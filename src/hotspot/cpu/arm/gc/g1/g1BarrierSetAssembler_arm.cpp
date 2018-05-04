@@ -28,6 +28,7 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1CardTable.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -126,6 +127,239 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 #endif // !R9_IS_SCRATCHED
 #endif // !AARCH64
 }
+
+// G1 pre-barrier.
+// Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR).
+// If store_addr != noreg, then previous value is loaded from [store_addr];
+// in such case store_addr and new_val registers are preserved;
+// otherwise pre_val register is preserved.
+void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
+                                          Register store_addr,
+                                          Register new_val,
+                                          Register pre_val,
+                                          Register tmp1,
+                                          Register tmp2) {
+  Label done;
+  Label runtime;
+
+  if (store_addr != noreg) {
+    assert_different_registers(store_addr, new_val, pre_val, tmp1, tmp2, noreg);
+  } else {
+    assert (new_val == noreg, "should be");
+    assert_different_registers(pre_val, tmp1, tmp2, noreg);
+  }
+
+  Address in_progress(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+  Address index(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(Rthread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
+
+  // Is marking active?
+  assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "adjust this code");
+  __ ldrb(tmp1, in_progress);
+  __ cbz(tmp1, done);
+
+  // Do we need to load the previous value?
+  if (store_addr != noreg) {
+    __ load_heap_oop(pre_val, Address(store_addr, 0));
+  }
+
+  // Is the previous value null?
+  __ cbz(pre_val, done);
+
+  // Can we store original value in the thread's buffer?
+  // Is index == 0?
+  // (The index field is typed as size_t.)
+
+  __ ldr(tmp1, index);           // tmp1 := *index_adr
+  __ ldr(tmp2, buffer);
+
+  __ subs(tmp1, tmp1, wordSize); // tmp1 := tmp1 - wordSize
+  __ b(runtime, lt);             // If negative, goto runtime
+
+  __ str(tmp1, index);           // *index_adr := tmp1
+
+  // Record the previous value
+  __ str(pre_val, Address(tmp2, tmp1));
+  __ b(done);
+
+  __ bind(runtime);
+
+  // save the live input values
+#ifdef AARCH64
+  if (store_addr != noreg) {
+    __ raw_push(store_addr, new_val);
+  } else {
+    __ raw_push(pre_val, ZR);
+  }
+#else
+  if (store_addr != noreg) {
+    // avoid raw_push to support any ordering of store_addr and new_val
+    __ push(RegisterSet(store_addr) | RegisterSet(new_val));
+  } else {
+    __ push(pre_val);
+  }
+#endif // AARCH64
+
+  if (pre_val != R0) {
+    __ mov(R0, pre_val);
+  }
+  __ mov(R1, Rthread);
+
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), R0, R1);
+
+#ifdef AARCH64
+  if (store_addr != noreg) {
+    __ raw_pop(store_addr, new_val);
+  } else {
+    __ raw_pop(pre_val, ZR);
+  }
+#else
+  if (store_addr != noreg) {
+    __ pop(RegisterSet(store_addr) | RegisterSet(new_val));
+  } else {
+    __ pop(pre_val);
+  }
+#endif // AARCH64
+
+  __ bind(done);
+}
+
+// G1 post-barrier.
+// Blows all volatile registers (R0-R3 on 32-bit ARM, R0-R18 on AArch64, Rtemp, LR).
+void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
+                                           Register store_addr,
+                                           Register new_val,
+                                           Register tmp1,
+                                           Register tmp2,
+                                           Register tmp3) {
+
+  Address queue_index(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+  Address buffer(Rthread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
+
+  BarrierSet* bs = BarrierSet::barrier_set();
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+  Label done;
+  Label runtime;
+
+  // Does store cross heap regions?
+
+  __ eor(tmp1, store_addr, new_val);
+#ifdef AARCH64
+  __ logical_shift_right(tmp1, tmp1, HeapRegion::LogOfHRGrainBytes);
+  __ cbz(tmp1, done);
+#else
+  __ movs(tmp1, AsmOperand(tmp1, lsr, HeapRegion::LogOfHRGrainBytes));
+  __ b(done, eq);
+#endif
+
+  // crosses regions, storing NULL?
+
+  __ cbz(new_val, done);
+
+  // storing region crossing non-NULL, is card already dirty?
+  const Register card_addr = tmp1;
+  assert(sizeof(*ct->byte_map_base()) == sizeof(jbyte), "adjust this code");
+
+  __ mov_address(tmp2, (address)ct->byte_map_base(), symbolic_Relocation::card_table_reference);
+  __ add(card_addr, tmp2, AsmOperand(store_addr, lsr, CardTable::card_shift));
+
+  __ ldrb(tmp2, Address(card_addr));
+  __ cmp(tmp2, (int)G1CardTable::g1_young_card_val());
+  __ b(done, eq);
+
+  __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad), tmp2);
+
+  assert(CardTable::dirty_card_val() == 0, "adjust this code");
+  __ ldrb(tmp2, Address(card_addr));
+  __ cbz(tmp2, done);
+
+  // storing a region crossing, non-NULL oop, card is clean.
+  // dirty card and log.
+
+  __ strb(__ zero_register(tmp2), Address(card_addr));
+
+  __ ldr(tmp2, queue_index);
+  __ ldr(tmp3, buffer);
+
+  __ subs(tmp2, tmp2, wordSize);
+  __ b(runtime, lt); // go to runtime if now negative
+
+  __ str(tmp2, queue_index);
+
+  __ str(card_addr, Address(tmp3, tmp2));
+  __ b(done);
+
+  __ bind(runtime);
+
+  if (card_addr != R0) {
+    __ mov(R0, card_addr);
+  }
+  __ mov(R1, Rthread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), R0, R1);
+
+  __ bind(done);
+}
+
+void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                    Register dst, Address src, Register tmp1, Register tmp2, Register tmp3) {
+  bool on_oop = type == T_OBJECT || type == T_ARRAY;
+  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
+  bool on_reference = on_weak || on_phantom;
+
+  ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2, tmp3);
+  if (on_oop && on_reference) {
+    // Generate the G1 pre-barrier code to log the value of
+    // the referent field in an SATB buffer.
+    g1_write_barrier_pre(masm, noreg, noreg, dst, tmp1, tmp2);
+  }
+}
+
+
+void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                         Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool in_concurrent_root = (decorators & IN_CONCURRENT_ROOT) != 0;
+
+  bool needs_pre_barrier = in_heap || in_concurrent_root;
+  bool needs_post_barrier = (new_val != noreg) && in_heap;
+
+  // flatten object address if needed
+  assert (obj.mode() == basic_offset, "pre- or post-indexing is not supported here");
+
+  const Register store_addr = obj.base();
+  if (obj.index() != noreg) {
+    assert (obj.disp() == 0, "index or displacement, not both");
+#ifdef AARCH64
+    __ add(store_addr, obj.base(), obj.index(), obj.extend(), obj.shift_imm());
+#else
+    assert(obj.offset_op() == add_offset, "addition is expected");
+    __ add(store_addr, obj.base(), AsmOperand(obj.index(), obj.shift(), obj.shift_imm()));
+#endif // AARCH64
+  } else if (obj.disp() != 0) {
+    __ add(store_addr, obj.base(), obj.disp());
+  }
+
+  if (needs_pre_barrier) {
+    g1_write_barrier_pre(masm, store_addr, new_val, tmp1, tmp2, tmp3);
+  }
+
+  if (is_null) {
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(store_addr), new_val, tmp1, tmp2, tmp3, true);
+  } else {
+    // G1 barrier needs uncompressed oop for region cross check.
+    Register val_to_store = new_val;
+    if (UseCompressedOops) {
+      val_to_store = tmp1;
+      __ mov(val_to_store, new_val);
+    }
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(store_addr), val_to_store, tmp1, tmp2, tmp3, false);
+    if (needs_post_barrier) {
+      g1_write_barrier_post(masm, store_addr, new_val, tmp1, tmp2, tmp3);
+    }
+  }
+};
 
 #ifdef COMPILER1
 

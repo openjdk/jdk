@@ -36,6 +36,11 @@ public:
   virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register addr, Register count, Register tmp) {}
 
+  virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                       Register dst, Address src, Register tmp1, Register tmp2, Register tmp3);
+  virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                        Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
+
   virtual void barrier_stubs_init() {}
 };
 

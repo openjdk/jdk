@@ -100,7 +100,7 @@ import nsk.share.test.Stresser;
  * @see nsk.share.jdwp.ArgumentHandler
  * @see nsk.share.jdi.ArgumentHandler
  * @see nsk.share.jvmti.ArgumentHandler
- * @see nsk.share.monitoring.ArgumentHandler
+ * @see nsk.monitoring.share.ArgumentHandler
  */
 public class ArgumentParser {
 

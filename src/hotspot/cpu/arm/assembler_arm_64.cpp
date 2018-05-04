@@ -42,10 +42,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/heapRegion.hpp"
-#endif // INCLUDE_ALL_GCS
 
 // Returns whether given imm has equal bit fields <0:size-1> and <size:2*size-1>.
 inline bool Assembler::LogicalImmediate::has_equal_subpatterns(uintx imm, int size) {

@@ -983,7 +983,7 @@ void ParNewGeneration::collect(bool   full,
   // Can  the mt_degree be set later (at run_task() time would be best)?
   rp->set_active_mt_degree(active_workers);
   ReferenceProcessorStats stats;
-  ReferenceProcessorPhaseTimes pt(_gc_timer, rp->num_q());
+  ReferenceProcessorPhaseTimes pt(_gc_timer, rp->num_queues());
   if (rp->processing_is_mt()) {
     ParNewRefProcTaskExecutor task_executor(*this, *_old_gen, thread_state_set);
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
@@ -1471,8 +1471,9 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
 void ParNewGeneration::ref_processor_init() {
   if (_ref_processor == NULL) {
     // Allocate and initialize a reference processor
+    _span_based_discoverer.set_span(_reserved);
     _ref_processor =
-      new ReferenceProcessor(_reserved,                  // span
+      new ReferenceProcessor(&_span_based_discoverer,    // span
                              ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
                              ParallelGCThreads,          // mt processing degree
                              refs_discovery_is_mt(),     // mt discovery

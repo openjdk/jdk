@@ -74,10 +74,6 @@
 #include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/cms/concurrentMarkSweepThread.hpp"
-#include "gc/parallel/psScavenge.hpp"
-#endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #include "c1/c1_Runtime1.hpp"
@@ -267,17 +263,17 @@ void print_statistics() {
     IndexSet::print_statistics();
   }
 #endif // ASSERT
-#else
-#ifdef INCLUDE_JVMCI
+#else // COMPILER2
+#if INCLUDE_JVMCI
 #ifndef COMPILER1
   if ((TraceDeoptimization || LogVMOutput || LogCompilation) && UseCompiler) {
     FlagSetting fs(DisplayVMOutput, DisplayVMOutput && TraceDeoptimization);
     Deoptimization::print_statistics();
     SharedRuntime::print_statistics();
   }
-#endif
-#endif
-#endif
+#endif // COMPILER1
+#endif // INCLUDE_JVMCI
+#endif // COMPILER2
 
   if (PrintAOTStatistics) {
     AOTLoader::print_statistics();

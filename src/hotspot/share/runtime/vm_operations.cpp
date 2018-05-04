@@ -235,7 +235,7 @@ void VM_PrintJNI::doit() {
 }
 
 void VM_PrintMetadata::doit() {
-  MetaspaceUtils::print_metadata_for_nmt(_out, _scale);
+  MetaspaceUtils::print_report(_out, _scale, _flags);
 }
 
 VM_FindDeadlocks::~VM_FindDeadlocks() {

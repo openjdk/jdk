@@ -25,12 +25,16 @@
 #ifndef SHARE_VM_GC_SHARED_SPECIALIZED_OOP_CLOSURES_HPP
 #define SHARE_VM_GC_SHARED_SPECIALIZED_OOP_CLOSURES_HPP
 
-#include "gc/serial/serial_specialized_oop_closures.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
 #include "gc/cms/cms_specialized_oop_closures.hpp"
+#endif
+#if INCLUDE_G1GC
 #include "gc/g1/g1_specialized_oop_closures.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif
+#if INCLUDE_SERIALGC
+#include "gc/serial/serial_specialized_oop_closures.hpp"
+#endif
 
 // The following OopClosure types get specialized versions of
 // "oop_oop_iterate" that invoke the closures' do_oop methods
@@ -56,14 +60,14 @@ class OopsInGenClosure;
 
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_1(f)                 \
   f(NoHeaderExtendedOopClosure,_nv)                               \
-               SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(f)          \
-  ALL_GCS_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f))
+  SERIALGC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_S(f))        \
+     CMSGC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_P(f))
 
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)                 \
-               SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f)         \
-  ALL_GCS_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f))       \
-  ALL_GCS_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f))        \
-  ALL_GCS_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(f))
+  SERIALGC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f))       \
+     CMSGC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f))      \
+      G1GC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f))       \
+      G1GC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(f))
 
 // We separate these out, because sometime the general one has
 // a different definition from the specialized ones, and sometimes it
@@ -85,7 +89,7 @@ class OopsInGenClosure;
 
 #define ALL_PAR_OOP_ITERATE_CLOSURES(f)                           \
   f(ExtendedOopClosure,_v)                                        \
-  ALL_GCS_ONLY(SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f))
+  CMSGC_ONLY(SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f))
 
 // This macro applies an argument macro to all OopClosures for which we
 // want specialized bodies of a family of methods related to
@@ -94,8 +98,8 @@ class OopsInGenClosure;
 // "OopClosure" in some applications and "OopsInGenClosure" in others.
 
 #define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG(f)  \
-               SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_S(f)   \
-  ALL_GCS_ONLY(SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f))
+  SERIALGC_ONLY(SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_S(f))   \
+     CMSGC_ONLY(SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f))
 
 #define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f)                  \
   SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG(f)

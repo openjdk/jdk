@@ -918,9 +918,10 @@ bool InstanceKlass::can_be_primary_super_slow() const {
     return Klass::can_be_primary_super_slow();
 }
 
-GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slots) {
+GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slots,
+                                                               Array<Klass*>* transitive_interfaces) {
   // The secondaries are the implemented interfaces.
-  Array<Klass*>* interfaces = transitive_interfaces();
+  Array<Klass*>* interfaces = transitive_interfaces;
   int num_secondaries = num_extra_slots + interfaces->length();
   if (num_secondaries == 0) {
     // Must share this for correct bootstrapping!

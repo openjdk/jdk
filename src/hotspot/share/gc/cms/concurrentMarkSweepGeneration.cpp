@@ -290,13 +290,13 @@ void CMSCollector::ref_processor_init() {
   if (_ref_processor == NULL) {
     // Allocate and initialize a reference processor
     _ref_processor =
-      new ReferenceProcessor(_span,                               // span
+      new ReferenceProcessor(&_span_based_discoverer,
                              (ParallelGCThreads > 1) && ParallelRefProcEnabled, // mt processing
-                             ParallelGCThreads,                   // mt processing degree
-                             _cmsGen->refs_discovery_is_mt(),     // mt discovery
+                             ParallelGCThreads,                      // mt processing degree
+                             _cmsGen->refs_discovery_is_mt(),        // mt discovery
                              MAX2(ConcGCThreads, ParallelGCThreads), // mt discovery degree
-                             _cmsGen->refs_discovery_is_atomic(), // discovery is not atomic
-                             &_is_alive_closure);                 // closure for liveness info
+                             _cmsGen->refs_discovery_is_atomic(),    // discovery is not atomic
+                             &_is_alive_closure);                    // closure for liveness info
     // Initialize the _ref_processor field of CMSGen
     _cmsGen->set_ref_processor(_ref_processor);
 
@@ -445,7 +445,10 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
                            CardTableRS*                   ct,
                            ConcurrentMarkSweepPolicy*     cp):
   _cmsGen(cmsGen),
+  // Adjust span to cover old (cms) gen
+  _span(cmsGen->reserved()),
   _ct(ct),
+  _span_based_discoverer(_span),
   _ref_processor(NULL),    // will be set later
   _conc_workers(NULL),     // may be set later
   _abort_preclean(false),
@@ -455,8 +458,6 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _modUnionTable((CardTable::card_shift - LogHeapWordSize),
                  -1 /* lock-free */, "No_lock" /* dummy */),
   _modUnionClosurePar(&_modUnionTable),
-  // Adjust my span to cover old (cms) gen
-  _span(cmsGen->reserved()),
   // Construct the is_alive_closure with _span & markBitMap
   _is_alive_closure(_span, &_markBitMap),
   _restart_addr(NULL),
@@ -3744,7 +3745,6 @@ void CMSCollector::sample_eden() {
   }
 }
 
-
 size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
   assert(_collectorState == Precleaning ||
          _collectorState == AbortablePreclean, "incorrect state");
@@ -3761,7 +3761,7 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
   // referents.
   if (clean_refs) {
     CMSPrecleanRefsYieldClosure yield_cl(this);
-    assert(rp->span().equals(_span), "Spans should be equal");
+    assert(_span_based_discoverer.span().equals(_span), "Spans should be equal");
     CMSKeepAliveClosure keep_alive(this, _span, &_markBitMap,
                                    &_markStack, true /* preclean */);
     CMSDrainMarkingStackClosure complete_trace(this,
@@ -5153,7 +5153,7 @@ void CMSRefProcTaskExecutor::execute(ProcessTask& task)
   WorkGang* workers = heap->workers();
   assert(workers != NULL, "Need parallel worker threads.");
   CMSRefProcTaskProxy rp_task(task, &_collector,
-                              _collector.ref_processor()->span(),
+                              _collector.ref_processor_span(),
                               _collector.markBitMap(),
                               workers, _collector.task_queues());
   workers->run_task(&rp_task);
@@ -5174,13 +5174,13 @@ void CMSCollector::refProcessingWork() {
   HandleMark   hm;
 
   ReferenceProcessor* rp = ref_processor();
-  assert(rp->span().equals(_span), "Spans should be equal");
+  assert(_span_based_discoverer.span().equals(_span), "Spans should be equal");
   assert(!rp->enqueuing_is_done(), "Enqueuing should not be complete");
   // Process weak references.
   rp->setup_policy(false);
   verify_work_stacks_empty();
 
-  ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_q());
+  ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_queues());
   {
     GCTraceTime(Debug, gc, phases) t("Reference Processing", _gc_timer_cm);
 
@@ -5245,7 +5245,7 @@ void CMSCollector::refProcessingWork() {
       CodeCache::do_unloading(&_is_alive_closure, purged_class);
 
       // Prune dead klasses from subklass/sibling/implementor lists.
-      Klass::clean_weak_klass_links();
+      Klass::clean_weak_klass_links(purged_class);
     }
 
     {

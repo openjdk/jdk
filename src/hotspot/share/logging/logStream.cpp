@@ -112,3 +112,12 @@ void LogStream::write(const char* s, size_t len) {
   update_position(s, len);
 }
 
+// Destructor writes any unfinished output left in the line buffer.
+LogStream::~LogStream() {
+  if (_current_line.is_empty() == false) {
+    _log_handle.print("%s", _current_line.buffer());
+    _current_line.reset();
+  }
+}
+
+

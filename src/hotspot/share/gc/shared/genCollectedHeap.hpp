@@ -502,10 +502,12 @@ private:
   void check_for_non_bad_heap_word_value(HeapWord* addr,
     size_t size) PRODUCT_RETURN;
 
+#if INCLUDE_SERIALGC
   // For use by mark-sweep.  As implemented, mark-sweep-compact is global
   // in an essential way: compaction is performed across generations, by
   // iterating over spaces.
   void prepare_for_compaction();
+#endif
 
   // Perform a full collection of the generations up to and including max_generation.
   // This is the low level interface used by the public versions of

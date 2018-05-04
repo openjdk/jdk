@@ -73,7 +73,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     StringDedupQueueFixup,
     StringDedupTableFixup,
     RedirtyCards,
-    PreserveCMReferents,
     YoungFreeCSet,
     NonYoungFreeCSet,
     GCParPhasesSentinel

@@ -201,7 +201,7 @@ void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
   size_t used = MetaspaceUtils::used_bytes(type);
   size_t free = (MetaspaceUtils::capacity_bytes(type) - used)
               + MetaspaceUtils::free_chunks_total_bytes(type)
-              + MetaspaceUtils::free_bytes(type);
+              + MetaspaceUtils::free_in_vs_bytes(type);
 
   assert(committed >= used + free, "Sanity");
   size_t waste = committed - (used + free);

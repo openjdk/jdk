@@ -429,7 +429,7 @@ void VirtualCallData::clean_weak_method_links() {
   ReceiverTypeData::clean_weak_method_links();
   for (uint row = 0; row < method_row_limit(); row++) {
     Method* p = method(row);
-    if (p != NULL && !p->on_stack()) {
+    if (p != NULL && p->is_old()) {
       clear_method_row(row);
     }
   }
@@ -1770,6 +1770,8 @@ void MethodData::clean_method_data(bool always_clean) {
   verify_extra_data_clean(&cl);
 }
 
+// This is called during redefinition to clean all "old" redefined
+// methods out of MethodData for all methods.
 void MethodData::clean_weak_method_links() {
   ResourceMark rm;
   for (ProfileData* data = first_data();

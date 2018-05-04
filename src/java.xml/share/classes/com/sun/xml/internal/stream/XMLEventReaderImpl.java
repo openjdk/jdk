@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,9 +153,9 @@ public class XMLEventReaderImpl implements javax.xml.stream.XMLEventReader{
             //space, cdata, characters and entity reference
             //nextEvent() would also set the last event.
             event = nextEvent();
-            while(event.getEventType() != XMLEvent.END_ELEMENT){
-                if(  type == XMLEvent.CHARACTERS || type == XMLEvent.SPACE ||
-                type == XMLEvent.CDATA){
+            while ((type = event.getEventType()) != XMLEvent.END_ELEMENT) {
+                if (type == XMLEvent.CHARACTERS || type == XMLEvent.SPACE ||
+                    type == XMLEvent.CDATA){
                     data = event.asCharacters().getData();
                 }
                 else if(type == XMLEvent.ENTITY_REFERENCE){
@@ -163,6 +163,7 @@ public class XMLEventReaderImpl implements javax.xml.stream.XMLEventReader{
                 }
                 else if(type == XMLEvent.COMMENT || type == XMLEvent.PROCESSING_INSTRUCTION){
                     //ignore
+                    data = null;
                 } else if(type == XMLEvent.END_DOCUMENT) {
                     throw new XMLStreamException("unexpected end of document when reading element text content");
                 } else if(type == XMLEvent.START_ELEMENT) {

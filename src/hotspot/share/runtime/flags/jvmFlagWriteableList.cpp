@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/plab.hpp"
 #include "runtime/flags/jvmFlagWriteableList.hpp"
 #include "runtime/os.hpp"
 #ifdef COMPILER1

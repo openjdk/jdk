@@ -71,8 +71,10 @@ TEST_VM_F(LogStreamTest, TestLineBufferAllocation) {
   const int max_line_len = 1024;
   char* const test_string = (char*) os::malloc(max_line_len, mtLogging);
   memset(test_string, 'A', max_line_len);
+  Log(gc) log;
+  set_log_config(TestLogFileName, "gc=debug");
   for (int interval = 1; interval < max_line_len; interval++) {
-    LogStream ls(Log(logging)::info());
+    LogStream ls(log.debug());
     int written = 0;
     while (written < max_line_len) {
       const int to_write = MIN2(interval, max_line_len - written);
@@ -84,7 +86,6 @@ TEST_VM_F(LogStreamTest, TestLineBufferAllocation) {
       }
       ASSERT_TRUE(line_buffer[written] == '\0');
     }
-    ls.cr(); // I do not expect printout, nor do I care. Just call cr() to flush and avoid assert in ~LogStream().
   }
 }
 
@@ -100,3 +101,14 @@ TEST_VM_F(LogStreamTest, TestLineBufferAllocationCap) {
   // reset to prevent assert for unflushed content
   ls._current_line.reset();
 }
+
+TEST_VM_F(LogStreamTest, autoflush_on_destruction) {
+  Log(gc) log;
+  set_log_config(TestLogFileName, "gc=debug");
+  {
+    LogStream stream(log.debug());
+    stream.print("ABCD"); // Unfinished line. I expect not to assert upon leaving the scope.
+  }
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "ABCD\n"));
+}
+

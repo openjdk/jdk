@@ -34,7 +34,7 @@
 #include "memory/referenceType.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 #include "gc/g1/g1YCTypes.hpp"
 #endif
 
@@ -97,7 +97,7 @@ class ParallelOldGCInfo {
   void* dense_prefix() const { return _dense_prefix; }
 };
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 
 class G1YoungGCInfo {
   G1YCType _type;
@@ -109,7 +109,7 @@ class G1YoungGCInfo {
   G1YCType type() const { return _type; }
 };
 
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
 class GCTracer : public ResourceObj {
  protected:
@@ -232,7 +232,7 @@ class ParNewTracer : public YoungGCTracer {
   ParNewTracer() : YoungGCTracer(ParNew) {}
 };
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 class G1MMUTracer : public AllStatic {
   static void send_g1_mmu_event(double time_slice_ms, double gc_time_ms, double max_time_ms);
 
@@ -294,7 +294,7 @@ class G1FullGCTracer : public OldGCTracer {
   G1FullGCTracer() : OldGCTracer(G1Full) {}
 };
 
-#endif
+#endif // INCLUDE_G1GC
 
 class CMSTracer : public OldGCTracer {
  public:

@@ -171,14 +171,14 @@ void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   oop_oop_iterate_ref_processing<nv>(obj, closure);
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 template <bool nv, class OopClosureType>
 void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
   InstanceKlass::oop_oop_iterate_reverse<nv>(obj, closure);
 
   oop_oop_iterate_ref_processing<nv>(obj, closure);
 }
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 
 
 template <bool nv, class OopClosureType>

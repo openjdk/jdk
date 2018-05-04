@@ -100,7 +100,6 @@ Classes:
         nsk.share.jdwp
         nsk.share.jdi
         nsk.share.jdb
-        nsk.share.monitoring
         nsk.share.sysdict
 
 Native functions and macroses:

@@ -3317,7 +3317,7 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     FLAG_SET_ERGO(uintx, InitialTenuringThreshold, MaxTenuringThreshold);
   }
 
-#if !defined(COMPILER2) && !INCLUDE_JVMCI
+#if !COMPILER2_OR_JVMCI
   // Don't degrade server performance for footprint
   if (FLAG_IS_DEFAULT(UseLargePages) &&
       MaxHeapSize < LargePageHeapSizeThreshold) {
@@ -3333,7 +3333,7 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   }
 #endif
 
-#if !defined(COMPILER2) && !INCLUDE_JVMCI
+#if !COMPILER2_OR_JVMCI
   UNSUPPORTED_OPTION(ProfileInterpreter);
   NOT_PRODUCT(UNSUPPORTED_OPTION(TraceProfileInterpreter));
 #endif

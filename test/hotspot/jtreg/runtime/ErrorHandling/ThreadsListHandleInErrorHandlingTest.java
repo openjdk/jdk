@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,13 +83,14 @@ public class ThreadsListHandleInErrorHandlingTest {
     String line = null;
 
     Pattern [] pattern = new Pattern[] {
-        // The "Current thread" line should show a hazard ptr:
-        Pattern.compile("Current thread .* _threads_hazard_ptr=0x.*"),
+        // The "Current thread" line should show a hazard ptr
+        // and no nested hazard ptrs:
+        Pattern.compile("Current thread .* _threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*, _nested_threads_hazard_ptr_cnt=0.*"),
         // We should have a section of Threads class SMR info:
         Pattern.compile("Threads class SMR info:"),
         // The current thread (marked with '=>') in the threads list
-        // should show a hazard ptr:
-        Pattern.compile("=>.* JavaThread \"main\" .*_threads_hazard_ptr=0x.*"),
+        // should show a hazard ptr and no nested hazard ptrs:
+        Pattern.compile("=>.* JavaThread \"main\" .* _threads_hazard_ptr=0x[0-9A-Fa-f][0-9A-Fa-f]*, _nested_threads_hazard_ptr_cnt=0.*"),
     };
     int currentPattern = 0;
 

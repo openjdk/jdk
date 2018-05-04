@@ -48,6 +48,7 @@ class LogStream : public outputStream {
   public:
     LineBuffer();
     ~LineBuffer();
+    bool is_empty() const { return _pos == 0; }
     const char* buffer() const { return _buf; }
     void append(const char* s, size_t len);
     void reset();
@@ -76,6 +77,9 @@ public:
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier) :
       _log_handle(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
+
+  // Destructor writes any unfinished output left in the line buffer.
+  ~LogStream();
 
   // Constructor to support creation from a LogTargetHandle.
   //

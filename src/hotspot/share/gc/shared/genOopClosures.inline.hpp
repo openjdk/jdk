@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_SHARED_GENOOPCLOSURES_INLINE_HPP
 #define SHARE_VM_GC_SHARED_GENOOPCLOSURES_INLINE_HPP
 
-#include "gc/serial/defNewGeneration.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.hpp"
@@ -34,6 +33,9 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#if INCLUDE_SERIALGC
+#include "gc/serial/defNewGeneration.inline.hpp"
+#endif
 
 inline OopsInGenClosure::OopsInGenClosure(Generation* gen) :
   ExtendedOopClosure(gen->ref_processor()), _orig_gen(gen), _rs(NULL) {
@@ -77,6 +79,8 @@ inline void OopsInClassLoaderDataOrGenClosure::do_cld_barrier() {
     _scanned_cld->record_modified_oops();
   }
 }
+
+#if INCLUDE_SERIALGC
 
 // NOTE! Any changes made here should also be made
 // in FastScanClosure::do_oop_work()
@@ -129,6 +133,8 @@ template <class T> inline void FastScanClosure::do_oop_work(T* p) {
 inline void FastScanClosure::do_oop_nv(oop* p)       { FastScanClosure::do_oop_work(p); }
 inline void FastScanClosure::do_oop_nv(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
+#endif // INCLUDE_SERIALGC
+
 template <class T> void FilteringClosure::do_oop_work(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
@@ -141,6 +147,8 @@ template <class T> void FilteringClosure::do_oop_work(T* p) {
 
 void FilteringClosure::do_oop_nv(oop* p)       { FilteringClosure::do_oop_work(p); }
 void FilteringClosure::do_oop_nv(narrowOop* p) { FilteringClosure::do_oop_work(p); }
+
+#if INCLUDE_SERIALGC
 
 // Note similarity to ScanClosure; the difference is that
 // the barrier set is taken care of outside this closure.
@@ -157,5 +165,7 @@ template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {
 
 inline void ScanWeakRefClosure::do_oop_nv(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
 inline void ScanWeakRefClosure::do_oop_nv(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
+
+#endif // INCLUDE_SERIALGC
 
 #endif // SHARE_VM_GC_SHARED_GENOOPCLOSURES_INLINE_HPP

@@ -42,6 +42,9 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
+import jdk.javadoc.doclet.StandardDoclet;
+import jdk.javadoc.doclet.Taglet;
+import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
 import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -356,7 +359,15 @@ public abstract class BaseConfiguration {
     /**
      * Constructs the configurations needed by the doclet.
      *
-     * @param doclet the doclet that created this configuration
+     * @apiNote
+     * The {@code doclet} parameter is used when {@link Taglet#init(DocletEnvironment, Doclet)
+     * initializing tags}.
+     * Some doclets (such as the {@link StandardDoclet), may delegate to another
+     * (such as the {@link HtmlDoclet}).  In such cases, the primary doclet (i.e
+     * {@code StandardDoclet}) should be provided here, and not any internal
+     * class like {@code HtmlDoclet}.
+     *
+     * @param doclet the doclet for this run of javadoc
      */
     public BaseConfiguration(Doclet doclet) {
         this.doclet = doclet;

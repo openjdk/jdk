@@ -28,7 +28,6 @@
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/generation.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/bytecodes.hpp"

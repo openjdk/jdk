@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8194893
+ * @bug 8194893 8194968
  * @summary javac -verbose prints wrong paths for output files
  * @modules jdk.compiler
  * @run main VerboseOutTest
@@ -56,7 +56,7 @@ public class VerboseOutTest {
         if (rc != 0) {
             throw new Exception("compilation failed: rc=" + rc);
         }
-        String expected = "[wrote ./" + className + ".class]";
+        String expected = "[wrote " + Paths.get(".").resolve(className + ".class") + "]";
         if (!log.contains(expected)) {
             throw new Exception("expected output not found: " + expected);
         }

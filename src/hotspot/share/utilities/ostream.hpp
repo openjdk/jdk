@@ -102,7 +102,9 @@ class outputStream : public ResourceObj {
    void put(char ch);
    void sp(int count = 1);
    void cr();
+   void cr_indent();
    void bol() { if (_position > 0)  cr(); }
+
 
    // Time stamp
    TimeStamp& time_stamp() { return _stamp; }
@@ -151,7 +153,6 @@ class streamIndentor : public StackObj {
   }
   ~streamIndentor() { _str->dec(_amount); }
 };
-
 
 // advisory locking for the shared tty stream:
 class ttyLocker: StackObj {

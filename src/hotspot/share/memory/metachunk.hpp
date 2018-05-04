@@ -110,6 +110,9 @@ enum ChunkIndex {
 size_t get_size_for_nonhumongous_chunktype(ChunkIndex chunk_type, bool is_class);
 ChunkIndex get_chunk_type_by_size(size_t size, bool is_class);
 
+ChunkIndex next_chunk_index(ChunkIndex i);
+ChunkIndex prev_chunk_index(ChunkIndex i);
+
 // Returns a descriptive name for a chunk type.
 const char* chunk_size_name(ChunkIndex index);
 
@@ -184,7 +187,7 @@ class Metachunk : public Metabase<Metachunk> {
   // Alignment of each allocation in the chunks.
   static size_t object_alignment();
 
-  // Size of the Metachunk header, including alignment.
+  // Size of the Metachunk header, in words, including alignment.
   static size_t overhead();
 
   Metachunk(ChunkIndex chunktype, bool is_class, size_t word_size, VirtualSpaceNode* container);

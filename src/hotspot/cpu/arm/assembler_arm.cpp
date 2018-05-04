@@ -42,10 +42,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/heapRegion.hpp"
-#endif // INCLUDE_ALL_GCS
 
 int AbstractAssembler::code_fill_byte() {
   return 0xff; // illegal instruction 0xffffffff

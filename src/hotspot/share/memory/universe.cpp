@@ -32,14 +32,10 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencies.hpp"
-#include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
-#include "gc/shared/gcLocker.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/space.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -318,7 +314,7 @@ void initialize_basic_type_klass(Klass* k, TRAPS) {
   } else
 #endif
   {
-    k->initialize_supers(ok, CHECK);
+    k->initialize_supers(ok, NULL, CHECK);
   }
   k->append_to_sibling_list();
 }

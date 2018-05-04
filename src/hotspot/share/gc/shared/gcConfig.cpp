@@ -23,16 +23,23 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/serialArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/parallel/parallelArguments.hpp"
+#if INCLUDE_CMSGC
 #include "gc/cms/cmsArguments.hpp"
+#endif
+#if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif
+#if INCLUDE_PARALLELGC
+#include "gc/parallel/parallelArguments.hpp"
+#endif
+#if INCLUDE_SERIALGC
+#include "gc/serial/serialArguments.hpp"
+#endif
 
 struct SupportedGC {
   bool&               _flag;
@@ -44,23 +51,19 @@ struct SupportedGC {
       _flag(flag), _name(name), _arguments(arguments), _hs_err_name(hs_err_name) {}
 };
 
-static SerialArguments   serialArguments;
-#if INCLUDE_ALL_GCS
-static ParallelArguments parallelArguments;
-static CMSArguments      cmsArguments;
-static G1Arguments       g1Arguments;
-#endif // INCLUDE_ALL_GCS
+     CMSGC_ONLY(static CMSArguments      cmsArguments;)
+      G1GC_ONLY(static G1Arguments       g1Arguments;)
+PARALLELGC_ONLY(static ParallelArguments parallelArguments;)
+  SERIALGC_ONLY(static SerialArguments   serialArguments;)
 
 // Table of supported GCs, for translating between command
 // line flag, CollectedHeap::Name and GCArguments instance.
 static const SupportedGC SupportedGCs[] = {
-  SupportedGC(UseSerialGC,        CollectedHeap::Serial,   serialArguments,   "serial gc"),
-#if INCLUDE_ALL_GCS
-  SupportedGC(UseParallelGC,      CollectedHeap::Parallel, parallelArguments, "parallel gc"),
-  SupportedGC(UseParallelOldGC,   CollectedHeap::Parallel, parallelArguments, "parallel gc"),
-  SupportedGC(UseConcMarkSweepGC, CollectedHeap::CMS,      cmsArguments,      "concurrent mark sweep gc"),
-  SupportedGC(UseG1GC,            CollectedHeap::G1,       g1Arguments,       "g1 gc"),
-#endif // INCLUDE_ALL_GCS
+       CMSGC_ONLY_ARG(SupportedGC(UseConcMarkSweepGC, CollectedHeap::CMS,      cmsArguments,      "concurrent mark sweep gc"))
+        G1GC_ONLY_ARG(SupportedGC(UseG1GC,            CollectedHeap::G1,       g1Arguments,       "g1 gc"))
+  PARALLELGC_ONLY_ARG(SupportedGC(UseParallelGC,      CollectedHeap::Parallel, parallelArguments, "parallel gc"))
+  PARALLELGC_ONLY_ARG(SupportedGC(UseParallelOldGC,   CollectedHeap::Parallel, parallelArguments, "parallel gc"))
+    SERIALGC_ONLY_ARG(SupportedGC(UseSerialGC,        CollectedHeap::Serial,   serialArguments,   "serial gc"))
 };
 
 #define FOR_EACH_SUPPORTED_GC(var) \
@@ -70,19 +73,25 @@ GCArguments* GCConfig::_arguments = NULL;
 bool GCConfig::_gc_selected_ergonomically = false;
 
 void GCConfig::select_gc_ergonomically() {
-#if INCLUDE_ALL_GCS
   if (os::is_server_class_machine()) {
+#if INCLUDE_G1GC
     FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
-  } else {
+#elif INCLUDE_PARALLELGC
+    FLAG_SET_ERGO_IF_DEFAULT(bool, UseParallelGC, true);
+#elif INCLUDE_SERIALGC
     FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
+#endif
+  } else {
+#if INCLUDE_SERIALGC
+    FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
+#endif
   }
-#else
-  UNSUPPORTED_OPTION(UseG1GC);
-  UNSUPPORTED_OPTION(UseParallelGC);
-  UNSUPPORTED_OPTION(UseParallelOldGC);
-  UNSUPPORTED_OPTION(UseConcMarkSweepGC);
-  FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
-#endif // INCLUDE_ALL_GCS
+
+  NOT_CMSGC(     UNSUPPORTED_OPTION(UseConcMarkSweepGC));
+  NOT_G1GC(      UNSUPPORTED_OPTION(UseG1GC);)
+  NOT_PARALLELGC(UNSUPPORTED_OPTION(UseParallelGC);)
+  NOT_PARALLELGC(UNSUPPORTED_OPTION(UseParallelOldGC));
+  NOT_SERIALGC(  UNSUPPORTED_OPTION(UseSerialGC);)
 }
 
 bool GCConfig::is_no_gc_selected() {
@@ -128,17 +137,25 @@ GCArguments* GCConfig::select_gc() {
     _gc_selected_ergonomically = true;
   }
 
-  if (is_exactly_one_gc_selected()) {
-    // Exacly one GC selected
-    FOR_EACH_SUPPORTED_GC(gc) {
-      if (gc->_flag) {
-        return &gc->_arguments;
-      }
+  if (!is_exactly_one_gc_selected()) {
+    // More than one GC selected
+    vm_exit_during_initialization("Multiple garbage collectors selected", NULL);
+  }
+
+#if INCLUDE_PARALLELGC && !INCLUDE_SERIALGC
+  if (FLAG_IS_CMDLINE(UseParallelOldGC) && !UseParallelOldGC) {
+    vm_exit_during_initialization("This JVM build only supports UseParallelOldGC as the full GC");
+  }
+#endif
+
+  // Exactly one GC selected
+  FOR_EACH_SUPPORTED_GC(gc) {
+    if (gc->_flag) {
+      return &gc->_arguments;
     }
   }
 
-  // More than one GC selected
-  vm_exit_during_initialization("Multiple garbage collectors selected", NULL);
+  fatal("Should have found the selected GC");
 
   return NULL;
 }

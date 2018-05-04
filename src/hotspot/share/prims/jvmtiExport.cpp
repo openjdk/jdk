@@ -59,9 +59,6 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/parallel/psMarkSweep.hpp"
-#endif // INCLUDE_ALL_GCS
 
 #ifdef JVMTI_TRACE
 #define EVT_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_SENT) != 0) { SafeResourceMark rm; log_trace(jvmti) out; }

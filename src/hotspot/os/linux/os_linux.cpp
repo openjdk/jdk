@@ -3111,6 +3111,68 @@ static address get_stack_commited_bottom(address bottom, size_t size) {
   return nbot;
 }
 
+bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
+  int mincore_return_value;
+  const size_t stripe = 1024;  // query this many pages each time
+  unsigned char vec[stripe];
+  const size_t page_sz = os::vm_page_size();
+  size_t pages = size / page_sz;
+
+  assert(is_aligned(start, page_sz), "Start address must be page aligned");
+  assert(is_aligned(size, page_sz), "Size must be page aligned");
+
+  committed_start = NULL;
+
+  int loops = (pages + stripe - 1) / stripe;
+  int committed_pages = 0;
+  address loop_base = start;
+  for (int index = 0; index < loops; index ++) {
+    assert(pages > 0, "Nothing to do");
+    int pages_to_query = (pages >= stripe) ? stripe : pages;
+    pages -= pages_to_query;
+
+    // Get stable read
+    while ((mincore_return_value = mincore(loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN);
+
+    // During shutdown, some memory goes away without properly notifying NMT,
+    // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
+    // Bailout and return as not committed for now.
+    if (mincore_return_value == -1 && errno == ENOMEM) {
+      return false;
+    }
+
+    assert(mincore_return_value == 0, "Range must be valid");
+    // Process this stripe
+    for (int vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
+      if ((vec[vecIdx] & 0x01) == 0) { // not committed
+        // End of current contiguous region
+        if (committed_start != NULL) {
+          break;
+        }
+      } else { // committed
+        // Start of region
+        if (committed_start == NULL) {
+          committed_start = loop_base + page_sz * vecIdx;
+        }
+        committed_pages ++;
+      }
+    }
+
+    loop_base += pages_to_query * page_sz;
+  }
+
+  if (committed_start != NULL) {
+    assert(committed_pages > 0, "Must have committed region");
+    assert(committed_pages <= int(size / page_sz), "Can not commit more than it has");
+    assert(committed_start >= start && committed_start < start + size, "Out of range");
+    committed_size = page_sz * committed_pages;
+    return true;
+  } else {
+    assert(committed_pages == 0, "Should not have committed region");
+    return false;
+  }
+}
+
 
 // Linux uses a growable mapping for the stack, and if the mapping for
 // the stack guard pages is not removed when we detach a thread the

@@ -107,10 +107,17 @@ typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
 // (optional) _is_alive_non_header closure in the STW
 // reference processor. It is also extensively used during
 // reference processing during STW evacuation pauses.
-class G1STWIsAliveClosure: public BoolObjectClosure {
+class G1STWIsAliveClosure : public BoolObjectClosure {
   G1CollectedHeap* _g1h;
 public:
   G1STWIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) {}
+  bool do_object_b(oop p);
+};
+
+class G1STWSubjectToDiscoveryClosure : public BoolObjectClosure {
+  G1CollectedHeap* _g1h;
+public:
+  G1STWSubjectToDiscoveryClosure(G1CollectedHeap* g1h) : _g1h(g1h) {}
   bool do_object_b(oop p);
 };
 
@@ -506,9 +513,6 @@ private:
   // allocated block, or else "NULL".
   HeapWord* expand_and_allocate(size_t word_size);
 
-  // Preserve any referents discovered by concurrent marking that have not yet been
-  // copied by the STW pause.
-  void preserve_cm_referents(G1ParScanThreadStateSet* per_thread_states);
   // Process any reference objects discovered during
   // an incremental evacuation pause.
   void process_discovered_references(G1ParScanThreadStateSet* per_thread_states);
@@ -897,6 +901,8 @@ private:
   // the discovered lists during reference discovery.
   G1STWIsAliveClosure _is_alive_closure_stw;
 
+  G1STWSubjectToDiscoveryClosure _is_subject_to_discovery_stw;
+
   // The (concurrent marking) reference processor...
   ReferenceProcessor* _ref_processor_cm;
 
@@ -908,6 +914,7 @@ private:
   // discovery.
   G1CMIsAliveClosure _is_alive_closure_cm;
 
+  G1CMSubjectToDiscoveryClosure _is_subject_to_discovery_cm;
 public:
 
   RefToScanQueue *task_queue(uint i) const;

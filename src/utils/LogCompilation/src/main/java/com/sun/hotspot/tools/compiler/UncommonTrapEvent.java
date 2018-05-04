@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,10 @@ class UncommonTrapEvent extends BasicLogEvent {
         setCount(Math.max(getCount(), trap.getCount()));
     }
 
+    public String toString() {
+        return "uncommon trap " + bytecode + " " + getReason() + " " + getAction();
+    }
+
     public void print(PrintStream stream, boolean printID) {
         if (printID) {
             stream.print(getId() + " ");
@@ -90,6 +94,20 @@ class UncommonTrapEvent extends BasicLogEvent {
 
     public void setCount(int count) {
         this.count = count;
+    }
+
+    private boolean trapReasonsAreEqual(String otherReason) {
+        if (otherReason.equals(getReason())) {
+            return true;
+        }
+
+        // Optimization may combine 2 if's into 1
+        if (otherReason.equals("unstable_if")
+                && getReason().equals("unstable_fused_if")) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -127,13 +145,14 @@ class UncommonTrapEvent extends BasicLogEvent {
             }
             for (UncommonTrap trap : traps) {
                 if (trap.getBCI() == jvmsBCIs.get(i) &&
-                    trap.getReason().equals(getReason()) &&
+                    trapReasonsAreEqual(trap.getReason()) &&
                     trap.getAction().equals(getAction())) {
                     bytecode = trap.getBytecode();
                     return;
                 }
             }
-            throw new InternalError("couldn't find bytecode");
+            throw new InternalError("couldn't find bytecode for [" + this + "] in Compilation:" + compilation);
+
         } catch (Exception e) {
             bytecode = "<unknown>";
         }

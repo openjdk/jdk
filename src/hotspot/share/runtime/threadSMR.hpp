@@ -28,6 +28,10 @@
 #include "memory/allocation.hpp"
 #include "runtime/timer.hpp"
 
+class JavaThread;
+class Monitor;
+class outputStream;
+class Thread;
 class ThreadClosure;
 
 // Thread Safe Memory Reclamation (Thread-SMR) support.
@@ -82,6 +86,8 @@ class ThreadClosure;
 // SMR Support for the Threads class.
 //
 class ThreadsSMRSupport : AllStatic {
+  friend class SafeThreadsListPtr;  // for _nested_thread_list_max, delete_notify(), release_stable_list_wake_up() access
+
   // The coordination between ThreadsSMRSupport::release_stable_list() and
   // ThreadsSMRSupport::smr_delete() uses the delete_lock in order to
   // reduce the traffic on the Threads_lock.
@@ -122,24 +128,20 @@ class ThreadsSMRSupport : AllStatic {
   static void inc_java_thread_list_alloc_cnt();
   static void inc_tlh_cnt();
   static bool is_a_protected_JavaThread(JavaThread *thread);
-  static void release_stable_list_fast_path(Thread *self);
-  static void release_stable_list_nested_path(Thread *self);
-  static void release_stable_list_wake_up(char *log_str);
+  static void release_stable_list_wake_up(bool is_nested);
   static void set_delete_notify();
   static void threads_do(ThreadClosure *tc);
   static void threads_do(ThreadClosure *tc, ThreadsList *list);
   static void update_deleted_thread_time_max(uint new_value);
   static void update_java_thread_list_max(uint new_value);
   static void update_tlh_time_max(uint new_value);
-  static void verify_hazard_pointer_scanned(Thread *self, ThreadsList *threads);
+  static void verify_hazard_ptr_scanned(Thread *self, ThreadsList *threads);
   static ThreadsList* xchg_java_thread_list(ThreadsList* new_list);
 
  public:
-  static ThreadsList *acquire_stable_list(Thread *self, bool is_ThreadsListSetter);
   static void add_thread(JavaThread *thread);
   static ThreadsList* get_java_thread_list();
   static bool is_a_protected_JavaThread_with_lock(JavaThread *thread);
-  static void release_stable_list(Thread *self);
   static void remove_thread(JavaThread *thread);
   static void smr_delete(JavaThread *thread);
   static void update_tlh_stats(uint millis);
@@ -148,22 +150,28 @@ class ThreadsSMRSupport : AllStatic {
   static void log_statistics();
   static void print_info_elements_on(outputStream* st, ThreadsList* t_list);
   static void print_info_on(outputStream* st);
+  static void print_info_on(const Thread* thread, outputStream* st);
 };
 
 // A fast list of JavaThreads.
 //
 class ThreadsList : public CHeapObj<mtThread> {
-  friend class ThreadsSMRSupport;  // for next_list(), set_next_list() access
+  friend class SafeThreadsListPtr;  // for {dec,inc}_nested_handle_cnt() access
+  friend class ThreadsSMRSupport;  // for _nested_handle_cnt, {add,remove}_thread(), {,set_}next_list() access
 
   const uint _length;
   ThreadsList* _next_list;
   JavaThread *const *const _threads;
+  volatile intx _nested_handle_cnt;
 
   template <class T>
   void threads_do_dispatch(T *cl, JavaThread *const thread) const;
 
   ThreadsList *next_list() const        { return _next_list; }
   void set_next_list(ThreadsList *list) { _next_list = list; }
+
+  void inc_nested_handle_cnt();
+  void dec_nested_handle_cnt();
 
   static ThreadsList* add_thread(ThreadsList* list, JavaThread* java_thread);
   static ThreadsList* remove_thread(ThreadsList* list, JavaThread* java_thread);
@@ -187,20 +195,60 @@ public:
   bool includes(const JavaThread * const p) const;
 };
 
-// Linked list of ThreadsLists to support nested ThreadsListHandles.
-class NestedThreadsList : public CHeapObj<mtThread> {
-  ThreadsList*const _t_list;
-  NestedThreadsList* _next;
+// An abstract safe ptr to a ThreadsList comprising either a stable hazard ptr
+// for leaves, or a retained reference count for nested uses. The user of this
+// API does not need to know which mechanism is providing the safety.
+class SafeThreadsListPtr {
+  friend class ThreadsListSetter;
+
+  SafeThreadsListPtr* _previous;
+  Thread*                 _thread;
+  ThreadsList*            _list;
+  bool                    _has_ref_count;
+  bool                    _needs_release;
+
+  void acquire_stable_list();
+  void acquire_stable_list_fast_path();
+  void acquire_stable_list_nested_path();
+
+  void release_stable_list();
+
+  void verify_hazard_ptr_scanned();
 
 public:
-  NestedThreadsList(ThreadsList* t_list) : _t_list(t_list) {
-    assert(Threads_lock->owned_by_self(),
-           "must own Threads_lock for saved t_list to be valid.");
+  // Constructor that attaches the list onto a thread.
+  SafeThreadsListPtr(Thread *thread, bool acquire) :
+    _previous(NULL),
+    _thread(thread),
+    _list(NULL),
+    _has_ref_count(false),
+    _needs_release(false)
+  {
+    if (acquire) {
+      acquire_stable_list();
+    }
   }
 
-  ThreadsList* t_list() { return _t_list; }
-  NestedThreadsList* next() { return _next; }
-  void set_next(NestedThreadsList* value) { _next = value; }
+  // Constructor that transfers ownership of the pointer.
+  SafeThreadsListPtr(SafeThreadsListPtr& other) :
+    _previous(other._previous),
+    _thread(other._thread),
+    _list(other._list),
+    _has_ref_count(other._has_ref_count),
+    _needs_release(other._needs_release)
+  {
+    other._needs_release = false;
+  }
+
+  ~SafeThreadsListPtr() {
+    if (_needs_release) {
+      release_stable_list();
+    }
+  }
+
+  ThreadsList* list() const { return _list; }
+  SafeThreadsListPtr* previous() const { return _previous; }
+  void print_on(outputStream* st);
 };
 
 // A helper to optionally set the hazard ptr in ourself. This helper can
@@ -209,24 +257,20 @@ public:
 //
 class ThreadsListSetter : public StackObj {
 private:
-  bool _target_needs_release;  // needs release only when set()
-  Thread * _target;
+  SafeThreadsListPtr _list_ptr;
 
 public:
-  ThreadsListSetter() : _target_needs_release(false), _target(Thread::current()) {
-  }
-  ~ThreadsListSetter();
-  ThreadsList* list();
-  void set();
-  bool target_needs_release() { return _target_needs_release; }
+  ThreadsListSetter() : _list_ptr(Thread::current(), /* acquire */ false) {}
+  ThreadsList* list() { return _list_ptr.list(); }
+  void set() { _list_ptr.acquire_stable_list(); }
+  bool is_set() { return _list_ptr._needs_release; }
 };
 
 // This stack allocated ThreadsListHandle keeps all JavaThreads in the
 // ThreadsList from being deleted until it is safe.
 //
 class ThreadsListHandle : public StackObj {
-  ThreadsList * _list;
-  Thread *const _self;
+  SafeThreadsListPtr _list_ptr;
   elapsedTimer _timer;  // Enabled via -XX:+EnableThreadSMRStatistics.
 
 public:
@@ -234,22 +278,22 @@ public:
   ~ThreadsListHandle();
 
   ThreadsList *list() const {
-    return _list;
+    return _list_ptr.list();
   }
 
   template <class T>
   void threads_do(T *cl) const {
-    return _list->threads_do(cl);
+    return list()->threads_do(cl);
   }
 
   bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread ** jt_pp, oop * thread_oop_p);
 
   bool includes(JavaThread* p) {
-    return _list->includes(p);
+    return list()->includes(p);
   }
 
   uint length() const {
-    return _list->length();
+    return list()->length();
   }
 };
 
