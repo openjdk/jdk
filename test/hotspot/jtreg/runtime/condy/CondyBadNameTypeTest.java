@@ -25,7 +25,6 @@
  * @test
  * @bug 8186211
  * @summary CONSTANT_Dynamic_info structure's name_and_type_index item does not point at CONSANT_NameAndType_info
- * @requires os.arch != "sparcv9"
  * @compile CondyBadNameType.jcod
  * @run main/othervm -Xverify:all CondyBadNameTypeTest
  */

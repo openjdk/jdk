@@ -25,7 +25,6 @@
  * @test
  * @bug 8186211
  * @summary CONSTANT_Dynamic_info structure present within an unsupported class file version.
- * @requires os.arch != "sparcv9"
  * @compile CondyCFVCheck.jcod
  * @run main/othervm -Xverify:all CondyCFVCheckTest
  */
