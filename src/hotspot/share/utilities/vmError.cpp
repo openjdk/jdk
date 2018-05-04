@@ -1620,6 +1620,9 @@ bool VMError::check_timeout() {
 }
 
 #ifndef PRODUCT
+#if defined(__SUNPRO_CC) && __SUNPRO_CC >= 0x5140
+#pragma error_messages(off, SEC_NULL_PTR_DEREF)
+#endif
 typedef void (*voidfun_t)();
 // Crash with an authentic sigfpe
 static void crash_with_sigfpe() {
