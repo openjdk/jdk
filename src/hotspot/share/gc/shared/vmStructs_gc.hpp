@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_VMSTRUCTS_GC_HPP
 #define SHARE_GC_SHARED_VMSTRUCTS_GC_HPP
 
+#include "gc/shared/ageTable.hpp"
 #include "gc/shared/cardGeneration.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -33,30 +34,36 @@
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/space.hpp"
+#if INCLUDE_CMSGC
+#include "gc/cms/vmStructs_cms.hpp"
+#endif
+#if INCLUDE_G1GC
+#include "gc/g1/vmStructs_g1.hpp"
+#endif
+#if INCLUDE_PARALLELGC
+#include "gc/parallel/vmStructs_parallelgc.hpp"
+#endif
+#if INCLUDE_SERIALGC
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/vmStructs_serial.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/cms/vmStructs_cms.hpp"
-#include "gc/g1/vmStructs_g1.hpp"
-#include "gc/parallel/vmStructs_parallelgc.hpp"
 #endif
 
 #define VM_STRUCTS_GC(nonstatic_field,                                                                                               \
                       volatile_nonstatic_field,                                                                                      \
                       static_field,                                                                                                  \
                       unchecked_nonstatic_field)                                                                                     \
-  ALL_GCS_ONLY(VM_STRUCTS_CMSGC(nonstatic_field,                                                                                     \
-                                volatile_nonstatic_field,                                                                            \
-                                static_field))                                                                                       \
-  ALL_GCS_ONLY(VM_STRUCTS_G1GC(nonstatic_field,                                                                                      \
-                               volatile_nonstatic_field,                                                                             \
-                               static_field))                                                                                        \
-  ALL_GCS_ONLY(VM_STRUCTS_PARALLELGC(nonstatic_field,                                                                                \
-                                     volatile_nonstatic_field,                                                                       \
-                                     static_field))                                                                                  \
-  VM_STRUCTS_SERIALGC(nonstatic_field,                                                                                               \
-                      volatile_nonstatic_field,                                                                                      \
-                      static_field)                                                                                                  \
+  CMSGC_ONLY(VM_STRUCTS_CMSGC(nonstatic_field,                                                                                       \
+                              volatile_nonstatic_field,                                                                              \
+                              static_field))                                                                                         \
+  G1GC_ONLY(VM_STRUCTS_G1GC(nonstatic_field,                                                                                         \
+                            volatile_nonstatic_field,                                                                                \
+                            static_field))                                                                                           \
+  PARALLELGC_ONLY(VM_STRUCTS_PARALLELGC(nonstatic_field,                                                                             \
+                                        volatile_nonstatic_field,                                                                    \
+                                        static_field))                                                                               \
+  SERIALGC_ONLY(VM_STRUCTS_SERIALGC(nonstatic_field,                                                                                 \
+                                    volatile_nonstatic_field,                                                                        \
+                                    static_field))                                                                                   \
   /**********************************************************************************/                                               \
   /* Generation and Space hierarchies                                               */                                               \
   /**********************************************************************************/                                               \
@@ -114,13 +121,6 @@
   nonstatic_field(ContiguousSpace,             _concurrent_iteration_safe_limit,              HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
-  nonstatic_field(DefNewGeneration,            _old_gen,                                      Generation*)                           \
-  nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                  \
-  nonstatic_field(DefNewGeneration,            _age_table,                                    AgeTable)                              \
-  nonstatic_field(DefNewGeneration,            _eden_space,                                   ContiguousSpace*)                      \
-  nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
-  nonstatic_field(DefNewGeneration,            _to_space,                                     ContiguousSpace*)                      \
-                                                                                                                                     \
   nonstatic_field(Generation,                  _reserved,                                     MemRegion)                             \
   nonstatic_field(Generation,                  _virtual_space,                                VirtualSpace)                          \
   nonstatic_field(Generation,                  _stat_record,                                  Generation::StatRecord)                \
@@ -150,18 +150,18 @@
 #define VM_TYPES_GC(declare_type,                                         \
                     declare_toplevel_type,                                \
                     declare_integer_type)                                 \
-  ALL_GCS_ONLY(VM_TYPES_CMSGC(declare_type,                               \
-                             declare_toplevel_type,                       \
-                             declare_integer_type))                       \
-  ALL_GCS_ONLY(VM_TYPES_G1GC(declare_type,                                \
-                             declare_toplevel_type,                       \
-                             declare_integer_type))                       \
-  ALL_GCS_ONLY(VM_TYPES_PARALLELGC(declare_type,                          \
-                                   declare_toplevel_type,                 \
-                                   declare_integer_type))                 \
-  VM_TYPES_SERIALGC(declare_type,                                         \
-                    declare_toplevel_type,                                \
-                    declare_integer_type)                                 \
+  CMSGC_ONLY(VM_TYPES_CMSGC(declare_type,                                 \
+                            declare_toplevel_type,                        \
+                            declare_integer_type))                        \
+  G1GC_ONLY(VM_TYPES_G1GC(declare_type,                                   \
+                          declare_toplevel_type,                          \
+                          declare_integer_type))                          \
+  PARALLELGC_ONLY(VM_TYPES_PARALLELGC(declare_type,                       \
+                                      declare_toplevel_type,              \
+                                      declare_integer_type))              \
+  SERIALGC_ONLY(VM_TYPES_SERIALGC(declare_type,                           \
+                                  declare_toplevel_type,                  \
+                                  declare_integer_type))                  \
   /******************************************/                            \
   /* Generation and space hierarchies       */                            \
   /* (needed for run-time type information) */                            \
@@ -170,7 +170,6 @@
   declare_toplevel_type(CollectedHeap)                                    \
            declare_type(GenCollectedHeap,             CollectedHeap)      \
   declare_toplevel_type(Generation)                                       \
-           declare_type(DefNewGeneration,             Generation)         \
            declare_type(CardGeneration,               Generation)         \
   declare_toplevel_type(Space)                                            \
            declare_type(CompactibleSpace,             Space)              \
@@ -224,14 +223,14 @@
 
 #define VM_INT_CONSTANTS_GC(declare_constant,                               \
                             declare_constant_with_value)                    \
-  ALL_GCS_ONLY(VM_INT_CONSTANTS_CMSGC(declare_constant,                     \
-                                      declare_constant_with_value))         \
-  ALL_GCS_ONLY(VM_INT_CONSTANTS_G1GC(declare_constant,                      \
-                                     declare_constant_with_value))          \
-  ALL_GCS_ONLY(VM_INT_CONSTANTS_PARALLELGC(declare_constant,                \
-                                           declare_constant_with_value))    \
-  VM_INT_CONSTANTS_SERIALGC(declare_constant,                               \
-                            declare_constant_with_value)                    \
+  CMSGC_ONLY(VM_INT_CONSTANTS_CMSGC(declare_constant,                       \
+                                    declare_constant_with_value))           \
+  G1GC_ONLY(VM_INT_CONSTANTS_G1GC(declare_constant,                         \
+                                  declare_constant_with_value))             \
+  PARALLELGC_ONLY(VM_INT_CONSTANTS_PARALLELGC(declare_constant,             \
+                                              declare_constant_with_value)) \
+  SERIALGC_ONLY(VM_INT_CONSTANTS_SERIALGC(declare_constant,                 \
+                                          declare_constant_with_value))     \
                                                                             \
   /********************************************/                            \
   /* Generation and Space Hierarchy Constants */                            \

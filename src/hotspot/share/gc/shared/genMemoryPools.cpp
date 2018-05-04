@@ -23,10 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/defNewGeneration.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/space.hpp"
+#if INCLUDE_SERIALGC
+#include "gc/serial/defNewGeneration.hpp"
+#endif
 
 ContiguousSpacePool::ContiguousSpacePool(ContiguousSpace* space,
                                          const char* name,
@@ -47,6 +49,8 @@ MemoryUsage ContiguousSpacePool::get_memory_usage() {
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }
+
+#if INCLUDE_SERIALGC
 
 SurvivorContiguousSpacePool::SurvivorContiguousSpacePool(DefNewGeneration* young_gen,
                                                          const char* name,
@@ -71,6 +75,8 @@ MemoryUsage SurvivorContiguousSpacePool::get_memory_usage() {
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }
+
+#endif // INCLUDE_SERIALGC
 
 GenerationPool::GenerationPool(Generation* gen,
                                const char* name,

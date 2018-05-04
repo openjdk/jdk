@@ -46,7 +46,7 @@ void eventlog_init();
 void mutex_init();
 void chunkpool_init();
 void perfMemory_init();
-void SuspendibleThreadSet_init() NOT_ALL_GCS_RETURN;
+void SuspendibleThreadSet_init();
 
 // Initialization done by Java thread in init_globals()
 void management_init();
@@ -62,7 +62,9 @@ jint universe_init();          // depends on codeCache_init and stubRoutines_ini
 void gc_barrier_stubs_init();
 void interpreter_init();       // before any methods loaded
 void invocationCounter_init(); // before any methods loaded
+#if INCLUDE_SERIALGC
 void marksweep_init();
+#endif
 void accessFlags_init();
 void templateTable_init();
 void InterfaceSupport_init();
@@ -117,7 +119,7 @@ jint init_globals() {
   gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
   interpreter_init();        // before any methods loaded
   invocationCounter_init();  // before any methods loaded
-  marksweep_init();
+  SERIALGC_ONLY(marksweep_init());
   accessFlags_init();
   templateTable_init();
   InterfaceSupport_init();

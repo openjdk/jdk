@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/genMarkSweep.hpp"
 #include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -304,6 +303,8 @@ void Generation::safe_object_iterate(ObjectClosure* cl) {
   space_iterate(&blk);
 }
 
+#if INCLUDE_SERIALGC
+
 void Generation::prepare_for_compaction(CompactPoint* cp) {
   // Generic implementation, can be specialized
   CompactibleSpace* space = first_compaction_space();
@@ -334,3 +335,5 @@ void Generation::compact() {
     sp = sp->next_compaction_space();
   }
 }
+
+#endif // INCLUDE_SERIALGC

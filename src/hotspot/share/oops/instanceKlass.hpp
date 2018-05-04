@@ -1180,7 +1180,7 @@ public:
 
   // GC specific object visitors
   //
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
   // Parallel Scavenge
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
   // Parallel Compact
@@ -1217,7 +1217,7 @@ public:
 
 
   // Reverse iteration
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
  public:
   // Iterate over all oop fields in the oop maps.
   template <bool nv, class OopClosureType>
@@ -1237,7 +1237,7 @@ public:
   // Iterate over all oop fields in one oop map.
   template <bool nv, typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure);
-#endif
+#endif // INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 
 
   // Bounded range iteration
@@ -1267,10 +1267,10 @@ public:
   ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
   ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_BACKWARDS)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_BACKWARDS)
-#endif // INCLUDE_ALL_GCS
+#endif
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 

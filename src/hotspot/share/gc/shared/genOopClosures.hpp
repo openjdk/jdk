@@ -94,6 +94,7 @@ class OopsInClassLoaderDataOrGenClosure: public OopsInGenClosure {
   void do_cld_barrier();
 };
 
+#if INCLUDE_SERIALGC
 
 // Closure for scanning DefNewGeneration.
 //
@@ -132,6 +133,8 @@ class FastScanClosure: public OopsInClassLoaderDataOrGenClosure {
   inline void do_oop_nv(narrowOop* p);
 };
 
+#endif // INCLUDE_SERIALGC
+
 class CLDScanClosure: public CLDClosure {
   OopsInClassLoaderDataOrGenClosure*   _scavenge_closure;
   // true if the the modified oops state should be saved.
@@ -161,6 +164,8 @@ class FilteringClosure: public ExtendedOopClosure {
   inline bool do_metadata_nv()        { assert(!_cl->do_metadata(), "assumption broken, must change to 'return _cl->do_metadata()'"); return false; }
 };
 
+#if INCLUDE_SERIALGC
+
 // Closure for scanning DefNewGeneration's weak references.
 // NOTE: very much like ScanClosure but not derived from
 //  OopsInGenClosure -- weak references are processed all
@@ -177,5 +182,7 @@ class ScanWeakRefClosure: public OopClosure {
   inline void do_oop_nv(oop* p);
   inline void do_oop_nv(narrowOop* p);
 };
+
+#endif // INCLUDE_SERIALGC
 
 #endif // SHARE_VM_GC_SHARED_GENOOPCLOSURES_HPP

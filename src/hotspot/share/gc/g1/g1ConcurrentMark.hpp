@@ -36,6 +36,7 @@
 class ConcurrentGCTimer;
 class G1ConcurrentMarkThread;
 class G1CollectedHeap;
+class G1CMOopClosure;
 class G1CMTask;
 class G1ConcurrentMark;
 class G1OldTracer;

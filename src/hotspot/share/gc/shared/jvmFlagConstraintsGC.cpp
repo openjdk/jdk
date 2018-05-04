@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
+#include "gc/shared/gcConfig.hpp"
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
@@ -36,9 +37,13 @@
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
 #include "gc/cms/jvmFlagConstraintsCMS.hpp"
+#endif
+#if INCLUDE_G1GC
 #include "gc/g1/jvmFlagConstraintsG1.hpp"
+#endif
+#if INCLUDE_PARALLELGC
 #include "gc/parallel/jvmFlagConstraintsParallel.hpp"
 #endif
 #ifdef COMPILER1
@@ -60,12 +65,14 @@
 JVMFlag::Error ParallelGCThreadsConstraintFunc(uint value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
   status = ParallelGCThreadsConstraintFuncParallel(value, verbose);
   if (status != JVMFlag::SUCCESS) {
     return status;
   }
+#endif
 
+#if INCLUDE_CMSGC
   status = ParallelGCThreadsConstraintFuncCMS(value, verbose);
   if (status != JVMFlag::SUCCESS) {
     return status;
@@ -78,42 +85,44 @@ JVMFlag::Error ParallelGCThreadsConstraintFunc(uint value, bool verbose) {
 // As ConcGCThreads should be smaller than ParallelGCThreads,
 // we need constraint function.
 JVMFlag::Error ConcGCThreadsConstraintFunc(uint value, bool verbose) {
-#if INCLUDE_ALL_GCS
   // CMS and G1 GCs use ConcGCThreads.
-  if ((UseConcMarkSweepGC || UseG1GC) && (value > ParallelGCThreads)) {
+  if ((GCConfig::is_gc_selected(CollectedHeap::CMS) ||
+       GCConfig::is_gc_selected(CollectedHeap::G1)) && (value > ParallelGCThreads)) {
     CommandLineError::print(verbose,
                             "ConcGCThreads (" UINT32_FORMAT ") must be "
                             "less than or equal to ParallelGCThreads (" UINT32_FORMAT ")\n",
                             value, ParallelGCThreads);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
-#endif
+
   return JVMFlag::SUCCESS;
 }
 
 static JVMFlag::Error MinPLABSizeBounds(const char* name, size_t value, bool verbose) {
-#if INCLUDE_ALL_GCS
-  if ((UseConcMarkSweepGC || UseG1GC || UseParallelGC) && (value < PLAB::min_size())) {
+  if ((GCConfig::is_gc_selected(CollectedHeap::CMS) ||
+       GCConfig::is_gc_selected(CollectedHeap::G1)  ||
+       GCConfig::is_gc_selected(CollectedHeap::Parallel)) && (value < PLAB::min_size())) {
     CommandLineError::print(verbose,
                             "%s (" SIZE_FORMAT ") must be "
                             "greater than or equal to ergonomic PLAB minimum size (" SIZE_FORMAT ")\n",
                             name, value, PLAB::min_size());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
-#endif // INCLUDE_ALL_GCS
+
   return JVMFlag::SUCCESS;
 }
 
 JVMFlag::Error MaxPLABSizeBounds(const char* name, size_t value, bool verbose) {
-#if INCLUDE_ALL_GCS
-  if ((UseConcMarkSweepGC || UseG1GC || UseParallelGC) && (value > PLAB::max_size())) {
+  if ((GCConfig::is_gc_selected(CollectedHeap::CMS) ||
+       GCConfig::is_gc_selected(CollectedHeap::G1)  ||
+       GCConfig::is_gc_selected(CollectedHeap::Parallel)) && (value > PLAB::max_size())) {
     CommandLineError::print(verbose,
                             "%s (" SIZE_FORMAT ") must be "
                             "less than or equal to ergonomic PLAB maximum size (" SIZE_FORMAT ")\n",
                             name, value, PLAB::max_size());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
-#endif // INCLUDE_ALL_GCS
+
   return JVMFlag::SUCCESS;
 }
 
@@ -133,13 +142,15 @@ JVMFlag::Error YoungPLABSizeConstraintFunc(size_t value, bool verbose) {
 JVMFlag::Error OldPLABSizeConstraintFunc(size_t value, bool verbose) {
   JVMFlag::Error status = JVMFlag::SUCCESS;
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
   if (UseConcMarkSweepGC) {
     return OldPLABSizeConstraintFuncCMS(value, verbose);
-  } else {
+  } else
+#endif
+  {
     status = MinMaxPLABSizeBounds("OldPLABSize", value, verbose);
   }
-#endif
+
   return status;
 }
 
@@ -221,7 +232,7 @@ JVMFlag::Error MaxMetaspaceFreeRatioConstraintFunc(uintx value, bool verbose) {
 }
 
 JVMFlag::Error InitialTenuringThresholdConstraintFunc(uintx value, bool verbose) {
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
   JVMFlag::Error status = InitialTenuringThresholdConstraintFuncParallel(value, verbose);
   if (status != JVMFlag::SUCCESS) {
     return status;
@@ -232,7 +243,7 @@ JVMFlag::Error InitialTenuringThresholdConstraintFunc(uintx value, bool verbose)
 }
 
 JVMFlag::Error MaxTenuringThresholdConstraintFunc(uintx value, bool verbose) {
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
   JVMFlag::Error status = MaxTenuringThresholdConstraintFuncParallel(value, verbose);
   if (status != JVMFlag::SUCCESS) {
     return status;
@@ -253,7 +264,7 @@ JVMFlag::Error MaxTenuringThresholdConstraintFunc(uintx value, bool verbose) {
 }
 
 JVMFlag::Error MaxGCPauseMillisConstraintFunc(uintx value, bool verbose) {
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
   JVMFlag::Error status = MaxGCPauseMillisConstraintFuncG1(value, verbose);
   if (status != JVMFlag::SUCCESS) {
     return status;
@@ -264,7 +275,7 @@ JVMFlag::Error MaxGCPauseMillisConstraintFunc(uintx value, bool verbose) {
 }
 
 JVMFlag::Error GCPauseIntervalMillisConstraintFunc(uintx value, bool verbose) {
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
   JVMFlag::Error status = GCPauseIntervalMillisConstraintFuncG1(value, verbose);
   if (status != JVMFlag::SUCCESS) {
     return status;
@@ -302,7 +313,7 @@ static JVMFlag::Error MaxSizeForAlignment(const char* name, size_t value, size_t
 static JVMFlag::Error MaxSizeForHeapAlignment(const char* name, size_t value, bool verbose) {
   size_t heap_alignment;
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
   if (UseG1GC) {
     // For G1 GC, we don't know until G1CollectorPolicy is created.
     heap_alignment = MaxSizeForHeapAlignmentG1();
@@ -343,7 +354,7 @@ JVMFlag::Error HeapBaseMinAddressConstraintFunc(size_t value, bool verbose) {
 }
 
 JVMFlag::Error NewSizeConstraintFunc(size_t value, bool verbose) {
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
   JVMFlag::Error status = NewSizeConstraintFuncG1(value, verbose);
   if (status != JVMFlag::SUCCESS) {
     return status;

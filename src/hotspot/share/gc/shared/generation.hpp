@@ -401,6 +401,7 @@ class Generation: public CHeapObj<mtGC> {
   GCStats* gc_stats() const { return _gc_stats; }
   virtual void update_gc_stats(Generation* current_generation, bool full) {}
 
+#if INCLUDE_SERIALGC
   // Mark sweep support phase2
   virtual void prepare_for_compaction(CompactPoint* cp);
   // Mark sweep support phase3
@@ -408,6 +409,7 @@ class Generation: public CHeapObj<mtGC> {
   // Mark sweep support phase4
   virtual void compact();
   virtual void post_compact() { ShouldNotReachHere(); }
+#endif
 
   // Support for CMS's rescan. In this general form we return a pointer
   // to an abstract object that can be used, based on specific previously

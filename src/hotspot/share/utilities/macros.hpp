@@ -131,26 +131,85 @@
 #define NOT_MANAGEMENT_RETURN_(code) { return code; }
 #endif // INCLUDE_MANAGEMENT
 
-/*
- * When INCLUDE_ALL_GCS is false the only garbage collectors
- * included in the JVM are defaultNewGeneration and markCompact.
- *
- * When INCLUDE_ALL_GCS is true all garbage collectors are
- * included in the JVM.
- */
-#ifndef INCLUDE_ALL_GCS
-#define INCLUDE_ALL_GCS 1
-#endif // INCLUDE_ALL_GCS
+#ifndef INCLUDE_CMSGC
+#define INCLUDE_CMSGC 1
+#endif // INCLUDE_CMSGC
 
-#if INCLUDE_ALL_GCS
-#define ALL_GCS_ONLY(x) x
-#define NOT_ALL_GCS_RETURN        /* next token must be ; */
-#define NOT_ALL_GCS_RETURN_(code) /* next token must be ; */
+#if INCLUDE_CMSGC
+#define CMSGC_ONLY(x) x
+#define CMSGC_ONLY_ARG(arg) arg,
+#define NOT_CMSGC(x)
+#define NOT_CMSGC_RETURN        /* next token must be ; */
+#define NOT_CMSGC_RETURN_(code) /* next token must be ; */
 #else
-#define ALL_GCS_ONLY(x)
-#define NOT_ALL_GCS_RETURN        {}
-#define NOT_ALL_GCS_RETURN_(code) { return code; }
-#endif // INCLUDE_ALL_GCS
+#define CMSGC_ONLY(x)
+#define CMSGC_ONLY_ARG(x)
+#define NOT_CMSGC(x) x
+#define NOT_CMSGC_RETURN        {}
+#define NOT_CMSGC_RETURN_(code) { return code; }
+#endif // INCLUDE_CMSGC
+
+#ifndef INCLUDE_G1GC
+#define INCLUDE_G1GC 1
+#endif // INCLUDE_G1GC
+
+#if INCLUDE_G1GC
+#define G1GC_ONLY(x) x
+#define G1GC_ONLY_ARG(arg) arg,
+#define NOT_G1GC(x)
+#define NOT_G1GC_RETURN        /* next token must be ; */
+#define NOT_G1GC_RETURN_(code) /* next token must be ; */
+#else
+#define G1GC_ONLY(x)
+#define G1GC_ONLY_ARG(arg)
+#define NOT_G1GC(x) x
+#define NOT_G1GC_RETURN        {}
+#define NOT_G1GC_RETURN_(code) { return code; }
+#endif // INCLUDE_G1GC
+
+#ifndef INCLUDE_PARALLELGC
+#define INCLUDE_PARALLELGC 1
+#endif // INCLUDE_PARALLELGC
+
+#if INCLUDE_PARALLELGC
+#define PARALLELGC_ONLY(x) x
+#define PARALLELGC_ONLY_ARG(arg) arg,
+#define NOT_PARALLELGC(x)
+#define NOT_PARALLELGC_RETURN        /* next token must be ; */
+#define NOT_PARALLELGC_RETURN_(code) /* next token must be ; */
+#else
+#define PARALLELGC_ONLY(x)
+#define PARALLELGC_ONLY_ARG(arg)
+#define NOT_PARALLELGC(x) x
+#define NOT_PARALLELGC_RETURN        {}
+#define NOT_PARALLELGC_RETURN_(code) { return code; }
+#endif // INCLUDE_PARALLELGC
+
+#ifndef INCLUDE_SERIALGC
+#define INCLUDE_SERIALGC 1
+#endif // INCLUDE_SERIALGC
+
+#if INCLUDE_SERIALGC
+#define SERIALGC_ONLY(x) x
+#define SERIALGC_ONLY_ARG(arg) arg,
+#define NOT_SERIALGC(x)
+#define NOT_SERIALGC_RETURN        /* next token must be ; */
+#define NOT_SERIALGC_RETURN_(code) /* next token must be ; */
+#else
+#define SERIALGC_ONLY(x)
+#define SERIALGC_ONLY_ARG(arg)
+#define NOT_SERIALGC(x) x
+#define NOT_SERIALGC_RETURN        {}
+#define NOT_SERIALGC_RETURN_(code) { return code; }
+#endif // INCLUDE_SERIALGC
+
+#if INCLUDE_CMSGC || INCLUDE_G1GC || INCLUDE_PARALLELGC
+#define INCLUDE_NOT_ONLY_SERIALGC 1
+#else
+#define INCLUDE_NOT_ONLY_SERIALGC 0
+#endif
+
+#define INCLUDE_OOP_OOP_ITERATE_BACKWARDS INCLUDE_NOT_ONLY_SERIALGC
 
 #ifndef INCLUDE_NMT
 #define INCLUDE_NMT 1
@@ -524,7 +583,7 @@
     non_atomic_decl
 #endif
 
-#if INCLUDE_CDS && INCLUDE_ALL_GCS && defined(_LP64) && !defined(_WINDOWS)
+#if INCLUDE_CDS && INCLUDE_G1GC && defined(_LP64) && !defined(_WINDOWS)
 #define INCLUDE_CDS_JAVA_HEAP 1
 #define CDS_JAVA_HEAP_ONLY(x) x
 #define NOT_CDS_JAVA_HEAP(x)

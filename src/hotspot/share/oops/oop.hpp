@@ -259,13 +259,11 @@ class oopDesc {
   inline void forward_to(oop p);
   inline bool cas_forward_to(oop p, markOop compare);
 
-#if INCLUDE_ALL_GCS
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
   // this call returns "NULL" for that thread; any other thread has the
   // value of the forwarding pointer returned and does not modify "this".
   inline oop forward_to_atomic(oop p);
-#endif // INCLUDE_ALL_GCS
 
   inline oop forwardee() const;
 
@@ -278,7 +276,7 @@ class oopDesc {
 
   // Garbage Collection support
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
   // Parallel Compact
   inline void pc_follow_contents(ParCompactionManager* cm);
   inline void pc_update_contents(ParCompactionManager* cm);
@@ -303,7 +301,7 @@ class oopDesc {
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_SIZE_DECL)
 
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 
 #define OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)  \
   inline void oop_iterate_backwards(OopClosureType* blk);
@@ -311,7 +309,7 @@ class oopDesc {
   ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_BACKWARDS_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_BACKWARDS_DECL)
 
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 
   inline int oop_iterate_no_header(OopClosure* bk);
   inline int oop_iterate_no_header(OopClosure* bk, MemRegion mr);

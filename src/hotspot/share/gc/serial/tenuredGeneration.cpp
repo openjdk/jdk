@@ -39,7 +39,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
 #include "gc/cms/parOopClosures.hpp"
 #endif
 

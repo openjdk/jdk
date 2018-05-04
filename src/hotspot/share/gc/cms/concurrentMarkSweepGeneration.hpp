@@ -69,7 +69,6 @@ class FreeChunk;
 class ParNewGeneration;
 class PromotionInfo;
 class ScanMarkedObjectsAgainCarefullyClosure;
-class TenuredGeneration;
 class SerialOldTracer;
 
 // A generic CMS bit map. It's the basis for both the CMS marking bit map

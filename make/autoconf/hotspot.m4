@@ -25,7 +25,7 @@
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero minimal dtrace jvmti jvmci \
-    graal vm-structs jni-check services management all-gcs nmt cds \
+    graal vm-structs jni-check services management cmsgc g1gc parallelgc serialgc nmt cds \
     static-build link-time-opt aot"
 
 # All valid JVM variants
@@ -305,12 +305,8 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     AC_MSG_ERROR([Specified JVM feature 'jvmci' requires feature 'compiler2' or 'compiler1'])
   fi
 
-  if HOTSPOT_CHECK_JVM_FEATURE(compiler2) && ! HOTSPOT_CHECK_JVM_FEATURE(all-gcs); then
-    AC_MSG_ERROR([Specified JVM feature 'compiler2' requires feature 'all-gcs'])
-  fi
-
-  if HOTSPOT_CHECK_JVM_FEATURE(vm-structs) && ! HOTSPOT_CHECK_JVM_FEATURE(all-gcs); then
-    AC_MSG_ERROR([Specified JVM feature 'vm-structs' requires feature 'all-gcs'])
+  if HOTSPOT_CHECK_JVM_FEATURE(cmsgc) && ! HOTSPOT_CHECK_JVM_FEATURE(serialgc); then
+    AC_MSG_ERROR([Specified JVM feature 'cmsgc' requires feature 'serialgc'])
   fi
 
   # Turn on additional features based on other parts of configure
@@ -395,7 +391,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   fi
 
   # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jvmti vm-structs jni-check services management all-gcs nmt"
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cmsgc g1gc parallelgc serialgc jni-check jvmti management nmt services vm-structs"
   if test "x$ENABLE_CDS" = "xtrue"; then
     NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cds"
   fi
@@ -404,7 +400,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   JVM_FEATURES_server="compiler1 compiler2 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci $JVM_FEATURES_aot $JVM_FEATURES_graal"
   JVM_FEATURES_client="compiler1 $NON_MINIMAL_FEATURES $JVM_FEATURES $JVM_FEATURES_jvmci"
   JVM_FEATURES_core="$NON_MINIMAL_FEATURES $JVM_FEATURES"
-  JVM_FEATURES_minimal="compiler1 minimal $JVM_FEATURES $JVM_FEATURES_link_time_opt"
+  JVM_FEATURES_minimal="compiler1 minimal serialgc $JVM_FEATURES $JVM_FEATURES_link_time_opt"
   JVM_FEATURES_zero="zero $NON_MINIMAL_FEATURES $JVM_FEATURES"
   JVM_FEATURES_custom="$JVM_FEATURES"
 
@@ -441,6 +437,12 @@ AC_DEFUN_ONCE([HOTSPOT_FINALIZE_JVM_FEATURES],
     # Update real feature set variable
     eval $features_var_name='"'$JVM_FEATURES_FOR_VARIANT'"'
     AC_MSG_RESULT(["$JVM_FEATURES_FOR_VARIANT"])
+
+    # Verify that we have at least one gc selected
+    GC_FEATURES=`$ECHO $JVM_FEATURES_FOR_VARIANT | $GREP gc`
+    if test "x$GC_FEATURES" = x; then
+      AC_MSG_WARN([Invalid JVM features: No gc selected for variant $variant.])
+    fi
 
     # Validate features (for configure script errors, not user errors)
     BASIC_GET_NON_MATCHING_VALUES(INVALID_FEATURES, $JVM_FEATURES_FOR_VARIANT, $VALID_JVM_FEATURES)

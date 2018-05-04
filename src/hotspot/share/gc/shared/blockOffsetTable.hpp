@@ -153,14 +153,14 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
 
   void fill_range(size_t start, size_t num_cards, u_char offset) {
     void* start_ptr = &_offset_array[start];
-#if INCLUDE_ALL_GCS
     // If collector is concurrent, special handling may be needed.
-    assert(!UseG1GC, "Shouldn't be here when using G1");
+    G1GC_ONLY(assert(!UseG1GC, "Shouldn't be here when using G1");)
+#if INCLUDE_CMSGC
     if (UseConcMarkSweepGC) {
       memset_with_concurrent_readers(start_ptr, offset, num_cards);
       return;
     }
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_CMSGC
     memset(start_ptr, offset, num_cards);
   }
 

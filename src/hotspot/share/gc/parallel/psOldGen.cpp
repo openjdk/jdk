@@ -139,10 +139,13 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
                              SpaceDecorator::Clear,
                              SpaceDecorator::Mangle);
 
+#if INCLUDE_SERIALGC
   _object_mark_sweep = new PSMarkSweepDecorator(_object_space, start_array(), MarkSweepDeadRatio);
 
-  if (_object_mark_sweep == NULL)
+  if (_object_mark_sweep == NULL) {
     vm_exit_during_initialization("Could not complete allocation of old generation");
+  }
+#endif // INCLUDE_SERIALGC
 
   // Update the start_array
   start_array()->set_covered_region(cmr);
@@ -163,6 +166,8 @@ bool  PSOldGen::is_allocated() {
   return virtual_space()->reserved_size() != 0;
 }
 
+#if INCLUDE_SERIALGC
+
 void PSOldGen::precompact() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -182,6 +187,8 @@ void PSOldGen::adjust_pointers() {
 void PSOldGen::compact() {
   object_mark_sweep()->compact(ZapUnusedHeapArea);
 }
+
+#endif // INCLUDE_SERIALGC
 
 size_t PSOldGen::contiguous_available() const {
   return object_space()->free_in_bytes() + virtual_space()->uncommitted_size();

@@ -29,7 +29,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/gcLocker.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metaspaceClosure.hpp"

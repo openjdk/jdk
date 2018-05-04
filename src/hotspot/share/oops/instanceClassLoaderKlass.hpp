@@ -48,7 +48,7 @@ public:
 
   // GC specific object visitors
   //
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
   // Parallel Scavenge
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
   // Parallel Compact
@@ -68,7 +68,7 @@ public:
   template <bool nv, class OopClosureType>
   inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
   // Reverse iteration
   // Iterate over the oop fields and metadata.
   template <bool nv, class OopClosureType>
@@ -85,10 +85,10 @@ public:
   ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
   ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_BACKWARDS)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_BACKWARDS)
-#endif // INCLUDE_ALL_GCS
+#endif
 
 };
 

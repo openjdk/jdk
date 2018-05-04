@@ -48,11 +48,8 @@
 // Forward declarations.
 class GenCollectorPolicy;
 class AdaptiveSizePolicy;
-#if INCLUDE_ALL_GCS
 class ConcurrentMarkSweepPolicy;
 class G1CollectorPolicy;
-#endif // INCLUDE_ALL_GCS
-
 class MarkSweepPolicy;
 
 class CollectorPolicy : public CHeapObj<mtGC> {

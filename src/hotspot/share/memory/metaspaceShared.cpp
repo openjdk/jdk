@@ -63,7 +63,7 @@
 #include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif

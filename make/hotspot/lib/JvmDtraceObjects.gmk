@@ -77,9 +77,14 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         vmGCOperations.o \
     )
 
-    ifeq ($(call check-jvm-feature, all-gcs), true)
+    ifeq ($(call check-jvm-feature, cmsgc), true)
       DTRACE_INSTRUMENTED_OBJS += $(addprefix $(JVM_OUTPUTDIR)/objs/, \
           vmCMSOperations.o \
+      )
+    endif
+
+    ifeq ($(call check-jvm-feature, parallelgc), true)
+      DTRACE_INSTRUMENTED_OBJS += $(addprefix $(JVM_OUTPUTDIR)/objs/, \
           vmPSOperations.o \
       )
     endif

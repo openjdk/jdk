@@ -31,11 +31,11 @@
 #include "runtime/os.hpp"
 #include "trace/traceBackend.hpp"
 #include "trace/tracing.hpp"
+#include "tracefiles/traceEventClasses.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 #include "gc/g1/evacuationInfo.hpp"
 #include "gc/g1/g1YCTypes.hpp"
-#include "tracefiles/traceEventClasses.hpp"
 #endif
 
 // All GC dependencies against the trace framework is contained within this file.
@@ -188,7 +188,7 @@ void OldGCTracer::send_concurrent_mode_failure_event() {
   }
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 void G1NewTracer::send_g1_young_gc_event() {
   EventG1GarbageCollection e(UNTIMED);
   if (e.should_commit()) {
@@ -311,7 +311,7 @@ void G1NewTracer::send_adaptive_ihop_statistics(size_t threshold,
   }
 }
 
-#endif
+#endif // INCLUDE_G1GC
 
 static TraceStructVirtualSpace to_trace_struct(const VirtualSpaceSummary& summary) {
   TraceStructVirtualSpace space;

@@ -34,8 +34,6 @@
 #include "gc/parallel/pcTasks.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
-#include "gc/parallel/psMarkSweep.hpp"
-#include "gc/parallel/psMarkSweepDecorator.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
@@ -72,6 +70,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 
 #include <math.h>
