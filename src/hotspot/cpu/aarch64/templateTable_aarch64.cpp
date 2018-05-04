@@ -407,7 +407,7 @@ void TemplateTable::fast_aldc(bool wide)
   __ bind(resolved);
 
   { // Check for the null sentinel.
-    // If we just called the VM, that already did the mapping for us,
+    // If we just called the VM, it already did the mapping for us,
     // but it's harmless to retry.
     Label notNull;
 
