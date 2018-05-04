@@ -25,7 +25,6 @@
  * @test
  * @bug 8186211
  * @summary Test CONSTANT_Dynamic where the BSM is invoked via a REF_newInvokeSpecial.
- * @requires os.arch != "sparcv9"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile CondyNewInvokeSpecial.jasm

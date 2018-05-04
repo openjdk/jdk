@@ -25,7 +25,6 @@
  * @test
  * @bug 8186211
  * @summary CONSTANT_Dynamic_info structure present with various bad BSM index, BSM array attribute checks.
- * @requires os.arch != "sparcv9"
  * @compile CondyBadBSMIndex.jcod
  * @compile CondyEmptyBSMArray1.jcod
  * @compile CondyNoBSMArray.jcod

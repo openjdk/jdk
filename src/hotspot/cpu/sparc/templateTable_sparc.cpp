@@ -256,7 +256,7 @@ void TemplateTable::sipush() {
 
 void TemplateTable::ldc(bool wide) {
   transition(vtos, vtos);
-  Label call_ldc, notInt, isString, notString, notClass, exit;
+  Label call_ldc, notInt, isString, notString, notClass, notFloat, exit;
 
   if (wide) {
     __ get_2_byte_integer_at_bcp(1, G3_scratch, O1, InterpreterMacroAssembler::Unsigned);
@@ -286,7 +286,8 @@ void TemplateTable::ldc(bool wide) {
   __ set(wide, O1);
   call_VM(Otos_i, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), O1);
   __ push(atos);
-  __ ba_short(exit);
+  __ ba(exit);
+  __ delayed()->nop();
 
   __ bind(notClass);
  // __ add(O0, base_offset, O0);
@@ -296,19 +297,30 @@ void TemplateTable::ldc(bool wide) {
   __ delayed()->cmp(O2, JVM_CONSTANT_String);
   __ ld(O0, O1, Otos_i);
   __ push(itos);
-  __ ba_short(exit);
+  __ ba(exit);
+  __ delayed()->nop();
 
   __ bind(notInt);
  // __ cmp(O2, JVM_CONSTANT_String);
   __ brx(Assembler::notEqual, true, Assembler::pt, notString);
-  __ delayed()->ldf(FloatRegisterImpl::S, O0, O1, Ftos_f);
+  __ delayed()->cmp(O2, JVM_CONSTANT_Float);
   __ bind(isString);
   __ stop("string should be rewritten to fast_aldc");
-  __ ba_short(exit);
+  __ ba(exit);
+  __ delayed()->nop();
 
   __ bind(notString);
- // __ ldf(FloatRegisterImpl::S, O0, O1, Ftos_f);
+ //__ cmp(O2, JVM_CONSTANT_Float);
+  __ brx(Assembler::notEqual, true, Assembler::pt, notFloat);
+  __ delayed()->nop();
+  __ ldf(FloatRegisterImpl::S, O0, O1, Ftos_f);
   __ push(ftos);
+  __ ba(exit);
+  __ delayed()->nop();
+
+  // assume the tag is for condy; if not, the VM runtime will tell us
+  __ bind(notFloat);
+  condy_helper(exit);
 
   __ bind(exit);
 }
@@ -336,12 +348,27 @@ void TemplateTable::fast_aldc(bool wide) {
   // first time invocation - must resolve first
   __ call_VM(Otos_i, entry, O1);
   __ bind(resolved);
+
+  { // Check for the null sentinel.
+    // If we just called the VM, it already did the mapping for us,
+    // but it's harmless to retry.
+    Label notNull;
+    __ set(ExternalAddress((address)Universe::the_null_sentinel_addr()), G3_scratch);
+    __ ld_ptr(G3_scratch, 0, G3_scratch);
+    __ cmp(G3_scratch, Otos_i);
+    __ br(Assembler::notEqual, true, Assembler::pt, notNull);
+    __ delayed()->nop();
+    __ clr(Otos_i);  // NULL object reference
+    __ bind(notNull);
+  }
+
+  // Safe to call with 0 result
   __ verify_oop(Otos_i);
 }
 
 void TemplateTable::ldc2_w() {
   transition(vtos, vtos);
-  Label Long, exit;
+  Label notDouble, notLong, exit;
 
   __ get_2_byte_integer_at_bcp(1, G3_scratch, O1, InterpreterMacroAssembler::Unsigned);
   __ get_cpool_and_tags(O0, O2);
@@ -355,7 +382,7 @@ void TemplateTable::ldc2_w() {
   __ sll(O1, LogBytesPerWord, O1);
   __ add(O0, O1, G3_scratch);
 
-  __ cmp_and_brx_short(O2, JVM_CONSTANT_Double, Assembler::notEqual, Assembler::pt, Long);
+  __ cmp_and_brx_short(O2, JVM_CONSTANT_Double, Assembler::notEqual, Assembler::pt, notDouble);
   // A double can be placed at word-aligned locations in the constant pool.
   // Check out Conversions.java for an example.
   // Also ConstantPool::header_size() is 20, which makes it very difficult
@@ -364,9 +391,127 @@ void TemplateTable::ldc2_w() {
   __ push(dtos);
   __ ba_short(exit);
 
-  __ bind(Long);
+  __ bind(notDouble);
+  __ cmp_and_brx_short(O2, JVM_CONSTANT_Long, Assembler::notEqual, Assembler::pt, notLong);
   __ ldx(G3_scratch, base_offset, Otos_l);
   __ push(ltos);
+  __ ba_short(exit);
+
+  __ bind(notLong);
+  condy_helper(exit);
+
+  __ bind(exit);
+}
+
+void TemplateTable::condy_helper(Label& exit) {
+  Register Robj = Otos_i;
+  Register Roffset = G4_scratch;
+  Register Rflags = G1_scratch;
+
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc);
+
+  __ set((int)bytecode(), O1);
+  __ call_VM(Robj, entry, O1);
+
+  // Get vm_result_2 has flags = (tos, off) using format CPCE::_flags
+  __ get_vm_result_2(G3_scratch);
+
+  // Get offset
+  __ set((int)ConstantPoolCacheEntry::field_index_mask, Roffset);
+  __ and3(G3_scratch, Roffset, Roffset);
+
+  // compute type
+  __ srl(G3_scratch, ConstantPoolCacheEntry::tos_state_shift, Rflags);
+  // Make sure we don't need to mask Rflags after the above shift
+  ConstantPoolCacheEntry::verify_tos_state_shift();
+
+  switch (bytecode()) {
+  case Bytecodes::_ldc:
+  case Bytecodes::_ldc_w:
+    {
+      // tos in (itos, ftos, stos, btos, ctos, ztos)
+      Label notInt, notFloat, notShort, notByte, notChar, notBool;
+      __ cmp(Rflags, itos);
+      __ br(Assembler::notEqual, false, Assembler::pt, notInt);
+      __ delayed()->cmp(Rflags, ftos);
+      // itos
+      __ ld(Robj, Roffset, Otos_i);
+      __ push(itos);
+      __ ba_short(exit);
+
+      __ bind(notInt);
+      __ br(Assembler::notEqual, false, Assembler::pt, notFloat);
+      __ delayed()->cmp(Rflags, stos);
+      // ftos
+      __ ldf(FloatRegisterImpl::S, Robj, Roffset, Ftos_f);
+      __ push(ftos);
+      __ ba_short(exit);
+
+      __ bind(notFloat);
+      __ br(Assembler::notEqual, false, Assembler::pt, notShort);
+      __ delayed()->cmp(Rflags, btos);
+      // stos
+      __ ldsh(Robj, Roffset, Otos_i);
+      __ push(itos);
+      __ ba_short(exit);
+
+      __ bind(notShort);
+      __ br(Assembler::notEqual, false, Assembler::pt, notByte);
+      __ delayed()->cmp(Rflags, ctos);
+      // btos
+      __ ldsb(Robj, Roffset, Otos_i);
+      __ push(itos);
+      __ ba_short(exit);
+
+      __ bind(notByte);
+      __ br(Assembler::notEqual, false, Assembler::pt, notChar);
+      __ delayed()->cmp(Rflags, ztos);
+      // ctos
+      __ lduh(Robj, Roffset, Otos_i);
+      __ push(itos);
+      __ ba_short(exit);
+
+      __ bind(notChar);
+      __ br(Assembler::notEqual, false, Assembler::pt, notBool);
+      __ delayed()->nop();
+      // ztos
+      __ ldsb(Robj, Roffset, Otos_i);
+      __ push(itos);
+      __ ba_short(exit);
+
+      __ bind(notBool);
+      break;
+    }
+
+  case Bytecodes::_ldc2_w:
+    {
+      Label notLong, notDouble;
+      __ cmp(Rflags, ltos);
+      __ br(Assembler::notEqual, false, Assembler::pt, notLong);
+      __ delayed()->cmp(Rflags, dtos);
+      // ltos
+      // load must be atomic
+      __ ld_long(Robj, Roffset, Otos_l);
+      __ push(ltos);
+      __ ba_short(exit);
+
+      __ bind(notLong);
+      __ br(Assembler::notEqual, false, Assembler::pt, notDouble);
+      __ delayed()->nop();
+      // dtos
+      __ ldf(FloatRegisterImpl::D, Robj, Roffset, Ftos_d);
+      __ push(dtos);
+      __ ba_short(exit);
+
+      __ bind(notDouble);
+      break;
+    }
+
+  default:
+    ShouldNotReachHere();
+  }
+
+  __ stop("bad ldc/condy");
 
   __ bind(exit);
 }
