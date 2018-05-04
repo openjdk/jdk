@@ -27,6 +27,7 @@
 
 #include "gc/serial/markSweep.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 #include "utilities/stack.hpp"
 
 class PSAdaptiveSizePolicy;
@@ -38,6 +39,8 @@ class PSMarkSweep : public MarkSweep {
   static elapsedTimer        _accumulated_time;
   static jlong               _time_of_last_gc;   // ms
   static CollectorCounters*  _counters;
+
+  static SpanSubjectToDiscoveryClosure _span_based_discoverer;
 
   // Closure accessors
   static OopClosure* mark_and_push_closure()   { return &MarkSweep::mark_and_push_closure; }

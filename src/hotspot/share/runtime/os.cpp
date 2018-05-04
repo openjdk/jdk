@@ -251,6 +251,14 @@ bool os::dll_build_name(char* buffer, size_t size, const char* fname) {
   return (n != -1);
 }
 
+#if !defined(LINUX) && !defined(_WINDOWS)
+bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
+  committed_start = start;
+  committed_size = size;
+  return true;
+}
+#endif
+
 // Helper for dll_locate_lib.
 // Pass buffer and printbuffer as we already printed the path to buffer
 // when we called get_current_directory. This way we avoid another buffer
@@ -1241,6 +1249,33 @@ char* os::format_boot_path(const char* format_string,
 
     assert((q - formatted_path) == formatted_path_len, "formatted_path size botched");
     return formatted_path;
+}
+
+// This function is a proxy to fopen, it tries to add a non standard flag ('e' or 'N')
+// that ensures automatic closing of the file on exec. If it can not find support in
+// the underlying c library, it will make an extra system call (fcntl) to ensure automatic
+// closing of the file on exec.
+FILE* os::fopen(const char* path, const char* mode) {
+  char modified_mode[20];
+  assert(strlen(mode) + 1 < sizeof(modified_mode), "mode chars plus one extra must fit in buffer");
+  sprintf(modified_mode, "%s" LINUX_ONLY("e") BSD_ONLY("e") WINDOWS_ONLY("N"), mode);
+  FILE* file = ::fopen(path, modified_mode);
+
+#if !(defined LINUX || defined BSD || defined _WINDOWS)
+  // assume fcntl FD_CLOEXEC support as a backup solution when 'e' or 'N'
+  // is not supported as mode in fopen
+  if (file != NULL) {
+    int fd = fileno(file);
+    if (fd != -1) {
+      int fd_flags = fcntl(fd, F_GETFD);
+      if (fd_flags != -1) {
+        fcntl(fd, F_SETFD, fd_flags | FD_CLOEXEC);
+      }
+    }
+  }
+#endif
+
+  return file;
 }
 
 bool os::set_boot_path(char fileSep, char pathSep) {

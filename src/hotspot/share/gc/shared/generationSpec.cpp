@@ -23,28 +23,32 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "memory/binaryTreeDictionary.hpp"
 #include "memory/filemap.hpp"
 #include "runtime/java.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/cms/parNewGeneration.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif
+#if INCLUDE_SERIALGC
+#include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
+#endif
 
 Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
   switch (name()) {
+#if INCLUDE_SERIALGC
     case Generation::DefNew:
       return new DefNewGeneration(rs, init_size());
 
     case Generation::MarkSweepCompact:
       return new TenuredGeneration(rs, init_size(), remset);
+#endif
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
     case Generation::ParNew:
       return new ParNewGeneration(rs, init_size());
 
@@ -64,7 +68,7 @@ Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
 
       return g;
     }
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_CMSGC
 
     default:
       guarantee(false, "unrecognized GenerationName");

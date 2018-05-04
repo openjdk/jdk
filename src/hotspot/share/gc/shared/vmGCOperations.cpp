@@ -38,10 +38,10 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
 VM_GC_Operation::~VM_GC_Operation() {
   CollectedHeap* ch = Universe::heap();
@@ -193,12 +193,14 @@ VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData
 
 // Returns true iff concurrent GCs unloads metadata.
 bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
   if (UseConcMarkSweepGC && CMSClassUnloadingEnabled) {
     MetaspaceGC::set_should_concurrent_collect(true);
     return true;
   }
+#endif
 
+#if INCLUDE_G1GC
   if (UseG1GC && ClassUnloadingWithConcurrentMark) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     g1h->g1_policy()->collector_state()->set_initiate_conc_mark_if_possible(true);

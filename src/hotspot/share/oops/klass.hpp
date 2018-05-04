@@ -189,12 +189,13 @@ protected:
   void set_super(Klass* k)           { _super = k; }
 
   // initializes _super link, _primary_supers & _secondary_supers arrays
-  void initialize_supers(Klass* k, TRAPS);
+  void initialize_supers(Klass* k, Array<Klass*>* transitive_interfaces, TRAPS);
   void initialize_supers_impl1(Klass* k);
   void initialize_supers_impl2(Klass* k);
 
   // klass-specific helper for initializing _secondary_supers
-  virtual GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);
+  virtual GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
+                                                          Array<Klass*>* transitive_interfaces);
 
   // java_super is the Java-level super type as specified by Class.getSuperClass.
   virtual Klass* java_super() const  { return NULL; }
@@ -637,14 +638,14 @@ protected:
   // Klass is considered alive.  Has already been marked as unloading.
   bool is_loader_alive() const { return !class_loader_data()->is_unloading(); }
 
-  static void clean_weak_klass_links(bool clean_alive_klasses = true);
+  static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);
   static void clean_subklass_tree() {
-    clean_weak_klass_links(false /* clean_alive_klasses */);
+    clean_weak_klass_links(/*unloading_occurred*/ true , /* clean_alive_klasses */ false);
   }
 
   // GC specific object visitors
   //
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
   // Parallel Scavenge
   virtual void oop_ps_push_contents(  oop obj, PSPromotionManager* pm)   = 0;
   // Parallel Compact
@@ -662,13 +663,13 @@ protected:
   ALL_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_DECL)
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 #define Klass_OOP_OOP_ITERATE_DECL_BACKWARDS(OopClosureType, nv_suffix)                     \
   virtual void oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) = 0;
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_DECL_BACKWARDS)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_DECL_BACKWARDS)
-#endif // INCLUDE_ALL_GCS
+#endif
 
   virtual void array_klasses_do(void f(Klass* k)) {}
 
@@ -729,10 +730,10 @@ protected:
   void oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure);                        \
   void oop_oop_iterate_bounded##nv_suffix(oop obj, OopClosureType* closure, MemRegion mr);
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 #define OOP_OOP_ITERATE_DECL_BACKWARDS(OopClosureType, nv_suffix)               \
   void oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure);
-#endif // INCLUDE_ALL_GCS
+#endif
 
 
 // Oop iteration macros for definitions.
@@ -743,7 +744,7 @@ void KlassType::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {  
   oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                        \
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 #define OOP_OOP_ITERATE_DEFN_BACKWARDS(KlassType, OopClosureType, nv_suffix)              \
 void KlassType::oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {  \
   oop_oop_iterate_reverse<nvs_to_bool(nv_suffix)>(obj, closure);                          \

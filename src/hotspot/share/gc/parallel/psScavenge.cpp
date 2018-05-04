@@ -28,7 +28,7 @@
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
-#include "gc/parallel/psMarkSweep.hpp"
+#include "gc/parallel/psMarkSweepProxy.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/parallel/psTasks.hpp"
@@ -58,18 +58,19 @@
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
-HeapWord*                  PSScavenge::_to_space_top_before_gc = NULL;
-int                        PSScavenge::_consecutive_skipped_scavenges = 0;
-ReferenceProcessor*        PSScavenge::_ref_processor = NULL;
-PSCardTable*               PSScavenge::_card_table = NULL;
-bool                       PSScavenge::_survivor_overflow = false;
-uint                       PSScavenge::_tenuring_threshold = 0;
-HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
-uintptr_t                  PSScavenge::_young_generation_boundary_compressed = 0;
-elapsedTimer               PSScavenge::_accumulated_time;
-STWGCTimer                 PSScavenge::_gc_timer;
-ParallelScavengeTracer     PSScavenge::_gc_tracer;
-CollectorCounters*         PSScavenge::_counters = NULL;
+HeapWord*                     PSScavenge::_to_space_top_before_gc = NULL;
+int                           PSScavenge::_consecutive_skipped_scavenges = 0;
+SpanSubjectToDiscoveryClosure PSScavenge::_span_based_discoverer;
+ReferenceProcessor*           PSScavenge::_ref_processor = NULL;
+PSCardTable*                  PSScavenge::_card_table = NULL;
+bool                          PSScavenge::_survivor_overflow = false;
+uint                          PSScavenge::_tenuring_threshold = 0;
+HeapWord*                     PSScavenge::_young_generation_boundary = NULL;
+uintptr_t                     PSScavenge::_young_generation_boundary_compressed = 0;
+elapsedTimer                  PSScavenge::_accumulated_time;
+STWGCTimer                    PSScavenge::_gc_timer;
+ParallelScavengeTracer        PSScavenge::_gc_tracer;
+CollectorCounters*            PSScavenge::_counters = NULL;
 
 // Define before use
 class PSIsAliveClosure: public BoolObjectClosure {
@@ -234,7 +235,7 @@ bool PSScavenge::invoke() {
     if (UseParallelOldGC) {
       full_gc_done = PSParallelCompact::invoke_no_policy(clear_all_softrefs);
     } else {
-      full_gc_done = PSMarkSweep::invoke_no_policy(clear_all_softrefs);
+      full_gc_done = PSMarkSweepProxy::invoke_no_policy(clear_all_softrefs);
     }
   }
 
@@ -416,7 +417,7 @@ bool PSScavenge::invoke_no_policy() {
       PSKeepAliveClosure keep_alive(promotion_manager);
       PSEvacuateFollowersClosure evac_followers(promotion_manager);
       ReferenceProcessorStats stats;
-      ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->num_q());
+      ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->num_queues());
       if (reference_processor()->processing_is_mt()) {
         PSRefProcTaskExecutor task_executor;
         stats = reference_processor()->process_discovered_references(
@@ -766,10 +767,9 @@ void PSScavenge::initialize() {
   set_young_generation_boundary(young_gen->eden_space()->bottom());
 
   // Initialize ref handling object for scavenging.
-  MemRegion mr = young_gen->reserved();
-
+  _span_based_discoverer.set_span(young_gen->reserved());
   _ref_processor =
-    new ReferenceProcessor(mr,                         // span
+    new ReferenceProcessor(&_span_based_discoverer,
                            ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
                            ParallelGCThreads,          // mt processing degree
                            true,                       // mt discovery

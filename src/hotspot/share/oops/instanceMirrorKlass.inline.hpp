@@ -86,14 +86,14 @@ void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   oop_oop_iterate_statics<nv>(obj, closure);
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 template <bool nv, class OopClosureType>
 void InstanceMirrorKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
   InstanceKlass::oop_oop_iterate_reverse<nv>(obj, closure);
 
   InstanceMirrorKlass::oop_oop_iterate_statics<nv>(obj, closure);
 }
-#endif
+#endif // INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 
 template <bool nv, typename T, class OopClosureType>
 void InstanceMirrorKlass::oop_oop_iterate_statics_specialized_bounded(oop obj,

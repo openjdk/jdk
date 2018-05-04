@@ -65,7 +65,7 @@ address CppInterpreterGenerator::generate_accessor_entry() {
 }
 
 address CppInterpreterGenerator::generate_Reference_get_entry(void) {
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
   if (UseG1GC) {
     // We need to generate have a routine that generates code to:
     //   * load the value in the referent field
@@ -77,7 +77,7 @@ address CppInterpreterGenerator::generate_Reference_get_entry(void) {
     // field as live.
     Unimplemented();
   }
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
   // If G1 is not enabled then attempt to go through the normal entry point
   // Reference.get could be instrumented by jvmti

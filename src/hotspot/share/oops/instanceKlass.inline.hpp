@@ -64,7 +64,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map(OopMapBlock* map, oop o
   }
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 template <bool nv, typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure) {
   T* const start = (T*)obj->obj_field_addr_raw<T>(map->offset());
@@ -110,7 +110,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_specialized(oop obj, O
   }
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 template <bool nv, typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_specialized_reverse(oop obj, OopClosureType* closure) {
   OopMapBlock* const start_map = start_of_nonstatic_oop_maps();
@@ -142,7 +142,7 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps(oop obj, OopClosureTyp
   }
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 template <bool nv, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure) {
   if (UseCompressedOops) {
@@ -173,7 +173,7 @@ ALWAYSINLINE int InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure
   return size_helper();
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 template <bool nv, class OopClosureType>
 ALWAYSINLINE int InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
   assert(!Devirtualizer<nv>::do_metadata(closure),

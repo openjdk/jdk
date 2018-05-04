@@ -26,7 +26,6 @@
 #include "code/debugInfoRec.hpp"
 #include "code/pcDesc.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/space.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"

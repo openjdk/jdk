@@ -58,7 +58,7 @@ class InstanceRefKlass: public InstanceKlass {
 
   // GC specific object visitors
   //
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
   // Parallel Scavenge
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
   // Parallel Compact
@@ -80,11 +80,11 @@ private:
   inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
   // Reverse iteration
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
   // Iterate over all oop fields and metadata.
   template <bool nv, class OopClosureType>
   inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
-#endif // INCLUDE_ALL_GCS
+#endif
 
   // Bounded range iteration
   // Iterate over all oop fields and metadata.
@@ -141,10 +141,10 @@ private:
   ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
   ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_BACKWARDS)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_BACKWARDS)
-#endif // INCLUDE_ALL_GCS
+#endif
 
   // Update non-static oop maps so 'referent', 'nextPending' and
   // 'discovered' will look like non-oops

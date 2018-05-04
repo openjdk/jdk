@@ -37,10 +37,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/heapRegion.hpp"
-#endif // INCLUDE_ALL_GCS
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing

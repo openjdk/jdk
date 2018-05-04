@@ -31,6 +31,7 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
@@ -59,8 +60,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
  */
 public class HtmlDoclet extends AbstractDoclet {
 
-    public HtmlDoclet() {
-        configuration = new HtmlConfiguration(this);
+    public HtmlDoclet(Doclet parent) {
+        configuration = new HtmlConfiguration(parent);
     }
 
     @Override // defined by Doclet

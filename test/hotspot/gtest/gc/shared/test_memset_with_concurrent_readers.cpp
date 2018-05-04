@@ -22,13 +22,12 @@
  */
 
 #include "precompiled.hpp"
-#include <string.h>
-#include "utilities/globalDefinitions.hpp"
-#include <sstream>
 #include "gc/shared/memset_with_concurrent_readers.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
-#if INCLUDE_ALL_GCS
+#include <string.h>
+#include <sstream>
 
 static unsigned line_byte(const char* line, size_t i) {
   return unsigned(line[i]) & 0xFF;
@@ -96,4 +95,3 @@ TEST(gc, memset_with_concurrent_readers) {
     }
   }
 }
-#endif

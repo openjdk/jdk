@@ -30,10 +30,107 @@
 #include "metaprogramming/isConst.hpp"
 #include "oops/oop.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+// Array of all active blocks.  Refcounted for lock-free reclaim of
+// old array when a new array is allocated for expansion.
+class OopStorage::BlockArray {
+  friend class OopStorage::TestAccess;
+
+  size_t _size;
+  volatile size_t _block_count;
+  mutable volatile int _refcount;
+  // Block* _blocks[1];            // Pseudo flexible array member.
+
+  BlockArray(size_t size);
+  ~BlockArray();
+
+  // Noncopyable
+  BlockArray(const BlockArray&);
+  BlockArray& operator=(const BlockArray&);
+
+  static size_t blocks_offset();
+  Block* const* base_ptr() const;
+
+  Block* const* block_ptr(size_t index) const;
+  Block** block_ptr(size_t index);
+
+public:
+  static BlockArray* create(size_t size, AllocFailType alloc_fail = AllocFailStrategy::EXIT_OOM);
+  static void destroy(BlockArray* ba);
+
+  inline Block* at(size_t i) const;
+
+  size_t size() const;
+  size_t block_count() const;
+  size_t block_count_acquire() const;
+  void increment_refcount() const;
+  bool decrement_refcount() const; // Return true if zero, otherwise false
+
+  // Support for OopStorage::allocate.
+  // Add block to the end of the array.  Updates block count at the
+  // end of the operation, with a release_store. Returns true if the
+  // block was added, false if there was no room available.
+  // precondition: owner's _allocation_mutex is locked, or at safepoint.
+  bool push(Block* block);
+
+  // Support OopStorage::delete_empty_blocks_xxx operations.
+  // Remove block from the array.
+  // precondition: block must be present at its active_index element.
+  void remove(Block* block);
+
+  void copy_from(const BlockArray* from);
+};
+
+inline size_t OopStorage::BlockArray::blocks_offset() {
+  return align_up(sizeof(BlockArray), sizeof(Block*));
+}
+
+inline OopStorage::Block* const* OopStorage::BlockArray::base_ptr() const {
+  const void* ptr = reinterpret_cast<const char*>(this) + blocks_offset();
+  return reinterpret_cast<Block* const*>(ptr);
+}
+
+inline OopStorage::Block* const* OopStorage::BlockArray::block_ptr(size_t index) const {
+  return base_ptr() + index;
+}
+
+inline OopStorage::Block** OopStorage::BlockArray::block_ptr(size_t index) {
+  return const_cast<Block**>(base_ptr() + index);
+}
+
+inline OopStorage::Block* OopStorage::BlockArray::at(size_t index) const {
+  assert(index < _block_count, "precondition");
+  return *block_ptr(index);
+}
+
+// A Block has an embedded BlockEntry to provide the links between
+// Blocks in a BlockList.
+class OopStorage::BlockEntry {
+  friend class OopStorage::BlockList;
+
+  // Members are mutable, and we deal exclusively with pointers to
+  // const, to make const blocks easier to use; a block being const
+  // doesn't prevent modifying its list state.
+  mutable const Block* _prev;
+  mutable const Block* _next;
+
+  // Noncopyable.
+  BlockEntry(const BlockEntry&);
+  BlockEntry& operator=(const BlockEntry&);
+
+public:
+  BlockEntry();
+  ~BlockEntry();
+};
+
+// Fixed-sized array of oops, plus bookkeeping data.
+// All blocks are in the storage's _active_array, at the block's _active_index.
+// Non-full blocks are in the storage's _allocate_list, linked through the
+// block's _allocate_entry.  Empty blocks are at the end of that list.
 class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
   // _data must be the first non-static data member, for alignment.
   oop _data[BitsPerWord];
@@ -42,7 +139,7 @@ class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
   volatile uintx _allocated_bitmask; // One bit per _data element.
   const OopStorage* _owner;
   void* _memory;              // Unaligned storage containing block.
-  BlockEntry _active_entry;
+  size_t _active_index;
   BlockEntry _allocate_entry;
   Block* volatile _deferred_updates_next;
   volatile uintx _release_refcount;
@@ -61,7 +158,6 @@ class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
   Block& operator=(const Block&);
 
 public:
-  static const BlockEntry& get_active_entry(const Block& block);
   static const BlockEntry& get_allocate_entry(const Block& block);
 
   static size_t allocation_size();
@@ -84,6 +180,10 @@ public:
 
   bool contains(const oop* ptr) const;
 
+  size_t active_index() const;
+  void set_active_index(size_t index);
+  static size_t active_index_safe(const Block* block); // Returns 0 if access fails.
+
   // Returns NULL if ptr is not in a block or not allocated in that block.
   static Block* block_for_ptr(const OopStorage* owner, const oop* ptr);
 
@@ -99,6 +199,10 @@ public:
 
 inline OopStorage::Block* OopStorage::BlockList::head() {
   return const_cast<Block*>(_head);
+}
+
+inline OopStorage::Block* OopStorage::BlockList::tail() {
+  return const_cast<Block*>(_tail);
 }
 
 inline const OopStorage::Block* OopStorage::BlockList::chead() const {
@@ -253,9 +357,10 @@ inline bool OopStorage::iterate_impl(F f, Storage* storage) {
   // Propagate const/non-const iteration to the block layer, by using
   // const or non-const blocks as corresponding to Storage.
   typedef typename Conditional<IsConst<Storage>::value, const Block*, Block*>::type BlockPtr;
-  for (BlockPtr block = storage->_active_head;
-       block != NULL;
-       block = storage->_active_list.next(*block)) {
+  BlockArray* blocks = storage->_active_array;
+  size_t limit = blocks->block_count();
+  for (size_t i = 0; i < limit; ++i) {
+    BlockPtr block = blocks->at(i);
     if (!block->iterate(f)) {
       return false;
     }

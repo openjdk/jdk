@@ -245,7 +245,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
     increment_file_count();
   }
 
-  _stream = fopen(_file_name, FileOpenMode);
+  _stream = os::fopen(_file_name, FileOpenMode);
   if (_stream == NULL) {
     errstream->print_cr("Error opening log file '%s': %s",
                         _file_name, strerror(errno));
@@ -334,7 +334,7 @@ void LogFileOutput::rotate() {
   archive();
 
   // Open the active log file using the same stream as before
-  _stream = fopen(_file_name, FileOpenMode);
+  _stream = os::fopen(_file_name, FileOpenMode);
   if (_stream == NULL) {
     jio_fprintf(defaultStream::error_stream(), "Could not reopen file '%s' during log rotation (%s).\n",
                 _file_name, os::strerror(errno));

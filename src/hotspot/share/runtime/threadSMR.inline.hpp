@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,14 +75,6 @@ inline void ThreadsSMRSupport::update_tlh_time_max(uint new_value) {
       break;
     }
   }
-}
-
-
-inline ThreadsList* ThreadsListSetter::list() {
-  ThreadsList *ret = _target->get_threads_hazard_ptr();
-  assert(ret != NULL, "hazard ptr should be set");
-  assert(!Thread::is_hazard_ptr_tagged(ret), "hazard ptr should be validated");
-  return ret;
 }
 
 inline ThreadsList* ThreadsSMRSupport::get_java_thread_list() {

@@ -391,10 +391,14 @@ class VM_PrintJNI: public VM_Operation {
 
 class VM_PrintMetadata : public VM_Operation {
  private:
-  outputStream* _out;
-  size_t        _scale;
+  outputStream* const _out;
+  const size_t        _scale;
+  const int           _flags;
+
  public:
-  VM_PrintMetadata(outputStream* out, size_t scale) : _out(out), _scale(scale) {};
+  VM_PrintMetadata(outputStream* out, size_t scale, int flags)
+    : _out(out), _scale(scale), _flags(flags)
+  {};
 
   VMOp_Type type() const  { return VMOp_PrintMetadata; }
   void doit();

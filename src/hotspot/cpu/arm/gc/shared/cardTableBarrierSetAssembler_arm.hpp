@@ -29,9 +29,18 @@
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
 
 class CardTableBarrierSetAssembler: public ModRefBarrierSetAssembler {
+private:
+  void store_check(MacroAssembler* masm, Register obj, Address dst);
+  void store_check_part1(MacroAssembler* masm, Register card_table_base);
+  void store_check_part2(MacroAssembler* masm, Register obj, Register card_table_base, Register tmp);
+
+  void set_card(MacroAssembler* masm, Register card_table_base, Address card_table_addr, Register tmp);
+
 protected:
   virtual void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                 Register addr, Register count, Register tmp);
+  virtual void oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                            Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
 };
 
 #endif // #ifndef CPU_ARM_GC_SHARED_CARDTABLEBARRIERSETASSEMBLER_ARM_HPP

@@ -98,7 +98,8 @@ class ArrayKlass: public Klass {
     return static_cast<const ArrayKlass*>(k);
   }
 
-  GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);
+  GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
+                                                  Array<Klass*>* transitive_interfaces);
   bool compute_is_subtype_of(Klass* k);
 
   // Sizing
@@ -151,11 +152,11 @@ class ArrayKlass: public Klass {
 #define OOP_OOP_ITERATE_DECL_RANGE(OopClosureType, nv_suffix)                                   \
   void oop_oop_iterate_range##nv_suffix(oop obj, OopClosureType* closure, int start, int end);
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 // Named NO_BACKWARDS because the definition used by *ArrayKlass isn't reversed, see below.
 #define OOP_OOP_ITERATE_DECL_NO_BACKWARDS(OopClosureType, nv_suffix)            \
   void oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure);
-#endif // INCLUDE_ALL_GCS
+#endif
 
 
 // Array oop iteration macros for definitions.
@@ -167,7 +168,7 @@ void KlassType::oop_oop_iterate_range##nv_suffix(oop obj, OopClosureType* closur
   oop_oop_iterate_range<nvs_to_bool(nv_suffix)>(obj, closure, start, end);                                \
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 #define OOP_OOP_ITERATE_DEFN_NO_BACKWARDS(KlassType, OopClosureType, nv_suffix)           \
 void KlassType::oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {  \
   /* No reverse implementation ATM. */                                                    \

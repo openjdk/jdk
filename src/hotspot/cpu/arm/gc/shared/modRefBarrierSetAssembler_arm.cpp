@@ -42,3 +42,12 @@ void ModRefBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Decorat
     gen_write_ref_array_post_barrier(masm, decorators, addr, count, tmp);
   }
 }
+
+void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                         Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
+  if (type == T_OBJECT || type == T_ARRAY) {
+    oop_store_at(masm, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);
+  } else {
+    BarrierSetAssembler::store_at(masm, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);
+  }
+}

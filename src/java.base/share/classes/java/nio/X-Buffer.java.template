@@ -700,7 +700,7 @@ public abstract class $Type$Buffer
      *
      * <pre>{@code
      *     for (int i = off; i < off + len; i++)
-     *         dst[i] = src.get():
+     *         dst[i] = src.get();
      * }</pre>
      *
      * except that it first checks that there are sufficient $type$s in

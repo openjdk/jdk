@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/oop.inline.hpp"

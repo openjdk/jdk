@@ -496,7 +496,7 @@ void ASPSYoungGen::reset_after_change() {
 
   _reserved = MemRegion((HeapWord*)virtual_space()->low_boundary(),
                         (HeapWord*)virtual_space()->high_boundary());
-  PSScavenge::reference_processor()->set_span(_reserved);
+  PSScavenge::set_subject_to_discovery_span(_reserved);
 
   HeapWord* new_eden_bottom = (HeapWord*)virtual_space()->low();
   HeapWord* eden_bottom = eden_space()->bottom();

@@ -27,7 +27,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/generation.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/handles.inline.hpp"

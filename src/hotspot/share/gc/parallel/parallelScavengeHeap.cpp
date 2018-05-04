@@ -31,7 +31,7 @@
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
-#include "gc/parallel/psMarkSweep.hpp"
+#include "gc/parallel/psMarkSweepProxy.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
@@ -48,6 +48,7 @@
 #include "runtime/vmThread.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
 PSYoungGen*  ParallelScavengeHeap::_young_gen = NULL;
@@ -155,7 +156,7 @@ void ParallelScavengeHeap::post_initialize() {
   if (UseParallelOldGC) {
     PSParallelCompact::post_initialize();
   } else {
-    PSMarkSweep::initialize();
+    PSMarkSweepProxy::initialize();
   }
   PSPromotionManager::initialize();
 }
@@ -406,7 +407,7 @@ void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
     bool maximum_compaction = clear_all_soft_refs;
     PSParallelCompact::invoke(maximum_compaction);
   } else {
-    PSMarkSweep::invoke(clear_all_soft_refs);
+    PSMarkSweepProxy::invoke(clear_all_soft_refs);
   }
 }
 
@@ -545,7 +546,7 @@ bool ParallelScavengeHeap::block_is_obj(const HeapWord* addr) const {
 jlong ParallelScavengeHeap::millis_since_last_gc() {
   return UseParallelOldGC ?
     PSParallelCompact::millis_since_last_gc() :
-    PSMarkSweep::millis_since_last_gc();
+    PSMarkSweepProxy::millis_since_last_gc();
 }
 
 void ParallelScavengeHeap::prepare_for_verify() {
@@ -602,7 +603,7 @@ void ParallelScavengeHeap::print_tracing_info() const {
   AdaptiveSizePolicyOutput::print();
   log_debug(gc, heap, exit)("Accumulated young generation GC time %3.7f secs", PSScavenge::accumulated_time()->seconds());
   log_debug(gc, heap, exit)("Accumulated old generation GC time %3.7f secs",
-      UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweep::accumulated_time()->seconds());
+      UseParallelOldGC ? PSParallelCompact::accumulated_time()->seconds() : PSMarkSweepProxy::accumulated_time()->seconds());
 }
 
 

@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/genMarkSweep.hpp"
 #include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -77,7 +76,8 @@ size_t Generation::max_capacity() const {
 void Generation::ref_processor_init() {
   assert(_ref_processor == NULL, "a reference processor already exists");
   assert(!_reserved.is_empty(), "empty generation?");
-  _ref_processor = new ReferenceProcessor(_reserved);    // a vanilla reference processor
+  _span_based_discoverer.set_span(_reserved);
+  _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
   if (_ref_processor == NULL) {
     vm_exit_during_initialization("Could not allocate ReferenceProcessor object");
   }
@@ -303,6 +303,8 @@ void Generation::safe_object_iterate(ObjectClosure* cl) {
   space_iterate(&blk);
 }
 
+#if INCLUDE_SERIALGC
+
 void Generation::prepare_for_compaction(CompactPoint* cp) {
   // Generic implementation, can be specialized
   CompactibleSpace* space = first_compaction_space();
@@ -333,3 +335,5 @@ void Generation::compact() {
     sp = sp->next_compaction_space();
   }
 }
+
+#endif // INCLUDE_SERIALGC

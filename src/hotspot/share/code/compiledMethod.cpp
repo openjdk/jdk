@@ -389,22 +389,24 @@ static void check_class(Metadata* md) {
 
 void CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
   if (ic->is_icholder_call()) {
-    // The only exception is compiledICHolder oops which may
+    // The only exception is compiledICHolder metdata which may
     // yet be marked below. (We check this further below).
-    CompiledICHolder* cichk_oop = ic->cached_icholder();
+    CompiledICHolder* cichk_metdata = ic->cached_icholder();
 
-    if (cichk_oop->is_loader_alive()) {
+    if (cichk_metdata->is_loader_alive()) {
       return;
     }
   } else {
-    Metadata* ic_oop = ic->cached_metadata();
-    if (ic_oop != NULL) {
-      if (ic_oop->is_klass()) {
-        if (((Klass*)ic_oop)->is_loader_alive()) {
+    Metadata* ic_metdata = ic->cached_metadata();
+    if (ic_metdata != NULL) {
+      if (ic_metdata->is_klass()) {
+        if (((Klass*)ic_metdata)->is_loader_alive()) {
           return;
         }
-      } else if (ic_oop->is_method()) {
-        if (((Method*)ic_oop)->method_holder()->is_loader_alive()) {
+      } else if (ic_metdata->is_method()) {
+        Method* method = (Method*)ic_metdata;
+        assert(!method->is_old(), "old method should have been cleaned");
+        if (method->method_holder()->is_loader_alive()) {
           return;
         }
       } else {
@@ -493,16 +495,6 @@ void CompiledMethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_oc
     // (See comment above.)
   }
 
-  // The RedefineClasses() API can cause the class unloading invariant
-  // to no longer be true. See jvmtiExport.hpp for details.
-  // Also, leave a debugging breadcrumb in local flag.
-  if (JvmtiExport::has_redefined_a_class()) {
-    // This set of the unloading_occurred flag is done before the
-    // call to post_compiled_method_unload() so that the unloading
-    // of this nmethod is reported.
-    unloading_occurred = true;
-  }
-
   // Exception cache
   clean_exception_cache();
 
@@ -579,16 +571,6 @@ bool CompiledMethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unl
     low_boundary += NativeJump::instruction_size;
     // %%% Note:  On SPARC we patch only a 4-byte trap, not a full NativeJump.
     // (See comment above.)
-  }
-
-  // The RedefineClasses() API can cause the class unloading invariant
-  // to no longer be true. See jvmtiExport.hpp for details.
-  // Also, leave a debugging breadcrumb in local flag.
-  if (JvmtiExport::has_redefined_a_class()) {
-    // This set of the unloading_occurred flag is done before the
-    // call to post_compiled_method_unload() so that the unloading
-    // of this nmethod is reported.
-    unloading_occurred = true;
   }
 
   // Exception cache

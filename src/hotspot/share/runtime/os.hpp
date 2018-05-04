@@ -273,6 +273,10 @@ class os: AllStatic {
   static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
+  // Find committed memory region within specified range (start, start + size),
+  // return true if found any
+  static bool committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size);
+
   // OS interface to Virtual Memory
 
   // Return the default page size.
@@ -547,6 +551,7 @@ class os: AllStatic {
   static const int default_file_open_flags();
   static int open(const char *path, int oflag, int mode);
   static FILE* open(int fd, const char* mode);
+  static FILE* fopen(const char* path, const char* mode);
   static int close(int fd);
   static jlong lseek(int fd, jlong offset, int whence);
   static char* native_path(char *path);

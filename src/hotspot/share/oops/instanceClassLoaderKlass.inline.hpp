@@ -47,7 +47,7 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* c
   }
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 template <bool nv, class OopClosureType>
 inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
   InstanceKlass::oop_oop_iterate_reverse<nv>(obj, closure);
@@ -55,7 +55,7 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosur
   assert(!Devirtualizer<nv>::do_metadata(closure),
       "Code to handle metadata is not implemented");
 }
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 
 
 template <bool nv, class OopClosureType>

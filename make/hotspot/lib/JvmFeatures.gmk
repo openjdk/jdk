@@ -118,19 +118,6 @@ ifneq ($(call check-jvm-feature, cds), true)
       #
 endif
 
-ifneq ($(call check-jvm-feature, all-gcs), true)
-  JVM_CFLAGS_FEATURES += -DINCLUDE_ALL_GCS=0
-  JVM_EXCLUDE_PATTERNS += \
-      cms/ g1/ parallel/
-  JVM_EXCLUDE_FILES += \
-      concurrentGCThread.cpp \
-      suspendibleThreadSet.cpp \
-      plab.cpp
-  JVM_EXCLUDE_FILES += \
-      g1MemoryPool.cpp \
-      psMemoryPool.cpp
-endif
-
 ifneq ($(call check-jvm-feature, nmt), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_NMT=0
   JVM_EXCLUDE_FILES += \
@@ -138,12 +125,33 @@ ifneq ($(call check-jvm-feature, nmt), true)
       memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp
 endif
 
-ifeq ($(call check-jvm-feature, aot), true)
-  JVM_CFLAGS_FEATURES += -DINCLUDE_AOT
-else
+ifneq ($(call check-jvm-feature, aot), true)
+  JVM_CFLAGS_FEATURES += -DINCLUDE_AOT=0
   JVM_EXCLUDE_FILES += \
       compiledIC_aot_x86_64.cpp compilerRuntime.cpp \
       aotCodeHeap.cpp aotCompiledMethod.cpp aotLoader.cpp compiledIC_aot.cpp
+endif
+
+ifneq ($(call check-jvm-feature, cmsgc), true)
+  JVM_CFLAGS_FEATURES += -DINCLUDE_CMSGC=0
+  JVM_EXCLUDE_PATTERNS += gc/cms
+endif
+
+ifneq ($(call check-jvm-feature, g1gc), true)
+  JVM_CFLAGS_FEATURES += -DINCLUDE_G1GC=0
+  JVM_EXCLUDE_PATTERNS += gc/g1
+endif
+
+ifneq ($(call check-jvm-feature, parallelgc), true)
+  JVM_CFLAGS_FEATURES += -DINCLUDE_PARALLELGC=0
+  JVM_EXCLUDE_PATTERNS += gc/parallel
+endif
+
+ifneq ($(call check-jvm-feature, serialgc), true)
+  JVM_CFLAGS_FEATURES += -DINCLUDE_SERIALGC=0
+  JVM_EXCLUDE_PATTERNS += gc/serial
+  # If serial is disabled, we cannot use serial as OldGC in parallel
+  JVM_EXCLUDE_FILES += psMarkSweep.cpp psMarkSweepDecorator.cpp
 endif
 ################################################################################
 

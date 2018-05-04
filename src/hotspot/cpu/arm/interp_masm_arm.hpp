@@ -144,11 +144,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // load cpool->resolved_klass_at(index); Rtemp is corrupted upon return
   void load_resolved_klass_at_offset(Register Rcpool, Register Rindex, Register Rklass);
 
-  void store_check_part1(Register card_table_base);                // Sets card_table_base register.
-  void store_check_part2(Register obj, Register card_table_base, Register tmp);
-
-  void set_card(Register card_table_base, Address card_table_addr, Register tmp);
-
   void pop_ptr(Register r);
   void pop_i(Register r = R0_tos);
 #ifdef AARCH64

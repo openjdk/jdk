@@ -45,13 +45,13 @@ void CollectedHeap::post_allocation_setup_common(Klass* klass,
                                                  HeapWord* obj_ptr) {
   post_allocation_setup_no_klass_install(klass, obj_ptr);
   oop obj = (oop)obj_ptr;
-#if ! INCLUDE_ALL_GCS
-  obj->set_klass(klass);
-#else
+#if (INCLUDE_G1GC || INCLUDE_CMSGC)
   // Need a release store to ensure array/class length, mark word, and
   // object zeroing are visible before setting the klass non-NULL, for
   // concurrent collectors.
   obj->release_set_klass(klass);
+#else
+  obj->set_klass(klass);
 #endif
 }
 

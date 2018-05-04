@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -187,70 +188,22 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register tmp1,
                          Register tmp2,
                          Register tmp3,
-                         BarrierSet::Name barrier,
-                         bool precise,
-                         bool is_null) {
+                         bool is_null,
+                         DecoratorSet decorators = 0) {
 
   assert_different_registers(obj.base(), new_val, tmp1, tmp2, tmp3, noreg);
-  switch (barrier) {
-#if INCLUDE_ALL_GCS
-    case BarrierSet::G1BarrierSet:
-      {
-        // flatten object address if needed
-        assert (obj.mode() == basic_offset, "pre- or post-indexing is not supported here");
-
-        const Register store_addr = obj.base();
-        if (obj.index() != noreg) {
-          assert (obj.disp() == 0, "index or displacement, not both");
-#ifdef AARCH64
-          __ add(store_addr, obj.base(), obj.index(), obj.extend(), obj.shift_imm());
-#else
-          assert(obj.offset_op() == add_offset, "addition is expected");
-          __ add(store_addr, obj.base(), AsmOperand(obj.index(), obj.shift(), obj.shift_imm()));
-#endif // AARCH64
-        } else if (obj.disp() != 0) {
-          __ add(store_addr, obj.base(), obj.disp());
-        }
-
-        __ g1_write_barrier_pre(store_addr, new_val, tmp1, tmp2, tmp3);
-        if (is_null) {
-          __ store_heap_oop_null(new_val, Address(store_addr));
-        } else {
-          // G1 barrier needs uncompressed oop for region cross check.
-          Register val_to_store = new_val;
-          if (UseCompressedOops) {
-            val_to_store = tmp1;
-            __ mov(val_to_store, new_val);
-          }
-          __ store_heap_oop(val_to_store, Address(store_addr)); // blows val_to_store:
-          val_to_store = noreg;
-          __ g1_write_barrier_post(store_addr, new_val, tmp1, tmp2, tmp3);
-        }
-      }
-      break;
-#endif // INCLUDE_ALL_GCS
-    case BarrierSet::CardTableBarrierSet:
-      {
-        if (is_null) {
-          __ store_heap_oop_null(new_val, obj);
-        } else {
-          assert (!precise || (obj.index() == noreg && obj.disp() == 0),
-                  "store check address should be calculated beforehand");
-
-          __ store_check_part1(tmp1);
-          __ store_heap_oop(new_val, obj); // blows new_val:
-          new_val = noreg;
-          __ store_check_part2(obj.base(), tmp1, tmp2);
-        }
-      }
-      break;
-    case BarrierSet::ModRef:
-      ShouldNotReachHere();
-      break;
-    default:
-      ShouldNotReachHere();
-      break;
+  if (is_null) {
+    __ store_heap_oop_null(obj, new_val, tmp1, tmp2, tmp3, decorators);
+  } else {
+    __ store_heap_oop(obj, new_val, tmp1, tmp2, tmp3, decorators);
   }
+}
+
+static void do_oop_load(InterpreterMacroAssembler* _masm,
+                        Register dst,
+                        Address obj,
+                        DecoratorSet decorators = 0) {
+  __ load_heap_oop(dst, obj, noreg, noreg, noreg, decorators);
 }
 
 Address TemplateTable::at_bcp(int offset) {
@@ -863,7 +816,7 @@ void TemplateTable::aaload() {
   const Register Rindex = R0_tos;
 
   index_check(Rarray, Rindex);
-  __ load_heap_oop(R0_tos, get_array_elem_addr(T_OBJECT, Rarray, Rindex, Rtemp));
+  do_oop_load(_masm, R0_tos, get_array_elem_addr(T_OBJECT, Rarray, Rindex, Rtemp), IN_HEAP_ARRAY);
 }
 
 
@@ -1248,7 +1201,7 @@ void TemplateTable::aastore() {
   __ add(Raddr_1, Raddr_1, AsmOperand(Rindex_4, lsl, LogBytesPerHeapOop));
 
   // Now store using the appropriate barrier
-  do_oop_store(_masm, Raddr_1, Rvalue_2, Rtemp, R0_tmp, R3_tmp, _bs->kind(), true, false);
+  do_oop_store(_masm, Raddr_1, Rvalue_2, Rtemp, R0_tmp, R3_tmp, false, IN_HEAP_ARRAY);
   __ b(done);
 
   __ bind(throw_array_store);
@@ -1264,7 +1217,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(R0_tmp);
 
   // Store a NULL
-  do_oop_store(_masm, Address::indexed_oop(Raddr_1, Rindex_4), Rvalue_2, Rtemp, R0_tmp, R3_tmp, _bs->kind(), true, true);
+  do_oop_store(_masm, Address::indexed_oop(Raddr_1, Rindex_4), Rvalue_2, Rtemp, R0_tmp, R3_tmp, true, IN_HEAP_ARRAY);
 
   // Pop stack arguments
   __ bind(done);
@@ -3286,7 +3239,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     // atos case for AArch64 and slow version on 32-bit ARM
     if(!atos_merged_with_itos) {
       __ bind(Latos);
-      __ load_heap_oop(R0_tos, Address(Robj, Roffset));
+      do_oop_load(_masm, R0_tos, Address(Robj, Roffset));
       __ push(atos);
       // Rewrite bytecode to be faster
       if (!is_static && rc == may_rewrite) {
@@ -3638,7 +3591,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     __ pop(atos);
     if (!is_static) pop_and_check_object(Robj);
     // Store into the field
-    do_oop_store(_masm, Address(Robj, Roffset), R0_tos, Rtemp, R1_tmp, R5_tmp, _bs->kind(), false, false);
+    do_oop_store(_masm, Address(Robj, Roffset), R0_tos, Rtemp, R1_tmp, R5_tmp, false);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_aputfield, R0_tmp, Rtemp, true, byte_no);
     }
@@ -3816,7 +3769,7 @@ void TemplateTable::fast_storefield(TosState state) {
 #endif // AARCH64
 
     case Bytecodes::_fast_aputfield:
-      do_oop_store(_masm, Address(Robj, Roffset), R0_tos, Rtemp, R1_tmp, R2_tmp, _bs->kind(), false, false);
+      do_oop_store(_masm, Address(Robj, Roffset), R0_tos, Rtemp, R1_tmp, R2_tmp, false);
       break;
 
     default:
@@ -3912,7 +3865,7 @@ void TemplateTable::fast_accessfield(TosState state) {
     case Bytecodes::_fast_dgetfield: __ add(Roffset, Robj, Roffset); __ fldd(D0_tos, Address(Roffset)); break;
 #endif // __SOFTFP__
 #endif // AARCH64
-    case Bytecodes::_fast_agetfield: __ load_heap_oop(R0_tos, Address(Robj, Roffset)); __ verify_oop(R0_tos); break;
+    case Bytecodes::_fast_agetfield: do_oop_load(_masm, R0_tos, Address(Robj, Roffset)); __ verify_oop(R0_tos); break;
     default:
       ShouldNotReachHere();
   }
@@ -3992,7 +3945,7 @@ void TemplateTable::fast_xaccess(TosState state) {
   if (state == itos) {
     __ ldr_s32(R0_tos, Address(Robj, Roffset));
   } else if (state == atos) {
-    __ load_heap_oop(R0_tos, Address(Robj, Roffset));
+    do_oop_load(_masm, R0_tos, Address(Robj, Roffset));
     __ verify_oop(R0_tos);
   } else if (state == ftos) {
 #ifdef AARCH64

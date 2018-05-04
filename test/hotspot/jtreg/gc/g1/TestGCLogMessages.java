@@ -134,8 +134,6 @@ public class TestGCLogMessages {
         // Humongous Eager Reclaim
         new LogMessageWithLevel("Humongous Reclaim", Level.DEBUG),
         new LogMessageWithLevel("Humongous Register", Level.DEBUG),
-        // Preserve CM Referents
-        new LogMessageWithLevel("Preserve CM Refs", Level.DEBUG),
         // Merge PSS
         new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
         // TLAB handling

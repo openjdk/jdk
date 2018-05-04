@@ -65,9 +65,11 @@ elapsedTimer        PSMarkSweep::_accumulated_time;
 jlong               PSMarkSweep::_time_of_last_gc   = 0;
 CollectorCounters*  PSMarkSweep::_counters = NULL;
 
+SpanSubjectToDiscoveryClosure PSMarkSweep::_span_based_discoverer;
+
 void PSMarkSweep::initialize() {
-  MemRegion mr = ParallelScavengeHeap::heap()->reserved_region();
-  set_ref_processor(new ReferenceProcessor(mr));     // a vanilla ref proc
+  _span_based_discoverer.set_span(ParallelScavengeHeap::heap()->reserved_region());
+  set_ref_processor(new ReferenceProcessor(&_span_based_discoverer));     // a vanilla ref proc
   _counters = new CollectorCounters("PSMarkSweep", 1);
 }
 
@@ -258,7 +260,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     DerivedPointerTable::update_pointers();
 #endif
 
-    ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->num_q());
+    ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->num_queues());
 
     ref_processor()->enqueue_discovered_references(NULL, &pt);
 
@@ -537,7 +539,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     GCTraceTime(Debug, gc, phases) t("Reference Processing", _gc_timer);
 
     ref_processor()->setup_policy(clear_all_softrefs);
-    ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->num_q());
+    ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->num_queues());
     const ReferenceProcessorStats& stats =
       ref_processor()->process_discovered_references(
         is_alive_closure(), mark_and_push_closure(), follow_stack_closure(), NULL, &pt);
@@ -563,7 +565,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     CodeCache::do_unloading(is_alive_closure(), purged_class);
 
     // Prune dead klasses from subklass/sibling/implementor lists.
-    Klass::clean_weak_klass_links();
+    Klass::clean_weak_klass_links(purged_class);
   }
 
   {

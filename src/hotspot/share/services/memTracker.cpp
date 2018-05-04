@@ -177,10 +177,12 @@ void MemTracker::report(bool summary_only, outputStream* output) {
     } else {
       MemDetailReporter rpt(baseline, output);
       rpt.report();
-
+      output->print("Metaspace:");
       // Metadata reporting requires a safepoint, so avoid it if VM is not in good state.
       assert(!VMError::fatal_error_in_progress(), "Do not report metadata in error report");
-      VM_PrintMetadata vmop(output, K);
+      VM_PrintMetadata vmop(output, K,
+          MetaspaceUtils::rf_show_loaders |
+          MetaspaceUtils::rf_break_down_by_spacetype);
       VMThread::execute(&vmop);
     }
   }

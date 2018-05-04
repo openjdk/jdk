@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "utilities/macros.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
+#include "utilities/macros.hpp"
 #include "unittest.hpp"
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
 
   TEST_VM(gc, oldFreeSpaceCalculation) {
 
