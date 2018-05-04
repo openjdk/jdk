@@ -73,9 +73,9 @@
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 #include "gc/g1/g1ThreadLocalData.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
 
 // -------------------- Compile::mach_constant_base_node -----------------------
@@ -3753,6 +3753,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 // Currently supported:
 // - G1 pre-barriers (see GraphKit::g1_write_barrier_pre())
 void Compile::verify_barriers() {
+#if INCLUDE_G1GC
   if (UseG1GC) {
     // Verify G1 pre-barriers
     const int marking_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
@@ -3812,6 +3813,7 @@ void Compile::verify_barriers() {
       }
     }
   }
+#endif
 }
 
 #endif

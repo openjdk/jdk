@@ -32,7 +32,14 @@
                             volatile_nonstatic_field,                         \
                             static_field)                                     \
   nonstatic_field(TenuredGeneration, _min_heap_delta_bytes, size_t)           \
-  nonstatic_field(TenuredGeneration, _the_space,            ContiguousSpace*)
+  nonstatic_field(TenuredGeneration, _the_space,            ContiguousSpace*) \
+                                                                              \
+  nonstatic_field(DefNewGeneration,  _old_gen,              Generation*)      \
+  nonstatic_field(DefNewGeneration,  _tenuring_threshold,   uint)             \
+  nonstatic_field(DefNewGeneration,  _age_table,            AgeTable)         \
+  nonstatic_field(DefNewGeneration,  _eden_space,           ContiguousSpace*) \
+  nonstatic_field(DefNewGeneration,  _from_space,           ContiguousSpace*) \
+  nonstatic_field(DefNewGeneration,  _to_space,             ContiguousSpace*)
 
 #define VM_TYPES_SERIALGC(declare_type,                                       \
                           declare_toplevel_type,                              \
@@ -40,6 +47,8 @@
   declare_type(SerialHeap,                   GenCollectedHeap)                \
   declare_type(TenuredGeneration,            CardGeneration)                  \
   declare_type(TenuredSpace,                 OffsetTableContigSpace)          \
+                                                                              \
+  declare_type(DefNewGeneration,             Generation)                      \
                                                                               \
   declare_toplevel_type(TenuredGeneration*)
 

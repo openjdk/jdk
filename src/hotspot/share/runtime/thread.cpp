@@ -114,11 +114,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/cms/concurrentMarkSweepThread.hpp"
-#include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#if INCLUDE_PARALLELGC
 #include "gc/parallel/pcTasks.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -4467,7 +4465,7 @@ void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClos
   possibly_parallel_threads_do(is_par, &tc);
 }
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_PARALLELGC
 // Used by ParallelScavenge
 void Threads::create_thread_roots_tasks(GCTaskQueue* q) {
   ALL_JAVA_THREADS(p) {
@@ -4483,7 +4481,7 @@ void Threads::create_thread_roots_marking_tasks(GCTaskQueue* q) {
   }
   q->enqueue(new ThreadRootsMarkingTask(VMThread::vm_thread()));
 }
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_PARALLELGC
 
 void Threads::nmethods_do(CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {

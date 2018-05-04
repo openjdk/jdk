@@ -25,9 +25,6 @@
 #include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compileLog.hpp"
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -48,8 +45,10 @@
 #include "opto/runtime.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
+#include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
+#include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 
 //----------------------------GraphKit-----------------------------------------
@@ -1565,9 +1564,12 @@ void GraphKit::pre_barrier(bool do_load,
   BarrierSet* bs = BarrierSet::barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
+
+#if INCLUDE_G1GC
     case BarrierSet::G1BarrierSet:
       g1_write_barrier_pre(do_load, obj, adr, adr_idx, val, val_type, pre_val, bt);
       break;
+#endif
 
     case BarrierSet::CardTableBarrierSet:
       break;
@@ -1581,8 +1583,11 @@ void GraphKit::pre_barrier(bool do_load,
 bool GraphKit::can_move_pre_barrier() const {
   BarrierSet* bs = BarrierSet::barrier_set();
   switch (bs->kind()) {
+
+#if INCLUDE_G1GC
     case BarrierSet::G1BarrierSet:
       return true; // Can move it if no safepoint
+#endif
 
     case BarrierSet::CardTableBarrierSet:
       return true; // There is no pre-barrier
@@ -1604,9 +1609,11 @@ void GraphKit::post_barrier(Node* ctl,
   BarrierSet* bs = BarrierSet::barrier_set();
   set_control(ctl);
   switch (bs->kind()) {
+#if INCLUDE_G1GC
     case BarrierSet::G1BarrierSet:
       g1_write_barrier_post(store, obj, adr, adr_idx, val, bt, use_precise);
       break;
+#endif
 
     case BarrierSet::CardTableBarrierSet:
       write_barrier_post(store, obj, adr, adr_idx, val, use_precise);
@@ -3929,6 +3936,9 @@ void GraphKit::write_barrier_post(Node* oop_store,
   // Final sync IdealKit and GraphKit.
   final_sync(ideal);
 }
+
+#if INCLUDE_G1GC
+
 /*
  * Determine if the G1 pre-barrier can be removed. The pre-barrier is
  * required by SATB to make sure all objects live at the start of the
@@ -4361,6 +4371,7 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
 }
 #undef __
 
+#endif // INCLUDE_G1GC
 
 Node* GraphKit::load_String_length(Node* ctrl, Node* str) {
   Node* len = load_array_length(load_String_value(ctrl, str));

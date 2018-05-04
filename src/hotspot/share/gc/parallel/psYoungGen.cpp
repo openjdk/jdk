@@ -730,6 +730,8 @@ void PSYoungGen::object_iterate(ObjectClosure* blk) {
   to_space()->object_iterate(blk);
 }
 
+#if INCLUDE_SERIALGC
+
 void PSYoungGen::precompact() {
   eden_mark_sweep()->precompact();
   from_mark_sweep()->precompact();
@@ -748,6 +750,8 @@ void PSYoungGen::compact() {
   // Mark sweep stores preserved markOops in to space, don't disturb!
   to_mark_sweep()->compact(false);
 }
+
+#endif // INCLUDE_SERIALGC
 
 void PSYoungGen::print() const { print_on(tty); }
 void PSYoungGen::print_on(outputStream* st) const {

@@ -40,8 +40,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vm_version.hpp"
-
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -636,14 +635,14 @@
   declare_function(JVMCIRuntime::log_printf) \
   declare_function(JVMCIRuntime::vm_error) \
   declare_function(JVMCIRuntime::load_and_clear_exception) \
-  ALL_GCS_ONLY(declare_function(JVMCIRuntime::write_barrier_pre)) \
-  ALL_GCS_ONLY(declare_function(JVMCIRuntime::write_barrier_post)) \
+  G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_pre)) \
+  G1GC_ONLY(declare_function(JVMCIRuntime::write_barrier_post)) \
   declare_function(JVMCIRuntime::validate_object) \
   \
   declare_function(JVMCIRuntime::test_deoptimize_call_int)
 
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 
 #define VM_STRUCTS_JVMCI_G1GC(nonstatic_field, static_field) \
   static_field(HeapRegion, LogOfHRGrainBytes, int)
@@ -656,7 +655,7 @@
   declare_constant_with_value("G1ThreadLocalData::dirty_card_queue_index_offset", in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset())) \
   declare_constant_with_value("G1ThreadLocalData::dirty_card_queue_buffer_offset", in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()))
 
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
 
 #ifdef LINUX
@@ -872,7 +871,7 @@ VMStructEntry JVMCIVMStructs::localHotSpotVMStructs[] = {
                  GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
                  GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
   VM_STRUCTS_JVMCI_G1GC(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                         GENERATE_STATIC_VM_STRUCT_ENTRY)
 #endif
@@ -924,7 +923,7 @@ VMIntConstantEntry JVMCIVMStructs::localHotSpotVMIntConstants[] = {
                        GENERATE_C2_VM_INT_CONSTANT_ENTRY,
                        GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
   VM_INT_CONSTANTS_JVMCI_G1GC(GENERATE_VM_INT_CONSTANT_ENTRY,
                               GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
                               GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)

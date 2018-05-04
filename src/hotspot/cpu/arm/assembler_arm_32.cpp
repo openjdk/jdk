@@ -42,10 +42,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/heapRegion.hpp"
-#endif // INCLUDE_ALL_GCS
 
 #ifdef COMPILER2
 // Convert the raw encoding form into the form expected by the

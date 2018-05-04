@@ -50,9 +50,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 #include "gc/g1/g1ThreadLocalData.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
 #if defined(_MSC_VER)
 #define strtoll _strtoi64
@@ -484,17 +484,17 @@ JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, bool a
   }
 JRT_END
 
+#if INCLUDE_G1GC
+
 JRT_LEAF(void, JVMCIRuntime::write_barrier_pre(JavaThread* thread, oopDesc* obj))
-#if INCLUDE_ALL_GCS
   G1ThreadLocalData::satb_mark_queue(thread).enqueue(obj);
-#endif // INCLUDE_ALL_GCS
 JRT_END
 
 JRT_LEAF(void, JVMCIRuntime::write_barrier_post(JavaThread* thread, void* card_addr))
-#if INCLUDE_ALL_GCS
   G1ThreadLocalData::dirty_card_queue(thread).enqueue(card_addr);
-#endif // INCLUDE_ALL_GCS
 JRT_END
+
+#endif // INCLUDE_G1GC
 
 JRT_LEAF(jboolean, JVMCIRuntime::validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child))
   bool ret = true;

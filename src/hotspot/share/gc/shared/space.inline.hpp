@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_SHARED_SPACE_INLINE_HPP
 #define SHARE_VM_GC_SHARED_SPACE_INLINE_HPP
 
-#include "gc/serial/markSweep.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/space.hpp"
@@ -35,6 +34,9 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
+#if INCLUDE_SERIALGC
+#include "gc/serial/markSweep.inline.hpp"
+#endif
 
 inline HeapWord* Space::block_start(const void* p) {
   return block_start_const(p);
@@ -76,6 +78,8 @@ OffsetTableContigSpace::block_start_const(const void* p) const {
 size_t CompactibleSpace::obj_size(const HeapWord* addr) const {
   return oop(addr)->size();
 }
+
+#if INCLUDE_SERIALGC
 
 class DeadSpacer : StackObj {
   size_t _allowed_deadspace_words;
@@ -346,6 +350,8 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
 
   clear_empty_region(space);
 }
+
+#endif // INCLUDE_SERIALGC
 
 size_t ContiguousSpace::scanned_block_size(const HeapWord* addr) const {
   return oop(addr)->size();

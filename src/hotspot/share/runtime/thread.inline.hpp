@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_THREAD_INLINE_HPP
 
 #include "runtime/atomic.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"

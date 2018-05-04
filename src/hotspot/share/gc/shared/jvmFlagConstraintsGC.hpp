@@ -27,9 +27,13 @@
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
 #include "gc/cms/jvmFlagConstraintsCMS.hpp"
+#endif
+#if INCLUDE_G1GC
 #include "gc/g1/jvmFlagConstraintsG1.hpp"
+#endif
+#if INCLUDE_PARALLELGC
 #include "gc/parallel/jvmFlagConstraintsParallel.hpp"
 #endif
 

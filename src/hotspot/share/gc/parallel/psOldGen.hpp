@@ -45,7 +45,9 @@ class PSOldGen : public CHeapObj<mtGC> {
   PSVirtualSpace*          _virtual_space;     // Controls mapping and unmapping of virtual mem
   ObjectStartArray         _start_array;       // Keeps track of where objects start in a 512b block
   MutableSpace*            _object_space;      // Where all the objects live
+#if INCLUDE_SERIALGC
   PSMarkSweepDecorator*    _object_mark_sweep; // The mark sweep view of _object_space
+#endif
   const char* const        _name;              // Name of this generation.
 
   // Performance Counters
@@ -150,17 +152,21 @@ class PSOldGen : public CHeapObj<mtGC> {
   }
 
   MutableSpace*         object_space() const      { return _object_space; }
+#if INCLUDE_SERIALGC
   PSMarkSweepDecorator* object_mark_sweep() const { return _object_mark_sweep; }
+#endif
   ObjectStartArray*     start_array()             { return &_start_array; }
   PSVirtualSpace*       virtual_space() const     { return _virtual_space;}
 
   // Has the generation been successfully allocated?
   bool is_allocated();
 
+#if INCLUDE_SERIALGC
   // MarkSweep methods
   virtual void precompact();
   void adjust_pointers();
   void compact();
+#endif
 
   // Size info
   size_t capacity_in_bytes() const        { return object_space()->capacity_in_bytes(); }

@@ -644,6 +644,7 @@ bool ArrayCopyNode::may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTra
 }
 
 static Node* step_over_gc_barrier(Node* c) {
+#if INCLUDE_G1GC
   if (UseG1GC && !GraphKit::use_ReduceInitialCardMarks() &&
       c != NULL && c->is_Region() && c->req() == 3) {
     for (uint i = 1; i < c->req(); i++) {
@@ -675,6 +676,7 @@ static Node* step_over_gc_barrier(Node* c) {
       }
     }
   }
+#endif // INCLUDE_G1GC
   return c;
 }
 

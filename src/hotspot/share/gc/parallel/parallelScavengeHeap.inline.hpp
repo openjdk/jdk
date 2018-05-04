@@ -26,13 +26,13 @@
 #define SHARE_VM_GC_PARALLEL_PARALLELSCAVENGEHEAP_INLINE_HPP
 
 #include "gc/parallel/parallelScavengeHeap.hpp"
-#include "gc/parallel/psMarkSweep.hpp"
+#include "gc/parallel/psMarkSweepProxy.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 
 inline size_t ParallelScavengeHeap::total_invocations() {
   return UseParallelOldGC ? PSParallelCompact::total_invocations() :
-    PSMarkSweep::total_invocations();
+    PSMarkSweepProxy::total_invocations();
 }
 
 inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const {

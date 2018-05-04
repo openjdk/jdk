@@ -56,7 +56,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
 #include "gc/cms/parOopClosures.hpp"
 #endif
 
@@ -1006,7 +1006,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
   if (result != NULL) {
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
     if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
       _old_gen->sample_eden_chunk();
     }
@@ -1024,7 +1024,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
 HeapWord* DefNewGeneration::par_allocate(size_t word_size,
                                          bool is_tlab) {
   HeapWord* res = eden()->par_allocate(word_size);
-#if INCLUDE_ALL_GCS
+#if INCLUDE_CMSGC
   if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
     _old_gen->sample_eden_chunk();
   }

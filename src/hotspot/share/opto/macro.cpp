@@ -47,9 +47,9 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "runtime/sharedRuntime.hpp"
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 #include "gc/g1/g1ThreadLocalData.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
 
 //
@@ -246,7 +246,9 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
       assert(mem->is_Store(), "store required");
       _igvn.replace_node(mem, mem->in(MemNode::Memory));
     }
-  } else {
+  }
+#if INCLUDE_G1GC
+  else {
     // G1 pre/post barriers
     assert(p2x->outcnt() <= 2, "expects 1 or 2 users: Xor and URShift nodes");
     // It could be only one user, URShift node, in Object.clone() intrinsic
@@ -326,6 +328,7 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
     assert(p2x->outcnt() == 0 || p2x->unique_out()->Opcode() == Op_URShiftX, "");
     _igvn.replace_node(p2x, top());
   }
+#endif // INCLUDE_G1GC
 }
 
 // Search for a memory operation for the specified memory slice.

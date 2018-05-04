@@ -76,9 +76,9 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 #include "gc/g1/g1ThreadLocalData.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
 // Shared stub locations
 RuntimeStub*        SharedRuntime::_wrong_method_blob;
@@ -208,7 +208,7 @@ void SharedRuntime::print_ic_miss_histogram() {
 }
 #endif // PRODUCT
 
-#if INCLUDE_ALL_GCS
+#if INCLUDE_G1GC
 
 // G1 write-barrier pre: executed before a pointer store.
 JRT_LEAF(void, SharedRuntime::g1_wb_pre(oopDesc* orig, JavaThread *thread))
@@ -226,7 +226,7 @@ JRT_LEAF(void, SharedRuntime::g1_wb_post(void* card_addr, JavaThread* thread))
   G1ThreadLocalData::dirty_card_queue(thread).enqueue(card_addr);
 JRT_END
 
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
 
 JRT_LEAF(jlong, SharedRuntime::lmul(jlong y, jlong x))

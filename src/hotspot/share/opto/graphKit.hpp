@@ -768,6 +768,7 @@ class GraphKit : public Phase {
   // Used for load_store operations which loads old value.
   bool can_move_pre_barrier() const;
 
+#if INCLUDE_G1GC
   // G1 pre/post barriers
   void g1_write_barrier_pre(bool do_load,
                             Node* obj,
@@ -794,6 +795,7 @@ class GraphKit : public Phase {
   bool g1_can_remove_pre_barrier(PhaseTransform* phase, Node* adr, BasicType bt, uint adr_idx);
 
   bool g1_can_remove_post_barrier(PhaseTransform* phase, Node* store, Node* adr);
+#endif // INCLUDE_G1GC
 
   public:
   // Helper function to round double arguments before a call

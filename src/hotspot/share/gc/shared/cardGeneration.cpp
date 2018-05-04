@@ -208,7 +208,7 @@ void CardGeneration::compute_new_size() {
 
     const size_t free_after_gc = free();
     const double free_percentage = ((double)free_after_gc) / capacity_after_gc;
-    log_trace(gc, heap)("TenuredGeneration::compute_new_size:");
+    log_trace(gc, heap)("CardGeneration::compute_new_size:");
     log_trace(gc, heap)("    minimum_free_percentage: %6.2f  maximum_used_percentage: %6.2f",
                   minimum_free_percentage,
                   maximum_used_percentage);
