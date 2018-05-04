@@ -25,7 +25,6 @@
  * @test
  * @bug 8186211
  * @summary Test basic invocation of multiple ldc's of the same dynamic constant that fail resolution
- * @requires os.arch != "sparcv9"
  * @library /lib/testlibrary/bytecode /java/lang/invoke/common
  * @build jdk.experimental.bytecode.BasicClassBuilder
  * @run testng CondyRepeatFailedResolution

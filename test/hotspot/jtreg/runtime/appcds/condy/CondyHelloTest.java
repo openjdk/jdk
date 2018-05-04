@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Make sure CDS works with a minimal test case that uses a CONSTANT_Dynamic constant-pool entry
- * @requires (os.arch != "sparcv9") & (vm.cds)
+ * @requires (vm.cds)
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @build CondyHello
