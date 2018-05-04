@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,11 @@
 #define NET_NSEC_PER_MSEC 1000000
 #define NET_NSEC_PER_SEC  1000000000
 #define NET_NSEC_PER_USEC 1000
+
+/* in case NI_MAXHOST is not defined in netdb.h */
+#ifndef NI_MAXHOST
+#define NI_MAXHOST 1025
+#endif
 
 /* Defines SO_REUSEPORT */
 #ifndef SO_REUSEPORT
