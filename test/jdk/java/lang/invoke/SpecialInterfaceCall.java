@@ -26,11 +26,9 @@
  * @bug 8200167
  * @summary Test direct and MethodHandle access to interface methods using invokespecial semantics
  * @compile SpecialInterfaceCall.java
- * @compile I4Special.jcod
+ * @compile SpecialInterfaceCallI4.jasm
  * @run main/othervm -Xint SpecialInterfaceCall
  * @run main/othervm -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1 SpecialInterfaceCall
- * @run main/othervm -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=2 SpecialInterfaceCall
- * @run main/othervm -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=3 SpecialInterfaceCall
  * @run main/othervm -Xbatch -XX:-TieredCompilation SpecialInterfaceCall
  */
 
@@ -74,9 +72,10 @@ public class SpecialInterfaceCall {
     }
     // This interface acts like I2 but we define a directInvoke method
     // that we will rewrite the bytecode of to use invokespecial
+    // (see SpecialInterfaceCallI4.jasm).
     interface I4 extends I1 {
         static void invokeDirect(I4 i) {
-            String s = i.toString();
+            throw new Error("Class file for I4 is not overwritten");
         }
     }
 
@@ -250,5 +249,4 @@ public class SpecialInterfaceCall {
             throw new Error(e);
         }
     }
-
 }

@@ -648,13 +648,21 @@ void Canonicalizer::do_NewTypeArray   (NewTypeArray*    x) {}
 void Canonicalizer::do_NewObjectArray (NewObjectArray*  x) {}
 void Canonicalizer::do_NewMultiArray  (NewMultiArray*   x) {}
 void Canonicalizer::do_CheckCast      (CheckCast*       x) {
-  if (x->klass()->is_loaded() && !x->is_invokespecial_receiver_check()) {
+  if (x->klass()->is_loaded()) {
     Value obj = x->obj();
     ciType* klass = obj->exact_type();
-    if (klass == NULL) klass = obj->declared_type();
-    if (klass != NULL && klass->is_loaded() && klass->is_subtype_of(x->klass())) {
-      set_canonical(obj);
-      return;
+    if (klass == NULL) {
+      klass = obj->declared_type();
+    }
+    if (klass != NULL && klass->is_loaded()) {
+      bool is_interface = klass->is_instance_klass() &&
+                          klass->as_instance_klass()->is_interface();
+      // Interface casts can't be statically optimized away since verifier doesn't
+      // enforce interface types in bytecode.
+      if (!is_interface && klass->is_subtype_of(x->klass())) {
+        set_canonical(obj);
+        return;
+      }
     }
     // checkcast of null returns null
     if (obj->as_Constant() && obj->type()->as_ObjectType()->constant_value()->is_null_object()) {
