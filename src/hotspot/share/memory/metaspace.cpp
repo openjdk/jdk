@@ -4131,7 +4131,7 @@ void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
       cl._stats_total.class_sm_stats().free_blocks_cap_words();
   out->print("Deallocated from chunks in use: ");
   print_scaled_words_and_percentage(out, free_blocks_cap_words, committed_words, scale, 6);
-  out->print(" ("UINTX_FORMAT " blocks)", free_blocks_num);
+  out->print(" (" UINTX_FORMAT " blocks)", free_blocks_num);
   out->cr();
 
   // Print total waste.
