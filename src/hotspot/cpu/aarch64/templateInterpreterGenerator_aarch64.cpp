@@ -918,6 +918,8 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // rmethod: Method*
   // r13: senderSP must preserve for slow path, set SP to it on fast path
 
+  // LR is live.  It must be saved around calls.
+
   address entry = __ pc();
 
   const int referent_offset = java_lang_ref_Reference::referent_offset;
