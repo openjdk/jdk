@@ -239,7 +239,7 @@ sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all
 sun/java2d/GdiRendering/InsetClipping.java 8196181 windows-all
-sun/java2d/OpenGL/CopyAreaOOB.java 7001973 windows-all,macosx-all
+java/awt/Graphics2D/CopyAreaOOB.java 7001973 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all
 sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191506 generic-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
@@ -257,7 +257,7 @@ java/awt/Choice/PopupPosTest/PopupPosTest.html 8192930 windows-all
 java/awt/Choice/ChoiceKeyEventReaction/ChoiceKeyEventReaction.html 6849922 macosx-all
 java/awt/Choice/ChoiceMouseWheelTest/ChoiceMouseWheelTest.java 7100044 macosx-all
 java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
-java/awt/Component/GetScreenLocTest.java 4753654 windows-all
+java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.html 8192929 windows-all
 java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.html 8017454 macosx-all
 java/awt/Dialog/SiblingChildOrder/SiblingChildOrderTest.java 8193940 windows-all
@@ -474,6 +474,8 @@ java/awt/Graphics2D/DrawString/RotTransText.java 8197797 generic-all
 java/awt/image/VolatileImage/CustomCompositeTest.java 8199002 windows-all,linux-all
 java/awt/image/VolatileImage/GradientPaints.java 8199003 linux-all
 java/awt/JAWT/JAWT.sh 8197798 windows-all
+java/awt/Debug/DumpOnKey/DumpOnKey.java 8202667 windows-all
+java/awt/Robot/RobotWheelTest/RobotWheelTest.java 8129827 generic-all
 
 ############################################################################
 
@@ -651,7 +653,7 @@ javax/swing/JEditorPane/5076514/bug5076514.java 8198321 generic-all
 javax/swing/JFileChooser/4524490/bug4524490.java 8042380 generic-all
 javax/swing/JFileChooser/8002077/bug8002077.java 8196094 windows-all
 javax/swing/JFileChooser/DeserializedJFileChooser/DeserializedJFileChooserTest.java 8196095 generic-all
-javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8058231 macosx-all
+javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8058231 generic-all
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8193942 generic-all
 javax/swing/JList/6462008/bug6462008.java 7156347 generic-all
 javax/swing/JPopupMenu/6580930/bug6580930.java 8196096 windows-all,macosx-all
@@ -715,6 +717,10 @@ javax/swing/UIDefaults/6302464/bug6302464.java 8199079 generic-all
 javax/swing/UIDefaults/8133926/InternalFrameIcon.java 8199075 generic-all
 javax/swing/UIDefaults/8149879/InternalResourceBundle.java 8199054 windows-all
 javax/swing/text/html/parser/Parser/8078268/bug8078268.java 8199092 generic-all
+javax/swing/PopupFactory/8048506/bug8048506.java 8202660 windows-all
+javax/swing/JTextArea/TextViewOOM/TextViewOOM.java 8167355 generic-all
+javax/swing/JEditorPane/8195095/ImageViewTest.java 8202656 windows-all
+javax/swing/text/Utilities/8142966/SwingFontMetricsTest.java 8202663 windows-all
 
 ############################################################################
 
