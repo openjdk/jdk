@@ -109,4 +109,18 @@ vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded004
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005/TestDescription.java 8153598 generic-all
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Deadlock/JavaDeadlock001/TestDescription.java 8060733 generic-all
 
+vmTestbase/nsk/jdi/AttachingConnector/attachnosuspend/attachnosuspend001/TestDescription.java 8153613 generic-all
+vmTestbase/nsk/jdi/ThreadReference/frameCount/framecount001/TestDescription.java 6530620 generic-all
+vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 4903717 generic-all
+vmTestbase/nsk/jdi/ThreadReference/resume/resume001/TestDescription.java 8072701 generic-all
+vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
+vmTestbase/nsk/jdi/BScenarios/hotswap/tc10x001/TestDescription.java 8013728 generic-all
+vmTestbase/nsk/jdi/BScenarios/multithrd/tc02x004/TestDescription.java 4751860 generic-all
+vmTestbase/nsk/jdi/EventRequest/setEnabled/setenabled003/TestDescription.java 8066993 generic-all
+vmTestbase/nsk/jdi/StackFrame/_bounds_/bounds001/TestDescription.java 6604963 generic-all
+vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses021/TestDescription.java 8065773 generic-all
+vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses023/TestDescription.java 8065773 generic-all
+vmTestbase/nsk/jdi/EventQueue/remove_l/remove_l005/TestDescription.java 8068225 generic-all
+vmTestbase/nsk/jdi/stress/ClassPrepareEvents/ClassPrepareEvents001/ClassPrepareEvents001.java 6426321 generic-all
+
 #############################################################################
