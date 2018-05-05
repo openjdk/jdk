@@ -26,6 +26,8 @@
 // Included early because the NMT flags don't include it.
 #include "utilities/macros.hpp"
 
+#if INCLUDE_NMT
+
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
@@ -208,3 +210,5 @@ TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
   CommittedVirtualMemoryTest::test_committed_region();
   CommittedVirtualMemoryTest::test_partial_region();
 }
+
+#endif // INCLUDE_NMT
