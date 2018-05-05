@@ -38,6 +38,7 @@ tier1 = \
     -jdk/jshell/ToolBasicTest.java \
     -jdk/jshell/ToolLocaleMessageTest.java \
     -jdk/jshell/ToolReloadTest.java \
+    -jdk/jshell/UserInputTest.java \
     -jdk/jshell/UserJdiUserRemoteTest.java
 
 # (Almost) no langtools tests are tier 2.
@@ -53,6 +54,7 @@ tier2 = \
     jdk/jshell/ToolBasicTest.java \
     jdk/jshell/ToolLocaleMessageTest.java \
     jdk/jshell/ToolReloadTest.java \
+    jdk/jshell/UserInputTest.java \
     jdk/jshell/UserJdiUserRemoteTest.java
 
 # No langtools tests are tier 3 either.
