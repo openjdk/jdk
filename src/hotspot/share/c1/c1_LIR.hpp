@@ -1096,6 +1096,7 @@ class LIR_Op: public CompilationResourceObj {
 #endif
 
   virtual const char * name() const PRODUCT_RETURN0;
+  virtual void visit(LIR_OpVisitState* state);
 
   int id()             const                  { return _id;     }
   void set_id(int id)                         { _id = id; }
@@ -1983,6 +1984,7 @@ class LIR_List: public CompilationResourceObj {
   int           _line;
 #endif
 
+ public:
   void append(LIR_Op* op) {
     if (op->source() == NULL)
       op->set_source(_compilation->current_instruction());
@@ -2003,7 +2005,6 @@ class LIR_List: public CompilationResourceObj {
 #endif
   }
 
- public:
   LIR_List(Compilation* compilation, BlockBegin* block = NULL);
 
 #ifdef ASSERT
