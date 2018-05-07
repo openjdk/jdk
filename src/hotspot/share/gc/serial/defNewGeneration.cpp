@@ -1006,11 +1006,9 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
   if (result != NULL) {
-#if INCLUDE_CMSGC
-    if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
+    if (_old_gen != NULL) {
       _old_gen->sample_eden_chunk();
     }
-#endif
   } else {
     // If the eden is full and the last collection bailed out, we are running
     // out of heap space, and we try to allocate the from-space, too.
@@ -1024,11 +1022,9 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
 HeapWord* DefNewGeneration::par_allocate(size_t word_size,
                                          bool is_tlab) {
   HeapWord* res = eden()->par_allocate(word_size);
-#if INCLUDE_CMSGC
-  if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
+  if (_old_gen != NULL) {
     _old_gen->sample_eden_chunk();
   }
-#endif
   return res;
 }
 
