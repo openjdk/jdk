@@ -2104,6 +2104,8 @@ class Threads: AllStatic {
   static void add(JavaThread* p, bool force_daemon = false);
   static void remove(JavaThread* p);
   static void non_java_threads_do(ThreadClosure* tc);
+  static void java_threads_do(ThreadClosure* tc);
+  static void java_threads_and_vm_thread_do(ThreadClosure* tc);
   static void threads_do(ThreadClosure* tc);
   static void possibly_parallel_threads_do(bool is_par, ThreadClosure* tc);
 
@@ -2142,10 +2144,6 @@ class Threads: AllStatic {
   static void oops_do(OopClosure* f, CodeBlobClosure* cf);
   // This version may be called by sequential or parallel code.
   static void possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClosure* cf);
-  // This creates a list of GCTasks, one per thread.
-  static void create_thread_roots_tasks(GCTaskQueue* q);
-  // This creates a list of GCTasks, one per thread, for marking objects.
-  static void create_thread_roots_marking_tasks(GCTaskQueue* q);
 
   // Apply "f->do_oop" to roots in all threads that
   // are part of compiled frames

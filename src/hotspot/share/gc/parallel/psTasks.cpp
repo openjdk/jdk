@@ -119,11 +119,7 @@ void ThreadRootsTask::do_it(GCTaskManager* manager, uint which) {
   PSScavengeRootsClosure roots_closure(pm);
   MarkingCodeBlobClosure roots_in_blobs(&roots_closure, CodeBlobToOopClosure::FixRelocations);
 
-  if (_java_thread != NULL)
-    _java_thread->oops_do(&roots_closure, &roots_in_blobs);
-
-  if (_vm_thread != NULL)
-    _vm_thread->oops_do(&roots_closure, &roots_in_blobs);
+  _thread->oops_do(&roots_closure, &roots_in_blobs);
 
   // Do the real work
   pm->drain_stacks(false);

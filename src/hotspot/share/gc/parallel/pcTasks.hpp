@@ -67,11 +67,10 @@ class ParallelTaskTerminator;
 
 class ThreadRootsMarkingTask : public GCTask {
  private:
-  JavaThread* _java_thread;
-  VMThread* _vm_thread;
+  Thread* _thread;
+
  public:
-  ThreadRootsMarkingTask(JavaThread* root) : _java_thread(root), _vm_thread(NULL) {}
-  ThreadRootsMarkingTask(VMThread* root) : _java_thread(NULL), _vm_thread(root) {}
+  ThreadRootsMarkingTask(Thread* root) : _thread(root) {}
 
   char* name() { return (char *)"thread-roots-marking-task"; }
 
