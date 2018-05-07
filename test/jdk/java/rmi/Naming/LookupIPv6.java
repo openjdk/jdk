@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,16 @@
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary
+ * @build RegistryVM
  * @run main/othervm -Djava.net.preferIPv6Addresses=true LookupIPv6
  */
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Inet6Address;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
+import java.rmi.Remote;
 
 public class LookupIPv6 {
     public static void main(String[] args) throws Exception {
@@ -67,19 +67,21 @@ public class LookupIPv6 {
          * an Inet6Address since this test is run with
          * -Djava.net.preferIPv6Addresses=true.
          */
-        int port = TestLibrary.getUnusedRandomPort();
         InetAddress localAddr = InetAddress.getAllByName(null)[0];
         if (localAddr instanceof Inet6Address) {
             System.out.println("IPv6 detected");
-            Registry reg;
+            RegistryVM rvm = RegistryVM.createRegistryVM();
             try {
-                reg = LocateRegistry.createRegistry(port);
-            } catch (Exception ex) {
-                reg = LocateRegistry.getRegistry();
+                rvm.start();
+                String name = String.format("rmi://[%s]:%d/foo",
+                        localAddr.getHostAddress(), rvm.getPort());
+                Naming.rebind(name, new R());
+                Naming.lookup(name);
+            } finally {
+                rvm.cleanup();
             }
-            reg.rebind("foo", reg);
-            Naming.lookup(String.format("rmi://[%s]:%d/foo",
-                          localAddr.getHostAddress(), port));
         }
     }
+
+    private static class R implements Remote, Serializable { }
 }
