@@ -245,7 +245,6 @@ class ChunkManager : public CHeapObj<mtInternal> {
       locked_verify_free_chunks_count();
     }
   }
-  void verify_free_chunks_count();
 
   // Given a pointer to a chunk, attempts to merge it with neighboring
   // free chunks to form a bigger chunk. Returns true if successful.
@@ -368,12 +367,9 @@ class ChunkManager : public CHeapObj<mtInternal> {
       locked_verify();
     }
   }
-  void verify_free_chunks_total();
 
   void locked_print_free_chunks(outputStream* st);
   void locked_print_sum_free_chunks(outputStream* st);
-
-  void print_on(outputStream* st) const;
 
   // Fill in current statistic values to the given statistics object.
   void collect_statistics(ChunkManagerStatistics* out) const;
@@ -1705,7 +1701,6 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
       ls.print("VirtualSpaceNode::take_from_committed() not available " SIZE_FORMAT " words ", chunk_word_size);
       // Dump some information about the virtual space that is nearly full
       print_on(&ls);
-      ls.cr(); // ~LogStream does not autoflush.
     }
     return NULL;
   }
@@ -2221,7 +2216,6 @@ void VirtualSpaceList::link_vs(VirtualSpaceNode* new_entry) {
     VirtualSpaceNode* vsl = current_virtual_space();
     ResourceMark rm;
     vsl->print_on(&ls);
-    ls.cr(); // ~LogStream does not autoflush.
   }
 }
 
@@ -2710,26 +2704,12 @@ void ChunkManager::locked_verify_free_chunks_total() {
          sum_free_chunks());
 }
 
-void ChunkManager::verify_free_chunks_total() {
-  MutexLockerEx cl(MetaspaceExpand_lock,
-                     Mutex::_no_safepoint_check_flag);
-  locked_verify_free_chunks_total();
-}
-
 void ChunkManager::locked_verify_free_chunks_count() {
   assert_lock_strong(MetaspaceExpand_lock);
   assert(sum_free_chunks_count() == _free_chunks_count,
          "_free_chunks_count " SIZE_FORMAT " is not the"
          " same as sum " SIZE_FORMAT, _free_chunks_count,
          sum_free_chunks_count());
-}
-
-void ChunkManager::verify_free_chunks_count() {
-#ifdef ASSERT
-  MutexLockerEx cl(MetaspaceExpand_lock,
-                     Mutex::_no_safepoint_check_flag);
-  locked_verify_free_chunks_count();
-#endif
 }
 
 void ChunkManager::verify() {
@@ -3041,7 +3021,6 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
              p2i(this), p2i(chunk), chunk->word_size(), list_count);
     ResourceMark rm;
     locked_print_free_chunks(&ls);
-    ls.cr(); // ~LogStream does not autoflush.
   }
 
   return chunk;
@@ -3132,10 +3111,6 @@ void ChunkManager::return_chunk_list(ChunkIndex index, Metachunk* chunks) {
   }
 }
 
-void ChunkManager::print_on(outputStream* out) const {
-  _humongous_dictionary.report_statistics(out);
-}
-
 void ChunkManager::collect_statistics(ChunkManagerStatistics* out) const {
   MutexLockerEx cl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
   for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
@@ -3220,7 +3195,6 @@ void SpaceManager::locked_print_chunks_in_use_on(outputStream* st) const {
   }
 
   chunk_manager()->locked_print_free_chunks(st);
-  chunk_manager()->locked_print_sum_free_chunks(st);
 }
 
 size_t SpaceManager::calc_chunk_size(size_t word_size) {
@@ -3418,7 +3392,6 @@ SpaceManager::~SpaceManager() {
     if (block_freelists() != NULL) {
       block_freelists()->print_on(&ls);
     }
-    ls.cr(); // ~LogStream does not autoflush.
   }
 
   // Add all the chunks in use by this space manager
@@ -3487,7 +3460,6 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
     LogStream ls(log.trace());
     new_chunk->print_on(&ls);
     chunk_manager()->locked_print_free_chunks(&ls);
-    ls.cr(); // ~LogStream does not autoflush.
   }
 }
 
@@ -4441,7 +4413,6 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
     ResourceMark rm;
     LogStream ls(lt);
     print_compressed_class_space(&ls, requested_addr);
-    ls.cr(); // ~LogStream does not autoflush.
   }
 }
 
@@ -4663,13 +4634,11 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
       if (loader_data->metaspace_or_null() != NULL) {
         LogStream ls(log.debug());
         loader_data->print_value_on(&ls);
-        ls.cr(); // ~LogStream does not autoflush.
       }
     }
     LogStream ls(log.info());
     // In case of an OOM, log out a short but still useful report.
     MetaspaceUtils::print_basic_report(&ls, 0);
-    ls.cr(); // ~LogStream does not autoflush.
   }
 
   bool out_of_compressed_class_space = false;
