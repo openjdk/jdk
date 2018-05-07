@@ -872,6 +872,7 @@ void TemplateTable::index_check_without_pop(Register array, Register index) {
     // convention with generate_ArrayIndexOutOfBounds_handler()
     __ mov(R4_ArrayIndexOutOfBounds_index, index, hs);
   }
+  __ mov(R1, array, hs);
   __ b(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry, hs);
 }
 

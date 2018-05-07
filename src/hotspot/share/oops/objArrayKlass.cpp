@@ -251,12 +251,34 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
 
   // Check is all offsets and lengths are non negative
   if (src_pos < 0 || dst_pos < 0 || length < 0) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
+    // Pass specific exception reason.
+    ResourceMark rm;
+    stringStream ss;
+    if (src_pos < 0) {
+      ss.print("arraycopy: source index %d out of bounds for object array[%d]",
+               src_pos, s->length());
+    } else if (dst_pos < 0) {
+      ss.print("arraycopy: destination index %d out of bounds for object array[%d]",
+               dst_pos, d->length());
+    } else {
+      ss.print("arraycopy: length %d is negative", length);
+    }
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
   // Check if the ranges are valid
-  if  ( (((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length())
-     || (((unsigned int) length + (unsigned int) dst_pos) > (unsigned int) d->length()) ) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
+  if ((((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length()) ||
+      (((unsigned int) length + (unsigned int) dst_pos) > (unsigned int) d->length())) {
+    // Pass specific exception reason.
+    ResourceMark rm;
+    stringStream ss;
+    if (((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length()) {
+      ss.print("arraycopy: last source index %u out of bounds for object array[%d]",
+               (unsigned int) length + (unsigned int) src_pos, s->length());
+    } else {
+      ss.print("arraycopy: last destination index %u out of bounds for object array[%d]",
+               (unsigned int) length + (unsigned int) dst_pos, d->length());
+    }
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
 
   // Special case. Boundary cases must be checked first

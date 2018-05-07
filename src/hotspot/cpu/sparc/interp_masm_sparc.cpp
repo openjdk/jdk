@@ -881,27 +881,32 @@ void InterpreterMacroAssembler::index_check_without_pop(Register array, Register
   assert_not_delayed();
 
   verify_oop(array);
-  // sign extend since tos (index) can be a 32bit value
+  // Sign extend since tos (index) can be a 32bit value.
   sra(index, G0, index);
 
-  // check array
+  // Check array.
   Label ptr_ok;
   tst(array);
-  throw_if_not_1_x( notZero, ptr_ok );
-  delayed()->ld( array, arrayOopDesc::length_offset_in_bytes(), tmp ); // check index
-  throw_if_not_2( Interpreter::_throw_NullPointerException_entry, G3_scratch, ptr_ok);
+  throw_if_not_1_x(notZero, ptr_ok);
+  delayed()->ld(array, arrayOopDesc::length_offset_in_bytes(), tmp); // Check index.
+  throw_if_not_2(Interpreter::_throw_NullPointerException_entry, G3_scratch, ptr_ok);
 
   Label index_ok;
   cmp(index, tmp);
-  throw_if_not_1_icc( lessUnsigned, index_ok );
-  if (index_shift > 0)  delayed()->sll(index, index_shift, index);
-  else                  delayed()->add(array, index, res); // addr - const offset in index
-  // convention: move aberrant index into G3_scratch for exception message
-  mov(index, G3_scratch);
-  throw_if_not_2( Interpreter::_throw_ArrayIndexOutOfBoundsException_entry, G4_scratch, index_ok);
+  throw_if_not_1_icc(lessUnsigned, index_ok);
+  if (index_shift > 0) {
+    delayed()->sll(index, index_shift, index);
+  } else {
+    delayed()->add(array, index, res); // addr - const offset in index
+  }
+  // Pass the array to create more detailed exceptions.
+  // Convention: move aberrant index into Otos_i for exception message.
+  mov(index, Otos_i);
+  mov(array, G3_scratch);
+  throw_if_not_2(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry, G4_scratch, index_ok);
 
   // add offset if didn't do it in delay slot
-  if (index_shift > 0)   add(array, index, res); // addr - const offset in index
+  if (index_shift > 0) { add(array, index, res); } // addr - const offset in index
 }
 
 

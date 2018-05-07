@@ -757,10 +757,13 @@ void TemplateTable::index_check_without_pop(Register array, Register index) {
     assert(rbx != array, "different registers");
     __ movl(rbx, index);
   }
-  __ jump_cc(Assembler::aboveEqual,
-             ExternalAddress(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry));
+  Label skip;
+  __ jccb(Assembler::below, skip);
+  // Pass array to create more detailed exceptions.
+  __ mov(NOT_LP64(rax) LP64_ONLY(c_rarg1), array);
+  __ jump(ExternalAddress(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry));
+  __ bind(skip);
 }
-
 
 void TemplateTable::iaload() {
   transition(itos, itos);

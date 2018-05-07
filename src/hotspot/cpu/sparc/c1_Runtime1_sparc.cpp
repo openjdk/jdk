@@ -302,7 +302,7 @@ OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address targe
   if (!has_argument) {
     call_offset = __ call_RT(noreg, noreg, target);
   } else {
-    call_offset = __ call_RT(noreg, noreg, target, G4);
+    call_offset = __ call_RT(noreg, noreg, target, G4, G5);
   }
   OopMapSet* oop_maps = new OopMapSet();
   oop_maps->add_gc_map(call_offset, oop_map);

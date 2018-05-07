@@ -147,10 +147,14 @@ class RangeCheckStub: public CodeStub {
  private:
   CodeEmitInfo* _info;
   LIR_Opr       _index;
+  LIR_Opr       _array;
   bool          _throw_index_out_of_bounds_exception;
 
  public:
-  RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, bool throw_index_out_of_bounds_exception = false);
+  // For ArrayIndexOutOfBoundsException.
+  RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array);
+  // For IndexOutOfBoundsException.
+  RangeCheckStub(CodeEmitInfo* info, LIR_Opr index);
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
   virtual bool is_exception_throw_stub() const   { return true; }
@@ -158,6 +162,7 @@ class RangeCheckStub: public CodeStub {
   virtual void visit(LIR_OpVisitState* visitor) {
     visitor->do_slow_case(_info);
     visitor->do_input(_index);
+    if (_array) { visitor->do_input(_array); }
   }
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("RangeCheckStub"); }

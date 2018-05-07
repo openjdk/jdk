@@ -784,7 +784,7 @@ void TemplateTable::index_check(Register array, Register index, unsigned int shi
   __ z_cl(index, Address(array, arrayOopDesc::length_offset_in_bytes()));
   __ z_brl(index_ok);
   __ lgr_if_needed(Z_ARG3, index); // See generate_ArrayIndexOutOfBounds_handler().
-  // Give back the array to create more detailed exceptions.
+  // Pass the array to create more detailed exceptions.
   __ lgr_if_needed(Z_ARG2, array); // See generate_ArrayIndexOutOfBounds_handler().
   __ load_absolute_address(Z_R1_scratch,
                            Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);

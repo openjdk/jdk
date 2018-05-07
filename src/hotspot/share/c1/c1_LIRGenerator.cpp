@@ -480,7 +480,7 @@ void LIRGenerator::klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitI
 
 void LIRGenerator::array_range_check(LIR_Opr array, LIR_Opr index,
                                     CodeEmitInfo* null_check_info, CodeEmitInfo* range_check_info) {
-  CodeStub* stub = new RangeCheckStub(range_check_info, index);
+  CodeStub* stub = new RangeCheckStub(range_check_info, index, array);
   if (index->is_constant()) {
     cmp_mem_int(lir_cond_belowEqual, array, arrayOopDesc::length_offset_in_bytes(),
                 index->as_jint(), null_check_info);
@@ -494,7 +494,7 @@ void LIRGenerator::array_range_check(LIR_Opr array, LIR_Opr index,
 
 
 void LIRGenerator::nio_range_check(LIR_Opr buffer, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
-  CodeStub* stub = new RangeCheckStub(info, index, true);
+  CodeStub* stub = new RangeCheckStub(info, index);
   if (index->is_constant()) {
     cmp_mem_int(lir_cond_belowEqual, buffer, java_nio_Buffer::limit_offset(), index->as_jint(), info);
     __ branch(lir_cond_belowEqual, T_INT, stub); // forward branch
@@ -1592,7 +1592,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   if (GenerateRangeChecks && needs_range_check) {
     if (use_length) {
       __ cmp(lir_cond_belowEqual, length.result(), index.result());
-      __ branch(lir_cond_belowEqual, T_INT, new RangeCheckStub(range_check_info, index.result()));
+      __ branch(lir_cond_belowEqual, T_INT, new RangeCheckStub(range_check_info, index.result(), array.result()));
     } else {
       array_range_check(array.result(), index.result(), null_check_info, range_check_info);
       // range_check also does the null check
@@ -1756,7 +1756,7 @@ void LIRGenerator::do_NIOCheckIndex(Intrinsic* x) {
   LIR_Opr result = rlock_result(x);
   if (GenerateRangeChecks) {
     CodeEmitInfo* info = state_for(x);
-    CodeStub* stub = new RangeCheckStub(info, index.result(), true);
+    CodeStub* stub = new RangeCheckStub(info, index.result());
     if (index.result()->is_constant()) {
       cmp_mem_int(lir_cond_belowEqual, buf.result(), java_nio_Buffer::limit_offset(), index.result()->as_jint(), info);
       __ branch(lir_cond_belowEqual, T_INT, stub);
@@ -1837,12 +1837,12 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
 
   if (GenerateRangeChecks && needs_range_check) {
     if (StressLoopInvariantCodeMotion && range_check_info->deoptimize_on_exception()) {
-      __ branch(lir_cond_always, T_ILLEGAL, new RangeCheckStub(range_check_info, index.result()));
+      __ branch(lir_cond_always, T_ILLEGAL, new RangeCheckStub(range_check_info, index.result(), array.result()));
     } else if (use_length) {
       // TODO: use a (modified) version of array_range_check that does not require a
       //       constant length to be loaded to a register
       __ cmp(lir_cond_belowEqual, length.result(), index.result());
-      __ branch(lir_cond_belowEqual, T_INT, new RangeCheckStub(range_check_info, index.result()));
+      __ branch(lir_cond_belowEqual, T_INT, new RangeCheckStub(range_check_info, index.result(), array.result()));
     } else {
       array_range_check(array.result(), index.result(), null_check_info, range_check_info);
       // The range check performs the null check, so clear it out for the load

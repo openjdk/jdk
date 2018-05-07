@@ -564,13 +564,13 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(const char* name) {
+address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   address entry = __ pc();
   __ empty_expression_stack();
-  __ load_const_optimized(R4_ARG2, (address) name);
+  // R4_ARG2 already contains the array.
   // Index is in R17_tos.
   __ mr(R5_ARG3, R17_tos);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException));
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException), R4_ARG2, R5_ARG3);
   return entry;
 }
 

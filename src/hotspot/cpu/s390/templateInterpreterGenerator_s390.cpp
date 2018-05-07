@@ -551,9 +551,10 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
 
 //
 // Args:
+//   Z_ARG2: oop of array
 //   Z_ARG3: aberrant index
 //
-address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(const char * name) {
+address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   address entry = __ pc();
   address excp = CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException);
 
@@ -562,8 +563,7 @@ address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(con
   __ empty_expression_stack();
 
   // Setup parameters.
-  // Leave out the name and use register for array to create more detailed exceptions.
-  __ load_absolute_address(Z_ARG2, (address) name);
+  // Pass register with array to create more detailed exceptions.
   __ call_VM(noreg, excp, Z_ARG2, Z_ARG3);
   return entry;
 }
