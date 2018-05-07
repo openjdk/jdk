@@ -1338,6 +1338,16 @@ public class Utils {
     }
 
     /**
+     * Returns a locale independent upper cased String. That is, it
+     * always uses US locale, this is a clone of the one in StringUtils.
+     * @param s to convert
+     * @return converted String
+     */
+    public static String toUpperCase(String s) {
+        return s.toUpperCase(Locale.US);
+    }
+
+    /**
      * Returns a locale independent lower cased String. That is, it
      * always uses US locale, this is a clone of the one in StringUtils.
      * @param s to convert
@@ -2869,7 +2879,7 @@ public class Utils {
             case "throws":
             case "exception":
             case "version":
-                kind = DocTree.Kind.valueOf(tagName.toUpperCase());
+                kind = DocTree.Kind.valueOf(toUpperCase(tagName));
                 return getBlockTags(element, kind);
             case "serialData":
                 kind = SERIAL_DATA;
