@@ -611,26 +611,29 @@ void Runtime1::initialize_pd() {
 }
 
 
-// target: the entry point of the method that creates and posts the exception oop
-// has_argument: true if the exception needs an argument (passed on stack because registers must be preserved)
-
+// Target: the entry point of the method that creates and posts the exception oop.
+// has_argument: true if the exception needs arguments (passed on the stack because
+//               registers must be preserved).
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
-  // preserve all registers
-  int num_rt_args = has_argument ? 2 : 1;
+  // Preserve all registers.
+  int num_rt_args = has_argument ? (2 + 1) : 1;
   OopMap* oop_map = save_live_registers(sasm, num_rt_args);
 
-  // now all registers are saved and can be used freely
-  // verify that no old value is used accidentally
+  // Now all registers are saved and can be used freely.
+  // Verify that no old value is used accidentally.
   __ invalidate_registers(true, true, true, true, true, true);
 
-  // registers used by this stub
+  // Registers used by this stub.
   const Register temp_reg = rbx;
 
-  // load argument for exception that is passed as an argument into the stub
+  // Load arguments for exception that are passed as arguments into the stub.
   if (has_argument) {
 #ifdef _LP64
     __ movptr(c_rarg1, Address(rbp, 2*BytesPerWord));
+    __ movptr(c_rarg2, Address(rbp, 3*BytesPerWord));
 #else
+    __ movptr(temp_reg, Address(rbp, 3*BytesPerWord));
+    __ push(temp_reg);
     __ movptr(temp_reg, Address(rbp, 2*BytesPerWord));
     __ push(temp_reg);
 #endif // _LP64

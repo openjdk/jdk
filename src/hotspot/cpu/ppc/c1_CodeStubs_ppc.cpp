@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,14 @@
 #define __ ce->masm()->
 
 
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index,
-                               bool throw_index_out_of_bounds_exception)
-  : _throw_index_out_of_bounds_exception(throw_index_out_of_bounds_exception)
-  , _index(index) {
+RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
+  : _throw_index_out_of_bounds_exception(false), _index(index), _array(array) {
+  assert(info != NULL, "must have info");
+  _info = new CodeEmitInfo(info);
+}
+
+RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
+  : _throw_index_out_of_bounds_exception(true), _index(index), _array(NULL) {
   assert(info != NULL, "must have info");
   _info = new CodeEmitInfo(info);
 }
@@ -68,12 +72,16 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
   __ mtctr(R0);
 
-  Register index = R0; // pass in R0
+  Register index = R0;
   if (_index->is_register()) {
     __ extsw(index, _index->as_register());
   } else {
     __ load_const_optimized(index, _index->as_jint());
   }
+  if (_array) {
+    __ std(_array->as_pointer_register(), -8, R1_SP);
+  }
+  __ std(index, -16, R1_SP);
 
   __ bctrl();
   ce->add_call_info_here(_info);

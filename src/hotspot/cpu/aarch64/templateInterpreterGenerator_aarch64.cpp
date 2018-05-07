@@ -333,16 +333,17 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(
-        const char* name) {
+address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   address entry = __ pc();
   // expression stack must be empty before entering the VM if an
   // exception happened
   __ empty_expression_stack();
   // setup parameters
+
   // ??? convention: expect aberrant index in register r1
   __ movw(c_rarg2, r1);
-  __ mov(c_rarg1, (address)name);
+  // ??? convention: expect array in register r3
+  __ mov(c_rarg1, r3);
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address,
                               InterpreterRuntime::

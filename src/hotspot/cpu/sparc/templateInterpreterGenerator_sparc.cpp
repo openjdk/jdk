@@ -255,15 +255,14 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
 }
 
 
-address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(const char* name) {
+address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   address entry = __ pc();
   // expression stack must be empty before entering the VM if an exception happened
   __ empty_expression_stack();
+  // Pass the array to create more detailed exceptions.
   // convention: expect aberrant index in register G3_scratch, then shuffle the
   // index to G4_scratch for the VM call
-  __ mov(G3_scratch, G4_scratch);
-  __ set((intptr_t)name, G3_scratch);
-  __ call_VM(Oexception, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException), G3_scratch, G4_scratch);
+  __ call_VM(Oexception, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException), G3_scratch, Otos_i);
   __ should_not_reach_here();
   return entry;
 }

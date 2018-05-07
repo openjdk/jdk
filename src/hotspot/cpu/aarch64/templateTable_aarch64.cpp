@@ -747,6 +747,8 @@ void TemplateTable::index_check(Register array, Register index)
   }
   Label ok;
   __ br(Assembler::LO, ok);
+    // ??? convention: move array into r3 for exception message
+  __ mov(r3, array);
   __ mov(rscratch1, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
   __ br(rscratch1);
   __ bind(ok);
