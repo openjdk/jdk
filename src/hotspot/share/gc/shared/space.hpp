@@ -608,15 +608,9 @@ class ContiguousSpace: public CompactibleSpace {
     _concurrent_iteration_safe_limit = new_limit;
   }
 
-
-#if INCLUDE_CMSGC
   // In support of parallel oop_iterate.
-  #define ContigSpace_PAR_OOP_ITERATE_DECL(OopClosureType, nv_suffix)  \
-    void par_oop_iterate(MemRegion mr, OopClosureType* blk);
-
-    ALL_PAR_OOP_ITERATE_CLOSURES(ContigSpace_PAR_OOP_ITERATE_DECL)
-  #undef ContigSpace_PAR_OOP_ITERATE_DECL
-#endif // INCLUDE_CMSGC
+  template <typename OopClosureType>
+  void par_oop_iterate(MemRegion mr, OopClosureType* blk);
 
   // Compaction support
   virtual void reset_after_compaction() {
