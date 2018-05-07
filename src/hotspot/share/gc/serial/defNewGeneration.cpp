@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
-#include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialHeap.inline.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/ageTable.inline.hpp"
@@ -57,9 +57,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_CMSGC
-#include "gc/cms/parOopClosures.hpp"
-#endif
 
 //
 // DefNewGeneration functions.
@@ -103,7 +100,7 @@ FastEvacuateFollowersClosure(SerialHeap* heap,
 
 void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
   do {
-    _heap->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen, _scan_cur_or_nonheap, _scan_older);
+    _heap->oop_since_save_marks_iterate(_scan_cur_or_nonheap, _scan_older);
   } while (!_heap->no_allocs_since_save_marks());
   guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
@@ -813,22 +810,6 @@ bool DefNewGeneration::no_allocs_since_save_marks() {
   assert(from()->saved_mark_at_top(), "Violated spec - alloc in from");
   return to()->saved_mark_at_top();
 }
-
-#define DefNew_SINCE_SAVE_MARKS_DEFN(OopClosureType, nv_suffix) \
-                                                                \
-void DefNewGeneration::                                         \
-oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) {   \
-  cl->set_generation(this);                                     \
-  eden()->oop_since_save_marks_iterate##nv_suffix(cl);          \
-  to()->oop_since_save_marks_iterate##nv_suffix(cl);            \
-  from()->oop_since_save_marks_iterate##nv_suffix(cl);          \
-  cl->reset_generation();                                       \
-  save_marks();                                                 \
-}
-
-ALL_SINCE_SAVE_MARKS_CLOSURES(DefNew_SINCE_SAVE_MARKS_DEFN)
-
-#undef DefNew_SINCE_SAVE_MARKS_DEFN
 
 void DefNewGeneration::contribute_scratch(ScratchBlock*& list, Generation* requestor,
                                          size_t max_alloc_words) {

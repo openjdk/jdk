@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_SERIAL_TENUREDGENERATION_INLINE_HPP
 
 #include "gc/serial/tenuredGeneration.hpp"
-#include "gc/shared/space.hpp"
+#include "gc/shared/space.inline.hpp"
 
 HeapWord* TenuredGeneration::allocate(size_t word_size,
                                                  bool is_tlab) {
@@ -51,6 +51,14 @@ size_t TenuredGeneration::block_size(const HeapWord* addr) const {
 
 bool TenuredGeneration::block_is_obj(const HeapWord* addr) const {
   return addr < _the_space  ->top();
+}
+
+template <typename OopClosureType>
+void TenuredGeneration::oop_since_save_marks_iterate(OopClosureType* blk) {
+  blk->set_generation(this);
+  _the_space->oop_since_save_marks_iterate(blk);
+  blk->reset_generation();
+  save_marks();
 }
 
 #endif // SHARE_VM_GC_SERIAL_TENUREDGENERATION_INLINE_HPP

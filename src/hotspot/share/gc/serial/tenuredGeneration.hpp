@@ -75,10 +75,8 @@ class TenuredGeneration: public CardGeneration {
   virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
   virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
-#define TenuredGen_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)     \
-  void oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl);
-  TenuredGen_SINCE_SAVE_MARKS_DECL(OopsInGenClosure,_v)
-  SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(TenuredGen_SINCE_SAVE_MARKS_DECL)
+  template <typename OopClosureType>
+  void oop_since_save_marks_iterate(OopClosureType* cl);
 
   void save_marks();
   void reset_saved_marks();

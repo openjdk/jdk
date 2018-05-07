@@ -2103,22 +2103,6 @@ bool CompactibleFreeListSpace::no_allocs_since_save_marks() {
   return _promoInfo.noPromotions();
 }
 
-#define CFLS_OOP_SINCE_SAVE_MARKS_DEFN(OopClosureType, nv_suffix)           \
-                                                                            \
-void CompactibleFreeListSpace::                                             \
-oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk) {              \
-  _promoInfo.promoted_oops_iterate##nv_suffix(blk);                         \
-  /*                                                                        \
-   * This also restores any displaced headers and removes the elements from \
-   * the iteration set as they are processed, so that we have a clean slate \
-   * at the end of the iteration. Note, thus, that if new objects are       \
-   * promoted as a result of the iteration they are iterated over as well.  \
-   */                                                                       \
-  assert(_promoInfo.noPromotions(), "_promoInfo inconsistency");            \
-}
-
-ALL_SINCE_SAVE_MARKS_CLOSURES(CFLS_OOP_SINCE_SAVE_MARKS_DEFN)
-
 bool CompactibleFreeListSpace::linearAllocationWouldFail() const {
   return _smallLinearAllocBlock._word_size == 0;
 }

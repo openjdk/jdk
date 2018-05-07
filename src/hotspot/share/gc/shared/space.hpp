@@ -639,11 +639,8 @@ class ContiguousSpace: public CompactibleSpace {
   // *are* included in the iteration.
   // Updates _saved_mark_word to point to just after the last object
   // iterated over.
-#define ContigSpace_OOP_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)  \
-  void oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk);
-
-  ALL_SINCE_SAVE_MARKS_CLOSURES(ContigSpace_OOP_SINCE_SAVE_MARKS_DECL)
-#undef ContigSpace_OOP_SINCE_SAVE_MARKS_DECL
+  template <typename OopClosureType>
+  void oop_since_save_marks_iterate(OopClosureType* blk);
 
   // Same as object_iterate, but starting from "mark", which is required
   // to denote the start of an object.  Objects allocated by

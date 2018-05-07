@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialHeap.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
+#include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/genMemoryPools.hpp"
 #include "services/memoryManager.hpp"
 

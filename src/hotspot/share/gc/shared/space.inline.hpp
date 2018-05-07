@@ -357,4 +357,24 @@ size_t ContiguousSpace::scanned_block_size(const HeapWord* addr) const {
   return oop(addr)->size();
 }
 
+template <typename OopClosureType>
+void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
+  HeapWord* t;
+  HeapWord* p = saved_mark_word();
+  assert(p != NULL, "expected saved mark");
+
+  const intx interval = PrefetchScanIntervalInBytes;
+  do {
+    t = top();
+    while (p < t) {
+      Prefetch::write(p, interval);
+      debug_only(HeapWord* prev = p);
+      oop m = oop(p);
+      p += m->oop_iterate_size(blk);
+    }
+  } while (t < top());
+
+  set_saved_mark_word(p);
+}
+
 #endif // SHARE_VM_GC_SHARED_SPACE_INLINE_HPP

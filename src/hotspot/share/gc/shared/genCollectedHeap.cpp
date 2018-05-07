@@ -913,23 +913,6 @@ void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
   _old_gen->ref_processor()->weak_oops_do(root_closure);
 }
 
-#define GCH_SINCE_SAVE_MARKS_ITERATE_DEFN(OopClosureType, nv_suffix)    \
-void GenCollectedHeap::                                                 \
-oop_since_save_marks_iterate(GenerationType gen,                        \
-                             OopClosureType* cur,                       \
-                             OopClosureType* older) {                   \
-  if (gen == YoungGen) {                              \
-    _young_gen->oop_since_save_marks_iterate##nv_suffix(cur);           \
-    _old_gen->oop_since_save_marks_iterate##nv_suffix(older);           \
-  } else {                                                              \
-    _old_gen->oop_since_save_marks_iterate##nv_suffix(cur);             \
-  }                                                                     \
-}
-
-ALL_SINCE_SAVE_MARKS_CLOSURES(GCH_SINCE_SAVE_MARKS_ITERATE_DEFN)
-
-#undef GCH_SINCE_SAVE_MARKS_ITERATE_DEFN
-
 bool GenCollectedHeap::no_allocs_since_save_marks() {
   return _young_gen->no_allocs_since_save_marks() &&
          _old_gen->no_allocs_since_save_marks();

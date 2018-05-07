@@ -104,6 +104,14 @@ public:
     return static_cast<ConcurrentMarkSweepGeneration*>(_old_gen);
   }
 
+  // Apply "cur->do_oop" or "older->do_oop" to all the oops in objects
+  // allocated since the last call to save_marks in the young generation.
+  // The "cur" closure is applied to references in the younger generation
+  // at "level", and the "older" closure to older generations.
+  template <typename OopClosureType1, typename OopClosureType2>
+  void oop_since_save_marks_iterate(OopClosureType1* cur,
+                                    OopClosureType2* older);
+
 private:
   WorkGang* _workers;
   MemoryPool* _eden_pool;

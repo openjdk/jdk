@@ -165,13 +165,10 @@ class PromotionInfo {
   bool ensure_spooling_space() {
     return has_spooling_space() || ensure_spooling_space_work();
   }
-  #define PROMOTED_OOPS_ITERATE_DECL(OopClosureType, nv_suffix)  \
-    void promoted_oops_iterate##nv_suffix(OopClosureType* cl);
-  ALL_SINCE_SAVE_MARKS_CLOSURES(PROMOTED_OOPS_ITERATE_DECL)
-  #undef PROMOTED_OOPS_ITERATE_DECL
-  void promoted_oops_iterate(OopsInGenClosure* cl) {
-    promoted_oops_iterate_v(cl);
-  }
+
+  template <typename OopClosureType>
+  void promoted_oops_iterate(OopClosureType* cl);
+
   void verify()  const;
   void reset() {
     _promoHead = NULL;

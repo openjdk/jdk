@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/cms/cmsHeap.hpp"
+#include "gc/cms/cmsHeap.inline.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/cms/parNewGeneration.inline.hpp"
@@ -36,7 +36,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/plab.inline.hpp"
@@ -836,20 +835,19 @@ ScanClosureWithParBarrier(ParNewGeneration* g, bool gc_barrier) :
   ScanClosure(g, gc_barrier)
 { }
 
-EvacuateFollowersClosureGeneral::
+template <typename OopClosureType1, typename OopClosureType2>
+EvacuateFollowersClosureGeneral<OopClosureType1, OopClosureType2>::
 EvacuateFollowersClosureGeneral(CMSHeap* heap,
-                                OopsInGenClosure* cur,
-                                OopsInGenClosure* older) :
+                                OopClosureType1* cur,
+                                OopClosureType2* older) :
   _heap(heap),
   _scan_cur_or_nonheap(cur), _scan_older(older)
 { }
 
-void EvacuateFollowersClosureGeneral::do_void() {
+template <typename OopClosureType1, typename OopClosureType2>
+void EvacuateFollowersClosureGeneral<OopClosureType1, OopClosureType2>::do_void() {
   do {
-    // Beware: this call will lead to closure applications via virtual
-    // calls.
-    _heap->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen,
-                                        _scan_cur_or_nonheap,
+    _heap->oop_since_save_marks_iterate(_scan_cur_or_nonheap,
                                         _scan_older);
   } while (!_heap->no_allocs_since_save_marks());
 }
@@ -977,8 +975,8 @@ void ParNewGeneration::collect(bool   full,
   ScanClosure               scan_without_gc_barrier(this, false);
   ScanClosureWithParBarrier scan_with_gc_barrier(this, true);
   set_promo_failure_scan_stack_closure(&scan_without_gc_barrier);
-  EvacuateFollowersClosureGeneral evacuate_followers(gch,
-    &scan_without_gc_barrier, &scan_with_gc_barrier);
+  EvacuateFollowersClosureGeneral<ScanClosure, ScanClosureWithParBarrier> evacuate_followers(
+      gch, &scan_without_gc_barrier, &scan_with_gc_barrier);
   rp->setup_policy(clear_all_soft_refs);
   // Can  the mt_degree be set later (at run_task() time would be best)?
   rp->set_active_mt_degree(active_workers);
