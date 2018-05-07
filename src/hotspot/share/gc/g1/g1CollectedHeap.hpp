@@ -1338,6 +1338,9 @@ public:
   void redirty_logged_cards();
   // Verification
 
+  // Deduplicate the string
+  virtual void deduplicate_string(oop str);
+
   // Perform any cleanup actions necessary before allowing a verification.
   virtual void prepare_for_verify();
 
