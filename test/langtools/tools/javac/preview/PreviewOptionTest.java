@@ -54,8 +54,8 @@ public class PreviewOptionTest {
                 .filter(s -> s.compareTo(Source.MIN) >= 0)
                 .collect(Collectors.toList());
 
-        versionsToTest.stream().forEach(this::testWithSourceFlag);
-        versionsToTest.stream().forEach(this::testWithReleaseFlag);
+        versionsToTest.forEach(this::testWithSourceFlag);
+        versionsToTest.forEach(this::testWithReleaseFlag);
 
         if (errors > 0)
             throw new Exception(errors + " errors occurred");
@@ -70,9 +70,7 @@ public class PreviewOptionTest {
     }
 
     void testWithReleaseFlag(Source release) {
-        //Todo: the condition below should say "release != Source.DEFAULT", but we can't do that
-        //since --release 11 is not supported yet.
-        testInternal(null, release, true);
+        testInternal(null, release, release != Source.DEFAULT);
     }
 
     void testInternal(Source source, Source release, boolean shouldFail) {
