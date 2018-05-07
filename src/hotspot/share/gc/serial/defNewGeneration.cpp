@@ -92,19 +92,6 @@ FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl) :
 void DefNewGeneration::FastKeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
 void DefNewGeneration::FastKeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
 
-DefNewGeneration::EvacuateFollowersClosure::
-EvacuateFollowersClosure(GenCollectedHeap* gch,
-                         ScanClosure* cur,
-                         ScanClosure* older) :
-  _gch(gch), _scan_cur_or_nonheap(cur), _scan_older(older)
-{}
-
-void DefNewGeneration::EvacuateFollowersClosure::do_void() {
-  do {
-    _gch->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen, _scan_cur_or_nonheap, _scan_older);
-  } while (!_gch->no_allocs_since_save_marks());
-}
-
 DefNewGeneration::FastEvacuateFollowersClosure::
 FastEvacuateFollowersClosure(GenCollectedHeap* gch,
                              FastScanClosure* cur,

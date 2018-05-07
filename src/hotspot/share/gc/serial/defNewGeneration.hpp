@@ -178,16 +178,6 @@ protected:
     virtual void do_oop(narrowOop* p);
   };
 
-  class EvacuateFollowersClosure: public VoidClosure {
-    GenCollectedHeap* _gch;
-    ScanClosure* _scan_cur_or_nonheap;
-    ScanClosure* _scan_older;
-  public:
-    EvacuateFollowersClosure(GenCollectedHeap* gch,
-                             ScanClosure* cur, ScanClosure* older);
-    void do_void();
-  };
-
   class FastEvacuateFollowersClosure: public VoidClosure {
     GenCollectedHeap* _gch;
     DefNewGeneration* _young_gen;
