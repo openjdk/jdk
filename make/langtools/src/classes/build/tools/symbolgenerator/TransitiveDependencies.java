@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,56 +26,67 @@
 package build.tools.symbolgenerator;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.util.Elements;
 import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+import com.sun.tools.javac.jvm.Target;
 
 /**
- * Print reflexive transitive closure of the given modules along their requires transitive edges.
+ * Write reflexive transitive closure of the given modules along their requires transitive edges into
+ * file <version>/system-modules in the specified directory.
  */
 public class TransitiveDependencies {
 
     private static void help() {
-        System.err.println("java TransitiveDependencies <module-source-path> <root-modules>");
+        System.err.println("java TransitiveDependencies <target-directory> <module-source-path> <root-modules>");
     }
 
     public static void main(String... args) throws IOException {
-        if (args.length < 1) {
+        if (args.length < 2) {
             help();
             return ;
         }
 
         JavaCompiler compiler = JavacTool.create();
-        List<String> options = Arrays.asList("-source", "10",
-                                             "-target", "10",
-                                             "-proc:only",
-                                             "--system", "none",
-                                             "--module-source-path", args[0],
-                                             "--add-modules", Arrays.stream(args)
-                                                                    .skip(1)
-                                                                    .collect(Collectors.joining(",")));
-        List<String> jlObjectList = Arrays.asList("java.lang.Object");
+        List<String> options = List.of("-source", Source.DEFAULT.name,
+                                       "-target", Target.DEFAULT.name,
+                                       "-proc:only",
+                                       "--system", "none",
+                                       "--module-source-path", args[1],
+                                       "--add-modules", Arrays.stream(args)
+                                                              .skip(2)
+                                                              .collect(Collectors.joining(",")));
+        List<String> jlObjectList = List.of("java.lang.Object");
         JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, options, jlObjectList, null);
         task.enter();
         Elements elements = task.getElements();
-        List<String> todo = new LinkedList<>();
-        Arrays.stream(args).skip(1).forEach(todo::add);
+        Deque<String> todo = new ArrayDeque<>();
+        Arrays.stream(args).skip(2).forEach(todo::add);
         Set<String> allModules = new HashSet<>();
 
         while (!todo.isEmpty()) {
-            String current = todo.remove(0);
+            String current = todo.removeFirst();
 
             if (!allModules.add(current))
                 continue;
@@ -89,7 +100,7 @@ public class TransitiveDependencies {
              //use the internal structure to avoid unnecesarily completing the symbol using the UsesProvidesVisitor:
             for (RequiresDirective rd : mod.requires) {
                 if (rd.isTransitive()) {
-                    todo.add(rd.getDependency().getQualifiedName().toString());
+                    todo.offerLast(rd.getDependency().getQualifiedName().toString());
                 }
             }
         }
@@ -97,9 +108,20 @@ public class TransitiveDependencies {
         allModules.add("java.base");
         allModules.add("jdk.unsupported");
 
-        allModules.stream()
-                  .sorted()
-                  .forEach(System.out::println);
+        String version =
+                Integer.toString(Integer.parseInt(Source.DEFAULT.name), Character.MAX_RADIX);
+        version = version.toUpperCase(Locale.ROOT);
+
+        Path targetFile = Paths.get(args[0]).resolve(version).resolve("system-modules");
+
+        Files.createDirectories(targetFile.getParent());
+
+        try (Writer w = Files.newBufferedWriter(targetFile);
+             PrintWriter out = new PrintWriter(w)) {
+            allModules.stream()
+                      .sorted()
+                      .forEach(out::println);
+        }
     }
 
 }
