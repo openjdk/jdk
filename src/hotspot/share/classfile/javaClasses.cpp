@@ -768,7 +768,7 @@ static void initialize_static_field(fieldDescriptor* fd, Handle mirror, TRAPS) {
         {
           assert(fd->signature() == vmSymbols::string_signature(),
                  "just checking");
-          if (DumpSharedSpaces && oopDesc::is_archive_object(mirror())) {
+          if (DumpSharedSpaces && MetaspaceShared::is_archive_object(mirror())) {
             // Archive the String field and update the pointer.
             oop s = mirror()->obj_field(fd->offset());
             oop archived_s = StringTable::create_archived_string(s, CHECK);
@@ -809,7 +809,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
     if (MetaspaceShared::open_archive_heap_region_mapped()) {
       oop m = k->archived_java_mirror();
       assert(m != NULL, "archived mirror is NULL");
-      assert(oopDesc::is_archive_object(m), "must be archived mirror object");
+      assert(MetaspaceShared::is_archive_object(m), "must be archived mirror object");
       Handle m_h(THREAD, m);
       // restore_archived_mirror() clears the klass' _has_raw_archived_mirror flag
       restore_archived_mirror(k, m_h, Handle(), Handle(), Handle(), CHECK);
