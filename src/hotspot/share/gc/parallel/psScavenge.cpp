@@ -242,6 +242,17 @@ bool PSScavenge::invoke() {
   return full_gc_done;
 }
 
+class PSAddThreadRootsTaskClosure : public ThreadClosure {
+private:
+  GCTaskQueue* _q;
+
+public:
+  PSAddThreadRootsTaskClosure(GCTaskQueue* q) : _q(q) { }
+  void do_thread(Thread* t) {
+    _q->enqueue(new ThreadRootsTask(t));
+  }
+};
+
 // This method contains no policy. You should probably
 // be calling invoke() instead.
 bool PSScavenge::invoke_no_policy() {
@@ -382,7 +393,8 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::universe));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::jni_handles));
       // We scan the thread roots in parallel
-      Threads::create_thread_roots_tasks(q);
+      PSAddThreadRootsTaskClosure cl(q);
+      Threads::java_threads_and_vm_thread_do(&cl);
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::object_synchronizer));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::management));
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::system_dictionary));

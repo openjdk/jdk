@@ -2049,6 +2049,17 @@ GCTaskManager* const PSParallelCompact::gc_task_manager() {
   return ParallelScavengeHeap::gc_task_manager();
 }
 
+class PCAddThreadRootsMarkingTaskClosure : public ThreadClosure {
+private:
+  GCTaskQueue* _q;
+
+public:
+  PCAddThreadRootsMarkingTaskClosure(GCTaskQueue* q) : _q(q) { }
+  void do_thread(Thread* t) {
+    _q->enqueue(new ThreadRootsMarkingTask(t));
+  }
+};
+
 void PSParallelCompact::marking_phase(ParCompactionManager* cm,
                                       bool maximum_heap_compaction,
                                       ParallelOldTracer *gc_tracer) {
@@ -2077,7 +2088,8 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::universe));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::jni_handles));
     // We scan the thread roots in parallel
-    Threads::create_thread_roots_marking_tasks(q);
+    PCAddThreadRootsMarkingTaskClosure cl(q);
+    Threads::java_threads_and_vm_thread_do(&cl);
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::object_synchronizer));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::management));
     q->enqueue(new MarkFromRootsTask(MarkFromRootsTask::system_dictionary));
