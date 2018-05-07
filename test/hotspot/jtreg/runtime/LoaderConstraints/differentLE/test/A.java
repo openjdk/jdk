@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 package test;
 
-public class Task implements Runnable {
-
-    public void run() {
-        Class<?> c = Foo.class; // forces PreemptingClassLoader to load Foo
-        C x = new C(); // triggers overloading constraints
-        x.m();
-    }
+// A simple interface, to allow an unknown foreign call from a class
+// loaded with the bootstrap loader to a class loaded with Loader2.
+public interface A {
+    public D_ambgs[] gen();
 }
+

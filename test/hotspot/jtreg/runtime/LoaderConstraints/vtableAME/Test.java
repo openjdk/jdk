@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,16 @@ public class Test {
     // because the loader constraint check that would cause the LinkageError
     // should not be done.
     public static void main(String args[]) throws Exception {
-        Class<?> c = Foo.class; // forces standard class loader to load Foo
-        ClassLoader l = new PreemptingClassLoader("Task", "Foo", "I", "J");
-        l.loadClass("Foo");
-        l.loadClass("Task").newInstance();
-        Task t = new Task();
+        Class<?> c = test.Foo.class; // forces standard class loader to load Foo
+        ClassLoader l = new PreemptingClassLoader("test.Task", "test.Foo", "test.I", "test.J");
+        l.loadClass("test.Foo");
+        l.loadClass("test.Task").newInstance();
+        test.Task t = new test.Task();
         try {
             t.m(); // Should get AME
             throw new RuntimeException("Missing AbstractMethodError exception");
         } catch (AbstractMethodError e) {
-            if (!e.getMessage().contains("Method Task.m()LFoo; is abstract")) {
+            if (!e.getMessage().contains("Method test/Task.m()Ltest/Foo; is abstract")) {
                 throw new RuntimeException("Wrong AME exception thrown: " + e.getMessage());
             }
         }

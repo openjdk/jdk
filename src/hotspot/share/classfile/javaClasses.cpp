@@ -4134,6 +4134,48 @@ oop java_lang_ClassLoader::unnamedModule(oop loader) {
   return loader->obj_field(unnamedModule_offset);
 }
 
+// Caller needs ResourceMark.
+const char* java_lang_ClassLoader::describe_external(const oop loader) {
+  if (loader == NULL) {
+    return "<bootstrap>";
+  }
+
+  bool well_known_loader = SystemDictionary::is_system_class_loader(loader) ||
+                           SystemDictionary::is_platform_class_loader(loader);
+
+  const char* name = NULL;
+  oop nameOop = java_lang_ClassLoader::name(loader);
+  if (nameOop != NULL) {
+    name = java_lang_String::as_utf8_string(nameOop);
+  }
+  if (name == NULL) {
+    // Use placeholder for missing name to have fixed message format.
+    name = "<unnamed>";
+  }
+
+  stringStream ss;
+  ss.print("\"%s\" (instance of %s", name, loader->klass()->external_name());
+  if (!well_known_loader) {
+    const char* parentName = NULL;
+    oop pl = java_lang_ClassLoader::parent(loader);
+    if (pl != NULL) {
+      oop parentNameOop = java_lang_ClassLoader::name(pl);
+      if (parentNameOop != NULL) {
+        parentName = java_lang_String::as_utf8_string(parentNameOop);
+        if (parentName == NULL) {
+          parentName = "<unnamed>";
+        }
+      }
+      ss.print(", child of \"%s\" %s", parentName, pl->klass()->external_name());
+    } else {
+      ss.print(", child of <bootstrap>");
+    }
+  }
+  ss.print(")");
+
+  return ss.as_string();
+}
+
 // Support for java_lang_System
 //
 #define SYSTEM_FIELDS_DO(macro) \
