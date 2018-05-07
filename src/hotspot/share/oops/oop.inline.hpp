@@ -26,6 +26,7 @@
 #define SHARE_VM_OOPS_OOP_INLINE_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
@@ -329,8 +330,8 @@ void oopDesc::forward_to(oop p) {
          "forwarding to something not aligned");
   assert(Universe::heap()->is_in_reserved(p),
          "forwarding to something not in heap");
-  assert(!is_archive_object(oop(this)) &&
-         !is_archive_object(p),
+  assert(!MetaspaceShared::is_archive_object(oop(this)) &&
+         !MetaspaceShared::is_archive_object(p),
          "forwarding archive object");
   markOop m = markOopDesc::encode_pointer_as_mark(p);
   assert(m->decode_pointer() == p, "encoding must be reversable");
