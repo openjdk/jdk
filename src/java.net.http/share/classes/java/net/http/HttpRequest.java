@@ -598,7 +598,7 @@ public abstract class HttpRequest {
          * @param length the number of bytes to use
          * @return a BodyPublisher
          * @throws IndexOutOfBoundsException if the sub-range is defined to be
-         *                                   out-of-bounds
+         *                                   out of bounds
          */
         public static BodyPublisher ofByteArray(byte[] buf, int offset, int length) {
             Objects.checkFromIndexSize(offset, length, buf.length);
