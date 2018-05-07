@@ -435,20 +435,6 @@ public:
   // in other generations, it should call this method.
   void save_marks();
 
-  // Apply "cur->do_oop" or "older->do_oop" to all the oops in objects
-  // allocated since the last call to save_marks in generations at or above
-  // "level".  The "cur" closure is
-  // applied to references in the generation at "level", and the "older"
-  // closure to older generations.
-#define GCH_SINCE_SAVE_MARKS_ITERATE_DECL(OopClosureType, nv_suffix)    \
-  void oop_since_save_marks_iterate(GenerationType start_gen,           \
-                                    OopClosureType* cur,                \
-                                    OopClosureType* older);
-
-  ALL_SINCE_SAVE_MARKS_CLOSURES(GCH_SINCE_SAVE_MARKS_ITERATE_DECL)
-
-#undef GCH_SINCE_SAVE_MARKS_ITERATE_DECL
-
   // Returns "true" iff no allocations have occurred since the last
   // call to "save_marks".
   bool no_allocs_since_save_marks();

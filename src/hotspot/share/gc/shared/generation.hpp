@@ -442,25 +442,6 @@ class Generation: public CHeapObj<mtGC> {
   // generation since the last call to "save_marks".
   virtual bool no_allocs_since_save_marks() = 0;
 
-  // Apply "cl->apply" to (the addresses of) all reference fields in objects
-  // allocated in the current generation since the last call to "save_marks".
-  // If more objects are allocated in this generation as a result of applying
-  // the closure, iterates over reference fields in those objects as well.
-  // Calls "save_marks" at the end of the iteration.
-  // General signature...
-  virtual void oop_since_save_marks_iterate_v(OopsInGenClosure* cl) = 0;
-  // ...and specializations for de-virtualization.  (The general
-  // implementation of the _nv versions call the virtual version.
-  // Note that the _nv suffix is not really semantically necessary,
-  // but it avoids some not-so-useful warnings on Solaris.)
-#define Generation_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)             \
-  virtual void oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) {    \
-    oop_since_save_marks_iterate_v((OopsInGenClosure*)cl);                      \
-  }
-  SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(Generation_SINCE_SAVE_MARKS_DECL)
-
-#undef Generation_SINCE_SAVE_MARKS_DECL
-
   // The "requestor" generation is performing some garbage collection
   // action for which it would be useful to have scratch space.  If
   // the target is not the requestor, no gc actions will be required

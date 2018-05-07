@@ -27,7 +27,7 @@
 
 #include "gc/cms/cmsHeap.hpp"
 #include "gc/cms/cmsLockVerifier.hpp"
-#include "gc/cms/compactibleFreeListSpace.hpp"
+#include "gc/cms/compactibleFreeListSpace.inline.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/cms/parNewGeneration.hpp"
@@ -373,6 +373,14 @@ inline void ConcurrentMarkSweepGeneration::save_sweep_limit() {
 
 inline MemRegion ConcurrentMarkSweepGeneration::used_region_at_save_marks() const {
   return _cmsSpace->used_region_at_save_marks();
+}
+
+template <typename OopClosureType>
+void ConcurrentMarkSweepGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
+  cl->set_generation(this);
+  cmsSpace()->oop_since_save_marks_iterate(cl);
+  cl->reset_generation();
+  save_marks();
 }
 
 inline void MarkFromRootsClosure::do_yield_check() {

@@ -36,6 +36,7 @@
 #include "gc/cms/concurrentMarkSweepGeneration.inline.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/cms/parNewGeneration.hpp"
+#include "gc/cms/promotionInfo.inline.hpp"
 #include "gc/cms/vmCMSOperations.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
@@ -1099,7 +1100,7 @@ ConcurrentMarkSweepGeneration::
 par_oop_since_save_marks_iterate_done(int thread_num) {
   CMSParGCThreadState* ps = _par_gc_thread_states[thread_num];
   ParScanWithoutBarrierClosure* dummy_cl = NULL;
-  ps->promo.promoted_oops_iterate_nv(dummy_cl);
+  ps->promo.promoted_oops_iterate(dummy_cl);
 
   // Because card-scanning has been completed, subsequent phases
   // (e.g., reference processing) will not need to recognize which
@@ -2460,18 +2461,6 @@ void ConcurrentMarkSweepGeneration::save_marks() {
 bool ConcurrentMarkSweepGeneration::no_allocs_since_save_marks() {
   return cmsSpace()->no_allocs_since_save_marks();
 }
-
-#define CMS_SINCE_SAVE_MARKS_DEFN(OopClosureType, nv_suffix)    \
-                                                                \
-void ConcurrentMarkSweepGeneration::                            \
-oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) {   \
-  cl->set_generation(this);                                     \
-  cmsSpace()->oop_since_save_marks_iterate##nv_suffix(cl);      \
-  cl->reset_generation();                                       \
-  save_marks();                                                 \
-}
-
-ALL_SINCE_SAVE_MARKS_CLOSURES(CMS_SINCE_SAVE_MARKS_DEFN)
 
 void
 ConcurrentMarkSweepGeneration::oop_iterate(ExtendedOopClosure* cl) {

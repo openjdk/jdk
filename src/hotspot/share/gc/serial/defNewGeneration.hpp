@@ -280,12 +280,8 @@ protected:
   // Need to declare the full complement of closures, whether we'll
   // override them or not, or get message from the compiler:
   //   oop_since_save_marks_iterate_nv hides virtual function...
-#define DefNew_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix) \
-  void oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl);
-
-  ALL_SINCE_SAVE_MARKS_CLOSURES(DefNew_SINCE_SAVE_MARKS_DECL)
-
-#undef DefNew_SINCE_SAVE_MARKS_DECL
+  template <typename OopClosureType>
+  void oop_since_save_marks_iterate(OopClosureType* cl);
 
   // For non-youngest collection, the DefNewGeneration can contribute
   // "to-space".

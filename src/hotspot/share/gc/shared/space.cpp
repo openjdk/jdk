@@ -550,32 +550,6 @@ ContiguousSpace::object_iterate_careful(ObjectClosureCareful* blk) {
   return NULL; // all done
 }
 
-#define ContigSpace_OOP_SINCE_SAVE_MARKS_DEFN(OopClosureType, nv_suffix)  \
-                                                                          \
-void ContiguousSpace::                                                    \
-oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk) {            \
-  HeapWord* t;                                                            \
-  HeapWord* p = saved_mark_word();                                        \
-  assert(p != NULL, "expected saved mark");                               \
-                                                                          \
-  const intx interval = PrefetchScanIntervalInBytes;                      \
-  do {                                                                    \
-    t = top();                                                            \
-    while (p < t) {                                                       \
-      Prefetch::write(p, interval);                                       \
-      debug_only(HeapWord* prev = p);                                     \
-      oop m = oop(p);                                                     \
-      p += m->oop_iterate_size(blk);                                      \
-    }                                                                     \
-  } while (t < top());                                                    \
-                                                                          \
-  set_saved_mark_word(p);                                                 \
-}
-
-ALL_SINCE_SAVE_MARKS_CLOSURES(ContigSpace_OOP_SINCE_SAVE_MARKS_DEFN)
-
-#undef ContigSpace_OOP_SINCE_SAVE_MARKS_DEFN
-
 // Very general, slow implementation.
 HeapWord* ContiguousSpace::block_start_const(const void* p) const {
   assert(MemRegion(bottom(), end()).contains(p),
