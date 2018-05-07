@@ -87,7 +87,6 @@ class MarkSweep : AllStatic {
   friend class AdjustPointerClosure;
   friend class KeepAliveClosure;
   friend class VM_MarkSweep;
-  friend void marksweep_init();
 
   //
   // Vars
@@ -117,6 +116,8 @@ class MarkSweep : AllStatic {
   static KeepAliveClosure keep_alive;
 
  public:
+  static void initialize();
+
   // Public closures
   static IsAliveClosure       is_alive;
   static FollowRootClosure    follow_root_closure;
