@@ -1037,7 +1037,7 @@ bool followed_by_acquire(const Node *load) {
   // So first get the Proj node, mem_proj, to use it to iterate forward.
   Node *mem_proj = NULL;
   for (DUIterator_Fast imax, i = mba->fast_outs(imax); i < imax; i++) {
-    mem_proj = mba->fast_out(i);      // Throw out-of-bounds if proj not found
+    mem_proj = mba->fast_out(i);      // Runs out of bounds and asserts if Proj not found.
     assert(mem_proj->is_Proj(), "only projections here");
     ProjNode *proj = mem_proj->as_Proj();
     if (proj->_con == TypeFunc::Memory &&

@@ -185,13 +185,13 @@ public class Preconditions {
         // Switch to default if fewer or more arguments than required are supplied
         switch ((args.size() != argSize) ? "" : checkKind) {
             case "checkIndex":
-                return String.format("Index %d out-of-bounds for length %d",
+                return String.format("Index %d out of bounds for length %d",
                                      args.get(0), args.get(1));
             case "checkFromToIndex":
-                return String.format("Range [%d, %d) out-of-bounds for length %d",
+                return String.format("Range [%d, %d) out of bounds for length %d",
                                      args.get(0), args.get(1), args.get(2));
             case "checkFromIndexSize":
-                return String.format("Range [%d, %<d + %d) out-of-bounds for length %d",
+                return String.format("Range [%d, %<d + %d) out of bounds for length %d",
                                      args.get(0), args.get(1), args.get(2));
             default:
                 return String.format("Range check failed: %s %s", checkKind, args);
@@ -202,7 +202,7 @@ public class Preconditions {
      * Checks if the {@code index} is within the bounds of the range from
      * {@code 0} (inclusive) to {@code length} (exclusive).
      *
-     * <p>The {@code index} is defined to be out-of-bounds if any of the
+     * <p>The {@code index} is defined to be out of bounds if any of the
      * following inequalities is true:
      * <ul>
      *  <li>{@code index < 0}</li>
@@ -210,14 +210,14 @@ public class Preconditions {
      *  <li>{@code length < 0}, which is implied from the former inequalities</li>
      * </ul>
      *
-     * <p>If the {@code index} is out-of-bounds, then a runtime exception is
+     * <p>If the {@code index} is out of bounds, then a runtime exception is
      * thrown that is the result of applying the following arguments to the
      * exception formatter: the name of this method, {@code checkIndex};
      * and an unmodifiable list integers whose values are, in order, the
      * out-of-bounds arguments {@code index} and {@code length}.
      *
      * @param <X> the type of runtime exception to throw if the arguments are
-     *        out-of-bounds
+     *        out of bounds
      * @param index the index
      * @param length the upper-bound (exclusive) of the range
      * @param oobef the exception formatter that when applied with this
@@ -228,9 +228,9 @@ public class Preconditions {
      *        instead (though it may be more efficient).
      *        Exceptions thrown by the formatter are relayed to the caller.
      * @return {@code index} if it is within bounds of the range
-     * @throws X if the {@code index} is out-of-bounds and the exception
+     * @throws X if the {@code index} is out of bounds and the exception
      *         formatter is non-{@code null}
-     * @throws IndexOutOfBoundsException if the {@code index} is out-of-bounds
+     * @throws IndexOutOfBoundsException if the {@code index} is out of bounds
      *         and the exception formatter is {@code null}
      * @since 9
      *
@@ -254,7 +254,7 @@ public class Preconditions {
      * {@code toIndex} (exclusive) is within the bounds of range from {@code 0}
      * (inclusive) to {@code length} (exclusive).
      *
-     * <p>The sub-range is defined to be out-of-bounds if any of the following
+     * <p>The sub-range is defined to be out of bounds if any of the following
      * inequalities is true:
      * <ul>
      *  <li>{@code fromIndex < 0}</li>
@@ -263,14 +263,14 @@ public class Preconditions {
      *  <li>{@code length < 0}, which is implied from the former inequalities</li>
      * </ul>
      *
-     * <p>If the sub-range  is out-of-bounds, then a runtime exception is
+     * <p>If the sub-range is out of bounds, then a runtime exception is
      * thrown that is the result of applying the following arguments to the
      * exception formatter: the name of this method, {@code checkFromToIndex};
      * and an unmodifiable list integers whose values are, in order, the
      * out-of-bounds arguments {@code fromIndex}, {@code toIndex}, and {@code length}.
      *
      * @param <X> the type of runtime exception to throw if the arguments are
-     *        out-of-bounds
+     *        out of bounds
      * @param fromIndex the lower-bound (inclusive) of the sub-range
      * @param toIndex the upper-bound (exclusive) of the sub-range
      * @param length the upper-bound (exclusive) the range
@@ -282,9 +282,9 @@ public class Preconditions {
      *        instead (though it may be more efficient).
      *        Exceptions thrown by the formatter are relayed to the caller.
      * @return {@code fromIndex} if the sub-range within bounds of the range
-     * @throws X if the sub-range is out-of-bounds and the exception factory
+     * @throws X if the sub-range is out of bounds and the exception factory
      *         function is non-{@code null}
-     * @throws IndexOutOfBoundsException if the sub-range is out-of-bounds and
+     * @throws IndexOutOfBoundsException if the sub-range is out of bounds and
      *         the exception factory function is {@code null}
      * @since 9
      */
@@ -301,7 +301,7 @@ public class Preconditions {
      * {@code fromIndex + size} (exclusive) is within the bounds of range from
      * {@code 0} (inclusive) to {@code length} (exclusive).
      *
-     * <p>The sub-range is defined to be out-of-bounds if any of the following
+     * <p>The sub-range is defined to be out of bounds if any of the following
      * inequalities is true:
      * <ul>
      *  <li>{@code fromIndex < 0}</li>
@@ -310,7 +310,7 @@ public class Preconditions {
      *  <li>{@code length < 0}, which is implied from the former inequalities</li>
      * </ul>
      *
-     * <p>If the sub-range  is out-of-bounds, then a runtime exception is
+     * <p>If the sub-range is out of bounds, then a runtime exception is
      * thrown that is the result of applying the following arguments to the
      * exception formatter: the name of this method, {@code checkFromIndexSize};
      * and an unmodifiable list integers whose values are, in order, the
@@ -318,7 +318,7 @@ public class Preconditions {
      * {@code length}.
      *
      * @param <X> the type of runtime exception to throw if the arguments are
-     *        out-of-bounds
+     *        out of bounds
      * @param fromIndex the lower-bound (inclusive) of the sub-interval
      * @param size the size of the sub-range
      * @param length the upper-bound (exclusive) of the range
@@ -330,9 +330,9 @@ public class Preconditions {
      *        instead (though it may be more efficient).
      *        Exceptions thrown by the formatter are relayed to the caller.
      * @return {@code fromIndex} if the sub-range within bounds of the range
-     * @throws X if the sub-range is out-of-bounds and the exception factory
+     * @throws X if the sub-range is out of bounds and the exception factory
      *         function is non-{@code null}
-     * @throws IndexOutOfBoundsException if the sub-range is out-of-bounds and
+     * @throws IndexOutOfBoundsException if the sub-range is out of bounds and
      *         the exception factory function is {@code null}
      * @since 9
      */

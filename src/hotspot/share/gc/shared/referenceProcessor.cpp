@@ -790,7 +790,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       id = next_id();
     }
   }
-  assert(id < _max_num_queues, "Id is out-of-bounds id %u and max id %u)", id, _max_num_queues);
+  assert(id < _max_num_queues, "Id is out of bounds id %u and max id %u)", id, _max_num_queues);
 
   // Get the discovered queue to which we will add
   DiscoveredList* list = NULL;
