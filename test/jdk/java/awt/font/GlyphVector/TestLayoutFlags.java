@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,18 @@
 
 
 /* @test
-   @bug 4328745 5090704 8166111
+   @bug 4328745 5090704 8166111 8176510
    @summary exercise getLayoutFlags, getGlyphCharIndex, getGlyphCharIndices
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.font.*;
-import java.awt.geom.*;
+import java.awt.Font;
+import static java.awt.Font.*;
+import java.awt.GraphicsEnvironment;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
+import static java.awt.font.GlyphVector.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 
 public class TestLayoutFlags {
 
@@ -40,17 +44,18 @@ public class TestLayoutFlags {
 
     void runTest() {
 
-        Font font = new Font("Lucida Sans", Font.PLAIN, 24);
+        Font font = findFont("abcde");
 
         String latin1 = "This is a latin1 string"; // none
         String hebrew = "\u05d0\u05d1\u05d2\u05d3"; // rtl
         String arabic = "\u0646\u0644\u0622\u0646"; // rtl + mc/g
         String hindi = "\u0939\u093f\u0923\u094d\u0921\u0940"; // ltr + reorder
-        //      String tamil = "\u0b9c\u0bcb"; // ltr + mg/c + split
+        String tamil = "\u0b9c\u0bcb"; // ltr + mg/c + split
 
         FontRenderContext frc = new FontRenderContext(null, true, true);
 
-        // get glyph char indices needs to initializes layoutFlags before use (5090704)
+        // get glyph char indices needs to initializes layoutFlags before
+        // use (5090704)
         {
           GlyphVector gv = font.createGlyphVector(frc, "abcde");
           int ix = gv.getGlyphCharIndex(0);
@@ -65,11 +70,11 @@ public class TestLayoutFlags {
           }
         }
 
-        GlyphVector latinGV = makeGlyphVector("Lucida Sans", frc, latin1, false, 1 /* ScriptRun.LATIN */);
-        GlyphVector hebrewGV = makeGlyphVector("Lucida Sans", frc, hebrew, true, 5 /* ScriptRun.HEBREW */);
-        GlyphVector arabicGV = makeGlyphVector("Lucida Sans", frc, arabic, true, 6 /* ScriptRun.ARABIC */);
-        GlyphVector hindiGV = makeGlyphVector("Lucida Sans", frc, hindi, false, 7 /* ScriptRun.DEVANAGARI */);
-        //      GlyphVector tamilGV = makeGlyphVector("Devanagari MT for IBM", frc, tamil, false, 12 /* ScriptRun.TAMIL */);
+        GlyphVector latinGV = makeGlyphVector("latin", latin1, false, frc);
+        GlyphVector hebrewGV = makeGlyphVector("hebrew", hebrew, true, frc);
+        GlyphVector arabicGV = makeGlyphVector("arabic", arabic, true, frc);
+        GlyphVector hindiGV = makeGlyphVector("devanagari", hindi, false, frc);
+        GlyphVector tamilGV = makeGlyphVector("tamil", tamil, false, frc);
 
         GlyphVector latinPos = font.createGlyphVector(frc, latin1);
         Point2D pt = latinPos.getGlyphPosition(0);
@@ -79,77 +84,136 @@ public class TestLayoutFlags {
         GlyphVector latinTrans = font.createGlyphVector(frc, latin1);
         latinTrans.setGlyphTransform(0, AffineTransform.getRotateInstance(.15));
 
-        test("latin", latinGV, GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS);
-        test("hebrew", hebrewGV, GlyphVector.FLAG_RUN_RTL |
-             GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS);
-        test("arabic", arabicGV, GlyphVector.FLAG_COMPLEX_GLYPHS |
-             GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS);
-        test("hindi", hindiGV, GlyphVector.FLAG_COMPLEX_GLYPHS |
-             GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS);
-        //      test("tamil", tamilGV, GlyphVector.FLAG_COMPLEX_GLYPHS);
-        test("pos", latinPos, GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS);
-        test("trans", latinTrans, GlyphVector.FLAG_HAS_TRANSFORMS);
+        test("latin", latinGV, true, 0);
+        test("hebrew", hebrewGV, true,  FLAG_RUN_RTL);
+        test("arabic", arabicGV, true, FLAG_COMPLEX_GLYPHS | FLAG_RUN_RTL);
+        test("hindi", hindiGV, true, FLAG_COMPLEX_GLYPHS);
+        test("tamil", tamilGV, true, FLAG_COMPLEX_GLYPHS);
+        test("pos", latinPos, true, 0);
+        test("trans", latinTrans, false, 0);
     }
 
-    GlyphVector makeGlyphVector(String fontname, FontRenderContext frc, String text, boolean rtl, int script) {
-        Font font = new Font(fontname, Font.PLAIN, 14);
-        System.out.println("asking for " + fontname + " and got " + font.getFontName());
-        int flags = rtl ? 1 : 0;
-        return font.layoutGlyphVector(frc, text.toCharArray(), 0, text.length(), flags);
+    static boolean isLogicalFont(Font f) {
+        String family = f.getFamily().toLowerCase();
+        switch (family) {
+          case "dialog":
+          case "dialoginput":
+          case "serif":
+          case "sansserif":
+          case "monospaced": return true;
+          default: return false;
+        }
     }
 
-    void test(String name, GlyphVector gv, int expectedFlags) {
-        expectedFlags &= gv.FLAG_MASK;
-        int computedFlags = computeFlags(gv) & gv.FLAG_MASK;
+    Font[] allFonts = null;
+
+    Font findFont(String text) {
+        if (allFonts == null) {
+            allFonts =
+                GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
+        }
+        for (Font f : allFonts) {
+            if (isLogicalFont(f)) {
+                continue;
+            }
+            if (f.canDisplayUpTo(text) == -1) {
+                 return f.deriveFont(Font.PLAIN, 24);
+            }
+        }
+        return null;
+    }
+
+    GlyphVector makeGlyphVector(String script, String text,
+                                boolean rtl, FontRenderContext frc) {
+
+        Font font = findFont(text);
+        if (font == null) {
+            System.out.println("No font found for script " + script);
+            return null;
+        } else {
+            System.out.println("Using " + font.getFontName() +
+                               " for script " + script);
+        }
+        int flags = rtl ? LAYOUT_RIGHT_TO_LEFT : LAYOUT_LEFT_TO_RIGHT;
+        return font.layoutGlyphVector(frc, text.toCharArray(),
+                                      0, text.length(), flags);
+    }
+
+    void test(String name, GlyphVector gv, boolean layout, int allowedFlags) {
+
+        int iv = (layout) ? FLAG_HAS_POSITION_ADJUSTMENTS : 0;
+
+        int computedFlags = computeFlags(gv, iv) & gv.FLAG_MASK;
         int actualFlags = gv.getLayoutFlags() & gv.FLAG_MASK;
 
         System.out.println("\n*** " + name + " ***");
         System.out.println(" test flags");
-        System.out.print("expected ");
-        printFlags(expectedFlags);
         System.out.print("computed ");
         printFlags(computedFlags);
         System.out.print("  actual ");
         printFlags(actualFlags);
+        System.out.print("allowed layout ");
+        printFlags(allowedFlags);
 
-        if (expectedFlags != actualFlags) {
-            throw new Error("layout flags in test: " + name +
-                            " expected: " + Integer.toHexString(expectedFlags) +
-                            " but got: " + Integer.toHexString(actualFlags));
+        if (computedFlags != actualFlags) {
+            // Depending on the font, if layout is run for a RTL script
+            // you might get that flag set, or COMPLEX_GLYPHS instead.
+            boolean error = false;
+            int COMPLEX_RTL = FLAG_COMPLEX_GLYPHS | FLAG_RUN_RTL;
+            if (allowedFlags == 0) {
+                error = (allowedFlags & COMPLEX_RTL) != 0;
+            }
+            if (allowedFlags == FLAG_RUN_RTL) {
+               error = (actualFlags & FLAG_COMPLEX_GLYPHS) != 0;
+            }
+            if (allowedFlags == FLAG_COMPLEX_GLYPHS) {
+               error = (actualFlags & FLAG_RUN_RTL) != 0;
+            }
+            if (allowedFlags == COMPLEX_RTL) {
+               error = (actualFlags & COMPLEX_RTL) == 0;
+            }
+            if (error) {
+                throw new Error("layout flags in test: " + name +
+                     " expected: " + Integer.toHexString(computedFlags) +
+                     " but got: " + Integer.toHexString(actualFlags));
+            }
         }
     }
 
     static public void printFlags(int flags) {
         System.out.print("flags:");
-        if ((flags & GlyphVector.FLAG_HAS_POSITION_ADJUSTMENTS) != 0) {
+        if ((flags & FLAG_HAS_POSITION_ADJUSTMENTS) != 0) {
             System.out.print(" pos");
         }
-        if ((flags & GlyphVector.FLAG_HAS_TRANSFORMS) != 0) {
+        if ((flags & FLAG_HAS_TRANSFORMS) != 0) {
             System.out.print(" trans");
         }
-        if ((flags & GlyphVector.FLAG_RUN_RTL) != 0) {
+        if ((flags & FLAG_RUN_RTL) != 0) {
             System.out.print(" rtl");
         }
-        if ((flags & GlyphVector.FLAG_COMPLEX_GLYPHS) != 0) {
+        if ((flags & FLAG_COMPLEX_GLYPHS) != 0) {
             System.out.print(" complex");
         }
-        if ((flags & GlyphVector.FLAG_MASK) == 0) {
+        if ((flags & FLAG_MASK) == 0) {
             System.out.print(" none");
         }
         System.out.println();
     }
 
-    int computeFlags(GlyphVector gv) {
+    int computeFlags(GlyphVector gv, int initValue) {
         validateCharIndexMethods(gv);
 
-        int result = 0;
+        int result = initValue;
         if (glyphsAreRTL(gv)) {
-            result |= GlyphVector.FLAG_RUN_RTL;
+            result |= FLAG_RUN_RTL;
         }
         if (hasComplexGlyphs(gv)) {
-            result |= GlyphVector.FLAG_COMPLEX_GLYPHS;
+            result |= FLAG_COMPLEX_GLYPHS;
         }
 
+        if (gv.getFont().isTransformed()) {
+            result |= FLAG_HAS_TRANSFORMS;
+        }
         return result;
     }
 
@@ -200,10 +264,3 @@ public class TestLayoutFlags {
         return !glyphsAreLTR(gv) && !glyphsAreRTL(gv);
     }
 }
-
-/*
-rect getPixelBounds(frc, x, y)
-rect getGlyphPixelBounds(frc, int, x, y)
-getGlyphOutline(int index, x, y)
-getGlyphInfo()
-*/
