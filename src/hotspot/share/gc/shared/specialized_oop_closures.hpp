@@ -80,15 +80,4 @@ class OopsInGenClosure;
 #define ALL_OOP_OOP_ITERATE_CLOSURES_2(f)                         \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)
 
-// This macro applies an argument macro to all OopClosures for which we
-// want specialized bodies of a family of methods related to
-// "par_oop_iterate".  The arguments to f are the same as above.
-// The "root_class" is the most general class to define; this may be
-// "OopClosure" in some applications and "OopsInGenClosure" in others.
-
-
-#define ALL_PAR_OOP_ITERATE_CLOSURES(f)                           \
-  f(ExtendedOopClosure,_v)                                        \
-  CMSGC_ONLY(SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f))
-
 #endif // SHARE_VM_GC_SHARED_SPECIALIZED_OOP_CLOSURES_HPP

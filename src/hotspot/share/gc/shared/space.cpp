@@ -490,23 +490,6 @@ bool Space::obj_is_alive(const HeapWord* p) const {
   return true;
 }
 
-#if INCLUDE_CMSGC
-#define ContigSpace_PAR_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)         \
-                                                                            \
-  void ContiguousSpace::par_oop_iterate(MemRegion mr, OopClosureType* blk) {\
-    HeapWord* obj_addr = mr.start();                                        \
-    HeapWord* t = mr.end();                                                 \
-    while (obj_addr < t) {                                                  \
-      assert(oopDesc::is_oop(oop(obj_addr)), "Should be an oop");           \
-      obj_addr += oop(obj_addr)->oop_iterate_size(blk);                     \
-    }                                                                       \
-  }
-
-  ALL_PAR_OOP_ITERATE_CLOSURES(ContigSpace_PAR_OOP_ITERATE_DEFN)
-
-#undef ContigSpace_PAR_OOP_ITERATE_DEFN
-#endif // INCLUDE_CMSGC
-
 void ContiguousSpace::oop_iterate(ExtendedOopClosure* blk) {
   if (is_empty()) return;
   HeapWord* obj_addr = bottom();
