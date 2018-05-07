@@ -60,6 +60,12 @@ public class SpecialInterfaceCall {
             // to Object.toString
             String s = (String) mh_I1_toString_from_I2.invokeExact(i);
         }
+        // special case of invoking a final Object method via an interface
+        static void invokeSpecialObjectFinalMH(I2 i) throws Throwable {
+            // emulates invokespecial of I1.getClass on i, which resolves
+            // to Object.getClass
+            Class<?> c = (Class<?>) mh_I1_getClass_from_I2.invokeExact(i);
+        }
     }
     interface I3 extends I2 {
         // Must take an I3 here rather than I2 else we get
@@ -70,11 +76,16 @@ public class SpecialInterfaceCall {
             mh_I2_pub_m_from_I3.invokeExact(i);
         }
     }
-    // This interface acts like I2 but we define a directInvoke method
+    // This interface acts like I2 but we define directInvoke* methods
     // that we will rewrite the bytecode of to use invokespecial
     // (see SpecialInterfaceCallI4.jasm).
     interface I4 extends I1 {
         static void invokeDirect(I4 i) {
+            // invokeSpecial Object.toString()
+            throw new Error("Class file for I4 is not overwritten");
+        }
+        static void invokeDirectFinal(I4 i) {
+            // invokeSpecial Object.getClass() - final method
             throw new Error("Class file for I4 is not overwritten");
         }
     }
@@ -101,6 +112,10 @@ public class SpecialInterfaceCall {
 
     // This MH acts likes an invokespecial of I1.toString from I2
     static final MethodHandle mh_I1_toString_from_I2;
+
+    // This MH acts likes an invokespecial of I1.getClass from I2
+    static final MethodHandle mh_I1_getClass_from_I2;
+
     static {
         try {
             MethodType mt = MethodType.methodType(void.class);
@@ -112,6 +127,9 @@ public class SpecialInterfaceCall {
             mt = MethodType.methodType(String.class);
             mh_I1_toString_from_I2 = lookup.findSpecial(I1.class, "toString", mt, I2.class);
 
+            mt = MethodType.methodType(Class.class);
+            mh_I1_getClass_from_I2 = lookup.findSpecial(I1.class, "getClass", mt, I2.class);
+
         } catch (Throwable e) {
             throw new Error(e);
         }
@@ -122,10 +140,15 @@ public class SpecialInterfaceCall {
         shouldNotThrow(() -> I2.invokeDirect(new C3()));
         shouldNotThrow(() -> I2.invokeSpecialMH(new C2()));
         shouldNotThrow(() -> I2.invokeSpecialMH(new C3()));
+        shouldNotThrow(() -> I2.invokeSpecialObjectMH(new C2()));
+        shouldNotThrow(() -> I2.invokeSpecialObjectMH(new C3()));
+        shouldNotThrow(() -> I2.invokeSpecialObjectFinalMH(new C2()));
+        shouldNotThrow(() -> I2.invokeSpecialObjectFinalMH(new C3()));
 
         shouldNotThrow(() -> I3.invokeSpecialMH(new C3()));
 
         shouldNotThrow(() -> I4.invokeDirect(new C4()));
+        shouldNotThrow(() -> I4.invokeDirectFinal(new C4()));
     }
 
     static void runNegativeTests() {
@@ -145,8 +168,12 @@ public class SpecialInterfaceCall {
         shouldThrowICCE(() -> I3.invokeSpecialMH(unsafeCastI3(new C2())));
         System.out.println("ICCE I4.invokeDirect C1");
         shouldThrowIAE(() -> I4.invokeDirect(unsafeCastI4(new C1())));
+        System.out.println("ICCE I4.invokeDirectFinal C1");
+        shouldThrowIAE(() -> I4.invokeDirectFinal(unsafeCastI4(new C1())));
         System.out.println("ICCE I2.invokeObjectMH C1");
         shouldThrowICCE(() -> I2.invokeSpecialObjectMH(unsafeCastI2(new C1())));
+        System.out.println("ICCE I2.invokeObjectFinalMH C1");
+        shouldThrowICCE(() -> I2.invokeSpecialObjectFinalMH(unsafeCastI2(new C1())));
 
     }
 

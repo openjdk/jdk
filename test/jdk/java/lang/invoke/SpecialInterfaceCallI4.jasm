@@ -35,6 +35,14 @@ interface SpecialInterfaceCall$I4 implements SpecialInterfaceCall$I1
         return;
     }
 
+    public static Method invokeDirectFinal:"(LSpecialInterfaceCall$I4;)V"
+      stack 1 locals 2
+    {
+        aload_0;
+        invokespecial Method java/lang/Object.getClass:"()Ljava/lang/Class;";
+        astore_1;
+        return;
+    }
     static abstract interface InnerClass I4=class SpecialInterfaceCall$I4 of class SpecialInterfaceCall;
     static abstract interface InnerClass I1=class SpecialInterfaceCall$I1 of class SpecialInterfaceCall;
 
