@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,7 @@ struct Atomic::PlatformAdd
   : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
 {
   template<typename I, typename D>
-  D add_and_fetch(I add_value, D volatile* dest) const {
+  D add_and_fetch(I add_value, D volatile* dest, atomic_memory_order order) const {
     return __sync_add_and_fetch(dest, add_value);
   }
 };
@@ -47,7 +47,8 @@ struct Atomic::PlatformAdd
 template<size_t byte_size>
 template<typename T>
 inline T Atomic::PlatformXchg<byte_size>::operator()(T exchange_value,
-                                                     T volatile* dest) const {
+                                                     T volatile* dest,
+                                                     atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
   T res = __sync_lock_test_and_set(dest, exchange_value);
   FULL_MEM_BARRIER;
@@ -59,7 +60,7 @@ template<typename T>
 inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T exchange_value,
                                                         T volatile* dest,
                                                         T compare_value,
-                                                        cmpxchg_memory_order order) const {
+                                                        atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
   if (order == memory_order_relaxed) {
     T value = compare_value;

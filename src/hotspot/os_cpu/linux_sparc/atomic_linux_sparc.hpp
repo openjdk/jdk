@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,13 @@ struct Atomic::PlatformAdd
   : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
 {
   template<typename I, typename D>
-  D add_and_fetch(I add_value, D volatile* dest) const;
+  D add_and_fetch(I add_value, D volatile* dest, atomic_memory_order order) const;
 };
 
 template<>
 template<typename I, typename D>
-inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) const {
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest,
+                                               atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
 
@@ -59,7 +60,8 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I add_value, D volatile* dest) co
 
 template<>
 template<typename I, typename D>
-inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) const {
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest,
+                                               atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
 
@@ -82,7 +84,8 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I add_value, D volatile* dest) co
 template<>
 template<typename T>
 inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
-                                             T volatile* dest) const {
+                                             T volatile* dest,
+                                             atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   T rv = exchange_value;
   __asm__ volatile(
@@ -96,7 +99,8 @@ inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
 template<>
 template<typename T>
 inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
-                                             T volatile* dest) const {
+                                             T volatile* dest,
+                                             atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   T rv = exchange_value;
   __asm__ volatile(
@@ -123,7 +127,7 @@ template<typename T>
 inline T Atomic::PlatformCmpxchg<4>::operator()(T exchange_value,
                                                 T volatile* dest,
                                                 T compare_value,
-                                                cmpxchg_memory_order order) const {
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
   T rv;
   __asm__ volatile(
@@ -139,7 +143,7 @@ template<typename T>
 inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
                                                 T volatile* dest,
                                                 T compare_value,
-                                                cmpxchg_memory_order order) const {
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
   T rv;
   __asm__ volatile(
