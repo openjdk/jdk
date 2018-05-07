@@ -100,7 +100,7 @@ void CMSHeap::initialize_serviceability() {
   _young_manager = new GCMemoryManager("ParNew", "end of minor GC");
   _old_manager = new GCMemoryManager("ConcurrentMarkSweep", "end of major GC");
 
-  ParNewGeneration* young = (ParNewGeneration*) young_gen();
+  ParNewGeneration* young = young_gen();
   _eden_pool = new ContiguousSpacePool(young->eden(),
                                        "Par Eden Space",
                                        young->max_eden_size(),
@@ -128,18 +128,11 @@ void CMSHeap::initialize_serviceability() {
 
 }
 
-void CMSHeap::check_gen_kinds() {
-  assert(young_gen()->kind() == Generation::ParNew,
-         "Wrong youngest generation type");
-  assert(old_gen()->kind() == Generation::ConcurrentMarkSweep,
-         "Wrong generation kind");
-}
-
 CMSHeap* CMSHeap::heap() {
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "Uninitialized access to CMSHeap::heap()");
   assert(heap->kind() == CollectedHeap::CMS, "Invalid name");
-  return (CMSHeap*) heap;
+  return static_cast<CMSHeap*>(heap);
 }
 
 void CMSHeap::gc_threads_do(ThreadClosure* tc) const {

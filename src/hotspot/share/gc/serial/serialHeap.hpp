@@ -25,12 +25,15 @@
 #ifndef SHARE_VM_GC_SERIAL_SERIALHEAP_HPP
 #define SHARE_VM_GC_SERIAL_SERIALHEAP_HPP
 
+#include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "utilities/growableArray.hpp"
 
 class GenCollectorPolicy;
 class GCMemoryManager;
 class MemoryPool;
+class TenuredGeneration;
 
 class SerialHeap : public GenCollectedHeap {
 private:
@@ -40,10 +43,9 @@ private:
 
   virtual void initialize_serviceability();
 
-protected:
-  virtual void check_gen_kinds();
-
 public:
+  static SerialHeap* heap();
+
   SerialHeap(GenCollectorPolicy* policy);
 
   virtual Name kind() const {
@@ -60,6 +62,16 @@ public:
   // override
   virtual bool is_in_closed_subset(const void* p) const {
     return is_in(p);
+  }
+
+  DefNewGeneration* young_gen() const {
+    assert(_young_gen->kind() == Generation::DefNew, "Wrong generation type");
+    return static_cast<DefNewGeneration*>(_young_gen);
+  }
+
+  TenuredGeneration* old_gen() const {
+    assert(_old_gen->kind() == Generation::MarkSweepCompact, "Wrong generation type");
+    return static_cast<TenuredGeneration*>(_old_gen);
   }
 };
 

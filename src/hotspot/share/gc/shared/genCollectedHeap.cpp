@@ -176,7 +176,7 @@ char* GenCollectedHeap::allocate(size_t alignment,
 void GenCollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
-  check_gen_kinds();
+
   DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
 
   initialize_size_policy(def_new_gen->eden()->capacity(),
@@ -249,7 +249,7 @@ unsigned int GenCollectedHeap::update_full_collections_completed(unsigned int co
 //   was a full collection because a partial collection (would
 //   have) failed and is likely to fail again
 bool GenCollectedHeap::should_try_older_generation_allocation(size_t word_size) const {
-  size_t young_capacity = young_gen()->capacity_before_gc();
+  size_t young_capacity = _young_gen->capacity_before_gc();
   return    (word_size > heap_word_size(young_capacity))
          || GCLocker::is_active_and_needs_gc()
          || incremental_collection_failed();
@@ -257,12 +257,12 @@ bool GenCollectedHeap::should_try_older_generation_allocation(size_t word_size) 
 
 HeapWord* GenCollectedHeap::expand_heap_and_allocate(size_t size, bool   is_tlab) {
   HeapWord* result = NULL;
-  if (old_gen()->should_allocate(size, is_tlab)) {
-    result = old_gen()->expand_and_allocate(size, is_tlab);
+  if (_old_gen->should_allocate(size, is_tlab)) {
+    result = _old_gen->expand_and_allocate(size, is_tlab);
   }
   if (result == NULL) {
-    if (young_gen()->should_allocate(size, is_tlab)) {
-      result = young_gen()->expand_and_allocate(size, is_tlab);
+    if (_young_gen->should_allocate(size, is_tlab)) {
+      result = _young_gen->expand_and_allocate(size, is_tlab);
     }
   }
   assert(result == NULL || is_in_reserved(result), "result not in heap");
@@ -287,7 +287,7 @@ HeapWord* GenCollectedHeap::mem_allocate_work(size_t size,
     HandleMark hm; // Discard any handles allocated in each iteration.
 
     // First allocation attempt is lock-free.
-    Generation *young = young_gen();
+    Generation *young = _young_gen;
     assert(young->supports_inline_contig_alloc(),
       "Otherwise, must do alloc within heap lock");
     if (young->should_allocate(size, is_tlab)) {
