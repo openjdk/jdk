@@ -63,10 +63,11 @@ public:
     OldGen
   };
 
-private:
+protected:
   Generation* _young_gen;
   Generation* _old_gen;
 
+private:
   GenerationSpec* _young_gen_spec;
   GenerationSpec* _old_gen_spec;
 
@@ -160,8 +161,6 @@ protected:
                    Generation::Name young,
                    Generation::Name old,
                    const char* policy_counters_name);
-
-  virtual void check_gen_kinds() = 0;
 
 public:
 

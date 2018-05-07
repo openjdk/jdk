@@ -39,6 +39,7 @@ class ScanClosure;
 class STWGCTimer;
 class CSpaceCounters;
 class ScanWeakRefClosure;
+class SerialHeap;
 
 // DefNewGeneration is a young generation containing eden, from- and
 // to-space.
@@ -179,12 +180,11 @@ protected:
   };
 
   class FastEvacuateFollowersClosure: public VoidClosure {
-    GenCollectedHeap* _gch;
-    DefNewGeneration* _young_gen;
+    SerialHeap* _heap;
     FastScanClosure* _scan_cur_or_nonheap;
     FastScanClosure* _scan_older;
   public:
-    FastEvacuateFollowersClosure(GenCollectedHeap* gch,
+    FastEvacuateFollowersClosure(SerialHeap* heap,
                                  FastScanClosure* cur,
                                  FastScanClosure* older);
     void do_void();

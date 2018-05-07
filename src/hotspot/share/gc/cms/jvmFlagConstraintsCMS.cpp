@@ -126,7 +126,7 @@ JVMFlag::Error CMSOldPLABMaxConstraintFunc(size_t value, bool verbose) {
 
 static JVMFlag::Error CMSReservedAreaConstraintFunc(const char* name, size_t value, bool verbose) {
   if (UseConcMarkSweepGC) {
-    ConcurrentMarkSweepGeneration* cms = (ConcurrentMarkSweepGeneration*)GenCollectedHeap::heap()->old_gen();
+    ConcurrentMarkSweepGeneration* cms = CMSHeap::heap()->old_gen();
     const size_t ergo_max = cms->cmsSpace()->max_flag_size_for_task_size();
     if (value > ergo_max) {
       CommandLineError::print(verbose,
@@ -189,7 +189,7 @@ JVMFlag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose) {
 
 JVMFlag::Error CMSSamplingGrainConstraintFunc(uintx value, bool verbose) {
   if (UseConcMarkSweepGC) {
-    size_t max_capacity = GenCollectedHeap::heap()->young_gen()->max_capacity();
+    size_t max_capacity = CMSHeap::heap()->young_gen()->max_capacity();
     if (value > max_uintx - max_capacity) {
     CommandLineError::print(verbose,
                             "CMSSamplingGrain (" UINTX_FORMAT ") must be "
@@ -212,7 +212,7 @@ JVMFlag::Error CMSBitMapYieldQuantumConstraintFunc(size_t value, bool verbose) {
   // Skip for current default value.
   if (UseConcMarkSweepGC && FLAG_IS_CMDLINE(CMSBitMapYieldQuantum)) {
     // CMSBitMapYieldQuantum should be compared with mark bitmap size.
-    ConcurrentMarkSweepGeneration* cms = (ConcurrentMarkSweepGeneration*)GenCollectedHeap::heap()->old_gen();
+    ConcurrentMarkSweepGeneration* cms = CMSHeap::heap()->old_gen();
     size_t bitmap_size = cms->collector()->markBitMap()->sizeInWords();
 
     if (value > bitmap_size) {

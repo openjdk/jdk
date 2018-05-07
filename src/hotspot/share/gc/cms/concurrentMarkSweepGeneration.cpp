@@ -602,8 +602,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Support for parallelizing young gen rescan
   CMSHeap* heap = CMSHeap::heap();
-  assert(heap->young_gen()->kind() == Generation::ParNew, "CMS can only be used with ParNew");
-  _young_gen = (ParNewGeneration*)heap->young_gen();
+  _young_gen = heap->young_gen();
   if (heap->supports_inline_contig_alloc()) {
     _top_addr = heap->top_addr();
     _end_addr = heap->end_addr();
@@ -770,7 +769,6 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
       log.trace("  Capacity " SIZE_FORMAT, capacity() / 1000);
       log.trace("  Desired capacity " SIZE_FORMAT, desired_capacity / 1000);
       CMSHeap* heap = CMSHeap::heap();
-      assert(heap->is_old_gen(this), "The CMS generation should always be the old generation");
       size_t young_size = heap->young_gen()->capacity();
       log.trace("  Young gen size " SIZE_FORMAT, young_size / 1000);
       log.trace("  unsafe_max_alloc_nogc " SIZE_FORMAT, unsafe_max_alloc_nogc() / 1000);
