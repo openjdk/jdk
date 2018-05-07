@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,17 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 package test;
 
-public class Task implements Runnable {
-
-    public void run() {
-        Class<?> c = Foo.class; // forces PreemptingClassLoader to load Foo
-        C x = new C(); // triggers overloading constraints
-        x.m();
+// This class is loaded via Loader2. Using D_ambgs here will trigger
+// loading it's second version with Loader2.
+public class B implements A {
+    public D_ambgs[] gen() {
+        D_ambgs[] x = new D_ambgs[1];
+        x[0] = new D_ambgs();
+        return x;
     }
 }

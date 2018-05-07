@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,26 @@ import java.io.*;
 public class PreemptingClassLoader extends ClassLoader {
 
     private final Set<String> names = new HashSet<>();
+    boolean checkLoaded = true;
 
     public PreemptingClassLoader(String... names) {
         for (String n : names) this.names.add(n);
     }
 
+    public PreemptingClassLoader(String name, String[] names) {
+        super(name, ClassLoader.getSystemClassLoader());
+        for (String n : names) this.names.add(n);
+    }
+
+    public PreemptingClassLoader(String name, String[] names, boolean cL) {
+        super(name, ClassLoader.getSystemClassLoader());
+        for (String n : names) this.names.add(n);
+        checkLoaded = cL;
+    }
+
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         if (!names.contains(name)) return super.loadClass(name, resolve);
-        Class<?> result = findLoadedClass(name);
+        Class<?> result = checkLoaded ? findLoadedClass(name) : null;
         if (result == null) {
             String filename = name.replace('.', '/') + ".class";
             try (InputStream data = getResourceAsStream(filename)) {

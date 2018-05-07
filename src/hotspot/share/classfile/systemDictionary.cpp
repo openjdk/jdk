@@ -2124,10 +2124,19 @@ BasicType SystemDictionary::box_klass_type(Klass* k) {
 
 void SystemDictionary::check_constraints(unsigned int d_hash,
                                          InstanceKlass* k,
-                                         Handle class_loader, bool defining,
+                                         Handle class_loader,
+                                         bool defining,
                                          TRAPS) {
+  ResourceMark rm(THREAD);
+  stringStream ss;
+  bool throwException = false;
+
   const char *linkage_error1 = NULL;
   const char *linkage_error2 = NULL;
+  const char *linkage_error3 = "";
+  // Remember the loader of the similar class that is already loaded.
+  const char *existing_klass_loader_name = "";
+
   {
     Symbol*  name  = k->name();
     ClassLoaderData *loader_data = class_loader_data(class_loader);
@@ -2136,16 +2145,18 @@ void SystemDictionary::check_constraints(unsigned int d_hash,
 
     InstanceKlass* check = find_class(d_hash, name, loader_data->dictionary());
     if (check != NULL) {
-      // if different InstanceKlass - duplicate class definition,
-      // else - ok, class loaded by a different thread in parallel,
-      // we should only have found it if it was done loading and ok to use
-      // dictionary only holds instance classes, placeholders
-      // also holds array classes
+      // If different InstanceKlass - duplicate class definition,
+      // else - ok, class loaded by a different thread in parallel.
+      // We should only have found it if it was done loading and ok to use.
+      // The dictionary only holds instance classes, placeholders
+      // also hold array classes.
 
       assert(check->is_instance_klass(), "noninstance in systemdictionary");
       if ((defining == true) || (k != check)) {
-        linkage_error1 = "loader (instance of ";
-        linkage_error2 = "): attempted duplicate class definition for name: \"";
+        throwException = true;
+        ss.print("loader %s", java_lang_ClassLoader::describe_external(class_loader()));
+        ss.print(" attempted duplicate %s definition for %s.",
+                 k->external_kind(), k->external_name());
       } else {
         return;
       }
@@ -2156,29 +2167,29 @@ void SystemDictionary::check_constraints(unsigned int d_hash,
     assert(ph_check == NULL || ph_check == name, "invalid symbol");
 #endif
 
-    if (linkage_error1 == NULL) {
+    if (throwException == false) {
       if (constraints()->check_or_update(k, class_loader, name) == false) {
-        linkage_error1 = "loader constraint violation: loader (instance of ";
-        linkage_error2 = ") previously initiated loading for a different type with name \"";
+        throwException = true;
+        ss.print("loader constraint violation: loader %s",
+                 java_lang_ClassLoader::describe_external(class_loader()));
+        ss.print(" wants to load %s %s.",
+                 k->external_kind(), k->external_name());
+        Klass *existing_klass = constraints()->find_constrained_klass(name, class_loader);
+        if (existing_klass->class_loader() != class_loader()) {
+          ss.print(" A different %s with the same name was previously loaded by %s.",
+                   existing_klass->external_kind(),
+                   java_lang_ClassLoader::describe_external(existing_klass->class_loader()));
+        }
       }
     }
   }
 
   // Throw error now if needed (cannot throw while holding
   // SystemDictionary_lock because of rank ordering)
-
-  if (linkage_error1) {
-    ResourceMark rm(THREAD);
-    const char* class_loader_name = loader_name(class_loader());
-    char* type_name = k->name()->as_C_string();
-    size_t buflen = strlen(linkage_error1) + strlen(class_loader_name) +
-      strlen(linkage_error2) + strlen(type_name) + 2; // +2 for '"' and null byte.
-    char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-    jio_snprintf(buf, buflen, "%s%s%s%s\"", linkage_error1, class_loader_name, linkage_error2, type_name);
-    THROW_MSG(vmSymbols::java_lang_LinkageError(), buf);
+  if (throwException == true) {
+    THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
   }
 }
-
 
 // Update class loader data dictionary - done after check_constraint and add_to_hierachy
 // have been called.

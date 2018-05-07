@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,39 +21,40 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8186092 8199852
+ * @bug 8199852
+ * @summary Test exception messages of LinkageError. A class loader loads
+ *          twice the same class. Should trigger exception in
+ *          SystemDictionary::check_constraints().
  * @compile ../common/Foo.java
- *          ../common/J.java
- *          I.java
- *          ../common/C.jasm
- *          Task.java
+ * @compile ../common/J.java
  *          ../common/PreemptingClassLoader.java
  * @run main/othervm Test
  */
 
 public class Test {
 
+    // Check that all names have external formatting ('.' and not '/' in package names).
+    // Check for parent of class loader.
     static String expectedErrorMessage1 =
-        "loader constraint violation for class test.Task: " +
-        "when selecting overriding method test.Task.m()Ltest/Foo; " +
-        "the class loader \"<unnamed>\" (instance of PreemptingClassLoader, " +
+        "loader \"<unnamed>\" (instance of PreemptingClassLoader, " +
         "child of \"app\" jdk.internal.loader.ClassLoaders$AppClassLoader) " +
-        "of the selected method's type test.Task, " +
-        "and the class loader \"app\" (instance of jdk.internal.loader.ClassLoaders$AppClassLoader) " +
-        "for its super type test.J " +
-        "have different Class objects for the type test.Foo used in the signature";
+        "attempted duplicate class definition for test.Foo.";
 
+    // Check that all names have external formatting ('.' and not '/' in package names).
+    // Check for name and parent of class loader.
     static String expectedErrorMessage2 =
-        "loader constraint violation for class test.Task: " +
-        "when selecting overriding method test.Task.m()Ltest/Foo; " +
-        "the class loader \"VtableLdrCnstrnt_Test_Loader\" (instance of PreemptingClassLoader, " +
+        "loader \"DuplicateLE_Test_Loader\" (instance of PreemptingClassLoader, " +
         "child of \"app\" jdk.internal.loader.ClassLoaders$AppClassLoader) " +
-        "of the selected method's type test.Task, " +
-        "and the class loader \"app\" (instance of jdk.internal.loader.ClassLoaders$AppClassLoader) " +
-        "for its super type test.J " +
-        "have different Class objects for the type test.Foo used in the signature";
+        "attempted duplicate class definition for test.Foo.";
+
+    // Check that all names have external formatting ('.' and not '/' in package names).
+    // Check for name and parent of class loader. Type should be mentioned as 'interface'.
+    static String expectedErrorMessage3 =
+        "loader \"DuplicateLE_Test_Loader_IF\" (instance of PreemptingClassLoader, " +
+        "child of \"app\" jdk.internal.loader.ClassLoaders$AppClassLoader) " +
+        "attempted duplicate interface definition for test.J.";
 
     // Test that the error message is correct when a loader constraint error is
     // detected during vtable creation.
@@ -62,13 +63,12 @@ public class Test {
     // overrides "J.m()LFoo;".  But, Task's class Foo and super type J's class Foo
     // are different.  So, a LinkageError exception should be thrown because the
     // loader constraint check will fail.
-    public static void test(String loaderName, String expectedErrorMessage) throws Exception {
-        Class<?> c = test.Foo.class; // Forces standard class loader to load Foo.
-        String[] classNames = {"test.Task", "test.Foo", "test.I"};
-        ClassLoader l = new PreemptingClassLoader(loaderName, classNames);
-        l.loadClass("test.Foo");
+    public static void test(String loaderName, String expectedErrorMessage, String testType) throws Exception {
+        String[] classNames = {testType};
+        ClassLoader l = new PreemptingClassLoader(loaderName, classNames, false);
+        l.loadClass(testType);
         try {
-            l.loadClass("test.Task").newInstance();
+            l.loadClass(testType).newInstance();
             throw new RuntimeException("Expected LinkageError exception not thrown");
         } catch (LinkageError e) {
             String errorMsg = e.getMessage();
@@ -82,8 +82,9 @@ public class Test {
     }
 
     public static void main(String args[]) throws Exception {
-        test(null, expectedErrorMessage1);
-        test("VtableLdrCnstrnt_Test_Loader", expectedErrorMessage2);
+        test(null, expectedErrorMessage1, "test.Foo");
+        test("DuplicateLE_Test_Loader", expectedErrorMessage2, "test.Foo");
+        test("DuplicateLE_Test_Loader_IF", expectedErrorMessage3, "test.J");
     }
 }
 
