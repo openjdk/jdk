@@ -87,6 +87,9 @@ LIR_Opr ModRefBarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_r
   DecoratorSet decorators = access.decorators();
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool is_write = (decorators & C1_WRITE_ACCESS) != 0;
-  resolve_in_register |= !needs_patching && is_write && access.is_oop();
+  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool precise = on_array || on_anonymous;
+  resolve_in_register |= !needs_patching && is_write && access.is_oop() && precise;
   return BarrierSetC1::resolve_address(access, resolve_in_register);
 }
