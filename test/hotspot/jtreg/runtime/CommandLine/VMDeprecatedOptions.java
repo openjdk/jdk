@@ -52,6 +52,7 @@ public class VMDeprecatedOptions {
         {"PrintSafepointStatisticsCount", "3"},
         {"PrintSafepointStatisticsTimeout", "3"},
         {"AggressiveOpts", "true"},
+        {"AllowNonVirtualCalls", "true"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},
