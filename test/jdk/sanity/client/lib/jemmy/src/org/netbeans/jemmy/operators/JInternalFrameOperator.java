@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@ package org.netbeans.jemmy.operators;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.beans.PropertyVetoException;
 import java.util.Hashtable;
@@ -505,6 +507,9 @@ public class JInternalFrameOperator extends JComponentOperator
                 + " position");
         checkIconified(false);
         wDriver.move(this, x, y);
+        if (getVerification()) {
+            waitComponentLocation(new Point(x, y));
+        }
     }
 
     /**
@@ -526,6 +531,9 @@ public class JInternalFrameOperator extends JComponentOperator
                 + " size");
         checkIconified(false);
         wDriver.resize(this, width, height);
+        if (getVerification()) {
+            waitComponentSize(new Dimension(width, height));
+        }
     }
 
     /**
@@ -536,6 +544,9 @@ public class JInternalFrameOperator extends JComponentOperator
     public void activate() {
         checkIconified(false);
         wDriver.activate(this);
+        if (getVerification()) {
+            waitActivate(true);
+        }
     }
 
     /**
@@ -544,6 +555,9 @@ public class JInternalFrameOperator extends JComponentOperator
     public void close() {
         checkIconified(false);
         wDriver.requestClose(this);
+        if (getVerification()) {
+            waitClosed();
+        }
     }
 
     /**
@@ -654,18 +668,18 @@ public class JInternalFrameOperator extends JComponentOperator
     /**
      * Waits for the frame to be iconified or deiconified.
      *
-     * @param icon whether the frame needs to be iconified.
+     * @param isIconified whether the frame needs to be iconified or deiconified.
      */
-    public void waitIcon(final boolean icon) {
-        waitState(new ComponentChooser() {
+    public void waitIcon(final boolean isIconified) {
+        waitStateOnQueue(new ComponentChooser() {
             @Override
             public boolean checkComponent(Component comp) {
-                return ((JInternalFrame) comp).isIcon() == icon;
+                return isIcon() == isIconified;
             }
 
             @Override
             public String getDescription() {
-                return "Iconified JInternalFrame";
+                return "Internal Frame is " + (isIconified ? "iconified" : "deiconified");
             }
 
             @Override
@@ -676,20 +690,66 @@ public class JInternalFrameOperator extends JComponentOperator
     }
 
     /**
-     * Waits for the frame to be maximized or demaximized.
+     * Waits for the frame to be activated or deactivated.
      *
-     * @param maximum whether the frame needs to be maximized.
+     * @param isActivate whether the frame needs to be activated or deactivated.
      */
-    public void waitMaximum(final boolean maximum) {
-        waitState(new ComponentChooser() {
+    public void waitActivate(final boolean isActivate) {
+        waitStateOnQueue(new ComponentChooser() {
             @Override
             public boolean checkComponent(Component comp) {
-                return ((JInternalFrame) comp).isMaximum() == maximum;
+                return isSelected() == isActivate;
             }
 
             @Override
             public String getDescription() {
-                return "Maximizied JInternalFrame";
+                return "Internal Frame is " + (isActivate ? "activated" : "deactivated");
+            }
+
+            @Override
+            public String toString() {
+                return "JInternalFrameOperator.waitActivate.ComponentChooser{description = " + getDescription() + '}';
+            }
+        });
+    }
+
+    /**
+     * Waits for the frame to be closed.
+     */
+    public void waitClosed() {
+        waitStateOnQueue(new ComponentChooser() {
+            @Override
+            public boolean checkComponent(Component comp) {
+                return isClosed();
+            }
+
+            @Override
+            public String getDescription() {
+                return "Internal Frame is closed";
+            }
+
+            @Override
+            public String toString() {
+                return "JInternalFrameOperator.waitClosed.ComponentChooser{description = " + getDescription() + '}';
+            }
+        });
+    }
+
+    /**
+     * Waits for the frame to be maximized or demaximized.
+     *
+     * @param isMaximum whether the frame needs to be maximized or demaximized.
+     */
+    public void waitMaximum(final boolean isMaximum) {
+        waitStateOnQueue(new ComponentChooser() {
+            @Override
+            public boolean checkComponent(Component comp) {
+                return isMaximum() == isMaximum;
+            }
+
+            @Override
+            public String getDescription() {
+                return "Internal Frame is " + (isMaximum ? "maximizied" : "demaximizied");
             }
 
             @Override
