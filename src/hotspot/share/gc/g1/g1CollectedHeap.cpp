@@ -2164,6 +2164,14 @@ jlong G1CollectedHeap::millis_since_last_gc() {
   return ret_val;
 }
 
+void G1CollectedHeap::deduplicate_string(oop str) {
+  assert(java_lang_String::is_instance(str), "invariant");
+
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::deduplicate(str);
+  }
+}
+
 void G1CollectedHeap::prepare_for_verify() {
   _verifier->prepare_for_verify();
 }

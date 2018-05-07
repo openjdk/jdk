@@ -597,6 +597,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual oop pin_object(JavaThread* thread, oop obj);
   virtual void unpin_object(JavaThread* thread, oop obj);
 
+  // Deduplicate the string, iff the GC supports string deduplication.
+  virtual void deduplicate_string(oop str);
+
   virtual bool is_oop(oop object) const;
 
   // Non product verification and debugging.

@@ -652,3 +652,7 @@ oop CollectedHeap::pin_object(JavaThread* thread, oop obj) {
 void CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
   ShouldNotReachHere();
 }
+
+void CollectedHeap::deduplicate_string(oop str) {
+  // Do nothing, unless overridden in subclass.
+}
