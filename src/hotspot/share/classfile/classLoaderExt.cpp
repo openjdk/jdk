@@ -31,7 +31,6 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/modules.hpp"
-#include "classfile/sharedClassUtil.hpp"
 #include "classfile/sharedPathsMiscInfo.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -57,8 +56,7 @@ bool ClassLoaderExt::_has_platform_classes = false;
 void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
 #if INCLUDE_CDS
   warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
-  FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
-  header->set_has_platform_or_app_classes(false);
+  FileMapInfo::current_info()->header()->set_has_platform_or_app_classes(false);
 #endif
   ClassLoader::add_to_boot_append_entries(new_entry);
 }
@@ -228,11 +226,7 @@ void ClassLoaderExt::setup_search_paths() {
   ClassLoaderExt::setup_app_search_path();
 }
 
-Thread* ClassLoaderExt::Context::_dump_thread = NULL;
-
-void ClassLoaderExt::record_result(ClassLoaderExt::Context *context,
-                                   Symbol* class_name,
-                                   const s2 classpath_index,
+void ClassLoaderExt::record_result(const s2 classpath_index,
                                    InstanceKlass* result,
                                    TRAPS) {
   assert(DumpSharedSpaces, "Sanity");

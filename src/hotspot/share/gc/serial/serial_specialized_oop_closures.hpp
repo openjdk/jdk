@@ -50,8 +50,4 @@ class AdjustPointerClosure;
   f(MarkAndPushClosure,_nv)                               \
   f(AdjustPointerClosure,_nv)
 
-#define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_S(f)  \
-  f(ScanClosure,_nv)                                      \
-  f(FastScanClosure,_nv)
-
 #endif // SHARE_GC_SERIAL_SERIAL_SPECIALIZED_OOP_CLOSURES_HPP

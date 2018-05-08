@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,11 @@ package sun.text.normalizer;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.nio.file.FileSystems;
 import java.util.Arrays;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -51,7 +46,7 @@ import java.security.PrivilegedAction;
 public final class ICUBinary {
 
     private static final class IsAcceptable implements Authenticate {
-        // @Override when we switch to Java 6
+        @Override
         public boolean isDataVersionAcceptable(byte version[]) {
             return version[0] == 1;
         }
@@ -93,7 +88,7 @@ public final class ICUBinary {
 
             BufferedInputStream b=new BufferedInputStream(is, 4096 /* data buffer size */);
             DataInputStream inputStream = new DataInputStream(b);
-            byte[] bb = new byte[120000];
+            byte[] bb = new byte[130000];
             int n = inputStream.read(bb);
             ByteBuffer bytes = ByteBuffer.wrap(bb, 0, n);
             return bytes;

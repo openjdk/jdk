@@ -39,6 +39,7 @@ class ScanClosure;
 class STWGCTimer;
 class CSpaceCounters;
 class ScanWeakRefClosure;
+class SerialHeap;
 
 // DefNewGeneration is a young generation containing eden, from- and
 // to-space.
@@ -178,23 +179,12 @@ protected:
     virtual void do_oop(narrowOop* p);
   };
 
-  class EvacuateFollowersClosure: public VoidClosure {
-    GenCollectedHeap* _gch;
-    ScanClosure* _scan_cur_or_nonheap;
-    ScanClosure* _scan_older;
-  public:
-    EvacuateFollowersClosure(GenCollectedHeap* gch,
-                             ScanClosure* cur, ScanClosure* older);
-    void do_void();
-  };
-
   class FastEvacuateFollowersClosure: public VoidClosure {
-    GenCollectedHeap* _gch;
-    DefNewGeneration* _young_gen;
+    SerialHeap* _heap;
     FastScanClosure* _scan_cur_or_nonheap;
     FastScanClosure* _scan_older;
   public:
-    FastEvacuateFollowersClosure(GenCollectedHeap* gch,
+    FastEvacuateFollowersClosure(SerialHeap* heap,
                                  FastScanClosure* cur,
                                  FastScanClosure* older);
     void do_void();
@@ -290,12 +280,8 @@ protected:
   // Need to declare the full complement of closures, whether we'll
   // override them or not, or get message from the compiler:
   //   oop_since_save_marks_iterate_nv hides virtual function...
-#define DefNew_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix) \
-  void oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl);
-
-  ALL_SINCE_SAVE_MARKS_CLOSURES(DefNew_SINCE_SAVE_MARKS_DECL)
-
-#undef DefNew_SINCE_SAVE_MARKS_DECL
+  template <typename OopClosureType>
+  void oop_since_save_marks_iterate(OopClosureType* cl);
 
   // For non-youngest collection, the DefNewGeneration can contribute
   // "to-space".

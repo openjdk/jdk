@@ -29,7 +29,7 @@
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/space.hpp"
+#include "gc/shared/space.inline.hpp"
 #include "oops/access.inline.hpp"
 
 // Methods of protected closure types
@@ -86,6 +86,16 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   if (((HeapWord*)obj < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
     _rs->inline_write_ref_field_gc(p, obj);
   }
+}
+
+template <typename OopClosureType>
+void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
+  cl->set_generation(this);
+  eden()->oop_since_save_marks_iterate(cl);
+  to()->oop_since_save_marks_iterate(cl);
+  from()->oop_since_save_marks_iterate(cl);
+  cl->reset_generation();
+  save_marks();
 }
 
 #endif // SHARE_VM_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP

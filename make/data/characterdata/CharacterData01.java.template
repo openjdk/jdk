@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -372,6 +372,13 @@ class CharacterData01 extends CharacterData {
             case 0x11063: retval = 90; break;      // BRAHMI NUMBER NINETY
             case 0x11064: retval = 100; break;     // BRAHMI NUMBER ONE HUNDRED
             case 0x11065: retval = 1000; break;    // BRAHMI NUMBER ONE THOUSAND
+            case 0x11C66: retval = 40; break;      // BHAIKSUKI NUMBER FORTY
+            case 0x11C67: retval = 50; break;      // BHAIKSUKI NUMBER FIFTY
+            case 0x11C68: retval = 60; break;      // BHAIKSUKI NUMBER SIXTY
+            case 0x11C69: retval = 70; break;      // BHAIKSUKI NUMBER SEVENTY
+            case 0x11C6A: retval = 80; break;      // BHAIKSUKI NUMBER EIGHTY
+            case 0x11C6B: retval = 90; break;      // BHAIKSUKI NUMBER NINETY
+            case 0x11C6C: retval = 100; break;     // BHAIKSUKI HUNDREDS UNIT MARK
             case 0x111ED: retval = 40; break;      // SINHALA ARCHAIC NUMBER FORTY
             case 0x111EE: retval = 50; break;      // SINHALA ARCHAIC NUMBER FIFTY
             case 0x111EF: retval = 60; break;      // SINHALA ARCHAIC NUMBER SIXTY

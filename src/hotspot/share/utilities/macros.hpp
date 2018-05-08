@@ -218,9 +218,13 @@
 #if INCLUDE_NMT
 #define NOT_NMT_RETURN        /* next token must be ; */
 #define NOT_NMT_RETURN_(code) /* next token must be ; */
+#define NMT_ONLY(x) x
+#define NOT_NMT(x)
 #else
 #define NOT_NMT_RETURN        {}
 #define NOT_NMT_RETURN_(code) { return code; }
+#define NMT_ONLY(x)
+#define NOT_NMT(x) x
 #endif // INCLUDE_NMT
 
 #ifndef INCLUDE_TRACE

@@ -1038,12 +1038,6 @@ void PSParallelCompact::post_compact()
   DerivedPointerTable::update_pointers();
 #endif
 
-  ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->num_queues());
-
-  ref_processor()->enqueue_discovered_references(NULL, &pt);
-
-  pt.print_enqueue_phase();
-
   if (ZapUnusedHeapArea) {
     heap->gen_mangle_unused_area();
   }

@@ -123,7 +123,8 @@
 
   void load_parameter(int offset_in_words, Register reg);
 
-  void save_live_registers_no_oop_map(int num_rt_args, bool save_fpu_registers);
+  void save_live_registers_no_oop_map(bool save_fpu_registers);
+  void restore_live_registers_except_rax(bool restore_fpu_registers);
   void restore_live_registers(bool restore_fpu_registers);
 
 #endif // CPU_X86_VM_C1_MACROASSEMBLER_X86_HPP

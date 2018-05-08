@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
+#include "gc/serial/serialHeap.inline.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
@@ -34,7 +36,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
@@ -56,9 +57,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
-#if INCLUDE_CMSGC
-#include "gc/cms/parOopClosures.hpp"
-#endif
 
 //
 // DefNewGeneration functions.
@@ -92,34 +90,19 @@ FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl) :
 void DefNewGeneration::FastKeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
 void DefNewGeneration::FastKeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
 
-DefNewGeneration::EvacuateFollowersClosure::
-EvacuateFollowersClosure(GenCollectedHeap* gch,
-                         ScanClosure* cur,
-                         ScanClosure* older) :
-  _gch(gch), _scan_cur_or_nonheap(cur), _scan_older(older)
-{}
-
-void DefNewGeneration::EvacuateFollowersClosure::do_void() {
-  do {
-    _gch->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen, _scan_cur_or_nonheap, _scan_older);
-  } while (!_gch->no_allocs_since_save_marks());
-}
-
 DefNewGeneration::FastEvacuateFollowersClosure::
-FastEvacuateFollowersClosure(GenCollectedHeap* gch,
+FastEvacuateFollowersClosure(SerialHeap* heap,
                              FastScanClosure* cur,
                              FastScanClosure* older) :
-  _gch(gch), _scan_cur_or_nonheap(cur), _scan_older(older)
+  _heap(heap), _scan_cur_or_nonheap(cur), _scan_older(older)
 {
-  assert(_gch->young_gen()->kind() == Generation::DefNew, "Generation should be DefNew");
-  _young_gen = (DefNewGeneration*)_gch->young_gen();
 }
 
 void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
   do {
-    _gch->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen, _scan_cur_or_nonheap, _scan_older);
-  } while (!_gch->no_allocs_since_save_marks());
-  guarantee(_young_gen->promo_failure_scan_is_complete(), "Failed to finish scan");
+    _heap->oop_since_save_marks_iterate(_scan_cur_or_nonheap, _scan_older);
+  } while (!_heap->no_allocs_since_save_marks());
+  guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
 ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
@@ -576,29 +559,29 @@ void DefNewGeneration::collect(bool   full,
                                bool   is_tlab) {
   assert(full || size > 0, "otherwise we don't want to collect");
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* heap = SerialHeap::heap();
 
   _gc_timer->register_gc_start();
   DefNewTracer gc_tracer;
-  gc_tracer.report_gc_start(gch->gc_cause(), _gc_timer->gc_start());
+  gc_tracer.report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
 
-  _old_gen = gch->old_gen();
+  _old_gen = heap->old_gen();
 
   // If the next generation is too full to accommodate promotion
   // from this generation, pass on collection; let the next generation
   // do it.
   if (!collection_attempt_is_safe()) {
     log_trace(gc)(":: Collection attempt not safe ::");
-    gch->set_incremental_collection_failed(); // Slight lie: we did not even attempt one
+    heap->set_incremental_collection_failed(); // Slight lie: we did not even attempt one
     return;
   }
   assert(to()->is_empty(), "Else not collection_attempt_is_safe");
 
   init_assuming_no_promotion_failure();
 
-  GCTraceTime(Trace, gc, phases) tm("DefNew", NULL, gch->gc_cause());
+  GCTraceTime(Trace, gc, phases) tm("DefNew", NULL, heap->gc_cause());
 
-  gch->trace_heap_before_gc(&gc_tracer);
+  heap->trace_heap_before_gc(&gc_tracer);
 
   // These can be shared for all code paths
   IsAliveClosure is_alive(this);
@@ -609,23 +592,23 @@ void DefNewGeneration::collect(bool   full,
   // The preserved marks should be empty at the start of the GC.
   _preserved_marks_set.init(1);
 
-  gch->rem_set()->prepare_for_younger_refs_iterate(false);
+  heap->rem_set()->prepare_for_younger_refs_iterate(false);
 
-  assert(gch->no_allocs_since_save_marks(),
+  assert(heap->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
 
   FastScanClosure fsc_with_no_gc_barrier(this, false);
   FastScanClosure fsc_with_gc_barrier(this, true);
 
   CLDScanClosure cld_scan_closure(&fsc_with_no_gc_barrier,
-                                  gch->rem_set()->cld_rem_set()->accumulate_modified_oops());
+                                  heap->rem_set()->cld_rem_set()->accumulate_modified_oops());
 
   set_promo_failure_scan_stack_closure(&fsc_with_no_gc_barrier);
-  FastEvacuateFollowersClosure evacuate_followers(gch,
+  FastEvacuateFollowersClosure evacuate_followers(heap,
                                                   &fsc_with_no_gc_barrier,
                                                   &fsc_with_gc_barrier);
 
-  assert(gch->no_allocs_since_save_marks(),
+  assert(heap->no_allocs_since_save_marks(),
          "save marks have not been newly set.");
 
   {
@@ -634,10 +617,10 @@ void DefNewGeneration::collect(bool   full,
     // See: CardTableRS::non_clean_card_iterate_possibly_parallel.
     StrongRootsScope srs(0);
 
-    gch->young_process_roots(&srs,
-                             &fsc_with_no_gc_barrier,
-                             &fsc_with_gc_barrier,
-                             &cld_scan_closure);
+    heap->young_process_roots(&srs,
+                              &fsc_with_no_gc_barrier,
+                              &fsc_with_gc_barrier,
+                              &cld_scan_closure);
   }
 
   // "evacuate followers".
@@ -654,12 +637,12 @@ void DefNewGeneration::collect(bool   full,
   gc_tracer.report_tenuring_threshold(tenuring_threshold());
   pt.print_all_references();
 
-  assert(gch->no_allocs_since_save_marks(), "save marks have not been newly set.");
+  assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   WeakProcessor::weak_oops_do(&is_alive, &keep_alive);
 
   // Verify that the usage of keep_alive didn't copy any objects.
-  assert(gch->no_allocs_since_save_marks(), "save marks have not been newly set.");
+  assert(heap->no_allocs_since_save_marks(), "save marks have not been newly set.");
 
   if (!_promotion_failed) {
     // Swap the survivor spaces.
@@ -683,9 +666,9 @@ void DefNewGeneration::collect(bool   full,
 
     // A successful scavenge should restart the GC time limit count which is
     // for full GC's.
-    AdaptiveSizePolicy* size_policy = gch->size_policy();
+    AdaptiveSizePolicy* size_policy = heap->size_policy();
     size_policy->reset_gc_overhead_limit_count();
-    assert(!gch->incremental_collection_failed(), "Should be clear");
+    assert(!heap->incremental_collection_failed(), "Should be clear");
   } else {
     assert(_promo_failure_scan_stack.is_empty(), "post condition");
     _promo_failure_scan_stack.clear(true); // Clear cached segments.
@@ -699,14 +682,14 @@ void DefNewGeneration::collect(bool   full,
     // and from-space.
     swap_spaces();   // For uniformity wrt ParNewGeneration.
     from()->set_next_compaction_space(to());
-    gch->set_incremental_collection_failed();
+    heap->set_incremental_collection_failed();
 
     // Inform the next generation that a promotion failure occurred.
     _old_gen->promotion_failure_occurred();
     gc_tracer.report_promotion_failed(_promotion_failed_info);
 
     // Reset the PromotionFailureALot counters.
-    NOT_PRODUCT(gch->reset_promotion_should_fail();)
+    NOT_PRODUCT(heap->reset_promotion_should_fail();)
   }
   // We should have processed and cleared all the preserved marks.
   _preserved_marks_set.reclaim();
@@ -720,7 +703,7 @@ void DefNewGeneration::collect(bool   full,
   jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   update_time_of_last_gc(now);
 
-  gch->trace_heap_after_gc(&gc_tracer);
+  heap->trace_heap_after_gc(&gc_tracer);
 
   _gc_timer->register_gc_end();
 
@@ -827,22 +810,6 @@ bool DefNewGeneration::no_allocs_since_save_marks() {
   assert(from()->saved_mark_at_top(), "Violated spec - alloc in from");
   return to()->saved_mark_at_top();
 }
-
-#define DefNew_SINCE_SAVE_MARKS_DEFN(OopClosureType, nv_suffix) \
-                                                                \
-void DefNewGeneration::                                         \
-oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) {   \
-  cl->set_generation(this);                                     \
-  eden()->oop_since_save_marks_iterate##nv_suffix(cl);          \
-  to()->oop_since_save_marks_iterate##nv_suffix(cl);            \
-  from()->oop_since_save_marks_iterate##nv_suffix(cl);          \
-  cl->reset_generation();                                       \
-  save_marks();                                                 \
-}
-
-ALL_SINCE_SAVE_MARKS_CLOSURES(DefNew_SINCE_SAVE_MARKS_DEFN)
-
-#undef DefNew_SINCE_SAVE_MARKS_DEFN
 
 void DefNewGeneration::contribute_scratch(ScratchBlock*& list, Generation* requestor,
                                          size_t max_alloc_words) {
@@ -1006,11 +973,9 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
   if (result != NULL) {
-#if INCLUDE_CMSGC
-    if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
+    if (_old_gen != NULL) {
       _old_gen->sample_eden_chunk();
     }
-#endif
   } else {
     // If the eden is full and the last collection bailed out, we are running
     // out of heap space, and we try to allocate the from-space, too.
@@ -1024,11 +989,9 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
 HeapWord* DefNewGeneration::par_allocate(size_t word_size,
                                          bool is_tlab) {
   HeapWord* res = eden()->par_allocate(word_size);
-#if INCLUDE_CMSGC
-  if (CMSEdenChunksRecordAlways && _old_gen != NULL) {
+  if (_old_gen != NULL) {
     _old_gen->sample_eden_chunk();
   }
-#endif
   return res;
 }
 

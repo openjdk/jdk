@@ -259,6 +259,8 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   bool on_reference = on_weak || on_phantom;
   ModRefBarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
   if (on_oop && on_reference) {
+    // LR is live.  It must be saved around calls.
+    __ enter(); // barrier may call runtime
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.
     g1_write_barrier_pre(masm /* masm */,
@@ -268,6 +270,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
                          tmp1 /* tmp */,
                          true /* tosca_live */,
                          true /* expand_call */);
+    __ leave();
   }
 }
 

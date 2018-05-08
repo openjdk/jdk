@@ -46,7 +46,6 @@ public:
     FinalRefPhase3,
     PhantomRefPhase2,
     PhantomRefPhase3,
-    RefEnqueue,
     RefParPhaseMax
   };
 
@@ -133,7 +132,6 @@ public:
   // Reset all fields. If not reset at next cycle, an assertion will fail.
   void reset();
 
-  void print_enqueue_phase(uint base_indent = 0, bool print_total = true) const;
   void print_all_references(uint base_indent = 0, bool print_total = true) const;
 };
 
@@ -201,15 +199,6 @@ public:
                            ReferenceProcessorPhaseTimes* phase_times,
                            ReferenceProcessor* rp);
   ~RefProcPhaseTimesTracker();
-};
-
-// Updates enqueue time related information.
-// - Enqueueing time, enqueued reference count and stats for each working thread if MT processed.
-class RefProcEnqueueTimeTracker : public RefProcPhaseTimeBaseTracker {
-public:
-  RefProcEnqueueTimeTracker(ReferenceProcessorPhaseTimes* phase_times,
-                            ReferenceProcessorStats& stats);
-  ~RefProcEnqueueTimeTracker();
 };
 
 #endif // SHARE_VM_GC_SHARED_REFERENCEPROCESSORPHASETIMES_HPP

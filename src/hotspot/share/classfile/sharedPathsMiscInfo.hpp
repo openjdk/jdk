@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ class outputStream;
 //
 // + The values of Arguments::get_sysclasspath() used during dumping.
 //
-// + The meta-index file(s) used during dumping (incl modification time and size)
-//
 // + The class path elements specified during dumping but did not exist --
 //   these elements must also be specified at run time, and they also must not
 //   exist at run time.
@@ -53,6 +51,8 @@ class outputStream;
 // two situations. See below.
 
 class SharedPathsMiscInfo : public CHeapObj<mtClass> {
+private:
+  int   _app_offset;
 protected:
   char* _buf_start;
   char* _cur_ptr;
@@ -67,7 +67,7 @@ protected:
 
 protected:
   static bool fail(const char* msg, const char* name = NULL);
-  virtual bool check(jint type, const char* path);
+  bool check(jint type, const char* path);
 
 public:
   enum {
@@ -77,6 +77,7 @@ public:
   SharedPathsMiscInfo();
   // This constructor is used when validating the misc info (during run time)
   SharedPathsMiscInfo(char *buff, int size) {
+    _app_offset = 0;
     _cur_ptr = _buf_start = buff;
     _end_ptr = _buf_start + size;
     _buf_size = size;
@@ -100,8 +101,20 @@ public:
 
   // The path must exist, and must contain exactly <num_entries> files/dirs
   void add_boot_classpath(const char* path) {
-    add_path(path, BOOT);
+    add_path(path, BOOT_PATH);
   }
+
+  void add_app_classpath(const char* path) {
+    add_path(path, APP_PATH);
+  }
+  void record_app_offset() {
+    _app_offset = get_used_bytes();
+  }
+  void pop_app() {
+    _cur_ptr = _buf_start + _app_offset;
+    write_jint(0);
+  }
+
   int write_jint(jint num) {
     write(&num, sizeof(num));
     return 0;
@@ -120,22 +133,24 @@ public:
 
   // reading --
 
+private:
   enum {
-    BOOT      = 1,
-    NON_EXIST = 2
+    BOOT_PATH      = 1,
+    APP_PATH       = 2,
+    NON_EXIST      = 3
   };
 
-  virtual const char* type_name(int type) {
+  const char* type_name(int type) {
     switch (type) {
-    case BOOT:      return "BOOT";
-    case NON_EXIST: return "NON_EXIST";
-    default:        ShouldNotReachHere(); return "?";
+    case BOOT_PATH:   return "BOOT";
+    case APP_PATH:    return "APP";
+    case NON_EXIST:   return "NON_EXIST";
+    default:          ShouldNotReachHere(); return "?";
     }
   }
 
-  virtual void print_path(outputStream* os, int type, const char* path);
+  void print_path(outputStream* os, int type, const char* path);
 
-  bool check();
   bool read_jint(jint *ptr) {
     return read(ptr, sizeof(jint));
   }
@@ -145,6 +160,9 @@ public:
   bool read_time(time_t *ptr) {
     return read(ptr, sizeof(time_t));
   }
+
+public:
+  bool check();
 };
 
 #endif // SHARE_VM_CLASSFILE_SHAREDPATHSMISCINFO_HPP

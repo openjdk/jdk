@@ -37,9 +37,14 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-enum cmpxchg_memory_order {
-  memory_order_relaxed,
-  // Use value which doesn't interfere with C++2011. We need to be more conservative.
+enum atomic_memory_order {
+  // The modes that align with C++11 are intended to
+  // follow the same semantics.
+  memory_order_relaxed = 0,
+  memory_order_acquire = 2,
+  memory_order_release = 3,
+  memory_order_acq_rel = 4,
+  // Strong two-way memory barrier.
   memory_order_conservative = 8
 };
 
@@ -80,10 +85,12 @@ public:
   // <fence> add-value-to-dest <membar StoreLoad|StoreStore>
 
   template<typename I, typename D>
-  inline static D add(I add_value, D volatile* dest);
+  inline static D add(I add_value, D volatile* dest,
+                      atomic_memory_order order = memory_order_conservative);
 
   template<typename I, typename D>
-  inline static D sub(I sub_value, D volatile* dest);
+  inline static D sub(I sub_value, D volatile* dest,
+                      atomic_memory_order order = memory_order_conservative);
 
   // Atomically increment location. inc() provide:
   // <fence> increment-dest <membar StoreLoad|StoreStore>
@@ -91,7 +98,8 @@ public:
   // type. If it is a pointer type, then the increment is
   // scaled to the size of the type pointed to by the pointer.
   template<typename D>
-  inline static void inc(D volatile* dest);
+  inline static void inc(D volatile* dest,
+                         atomic_memory_order order = memory_order_conservative);
 
   // Atomically decrement a location. dec() provide:
   // <fence> decrement-dest <membar StoreLoad|StoreStore>
@@ -99,7 +107,8 @@ public:
   // type. If it is a pointer type, then the decrement is
   // scaled to the size of the type pointed to by the pointer.
   template<typename D>
-  inline static void dec(D volatile* dest);
+  inline static void dec(D volatile* dest,
+                         atomic_memory_order order = memory_order_conservative);
 
   // Performs atomic exchange of *dest with exchange_value. Returns old
   // prior value of *dest. xchg*() provide:
@@ -108,7 +117,8 @@ public:
   // to D, an integral/enum type equal to D, or a type equal to D that
   // is primitive convertible using PrimitiveConversions.
   template<typename T, typename D>
-  inline static D xchg(T exchange_value, volatile D* dest);
+  inline static D xchg(T exchange_value, volatile D* dest,
+                       atomic_memory_order order = memory_order_conservative);
 
   // Performs atomic compare of *dest and compare_value, and exchanges
   // *dest with exchange_value if the comparison succeeded. Returns prior
@@ -119,7 +129,7 @@ public:
   inline static D cmpxchg(T exchange_value,
                           D volatile* dest,
                           U compare_value,
-                          cmpxchg_memory_order order = memory_order_conservative);
+                          atomic_memory_order order = memory_order_conservative);
 
   // Performs atomic compare of *dest and NULL, and replaces *dest
   // with exchange_value if the comparison succeeded.  Returns true if
@@ -128,7 +138,7 @@ public:
   // alternative to the Double-Checked Locking Pattern.
   template<typename T, typename D>
   inline static bool replace_if_null(T* value, D* volatile* dest,
-                                     cmpxchg_memory_order order = memory_order_conservative);
+                                     atomic_memory_order order = memory_order_conservative);
 
 private:
 WINDOWS_ONLY(public:) // VS2017 warns (C2027) use of undefined type if IsPointerConvertible is declared private
@@ -272,7 +282,7 @@ private:
   //
   // - dest is of type T*.
   // - exchange_value and compare_value are of type T.
-  // - order is of type cmpxchg_memory_order.
+  // - order is of type atomic_memory_order.
   // - platform_cmpxchg is an object of type PlatformCmpxchg<sizeof(T)>.
   //
   // Then
@@ -280,7 +290,7 @@ private:
   // must be a valid expression, returning a result convertible to T.
   //
   // A default definition is provided, which declares a function template
-  //   T operator()(T, T volatile*, T, cmpxchg_memory_order) const
+  //   T operator()(T, T volatile*, T, atomic_memory_order) const
   //
   // For each required size, a platform must either provide an
   // appropriate definition of that function, or must entirely
@@ -327,7 +337,7 @@ private:
   // must be a valid expression, returning a result convertible to T.
   //
   // A default definition is provided, which declares a function template
-  //   T operator()(T, T volatile*, T, cmpxchg_memory_order) const
+  //   T operator()(T, T volatile*, T, atomic_memory_order) const
   //
   // For each required size, a platform must either provide an
   // appropriate definition of that function, or must entirely
@@ -488,33 +498,33 @@ struct Atomic::PlatformStore {
 template<typename Derived>
 struct Atomic::FetchAndAdd {
   template<typename I, typename D>
-  D operator()(I add_value, D volatile* dest) const;
+  D operator()(I add_value, D volatile* dest, atomic_memory_order order) const;
 };
 
 template<typename Derived>
 struct Atomic::AddAndFetch {
   template<typename I, typename D>
-  D operator()(I add_value, D volatile* dest) const;
+  D operator()(I add_value, D volatile* dest, atomic_memory_order order) const;
 };
 
 template<typename D>
-inline void Atomic::inc(D volatile* dest) {
+inline void Atomic::inc(D volatile* dest, atomic_memory_order order) {
   STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
   typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
-  Atomic::add(I(1), dest);
+  Atomic::add(I(1), dest, order);
 }
 
 template<typename D>
-inline void Atomic::dec(D volatile* dest) {
+inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
   STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
   typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146)
-  Atomic::add(I(-1), dest);
+  Atomic::add(I(-1), dest, order);
 }
 
 template<typename I, typename D>
-inline D Atomic::sub(I sub_value, D volatile* dest) {
+inline D Atomic::sub(I sub_value, D volatile* dest, atomic_memory_order order) {
   STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
   STATIC_ASSERT(IsIntegral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,
@@ -527,7 +537,7 @@ inline D Atomic::sub(I sub_value, D volatile* dest) {
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146) // In case AddendType is not signed.
-  return Atomic::add(-addend, dest);
+  return Atomic::add(-addend, dest, order);
 }
 
 // Define the class before including platform file, which may specialize
@@ -541,7 +551,7 @@ struct Atomic::PlatformCmpxchg {
   T operator()(T exchange_value,
                T volatile* dest,
                T compare_value,
-               cmpxchg_memory_order order) const;
+               atomic_memory_order order) const;
 };
 
 // Define the class before including platform file, which may use this
@@ -552,7 +562,7 @@ struct Atomic::CmpxchgByteUsingInt {
   T operator()(T exchange_value,
                T volatile* dest,
                T compare_value,
-               cmpxchg_memory_order order) const;
+               atomic_memory_order order) const;
 };
 
 // Define the class before including platform file, which may specialize
@@ -564,7 +574,8 @@ template<size_t byte_size>
 struct Atomic::PlatformXchg {
   template<typename T>
   T operator()(T exchange_value,
-               T volatile* dest) const;
+               T volatile* dest,
+               atomic_memory_order order) const;
 };
 
 // platform specific in-line definitions - must come before shared definitions
@@ -589,8 +600,9 @@ inline void Atomic::store(T store_value, volatile D* dest) {
 }
 
 template<typename I, typename D>
-inline D Atomic::add(I add_value, D volatile* dest) {
-  return AddImpl<I, D>()(add_value, dest);
+inline D Atomic::add(I add_value, D volatile* dest,
+                     atomic_memory_order order) {
+  return AddImpl<I, D>()(add_value, dest, order);
 }
 
 template<typename I, typename D>
@@ -601,9 +613,9 @@ struct Atomic::AddImpl<
                     (sizeof(I) <= sizeof(D)) &&
                     (IsSigned<I>::value == IsSigned<D>::value)>::type>
 {
-  D operator()(I add_value, D volatile* dest) const {
+  D operator()(I add_value, D volatile* dest, atomic_memory_order order) const {
     D addend = add_value;
-    return PlatformAdd<sizeof(D)>()(addend, dest);
+    return PlatformAdd<sizeof(D)>()(addend, dest, order);
   }
 };
 
@@ -612,14 +624,14 @@ struct Atomic::AddImpl<
   I, P*,
   typename EnableIf<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
 {
-  P* operator()(I add_value, P* volatile* dest) const {
+  P* operator()(I add_value, P* volatile* dest, atomic_memory_order order) const {
     STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
     STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
     typedef typename Conditional<IsSigned<I>::value,
                                  intptr_t,
                                  uintptr_t>::type CI;
     CI addend = add_value;
-    return PlatformAdd<sizeof(P*)>()(addend, dest);
+    return PlatformAdd<sizeof(P*)>()(addend, dest, order);
   }
 };
 
@@ -634,13 +646,13 @@ struct Atomic::AddImpl<
 // Use the ATOMIC_SHORT_PAIR macro (see macros.hpp) to get the desired alignment.
 template<>
 struct Atomic::AddImpl<short, short> {
-  short operator()(short add_value, short volatile* dest) const {
+  short operator()(short add_value, short volatile* dest, atomic_memory_order order) const {
 #ifdef VM_LITTLE_ENDIAN
     assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
-    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest-1));
+    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest-1), order);
 #else
     assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
-    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest));
+    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest), order);
 #endif
     return (short)(new_value >> 16); // preserves sign
   }
@@ -648,24 +660,26 @@ struct Atomic::AddImpl<short, short> {
 
 template<typename Derived>
 template<typename I, typename D>
-inline D Atomic::FetchAndAdd<Derived>::operator()(I add_value, D volatile* dest) const {
+inline D Atomic::FetchAndAdd<Derived>::operator()(I add_value, D volatile* dest,
+                                                  atomic_memory_order order) const {
   I addend = add_value;
   // If D is a pointer type P*, scale by sizeof(P).
   if (IsPointer<D>::value) {
     addend *= sizeof(typename RemovePointer<D>::type);
   }
-  D old = static_cast<const Derived*>(this)->fetch_and_add(addend, dest);
+  D old = static_cast<const Derived*>(this)->fetch_and_add(addend, dest, order);
   return old + add_value;
 }
 
 template<typename Derived>
 template<typename I, typename D>
-inline D Atomic::AddAndFetch<Derived>::operator()(I add_value, D volatile* dest) const {
+inline D Atomic::AddAndFetch<Derived>::operator()(I add_value, D volatile* dest,
+                                                  atomic_memory_order order) const {
   // If D is a pointer type P*, scale by sizeof(P).
   if (IsPointer<D>::value) {
     add_value *= sizeof(typename RemovePointer<D>::type);
   }
-  return static_cast<const Derived*>(this)->add_and_fetch(add_value, dest);
+  return static_cast<const Derived*>(this)->add_and_fetch(add_value, dest, order);
 }
 
 template<typename Type, typename Fn, typename I, typename D>
@@ -679,13 +693,13 @@ template<typename T, typename D, typename U>
 inline D Atomic::cmpxchg(T exchange_value,
                          D volatile* dest,
                          U compare_value,
-                         cmpxchg_memory_order order) {
+                         atomic_memory_order order) {
   return CmpxchgImpl<T, D, U>()(exchange_value, dest, compare_value, order);
 }
 
 template<typename T, typename D>
 inline bool Atomic::replace_if_null(T* value, D* volatile* dest,
-                                    cmpxchg_memory_order order) {
+                                    atomic_memory_order order) {
   // Presently using a trivial implementation in terms of cmpxchg.
   // Consider adding platform support, to permit the use of compiler
   // intrinsics like gcc's __sync_bool_compare_and_swap.
@@ -702,7 +716,7 @@ struct Atomic::CmpxchgImpl<
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
 {
   T operator()(T exchange_value, T volatile* dest, T compare_value,
-               cmpxchg_memory_order order) const {
+               atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.
     return PlatformCmpxchg<sizeof(T)>()(exchange_value,
                                         dest,
@@ -728,7 +742,7 @@ struct Atomic::CmpxchgImpl<
                            typename RemoveCV<U>::type>::value>::type>
 {
   D* operator()(T* exchange_value, D* volatile* dest, U* compare_value,
-               cmpxchg_memory_order order) const {
+               atomic_memory_order order) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
     D* new_value = exchange_value;
     // Don't care what the CV qualifiers for compare_value are,
@@ -751,7 +765,7 @@ struct Atomic::CmpxchgImpl<
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
   T operator()(T exchange_value, T volatile* dest, T compare_value,
-               cmpxchg_memory_order order) const {
+               atomic_memory_order order) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
     STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
@@ -779,7 +793,7 @@ template<typename T>
 inline T Atomic::CmpxchgByteUsingInt::operator()(T exchange_value,
                                                  T volatile* dest,
                                                  T compare_value,
-                                                 cmpxchg_memory_order order) const {
+                                                 atomic_memory_order order) const {
   STATIC_ASSERT(sizeof(T) == sizeof(uint8_t));
   uint8_t canon_exchange_value = exchange_value;
   uint8_t canon_compare_value = compare_value;
@@ -821,9 +835,9 @@ struct Atomic::XchgImpl<
   T, T,
   typename EnableIf<IsIntegral<T>::value || IsRegisteredEnum<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest) const {
+  T operator()(T exchange_value, T volatile* dest, atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.
-    return PlatformXchg<sizeof(T)>()(exchange_value, dest);
+    return PlatformXchg<sizeof(T)>()(exchange_value, dest, order);
   }
 };
 
@@ -837,10 +851,10 @@ struct Atomic::XchgImpl<
   T*, D*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value>::type>
 {
-  D* operator()(T* exchange_value, D* volatile* dest) const {
+  D* operator()(T* exchange_value, D* volatile* dest, atomic_memory_order order) const {
     // Allow derived to base conversion, and adding cv-qualifiers.
     D* new_value = exchange_value;
-    return PlatformXchg<sizeof(D*)>()(new_value, dest);
+    return PlatformXchg<sizeof(D*)>()(new_value, dest, order);
   }
 };
 
@@ -856,13 +870,14 @@ struct Atomic::XchgImpl<
   T, T,
   typename EnableIf<PrimitiveConversions::Translate<T>::value>::type>
 {
-  T operator()(T exchange_value, T volatile* dest) const {
+  T operator()(T exchange_value, T volatile* dest, atomic_memory_order order) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
     STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
     return Translator::recover(
       xchg(Translator::decay(exchange_value),
-           reinterpret_cast<Decayed volatile*>(dest)));
+           reinterpret_cast<Decayed volatile*>(dest),
+           order));
   }
 };
 
@@ -877,8 +892,8 @@ inline T Atomic::xchg_using_helper(Fn fn,
 }
 
 template<typename T, typename D>
-inline D Atomic::xchg(T exchange_value, volatile D* dest) {
-  return XchgImpl<T, D>()(exchange_value, dest);
+inline D Atomic::xchg(T exchange_value, volatile D* dest, atomic_memory_order order) {
+  return XchgImpl<T, D>()(exchange_value, dest, order);
 }
 
 #endif // SHARE_VM_RUNTIME_ATOMIC_HPP

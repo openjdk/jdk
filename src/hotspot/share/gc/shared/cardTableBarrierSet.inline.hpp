@@ -32,9 +32,8 @@
 template <DecoratorSet decorators, typename T>
 inline void CardTableBarrierSet::write_ref_field_post(T* field, oop newVal) {
   volatile jbyte* byte = _card_table->byte_for(field);
-  if (UseConcMarkSweepGC) {
-    // Perform a releasing store if using CMS so that it may
-    // scan and clear the cards concurrently during pre-cleaning.
+  if (_card_table->scanned_concurrently()) {
+    // Perform a releasing store if the card table is scanned concurrently
     OrderAccess::release_store(byte, CardTable::dirty_card_val());
   } else {
     *byte = CardTable::dirty_card_val();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8080535
+ * @bug 8080535 8191410
  * @summary Expected size of Character.UnicodeBlock.map is not optimal
  * @library /lib/testlibrary
  * @modules java.base/java.lang:open
@@ -41,8 +41,8 @@ import jdk.testlibrary.OptimalCapacity;
 // According to http://www.unicode.org/versions/beta-8.0.0.html ,
 // in Unicode 8 there will be added 10 more blocks (30 with aliases).
 //
-// After implementing support of Unicode 7 and 8 in Java, there will
-// be 510+96+30 = 636 entries in Character.UnicodeBlock.map.
+// After implementing support of Unicode 9 and 10 in Java, there will
+// be 638 entries in Character.UnicodeBlock.map.
 //
 // Initialization of the map and this test will have to be adjusted
 // accordingly then.
@@ -51,7 +51,7 @@ public class OptimalMapSize {
     public static void main(String[] args) throws Throwable {
         // The initial size of Character.UnicodeBlock.map.
         // See src/java.base/share/classes/java/lang/Character.java
-        int initialCapacity = (int)(510 / 0.75f + 1.0f);
+        int initialCapacity = (int)(638 / 0.75f + 1.0f);
 
         OptimalCapacity.ofHashMap(Character.UnicodeBlock.class,
                 "map", initialCapacity);

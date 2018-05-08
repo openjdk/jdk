@@ -60,14 +60,4 @@ class CMSInnerParMarkAndPushClosure;
   f(CMSKeepAliveClosure,_nv)                              \
   f(CMSInnerParMarkAndPushClosure,_nv)
 
-#define SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f)           \
-  f(MarkRefsIntoAndScanClosure,_nv)                       \
-  f(PushAndMarkClosure,_nv)                               \
-  f(ParMarkRefsIntoAndScanClosure,_nv)                    \
-  f(ParPushAndMarkClosure,_nv)
-
-#define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f)  \
-  f(ParScanWithBarrierClosure,_nv)                        \
-  f(ParScanWithoutBarrierClosure,_nv)
-
 #endif // SHARE_GC_CMS_CMS_SPECIALIZED_OOP_CLOSURES_HPP

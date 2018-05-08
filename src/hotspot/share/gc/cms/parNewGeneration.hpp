@@ -258,15 +258,16 @@ class KeepAliveClosure: public DefNewGeneration::KeepAliveClosure {
   virtual void do_oop(narrowOop* p);
 };
 
+template <typename OopClosureType1, typename OopClosureType2>
 class EvacuateFollowersClosureGeneral: public VoidClosure {
  private:
   CMSHeap* _heap;
-  OopsInGenClosure* _scan_cur_or_nonheap;
-  OopsInGenClosure* _scan_older;
+  OopClosureType1* _scan_cur_or_nonheap;
+  OopClosureType2* _scan_older;
  public:
   EvacuateFollowersClosureGeneral(CMSHeap* heap,
-                                  OopsInGenClosure* cur,
-                                  OopsInGenClosure* older);
+                                  OopClosureType1* cur,
+                                  OopClosureType2* older);
   virtual void do_void();
 };
 

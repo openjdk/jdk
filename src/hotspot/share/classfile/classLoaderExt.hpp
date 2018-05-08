@@ -29,74 +29,21 @@
 #include "classfile/moduleEntry.hpp"
 #include "utilities/macros.hpp"
 
-CDS_ONLY(class SharedPathsMiscInfoExt;)
-CDS_ONLY(class ClassListParser;)
+class ClassListParser;
 
 class ClassLoaderExt: public ClassLoader { // AllStatic
 public:
   enum SomeConstants {
     max_classpath_index = 0x7fff
   };
-  // ClassLoaderExt::Context --
-  //
-  // This is used by DumpSharedSpaces only - it enforces the same classloader
-  // delegation model as would be in run-time. I.e.,
-  // + classes defined by the NULL class loader cannot load classes in the PLATFORM or APP paths.
-  // + classes defined by the PLATFORM class loader cannot load classes in the APP paths.
-  class Context {
-    static Thread* _dump_thread;
-    const char* _class_name;
-    const char* _file_name;
-  public:
-    const char* class_name() {
-      return _class_name;
-    }
-    const char* file_name() {
-      return _file_name;
-    }
-
-    Context(const char* class_name, const char* file_name, TRAPS) {
-      _class_name = class_name;
-      _file_name = file_name;
-#if INCLUDE_CDS
-      if (!DumpSharedSpaces && !UseSharedSpaces) {
-        // Must not modify _app_class_paths_start_index if we're not using CDS.
-        assert(_app_class_paths_start_index == ClassLoaderExt::max_classpath_index, "must be");
-      }
-#endif
-    }
-
-    bool should_verify(int classpath_index) {
-      CDS_ONLY(return (classpath_index >= _app_class_paths_start_index);)
-      NOT_CDS(return false;)
-    }
-
-    void record_result(Symbol* class_name,
-                       const s2 classpath_index,
-                       InstanceKlass* result,
-                       TRAPS) {
-#if INCLUDE_CDS
-      ClassLoaderExt::record_result(this, class_name, classpath_index, result, THREAD);
-#endif
-    }
-
-    ~Context() {
-#if INCLUDE_CDS
-      if (!DumpSharedSpaces && !UseSharedSpaces) {
-        // Must not modify app_class_paths_start_index if we're not using CDS.
-        assert(_app_class_paths_start_index == ClassLoaderExt::max_classpath_index, "must be");
-      }
-#endif
-    }
-  }; // end ClassLoaderExt::Context
 
 private:
 #if INCLUDE_CDS
   static char* get_class_path_attr(const char* jar_path, char* manifest, jint manifest_size);
   static void setup_app_search_path(); // Only when -Xshare:dump
   static void process_module_table(ModuleEntryTable* met, TRAPS);
-  static SharedPathsMiscInfoExt* shared_paths_misc_info() {
-    return (SharedPathsMiscInfoExt*)_shared_paths_misc_info;
+  static SharedPathsMiscInfo* shared_paths_misc_info() {
+    return (SharedPathsMiscInfo*)_shared_paths_misc_info;
   }
   // index of first app JAR in shared classpath entry table
   static jshort _app_class_paths_start_index;
@@ -110,6 +57,10 @@ private:
 public:
   CDS_ONLY(static void process_jar_manifest(ClassPathEntry* entry, bool check_for_duplicates);)
 
+  static bool should_verify(int classpath_index) {
+    CDS_ONLY(return (classpath_index >= _app_class_paths_start_index);)
+    NOT_CDS(return false;)
+  }
   // Called by JVMTI code to add boot classpath
   static void append_boot_classpath(ClassPathEntry* new_entry);
 
@@ -156,9 +107,7 @@ public:
     return _has_app_classes || _has_platform_classes;
   }
 
-  static void record_result(class ClassLoaderExt::Context *context,
-                            Symbol* class_name,
-                            const s2 classpath_index,
+  static void record_result(const s2 classpath_index,
                             InstanceKlass* result, TRAPS);
   static InstanceKlass* load_class(Symbol* h_name, const char* path, TRAPS);
   static Klass* load_one_class(ClassListParser* parser, TRAPS);
