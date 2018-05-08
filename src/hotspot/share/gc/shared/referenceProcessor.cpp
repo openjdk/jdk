@@ -311,7 +311,7 @@ void DiscoveredListIterator::enqueue() {
                                             _next_discovered);
 }
 
-void DiscoveredListIterator::complete_enqeue() {
+void DiscoveredListIterator::complete_enqueue() {
   if (_prev_discovered != NULL) {
     // This is the last object.
     // Swap refs_list into pending list and set obj's
@@ -474,7 +474,7 @@ void ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
     assert(oopDesc::is_oop(iter.obj(), UseConcMarkSweepGC), "Adding a bad reference");
     iter.next();
   }
-  iter.complete_enqeue();
+  iter.complete_enqueue();
   // Close the reachable set
   complete_gc->do_void();
   // Clear the list.
