@@ -147,7 +147,7 @@ public:
   void enqueue();
 
   // Move enqueued references to the reference pending list.
-  void complete_enqeue();
+  void complete_enqueue();
 
   // NULL out referent pointer.
   void clear_referent();
