@@ -501,7 +501,7 @@ public class ToolBasicTest extends ReplToolTesting {
         compiler.writeToFile(path, "int a = 10;int b = 20;int c = a + b;\n");
         for (String s : new String[]{"/o", "/open"}) {
             test(
-                    (a) -> assertCommand(a, s + " file://" + path.toString(), ""),
+                    (a) -> assertCommand(a, s + " " + path.toUri(), ""),
                     (a) -> assertCommand(a, "a", "a ==> 10"),
                     (a) -> assertCommand(a, "b", "b ==> 20"),
                     (a) -> assertCommand(a, "c", "c ==> 30")
