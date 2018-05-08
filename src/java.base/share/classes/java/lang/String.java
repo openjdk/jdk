@@ -2599,35 +2599,36 @@ public final class String
     }
 
     /**
-     * Returns a string whose value is this string, with any leading and trailing
-     * whitespace removed.
+     * Returns a string whose value is this string, with all leading
+     * and trailing space removed, where space is defined
+     * as any character whose codepoint is less than or equal to
+     * {@code '\u005Cu0020'} (the space character).
      * <p>
      * If this {@code String} object represents an empty character
      * sequence, or the first and last characters of character sequence
      * represented by this {@code String} object both have codes
-     * greater than {@code '\u005Cu0020'} (the space character), then a
+     * that are not space (as defined above), then a
      * reference to this {@code String} object is returned.
      * <p>
-     * Otherwise, if there is no character with a code greater than
-     * {@code '\u005Cu0020'} in the string, then a
-     * {@code String} object representing an empty string is
-     * returned.
+     * Otherwise, if all characters in this string are space (as
+     * defined above), then a  {@code String} object representing an
+     * empty string is returned.
      * <p>
      * Otherwise, let <i>k</i> be the index of the first character in the
-     * string whose code is greater than {@code '\u005Cu0020'}, and let
+     * string whose code is not a space (as defined above) and let
      * <i>m</i> be the index of the last character in the string whose code
-     * is greater than {@code '\u005Cu0020'}. A {@code String}
+     * is not a space (as defined above). A {@code String}
      * object is returned, representing the substring of this string that
      * begins with the character at index <i>k</i> and ends with the
      * character at index <i>m</i>-that is, the result of
      * {@code this.substring(k, m + 1)}.
      * <p>
-     * This method may be used to trim whitespace (as defined above) from
+     * This method may be used to trim space (as defined above) from
      * the beginning and end of a string.
      *
-     * @return  A string whose value is this string, with any leading and trailing white
-     *          space removed, or this string if it has no leading or
-     *          trailing white space.
+     * @return  a string whose value is this string, with all leading
+     *          and trailing space removed, or this string if it
+     *          has no leading or trailing space.
      */
     public String trim() {
         String ret = isLatin1() ? StringLatin1.trim(value)
