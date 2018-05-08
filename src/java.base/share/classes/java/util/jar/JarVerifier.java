@@ -684,7 +684,7 @@ class JarVerifier {
         }
 
         final List<CodeSigner[]> signersReq = req;
-        final Enumeration<String> enum2 = (matchUnsigned) ? unsignedEntryNames(jar) : emptyEnumeration;
+        final Enumeration<String> enum2 = matchUnsigned ? unsignedEntryNames(jar) : Collections.emptyEnumeration();
 
         return new Enumeration<>() {
 
@@ -769,16 +769,6 @@ class JarVerifier {
             }
         };
     }
-    private Enumeration<String> emptyEnumeration = new Enumeration<String>() {
-
-        public boolean hasMoreElements() {
-            return false;
-        }
-
-        public String nextElement() {
-            throw new NoSuchElementException();
-        }
-    };
 
     // true if file is part of the signature mechanism itself
     static boolean isSigningRelated(String name) {
