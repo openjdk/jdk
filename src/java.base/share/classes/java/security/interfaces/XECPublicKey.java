@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.security.spec;
+package java.security.interfaces;
+
+import java.math.BigInteger;
+import java.security.PublicKey;
 
 /**
- * This immutable class specifies the set of parameters used for
- * generating elliptic curve (EC) domain parameters.
+ * An interface for an elliptic curve public key as defined by RFC 7748.
+ * These keys are distinct from the keys represented by {@code ECPublicKey},
+ * and they are intended for use with algorithms based on RFC 7748 such as the
+ * XDH {@code KeyAgreement} algorithm.
  *
- * @see AlgorithmParameterSpec
+ * An XEC public key is a particular point on the curve, which is represented
+ * using only its u-coordinate as described in RFC 7748. A u-coordinate is an
+ * element of the field of integers modulo some value that is determined by
+ * the algorithm parameters. This field element is represented by a BigInteger
+ * which may hold any value. That is, the BigInteger is not restricted to the
+ * range of canonical field elements.
  *
- * @author Valerie Peng
- *
- * @since 1.5
+ * @since 11
  */
-public class ECGenParameterSpec extends NamedParameterSpec {
+public interface XECPublicKey extends XECKey, PublicKey {
 
     /**
-     * Creates a parameter specification for EC parameter
-     * generation using a standard (or predefined) name
-     * {@code stdName} in order to generate the corresponding
-     * (precomputed) elliptic curve domain parameters. For the
-     * list of supported names, please consult the documentation
-     * of the provider whose implementation will be used.
+     * Get the u coordinate of the point.
      *
-     * @param stdName the standard name of the to-be-generated EC
-     *                domain parameters.
-     * @throws NullPointerException if {@code stdName}
-     *                              is null.
+     * @return the u-coordinate, represented using a BigInteger which may hold
+     *          any value
      */
-    public ECGenParameterSpec(String stdName) {
-        super(stdName);
-    }
+    BigInteger getU();
+
 }
 

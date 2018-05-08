@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.security.*;
 import java.util.regex.Pattern;
 import sun.security.util.CurveDB;
 import sun.security.util.NamedCurve;
-import sun.security.util.ECParameters;
+
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
@@ -119,6 +119,12 @@ public final class SunEC extends Provider {
                 } else  if (type.equals("KeyFactory")) {
                     if (algo.equals("EC")) {
                         return new ECKeyFactory();
+                    } else if (algo.equals("XDH")) {
+                        return new XDHKeyFactory();
+                    } else if (algo.equals("X25519")) {
+                        return new XDHKeyFactory.X25519();
+                    } else if (algo.equals("X448")) {
+                        return new XDHKeyFactory.X448();
                     }
                 } else  if (type.equals("AlgorithmParameters")) {
                     if (algo.equals("EC")) {
@@ -127,10 +133,22 @@ public final class SunEC extends Provider {
                 } else  if (type.equals("KeyPairGenerator")) {
                     if (algo.equals("EC")) {
                         return new ECKeyPairGenerator();
+                    } else if (algo.equals("XDH")) {
+                        return new XDHKeyPairGenerator();
+                    } else if (algo.equals("X25519")) {
+                        return new XDHKeyPairGenerator.X25519();
+                    } else if (algo.equals("X448")) {
+                        return new XDHKeyPairGenerator.X448();
                     }
                 } else  if (type.equals("KeyAgreement")) {
                     if (algo.equals("ECDH")) {
                         return new ECDHKeyAgreement();
+                    } else if (algo.equals("XDH")) {
+                        return new XDHKeyAgreement();
+                    } else if (algo.equals("X25519")) {
+                        return new XDHKeyAgreement.X25519();
+                    } else if (algo.equals("X448")) {
+                        return new XDHKeyAgreement.X448();
                     }
                 }
             } catch (Exception ex) {
@@ -205,6 +223,8 @@ public final class SunEC extends Provider {
             new String[] { "EllipticCurve", "1.2.840.10045.2.1", "OID.1.2.840.10045.2.1" },
             apAttrs));
 
+        putXDHEntries();
+
         /*
          * Register the algorithms below only when the full ECC implementation
          * is available
@@ -271,5 +291,40 @@ public final class SunEC extends Provider {
          */
         putService(new ProviderService(this, "KeyAgreement",
             "ECDH", "sun.security.ec.ECDHKeyAgreement", null, ATTRS));
+    }
+
+    private void putXDHEntries() {
+
+        HashMap<String, String> ATTRS = new HashMap<>(1);
+        ATTRS.put("ImplementedIn", "Software");
+
+        /* XDH does not require native implementation */
+        putService(new ProviderService(this, "KeyFactory",
+            "XDH", "sun.security.ec.XDHKeyFactory", null, ATTRS));
+        putService(new ProviderService(this, "KeyFactory",
+            "X25519", "sun.security.ec.XDHKeyFactory.X25519",
+            new String[]{"1.3.101.110", "OID.1.3.101.110"}, ATTRS));
+        putService(new ProviderService(this, "KeyFactory",
+            "X448", "sun.security.ec.XDHKeyFactory.X448",
+            new String[]{"1.3.101.111", "OID.1.3.101.111"}, ATTRS));
+
+        putService(new ProviderService(this, "KeyPairGenerator",
+            "XDH", "sun.security.ec.XDHKeyPairGenerator", null, ATTRS));
+        putService(new ProviderService(this, "KeyPairGenerator",
+            "X25519", "sun.security.ec.XDHKeyPairGenerator.X25519",
+            new String[]{"1.3.101.110", "OID.1.3.101.110"}, ATTRS));
+        putService(new ProviderService(this, "KeyPairGenerator",
+            "X448", "sun.security.ec.XDHKeyPairGenerator.X448",
+            new String[]{"1.3.101.111", "OID.1.3.101.111"}, ATTRS));
+
+        putService(new ProviderService(this, "KeyAgreement",
+            "XDH", "sun.security.ec.XDHKeyAgreement", null, ATTRS));
+        putService(new ProviderService(this, "KeyAgreement",
+            "X25519", "sun.security.ec.XDHKeyAgreement.X25519",
+            new String[]{"1.3.101.110", "OID.1.3.101.110"}, ATTRS));
+        putService(new ProviderService(this, "KeyAgreement",
+            "X448", "sun.security.ec.XDHKeyAgreement.X448",
+            new String[]{"1.3.101.111", "OID.1.3.101.111"}, ATTRS));
+
     }
 }
