@@ -33,10 +33,11 @@ import java.util.Hashtable;
 import javax.swing.Icon;
 import javax.swing.JDesktopPane;
 import javax.swing.JInternalFrame;
+import javax.swing.JInternalFrame.JDesktopIcon;
 import javax.swing.JLayeredPane;
 import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
-import javax.swing.JInternalFrame.JDesktopIcon;
+import javax.swing.UIManager;
 import javax.swing.event.InternalFrameListener;
 import javax.swing.plaf.InternalFrameUI;
 
@@ -132,6 +133,24 @@ public class JInternalFrameOperator extends JComponentOperator
      * @see #getDump
      */
     public static final String IS_SELECTED_DPROP = "Selected";
+
+    /**
+     * Maximize button tool tip key
+     */
+    public static final String MAXIMIZE_BUTTON_TOOLTIP =
+            UIManager.getString("InternalFrame.maxButtonToolTip");
+
+    /**
+     * Close button tool tip key
+     */
+    public static final String CLOSE_BUTTON_TOOLTIP =
+            UIManager.getString("InternalFrame.closeButtonToolTip");
+
+    /**
+     * Minimize button tool tip key
+     */
+    public static final String MINIMIZE_BUTTON_TOOLTIP =
+            UIManager.getString("InternalFrame.iconButtonToolTip");
 
     /**
      * A minimizing button.
@@ -1359,7 +1378,6 @@ public class JInternalFrameOperator extends JComponentOperator
         if (!isIcon() && titlePane != null) {
             if (titleOperator == null) {
                 titleOperator = new ContainerOperator<>(titlePane);
-                int bttCount = 0;
                 if (getContainer(new ComponentChooser() {
                     @Override
                     public boolean checkComponent(Component comp) {
@@ -1368,7 +1386,7 @@ public class JInternalFrameOperator extends JComponentOperator
 
                     @Override
                     public String getDescription() {
-                        return "Desctop pane";
+                        return "Desktop pane";
                     }
 
                     @Override
@@ -1376,11 +1394,11 @@ public class JInternalFrameOperator extends JComponentOperator
                         return "JInternalFrameOperator.initOperators.ComponentChooser{description = " + getDescription() + '}';
                     }
                 }) != null) {
-                    minOper = new JButtonOperator(titleOperator, bttCount);
-                    bttCount++;
+                    minOper = new JButtonOperator(titleOperator,
+                            new JComponentByTipFinder(MINIMIZE_BUTTON_TOOLTIP));
                     if (((JInternalFrame) getSource()).isMaximizable()) {
-                        maxOper = new JButtonOperator(titleOperator, bttCount);
-                        bttCount++;
+                        maxOper = new JButtonOperator(titleOperator,
+                                new JComponentByTipFinder(MAXIMIZE_BUTTON_TOOLTIP));
                     } else {
                         maxOper = null;
                     }
@@ -1389,7 +1407,8 @@ public class JInternalFrameOperator extends JComponentOperator
                     maxOper = null;
                 }
                 if (isClosable()) {
-                    closeOper = new JButtonOperator(titleOperator, bttCount);
+                    closeOper = new JButtonOperator(titleOperator,
+                            new JComponentByTipFinder(CLOSE_BUTTON_TOOLTIP));
                 } else {
                     closeOper = null;
                 }
