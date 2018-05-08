@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "classfile/classLoader.inline.hpp"
+#include "classfile/classLoaderExt.hpp"
 #include "classfile/compactHashtable.inline.hpp"
-#include "classfile/sharedClassUtil.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -159,8 +159,9 @@ FileMapInfo::FileMapInfo() {
   memset((void*)this, 0, sizeof(FileMapInfo));
   _file_offset = 0;
   _file_open = false;
-  _header = SharedClassUtil::allocate_file_map_header();
+  _header = new FileMapHeader();
   _header->_version = _invalid_version;
+  _header->_has_platform_or_app_classes = true;
 }
 
 FileMapInfo::~FileMapInfo() {
@@ -170,10 +171,6 @@ FileMapInfo::~FileMapInfo() {
 
 void FileMapInfo::populate_header(size_t alignment) {
   _header->populate(this, alignment);
-}
-
-size_t FileMapInfo::FileMapHeader::data_size() {
-  return SharedClassUtil::file_map_header_size() - sizeof(FileMapInfo::FileMapHeaderBase);
 }
 
 void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment) {
@@ -198,6 +195,14 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
 
   // JVM version string ... changes on each build.
   get_header_version(_jvm_ident);
+
+  ClassLoaderExt::finalize_shared_paths_misc_info();
+  _app_class_paths_start_index = ClassLoaderExt::app_class_paths_start_index();
+  _app_module_paths_start_index = ClassLoaderExt::app_module_paths_start_index();
+
+  _verify_local = BytecodeVerificationLocal;
+  _verify_remote = BytecodeVerificationRemote;
+  _has_platform_or_app_classes = ClassLoaderExt::has_platform_or_app_classes();
 }
 
 void SharedClassPathEntry::init(const char* name, TRAPS) {
@@ -278,7 +283,7 @@ void FileMapInfo::allocate_shared_path_table() {
   assert(jrt != NULL,
          "No modular java runtime image present when allocating the CDS classpath entry table");
 
-  size_t entry_size = SharedClassUtil::shared_class_path_entry_size(); // assert ( should be 8 byte aligned??)
+  size_t entry_size = sizeof(SharedClassPathEntry); // assert ( should be 8 byte aligned??)
   int num_boot_classpath_entries = ClassLoader::num_boot_classpath_entries();
   int num_app_classpath_entries = ClassLoader::num_app_classpath_entries();
   int num_module_path_entries = ClassLoader::num_module_path_entries();
@@ -299,7 +304,7 @@ void FileMapInfo::allocate_shared_path_table() {
     ent->init(cpe->name(), THREAD);
     if (cpe != jrt) { // No need to do jimage.
       EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
-      SharedClassUtil::update_shared_classpath(cpe, ent, THREAD);
+      update_shared_classpath(cpe, ent, THREAD);
     }
     cpe = ClassLoader::get_next_boot_classpath_entry(cpe);
     i++;
@@ -314,7 +319,7 @@ void FileMapInfo::allocate_shared_path_table() {
     SharedClassPathEntry* ent = shared_path(i);
     ent->init(acpe->name(), THREAD);
     EXCEPTION_MARK;
-    SharedClassUtil::update_shared_classpath(acpe, ent, THREAD);
+    update_shared_classpath(acpe, ent, THREAD);
     acpe = acpe->next();
     i++;
   }
@@ -326,7 +331,7 @@ void FileMapInfo::allocate_shared_path_table() {
     SharedClassPathEntry* ent = shared_path(i);
     ent->init(mpe->name(), THREAD);
     EXCEPTION_MARK;
-    SharedClassUtil::update_shared_classpath(mpe, ent, THREAD);
+    update_shared_classpath(mpe, ent, THREAD);
     mpe = mpe->next();
     i++;
   }
@@ -360,6 +365,84 @@ void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
   }
 }
 
+class ManifestStream: public ResourceObj {
+  private:
+  u1*   _buffer_start; // Buffer bottom
+  u1*   _buffer_end;   // Buffer top (one past last element)
+  u1*   _current;      // Current buffer position
+
+ public:
+  // Constructor
+  ManifestStream(u1* buffer, int length) : _buffer_start(buffer),
+                                           _current(buffer) {
+    _buffer_end = buffer + length;
+  }
+
+  static bool is_attr(u1* attr, const char* name) {
+    return strncmp((const char*)attr, name, strlen(name)) == 0;
+  }
+
+  static char* copy_attr(u1* value, size_t len) {
+    char* buf = NEW_RESOURCE_ARRAY(char, len + 1);
+    strncpy(buf, (char*)value, len);
+    buf[len] = 0;
+    return buf;
+  }
+
+  // The return value indicates if the JAR is signed or not
+  bool check_is_signed() {
+    u1* attr = _current;
+    bool isSigned = false;
+    while (_current < _buffer_end) {
+      if (*_current == '\n') {
+        *_current = '\0';
+        u1* value = (u1*)strchr((char*)attr, ':');
+        if (value != NULL) {
+          assert(*(value+1) == ' ', "Unrecognized format" );
+          if (strstr((char*)attr, "-Digest") != NULL) {
+            isSigned = true;
+            break;
+          }
+        }
+        *_current = '\n'; // restore
+        attr = _current + 1;
+      }
+      _current ++;
+    }
+    return isSigned;
+  }
+};
+
+void FileMapInfo::update_shared_classpath(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS) {
+  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+  ResourceMark rm(THREAD);
+  jint manifest_size;
+  bool isSigned;
+
+  if (cpe->is_jar_file()) {
+    char* manifest = ClassLoaderExt::read_manifest(cpe, &manifest_size, CHECK);
+    if (manifest != NULL) {
+      ManifestStream* stream = new ManifestStream((u1*)manifest,
+                                                  manifest_size);
+      isSigned = stream->check_is_signed();
+      if (isSigned) {
+        ent->set_is_signed(true);
+      } else {
+        // Copy the manifest into the shared archive
+        manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
+        Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
+                                                        manifest_size,
+                                                        THREAD);
+        char* p = (char*)(buf->data());
+        memcpy(p, manifest, manifest_size);
+        ent->set_manifest(buf);
+        ent->set_is_signed(false);
+      }
+    }
+  }
+}
+
+
 bool FileMapInfo::validate_shared_path_table() {
   assert(UseSharedSpaces, "runtime only");
 
@@ -368,14 +451,13 @@ bool FileMapInfo::validate_shared_path_table() {
   _shared_path_entry_size = _header->_shared_path_entry_size;
   _shared_path_table_size = _header->_shared_path_table_size;
 
-  FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
-  int module_paths_start_index = header->_app_module_paths_start_index;
+  int module_paths_start_index = _header->_app_module_paths_start_index;
 
   // If the shared archive contain app or platform classes, validate all entries
   // in the shared path table. Otherwise, only validate the boot path entries (with
   // entry index < _app_class_paths_start_index).
-  int count = header->has_platform_or_app_classes() ?
-              _shared_path_table_size : header->_app_class_paths_start_index;
+  int count = _header->has_platform_or_app_classes() ?
+              _shared_path_table_size : _header->_app_class_paths_start_index;
 
   for (int i=0; i<count; i++) {
     if (i < module_paths_start_index) {
@@ -1075,6 +1157,26 @@ bool FileMapInfo::FileMapHeader::validate() {
                   " does not equal the current CompactStrings setting (%s).",
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
+    return false;
+  }
+
+  // This must be done after header validation because it might change the
+  // header data
+  const char* prop = Arguments::get_property("java.system.class.loader");
+  if (prop != NULL) {
+    warning("Archived non-system classes are disabled because the "
+            "java.system.class.loader property is specified (value = \"%s\"). "
+            "To use archived non-system classes, this property must be not be set", prop);
+    _has_platform_or_app_classes = false;
+  }
+
+  // For backwards compatibility, we don't check the verification setting
+  // if the archive only contains system classes.
+  if (_has_platform_or_app_classes &&
+      ((!_verify_local && BytecodeVerificationLocal) ||
+       (!_verify_remote && BytecodeVerificationRemote))) {
+    FileMapInfo::fail_continue("The shared archive file was created with less restrictive "
+                  "verification setting than the current setting.");
     return false;
   }
 

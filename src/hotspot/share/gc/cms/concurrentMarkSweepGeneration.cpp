@@ -36,6 +36,7 @@
 #include "gc/cms/concurrentMarkSweepGeneration.inline.hpp"
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/cms/parNewGeneration.hpp"
+#include "gc/cms/promotionInfo.inline.hpp"
 #include "gc/cms/vmCMSOperations.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
@@ -54,6 +55,7 @@
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/referencePolicy.hpp"
+#include "gc/shared/space.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.hpp"
@@ -602,8 +604,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   // Support for parallelizing young gen rescan
   CMSHeap* heap = CMSHeap::heap();
-  assert(heap->young_gen()->kind() == Generation::ParNew, "CMS can only be used with ParNew");
-  _young_gen = (ParNewGeneration*)heap->young_gen();
+  _young_gen = heap->young_gen();
   if (heap->supports_inline_contig_alloc()) {
     _top_addr = heap->top_addr();
     _end_addr = heap->end_addr();
@@ -770,7 +771,6 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
       log.trace("  Capacity " SIZE_FORMAT, capacity() / 1000);
       log.trace("  Desired capacity " SIZE_FORMAT, desired_capacity / 1000);
       CMSHeap* heap = CMSHeap::heap();
-      assert(heap->is_old_gen(this), "The CMS generation should always be the old generation");
       size_t young_size = heap->young_gen()->capacity();
       log.trace("  Young gen size " SIZE_FORMAT, young_size / 1000);
       log.trace("  unsafe_max_alloc_nogc " SIZE_FORMAT, unsafe_max_alloc_nogc() / 1000);
@@ -1101,7 +1101,7 @@ ConcurrentMarkSweepGeneration::
 par_oop_since_save_marks_iterate_done(int thread_num) {
   CMSParGCThreadState* ps = _par_gc_thread_states[thread_num];
   ParScanWithoutBarrierClosure* dummy_cl = NULL;
-  ps->promo.promoted_oops_iterate_nv(dummy_cl);
+  ps->promo.promoted_oops_iterate(dummy_cl);
 
   // Because card-scanning has been completed, subsequent phases
   // (e.g., reference processing) will not need to recognize which
@@ -2462,18 +2462,6 @@ void ConcurrentMarkSweepGeneration::save_marks() {
 bool ConcurrentMarkSweepGeneration::no_allocs_since_save_marks() {
   return cmsSpace()->no_allocs_since_save_marks();
 }
-
-#define CMS_SINCE_SAVE_MARKS_DEFN(OopClosureType, nv_suffix)    \
-                                                                \
-void ConcurrentMarkSweepGeneration::                            \
-oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) {   \
-  cl->set_generation(this);                                     \
-  cmsSpace()->oop_since_save_marks_iterate##nv_suffix(cl);      \
-  cl->reset_generation();                                       \
-  save_marks();                                                 \
-}
-
-ALL_SINCE_SAVE_MARKS_CLOSURES(CMS_SINCE_SAVE_MARKS_DEFN)
 
 void
 ConcurrentMarkSweepGeneration::oop_iterate(ExtendedOopClosure* cl) {
@@ -5266,16 +5254,7 @@ void CMSCollector::refProcessingWork() {
   restore_preserved_marks_if_any();  // done single-threaded for now
 
   rp->set_enqueuing_is_done(true);
-  if (rp->processing_is_mt()) {
-    rp->balance_all_queues();
-    CMSRefProcTaskExecutor task_executor(*this);
-    rp->enqueue_discovered_references(&task_executor, &pt);
-  } else {
-    rp->enqueue_discovered_references(NULL, &pt);
-  }
   rp->verify_no_references_recorded();
-  pt.print_enqueue_phase();
-  assert(!rp->discovery_enabled(), "should have been disabled");
 }
 
 #ifndef PRODUCT

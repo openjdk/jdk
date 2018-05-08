@@ -141,7 +141,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
         // Reference Processing
         new LogMessageWithLevel("Reference Processing", Level.DEBUG),
-        new LogMessageWithLevel("Reference Enqueuing", Level.DEBUG),
         // VM internal reference processing
         new LogMessageWithLevel("Weak Processing", Level.DEBUG),
 

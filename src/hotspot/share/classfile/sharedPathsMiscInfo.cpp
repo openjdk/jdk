@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/sharedPathsMiscInfo.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -36,6 +35,7 @@
 #include "utilities/ostream.hpp"
 
 SharedPathsMiscInfo::SharedPathsMiscInfo() {
+  _app_offset = 0;
   _buf_size = INITIAL_BUF_SIZE;
   _cur_ptr = _buf_start = NEW_C_HEAP_ARRAY(char, _buf_size, mtClass);
   _allocated = true;
@@ -89,11 +89,14 @@ bool SharedPathsMiscInfo::fail(const char* msg, const char* name) {
 
 void SharedPathsMiscInfo::print_path(outputStream* out, int type, const char* path) {
   switch (type) {
-  case BOOT:
+  case BOOT_PATH:
     out->print("Expecting BOOT path=%s", path);
     break;
   case NON_EXIST:
     out->print("Expecting that %s does not exist", path);
+    break;
+  case APP_PATH:
+    ClassLoader::trace_class_path("Expecting -Djava.class.path=", path);
     break;
   default:
     ShouldNotReachHere();
@@ -139,7 +142,7 @@ bool SharedPathsMiscInfo::check() {
 
 bool SharedPathsMiscInfo::check(jint type, const char* path) {
   switch (type) {
-  case BOOT:
+  case BOOT_PATH:
     // In the future we should perform the check based on the content of the mapped archive.
     if (os::file_name_strcmp(path, Arguments::get_sysclasspath()) != 0) {
       return fail("[BOOT classpath mismatch, actual =", Arguments::get_sysclasspath());
@@ -152,6 +155,33 @@ bool SharedPathsMiscInfo::check(jint type, const char* path) {
         // The file actually exists
         // But we want it to not exist -> fail
         return fail("File must not exist");
+      }
+    }
+    break;
+  case APP_PATH:
+    {
+      // Prefix is OK: E.g., dump with -cp foo.jar, but run with -cp foo.jar:bar.jar
+      size_t len = strlen(path);
+      const char *appcp = Arguments::get_appclasspath();
+      assert(appcp != NULL, "NULL app classpath");
+      size_t appcp_len = strlen(appcp);
+      if (appcp_len < len) {
+        return fail("Run time APP classpath is shorter than the one at dump time: ", appcp);
+      }
+      ResourceMark rm;
+      char* tmp_path;
+      if (len == appcp_len) {
+        tmp_path = (char*)appcp;
+      } else {
+        tmp_path = NEW_RESOURCE_ARRAY(char, len + 1);
+        strncpy(tmp_path, appcp, len);
+        tmp_path[len] = 0;
+      }
+      if (os::file_name_strcmp(path, tmp_path) != 0) {
+        return fail("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
+      }
+      if (appcp[len] != '\0' && appcp[len] != os::path_separator()[0]) {
+        return fail("Dump time APP classpath is not a proper prefix of run time APP classpath: ", appcp);
       }
     }
     break;

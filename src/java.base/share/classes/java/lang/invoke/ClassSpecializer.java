@@ -68,7 +68,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
     private final List<MemberName> transformMethods;
     private final MethodType baseConstructorType;
     private final S topSpecies;
-    private final ConcurrentHashMap<K, S> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<K, Object> cache = new ConcurrentHashMap<>();
     private final Factory factory;
     private @Stable boolean topClassIsSuper;
 
@@ -151,14 +151,20 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         return new IllegalArgumentException(message, cause);
     }
 
+    private static final Function<Object, Object> CREATE_RESERVATION = new Function<>() {
+        @Override
+        public Object apply(Object key) {
+            return new Object();
+        }
+    };
+
     public final S findSpecies(K key) {
         // Note:  Species instantiation may throw VirtualMachineError because of
         // code cache overflow.  If this happens the species bytecode may be
         // loaded but not linked to its species metadata (with MH's etc).
-        // That will cause a throw out of CHM.computeIfAbsent,
-        // which will shut down the caller thread.
+        // That will cause a throw out of Factory.loadSpecies.
         //
-        // In a latter attempt to get the same species, the already-loaded
+        // In a later attempt to get the same species, the already-loaded
         // class will be present in the system dictionary, causing an
         // error when the species generator tries to reload it.
         // We try to detect this case and link the pre-existing code.
@@ -168,25 +174,20 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         // (As an alternative, we might spin a new class with a new name,
         // or use the anonymous class mechanism.)
         //
-        // In the end, as long as everybody goes through the same CHM,
-        // CHM.computeIfAbsent will ensure only one SpeciesData will be set
-        // successfully on a concrete class if ever.
+        // In the end, as long as everybody goes through this findSpecies method,
+        // it will ensure only one SpeciesData will be set successfully on a
+        // concrete class if ever.
         // The concrete class is published via SpeciesData instance
         // returned here only after the class and species data are linked together.
-        S speciesData = cache.computeIfAbsent(key, new Function<>() {
-            @Override
-            public S apply(K key1) {
-                return newSpeciesData(key1);
-            }
-        });
+        Object speciesDataOrReservation = cache.computeIfAbsent(key, CREATE_RESERVATION);
         // Separating the creation of a placeholder SpeciesData instance above
         // from the loading and linking a real one below ensures we can never
-        // accidentally call computeIfAbsent recursively.  Replacing rather than
-        // updating the placeholder is done to ensure safe publication.
-        if (!speciesData.isResolved()) {
-            synchronized (speciesData) {
-                S existingSpeciesData = cache.get(key);
-                if (existingSpeciesData == speciesData) { // won the race
+        // accidentally call computeIfAbsent recursively.
+        S speciesData;
+        if (speciesDataOrReservation.getClass() == Object.class) {
+            synchronized (speciesDataOrReservation) {
+                Object existingSpeciesData = cache.get(key);
+                if (existingSpeciesData == speciesDataOrReservation) { // won the race
                     // create a new SpeciesData...
                     speciesData = newSpeciesData(key);
                     // load and link it...
@@ -195,9 +196,11 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                         throw newInternalError("Concurrent loadSpecies");
                     }
                 } else { // lost the race; the retrieved existingSpeciesData is the final
-                    speciesData = existingSpeciesData;
+                    speciesData = metaType.cast(existingSpeciesData);
                 }
             }
+        } else {
+            speciesData = metaType.cast(speciesDataOrReservation);
         }
         assert(speciesData != null && speciesData.isResolved());
         return speciesData;

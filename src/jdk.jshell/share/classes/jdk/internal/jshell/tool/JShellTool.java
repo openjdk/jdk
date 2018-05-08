@@ -40,6 +40,10 @@ import java.io.StringReader;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -2997,15 +3001,39 @@ public class JShellTool implements MessageHandler {
                     regenerateOnDeath = false;
                     scanner = new Scanner(cmdin);
                 } else {
-                    Path path = toPathResolvingUserHome(filename);
+                    Path path = null;
+                    URL url = null;
                     String resource;
-                    scanner = new Scanner(
-                            (!Files.exists(path) && (resource = getResource(filename)) != null)
-                            ? new StringReader(resource) // Not found as file, but found as resource
-                            : new FileReader(path.toString())
-                    );
+                    try {
+                        path = toPathResolvingUserHome(filename);
+                    } catch (InvalidPathException ipe) {
+                        try {
+                            url = new URL(filename);
+                            if (url.getProtocol().equalsIgnoreCase("file")) {
+                                path = Paths.get(url.toURI());
+                            }
+                        } catch (MalformedURLException | URISyntaxException e) {
+                            throw new FileNotFoundException(filename);
+                        }
+                    }
+                    if (path != null && Files.exists(path)) {
+                        scanner = new Scanner(new FileReader(path.toString()));
+                    } else if ((resource = getResource(filename)) != null) {
+                        scanner = new Scanner(new StringReader(resource));
+                    } else {
+                        if (url == null) {
+                            try {
+                                url = new URL(filename);
+                            } catch (MalformedURLException mue) {
+                                throw new FileNotFoundException(filename);
+                            }
+                        }
+                        scanner = new Scanner(url.openStream());
+                    }
                 }
-                run(new ScannerIOContext(scanner));
+                try (var scannerIOContext = new ScannerIOContext(scanner)) {
+                    run(scannerIOContext);
+                }
                 return true;
             } catch (FileNotFoundException e) {
                 errormsg("jshell.err.file.not.found", context, filename, e.getMessage());

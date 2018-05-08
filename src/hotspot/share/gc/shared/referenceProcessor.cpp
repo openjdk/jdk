@@ -257,113 +257,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   return stats;
 }
 
-void ReferenceProcessor::enqueue_discovered_references(AbstractRefProcTaskExecutor*  task_executor,
-                                                       ReferenceProcessorPhaseTimes* phase_times) {
-  // Enqueue references that are not made active again, and
-  // clear the decks for the next collection (cycle).
-  enqueue_discovered_reflists(task_executor, phase_times);
-
-  // Stop treating discovered references specially.
-  disable_discovery();
-}
-
-void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list) {
-  // Given a list of refs linked through the "discovered" field
-  // (java.lang.ref.Reference.discovered), self-loop their "next" field
-  // thus distinguishing them from active References, then
-  // prepend them to the pending list.
-  //
-  // The Java threads will see the Reference objects linked together through
-  // the discovered field. Instead of trying to do the write barrier updates
-  // in all places in the reference processor where we manipulate the discovered
-  // field we make sure to do the barrier here where we anyway iterate through
-  // all linked Reference objects. Note that it is important to not dirty any
-  // cards during reference processing since this will cause card table
-  // verification to fail for G1.
-  log_develop_trace(gc, ref)("ReferenceProcessor::enqueue_discovered_reflist list " INTPTR_FORMAT, p2i(&refs_list));
-
-  oop obj = NULL;
-  oop next_discovered = refs_list.head();
-  // Walk down the list, self-looping the next field
-  // so that the References are not considered active.
-  while (obj != next_discovered) {
-    obj = next_discovered;
-    assert(obj->is_instance(), "should be an instance object");
-    assert(InstanceKlass::cast(obj->klass())->is_reference_instance_klass(), "should be reference object");
-    next_discovered = java_lang_ref_Reference::discovered(obj);
-    log_develop_trace(gc, ref)("        obj " INTPTR_FORMAT "/next_discovered " INTPTR_FORMAT, p2i(obj), p2i(next_discovered));
-    assert(java_lang_ref_Reference::next(obj) == NULL,
-           "Reference not active; should not be discovered");
-    // Self-loop next, so as to make Ref not active.
-    java_lang_ref_Reference::set_next_raw(obj, obj);
-    if (next_discovered != obj) {
-      HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(obj, java_lang_ref_Reference::discovered_offset, next_discovered);
-    } else {
-      // This is the last object.
-      // Swap refs_list into pending list and set obj's
-      // discovered to what we read from the pending list.
-      oop old = Universe::swap_reference_pending_list(refs_list.head());
-      HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(obj, java_lang_ref_Reference::discovered_offset, old);
-    }
-  }
-}
-
-// Parallel enqueue task
-class RefProcEnqueueTask: public AbstractRefProcTaskExecutor::EnqueueTask {
-public:
-  RefProcEnqueueTask(ReferenceProcessor&           ref_processor,
-                     DiscoveredList                discovered_refs[],
-                     int                           n_queues,
-                     ReferenceProcessorPhaseTimes* phase_times)
-    : EnqueueTask(ref_processor, discovered_refs, n_queues, phase_times)
-  { }
-
-  virtual void work(unsigned int work_id) {
-    RefProcWorkerTimeTracker tt(ReferenceProcessorPhaseTimes::RefEnqueue, _phase_times, work_id);
-
-    assert(work_id < (unsigned int)_ref_processor.max_num_queues(), "Index out-of-bounds");
-    // Simplest first cut: static partitioning.
-    int index = work_id;
-    // The increment on "index" must correspond to the maximum number of queues
-    // (n_queues) with which that ReferenceProcessor was created.  That
-    // is because of the "clever" way the discovered references lists were
-    // allocated and are indexed into.
-    assert(_n_queues == (int) _ref_processor.max_num_queues(), "Different number not expected");
-    for (int j = 0;
-         j < ReferenceProcessor::number_of_subclasses_of_ref();
-         j++, index += _n_queues) {
-      _ref_processor.enqueue_discovered_reflist(_refs_lists[index]);
-      _refs_lists[index].set_head(NULL);
-      _refs_lists[index].set_length(0);
-    }
-  }
-};
-
-// Enqueue references that are not made active again
-void ReferenceProcessor::enqueue_discovered_reflists(AbstractRefProcTaskExecutor*  task_executor,
-                                                     ReferenceProcessorPhaseTimes* phase_times) {
-
-  ReferenceProcessorStats stats(total_count(_discoveredSoftRefs),
-                                total_count(_discoveredWeakRefs),
-                                total_count(_discoveredFinalRefs),
-                                total_count(_discoveredPhantomRefs));
-
-  RefProcEnqueueTimeTracker tt(phase_times, stats);
-
-  if (_processing_is_mt && task_executor != NULL) {
-    // Parallel code
-    RefProcEnqueueTask tsk(*this, _discovered_refs, _max_num_queues, phase_times);
-    task_executor->execute(tsk);
-  } else {
-    // Serial code: call the parent class's implementation
-    for (uint i = 0; i < _max_num_queues * number_of_subclasses_of_ref(); i++) {
-      enqueue_discovered_reflist(_discovered_refs[i]);
-      _discovered_refs[i].set_head(NULL);
-      _discovered_refs[i].set_length(0);
-    }
-  }
-}
-
 void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   _current_discovered_addr = java_lang_ref_Reference::discovered_addr_raw(_current_discovered);
   oop discovered = java_lang_ref_Reference::discovered(_current_discovered);
@@ -407,6 +300,25 @@ void DiscoveredListIterator::remove() {
 
 void DiscoveredListIterator::clear_referent() {
   RawAccess<>::oop_store(_referent_addr, oop(NULL));
+}
+
+void DiscoveredListIterator::enqueue() {
+  // Self-loop next, so as to make Ref not active.
+  java_lang_ref_Reference::set_next_raw(_current_discovered, _current_discovered);
+
+  HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(_current_discovered,
+                                            java_lang_ref_Reference::discovered_offset,
+                                            _next_discovered);
+}
+
+void DiscoveredListIterator::complete_enqueue() {
+  if (_prev_discovered != NULL) {
+    // This is the last object.
+    // Swap refs_list into pending list and set obj's
+    // discovered to what we read from the pending list.
+    oop old = Universe::swap_reference_pending_list(_refs_list.head());
+    HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(_prev_discovered, java_lang_ref_Reference::discovered_offset, old);
+  }
 }
 
 // NOTE: process_phase*() are largely similar, and at a high level
@@ -556,13 +468,18 @@ void ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
       // keep the referent around
       iter.make_referent_alive();
     }
+    iter.enqueue();
     log_develop_trace(gc, ref)("Adding %sreference (" INTPTR_FORMAT ": %s) as pending",
                                clear_referent ? "cleared " : "", p2i(iter.obj()), iter.obj()->klass()->internal_name());
     assert(oopDesc::is_oop(iter.obj(), UseConcMarkSweepGC), "Adding a bad reference");
     iter.next();
   }
+  iter.complete_enqueue();
   // Close the reachable set
   complete_gc->do_void();
+  // Clear the list.
+  refs_list.set_head(NULL);
+  refs_list.set_length(0);
 }
 
 void
@@ -783,13 +700,6 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
   log_reflist_counts(ref_lists, _num_queues, balanced_total_refs);
   assert(total_refs == balanced_total_refs, "Balancing was incomplete");
 #endif
-}
-
-void ReferenceProcessor::balance_all_queues() {
-  balance_queues(_discoveredSoftRefs);
-  balance_queues(_discoveredWeakRefs);
-  balance_queues(_discoveredFinalRefs);
-  balance_queues(_discoveredPhantomRefs);
 }
 
 void ReferenceProcessor::process_discovered_reflist(

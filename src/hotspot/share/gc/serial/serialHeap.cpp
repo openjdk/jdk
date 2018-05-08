@@ -23,10 +23,18 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialHeap.hpp"
+#include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/genMemoryPools.hpp"
 #include "services/memoryManager.hpp"
+
+SerialHeap* SerialHeap::heap() {
+  CollectedHeap* heap = Universe::heap();
+  assert(heap != NULL, "Uninitialized access to SerialHeap::heap()");
+  assert(heap->kind() == CollectedHeap::Serial, "Invalid name");
+  return static_cast<SerialHeap*>(heap);
+}
 
 SerialHeap::SerialHeap(GenCollectorPolicy* policy) :
     GenCollectedHeap(policy,
@@ -42,7 +50,7 @@ SerialHeap::SerialHeap(GenCollectorPolicy* policy) :
 
 void SerialHeap::initialize_serviceability() {
 
-  DefNewGeneration* young = (DefNewGeneration*) young_gen();
+  DefNewGeneration* young = young_gen();
 
   // Add a memory pool for each space and young gen doesn't
   // support low memory detection as it is expected to get filled up.
@@ -54,7 +62,7 @@ void SerialHeap::initialize_serviceability() {
                                                    "Survivor Space",
                                                    young->max_survivor_size(),
                                                    false /* support_usage_threshold */);
-  Generation* old = old_gen();
+  TenuredGeneration* old = old_gen();
   _old_pool = new GenerationPool(old, "Tenured Gen", true);
 
   _young_manager->add_pool(_eden_pool);
@@ -66,13 +74,6 @@ void SerialHeap::initialize_serviceability() {
   _old_manager->add_pool(_old_pool);
   old->set_gc_manager(_old_manager);
 
-}
-
-void SerialHeap::check_gen_kinds() {
-  assert(young_gen()->kind() == Generation::DefNew,
-         "Wrong youngest generation type");
-  assert(old_gen()->kind() == Generation::MarkSweepCompact,
-         "Wrong generation kind");
 }
 
 GrowableArray<GCMemoryManager*> SerialHeap::memory_managers() {

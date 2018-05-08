@@ -501,10 +501,8 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Fields in objects allocated by applications of the closure
   // *are* included in the iteration. Thus, when the iteration completes
   // there should be no further such objects remaining.
-  #define CFLS_OOP_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)  \
-    void oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk);
-  ALL_SINCE_SAVE_MARKS_CLOSURES(CFLS_OOP_SINCE_SAVE_MARKS_DECL)
-  #undef CFLS_OOP_SINCE_SAVE_MARKS_DECL
+  template <typename OopClosureType>
+  void oop_since_save_marks_iterate(OopClosureType* blk);
 
   // Allocation support
   HeapWord* allocate(size_t size);

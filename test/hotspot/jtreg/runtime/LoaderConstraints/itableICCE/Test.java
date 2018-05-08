@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,14 @@ public class Test {
     // ICCE). So, no LinkageError exception should be thrown because the loader
     // constraint check that would cause the LinkageError should not be done.
     public static void main(String... args) throws Exception {
-        Class<?> c = Foo.class; // forces standard class loader to load Foo
-        ClassLoader l = new PreemptingClassLoader("Task", "Foo", "C", "I");
-        Runnable r = (Runnable) l.loadClass("Task").newInstance();
+        Class<?> c = test.Foo.class; // forces standard class loader to load Foo
+        ClassLoader l = new PreemptingClassLoader("test.Task", "test.Foo", "test.C", "test.I");
+        Runnable r = (Runnable) l.loadClass("test.Task").newInstance();
         try {
             r.run(); // Cause an ICCE because both I and J define m()LFoo;
             throw new RuntimeException("Expected ICCE exception not thrown");
         } catch (IncompatibleClassChangeError e) {
-            if (!e.getMessage().contains("Conflicting default methods: I.m J.m")) {
+            if (!e.getMessage().contains("Conflicting default methods: test/I.m test/J.m")) {
                 throw new RuntimeException("Wrong ICCE exception thrown: " + e.getMessage());
             }
         }

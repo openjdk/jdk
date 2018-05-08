@@ -1195,12 +1195,8 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   virtual void safe_object_iterate(ObjectClosure* cl);
   virtual void object_iterate(ObjectClosure* cl);
 
-  // Need to declare the full complement of closures, whether we'll
-  // override them or not, or get message from the compiler:
-  //   oop_since_save_marks_iterate_nv hides virtual function...
-  #define CMS_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix) \
-    void oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl);
-  ALL_SINCE_SAVE_MARKS_CLOSURES(CMS_SINCE_SAVE_MARKS_DECL)
+  template <typename OopClosureType>
+  void oop_since_save_marks_iterate(OopClosureType* cl);
 
   // Smart allocation  XXX -- move to CFLSpace?
   void setNearLargestChunk();

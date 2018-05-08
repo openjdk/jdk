@@ -608,15 +608,9 @@ class ContiguousSpace: public CompactibleSpace {
     _concurrent_iteration_safe_limit = new_limit;
   }
 
-
-#if INCLUDE_CMSGC
   // In support of parallel oop_iterate.
-  #define ContigSpace_PAR_OOP_ITERATE_DECL(OopClosureType, nv_suffix)  \
-    void par_oop_iterate(MemRegion mr, OopClosureType* blk);
-
-    ALL_PAR_OOP_ITERATE_CLOSURES(ContigSpace_PAR_OOP_ITERATE_DECL)
-  #undef ContigSpace_PAR_OOP_ITERATE_DECL
-#endif // INCLUDE_CMSGC
+  template <typename OopClosureType>
+  void par_oop_iterate(MemRegion mr, OopClosureType* blk);
 
   // Compaction support
   virtual void reset_after_compaction() {
@@ -639,11 +633,8 @@ class ContiguousSpace: public CompactibleSpace {
   // *are* included in the iteration.
   // Updates _saved_mark_word to point to just after the last object
   // iterated over.
-#define ContigSpace_OOP_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)  \
-  void oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk);
-
-  ALL_SINCE_SAVE_MARKS_CLOSURES(ContigSpace_OOP_SINCE_SAVE_MARKS_DECL)
-#undef ContigSpace_OOP_SINCE_SAVE_MARKS_DECL
+  template <typename OopClosureType>
+  void oop_since_save_marks_iterate(OopClosureType* blk);
 
   // Same as object_iterate, but starting from "mark", which is required
   // to denote the start of an object.  Objects allocated by

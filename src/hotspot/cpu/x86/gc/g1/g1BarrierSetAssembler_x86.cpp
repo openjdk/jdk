@@ -496,7 +496,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   __ bind(runtime);
 
-  __ save_live_registers_no_oop_map(3, true);
+  __ save_live_registers_no_oop_map(true);
 
   // load the pre-value
   __ load_parameter(0, rcx);
@@ -575,7 +575,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   __ bind(runtime);
 
-  __ save_live_registers_no_oop_map(3, true);
+  __ save_live_registers_no_oop_map(true);
 
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), card_addr, thread);
 

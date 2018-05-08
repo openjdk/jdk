@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508 8166232 8196133
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317 8143955 8157953 8080347 8154714 8166649 8167643 8170162 8172102 8165405 8174796 8174797 8175304 8167554 8180508 8166232 8196133 8199912
  * @summary Tests for Basic tests for REPL tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -33,12 +33,15 @@
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting TestingInputStream Compiler
  * @run testng/timeout=600 ToolBasicTest
+ * @key intermittent
  */
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,6 +55,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.sun.net.httpserver.HttpServer;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -488,6 +492,49 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertCommand(a, s + " " + unknown,
                             "|  File '" + unknown + "' for '/open' is not found.")
             );
+        }
+    }
+
+    public void testOpenLocalFileUrl() {
+        Compiler compiler = new Compiler();
+        Path path = compiler.getPath("testOpen.repl");
+        compiler.writeToFile(path, "int a = 10;int b = 20;int c = a + b;\n");
+        for (String s : new String[]{"/o", "/open"}) {
+            test(
+                    (a) -> assertCommand(a, s + " " + path.toUri(), ""),
+                    (a) -> assertCommand(a, "a", "a ==> 10"),
+                    (a) -> assertCommand(a, "b", "b ==> 20"),
+                    (a) -> assertCommand(a, "c", "c ==> 30")
+            );
+        }
+    }
+
+    public void testOpenFileOverHttp() throws IOException {
+        var script = "int a = 10;int b = 20;int c = a + b;";
+
+        var localhostAddress = new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), 0);
+        var httpServer = HttpServer.create(localhostAddress, 0);
+        try {
+            httpServer.createContext("/script", exchange -> {
+                exchange.sendResponseHeaders(200, script.length());
+                try (var output = exchange.getResponseBody()) {
+                    output.write(script.getBytes());
+                }
+            });
+            httpServer.setExecutor(null);
+            httpServer.start();
+
+            var urlAddress = "http:/" + httpServer.getAddress().toString() + "/script";
+            for (String s : new String[]{"/o", "/open"}) {
+                test(
+                        (a) -> assertCommand(a, s + " " + urlAddress, ""),
+                        (a) -> assertCommand(a, "a", "a ==> 10"),
+                        (a) -> assertCommand(a, "b", "b ==> 20"),
+                        (a) -> assertCommand(a, "c", "c ==> 30")
+                );
+            }
+        } finally {
+            httpServer.stop(0);
         }
     }
 

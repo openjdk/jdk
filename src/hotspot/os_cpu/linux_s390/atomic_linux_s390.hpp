@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,23 +68,31 @@
 // The return value of the method is the value that was successfully stored. At the
 // time the caller receives back control, the value in memory may have changed already.
 
+// New atomic operations only include specific-operand-serialization, not full
+// memory barriers. We can use the Fast-BCR-Serialization Facility for them.
+inline void z196_fast_sync() {
+  __asm__ __volatile__ ("bcr 14, 0" : : : "memory");
+}
+
 template<size_t byte_size>
 struct Atomic::PlatformAdd
   : Atomic::AddAndFetch<Atomic::PlatformAdd<byte_size> >
 {
   template<typename I, typename D>
-  D add_and_fetch(I add_value, D volatile* dest) const;
+  D add_and_fetch(I add_value, D volatile* dest, atomic_memory_order order) const;
 };
 
 template<>
 template<typename I, typename D>
-inline D Atomic::PlatformAdd<4>::add_and_fetch(I inc, D volatile* dest) const {
+inline D Atomic::PlatformAdd<4>::add_and_fetch(I inc, D volatile* dest,
+                                               atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
 
   D old, upd;
 
   if (VM_Version::has_LoadAndALUAtomicV1()) {
+    if (order == memory_order_conservative) { z196_fast_sync(); }
     __asm__ __volatile__ (
       "   LGFR     0,%[inc]                \n\t" // save increment
       "   LA       3,%[mem]                \n\t" // force data address into ARG2
@@ -106,6 +114,7 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I inc, D volatile* dest) const {
       //---<  clobbered  >---
       : "cc", "r0", "r2", "r3", "memory"
     );
+    if (order == memory_order_conservative) { z196_fast_sync(); }
   } else {
     __asm__ __volatile__ (
       "   LLGF     %[old],%[mem]           \n\t" // get old value
@@ -129,13 +138,15 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(I inc, D volatile* dest) const {
 
 template<>
 template<typename I, typename D>
-inline D Atomic::PlatformAdd<8>::add_and_fetch(I inc, D volatile* dest) const {
+inline D Atomic::PlatformAdd<8>::add_and_fetch(I inc, D volatile* dest,
+                                               atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
 
   D old, upd;
 
   if (VM_Version::has_LoadAndALUAtomicV1()) {
+    if (order == memory_order_conservative) { z196_fast_sync(); }
     __asm__ __volatile__ (
       "   LGR      0,%[inc]                \n\t" // save increment
       "   LA       3,%[mem]                \n\t" // force data address into ARG2
@@ -157,6 +168,7 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I inc, D volatile* dest) const {
       //---<  clobbered  >---
       : "cc", "r0", "r2", "r3", "memory"
     );
+    if (order == memory_order_conservative) { z196_fast_sync(); }
   } else {
     __asm__ __volatile__ (
       "   LG       %[old],%[mem]           \n\t" // get old value
@@ -197,7 +209,8 @@ inline D Atomic::PlatformAdd<8>::add_and_fetch(I inc, D volatile* dest) const {
 template<>
 template<typename T>
 inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
-                                             T volatile* dest) const {
+                                             T volatile* dest,
+                                             atomic_memory_order unused) const {
   STATIC_ASSERT(4 == sizeof(T));
   T old;
 
@@ -220,7 +233,8 @@ inline T Atomic::PlatformXchg<4>::operator()(T exchange_value,
 template<>
 template<typename T>
 inline T Atomic::PlatformXchg<8>::operator()(T exchange_value,
-                                             T volatile* dest) const {
+                                             T volatile* dest,
+                                             atomic_memory_order unused) const {
   STATIC_ASSERT(8 == sizeof(T));
   T old;
 
@@ -278,7 +292,7 @@ template<typename T>
 inline T Atomic::PlatformCmpxchg<4>::operator()(T xchg_val,
                                                 T volatile* dest,
                                                 T cmp_val,
-                                                cmpxchg_memory_order unused) const {
+                                                atomic_memory_order unused) const {
   STATIC_ASSERT(4 == sizeof(T));
   T old;
 
@@ -302,7 +316,7 @@ template<typename T>
 inline T Atomic::PlatformCmpxchg<8>::operator()(T xchg_val,
                                                 T volatile* dest,
                                                 T cmp_val,
-                                                cmpxchg_memory_order unused) const {
+                                                atomic_memory_order unused) const {
   STATIC_ASSERT(8 == sizeof(T));
   T old;
 

@@ -1459,6 +1459,7 @@ void os::print_memory_info(outputStream* st) {
   const char* const aixthread_guardpages = ::getenv("AIXTHREAD_GUARDPAGES");
   st->print_cr("  AIXTHREAD_GUARDPAGES=%s.",
       aixthread_guardpages ? aixthread_guardpages : "<unset>");
+  st->cr();
 
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
@@ -1479,6 +1480,16 @@ void os::print_memory_info(outputStream* st) {
         mi.pgsp_total ? (100.0f * (mi.pgsp_total - mi.pgsp_free) / mi.pgsp_total) : -1.0f);
     }
   }
+  st->cr();
+
+  // Print program break.
+  st->print_cr("Program break at VM startup: " PTR_FORMAT ".", p2i(g_brk_at_startup));
+  address brk_now = (address)::sbrk(0);
+  if (brk_now != (address)-1) {
+    st->print_cr("Program break now          : " PTR_FORMAT " (distance: " SIZE_FORMAT "k).",
+                 p2i(brk_now), (size_t)((brk_now - g_brk_at_startup) / K));
+  }
+  st->print_cr("MaxExpectedDataSegmentSize    : " SIZE_FORMAT "k.", MaxExpectedDataSegmentSize / K);
   st->cr();
 
   // Print segments allocated with os::reserve_memory.

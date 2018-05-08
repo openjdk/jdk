@@ -256,20 +256,6 @@ bool TenuredGeneration::no_allocs_since_save_marks() {
   return _the_space->saved_mark_at_top();
 }
 
-#define TenuredGen_SINCE_SAVE_MARKS_ITERATE_DEFN(OopClosureType, nv_suffix)     \
-                                                                                \
-void TenuredGeneration::                                                        \
-oop_since_save_marks_iterate##nv_suffix(OopClosureType* blk) {                  \
-  blk->set_generation(this);                                                    \
-  _the_space->oop_since_save_marks_iterate##nv_suffix(blk);                     \
-  blk->reset_generation();                                                      \
-  save_marks();                                                                 \
-}
-
-ALL_SINCE_SAVE_MARKS_CLOSURES(TenuredGen_SINCE_SAVE_MARKS_ITERATE_DEFN)
-
-#undef TenuredGen_SINCE_SAVE_MARKS_ITERATE_DEFN
-
 void TenuredGeneration::gc_epilogue(bool full) {
   // update the generation and space performance counters
   update_counters();

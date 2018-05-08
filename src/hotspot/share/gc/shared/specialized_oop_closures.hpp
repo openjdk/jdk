@@ -80,36 +80,4 @@ class OopsInGenClosure;
 #define ALL_OOP_OOP_ITERATE_CLOSURES_2(f)                         \
   SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_2(f)
 
-// This macro applies an argument macro to all OopClosures for which we
-// want specialized bodies of a family of methods related to
-// "par_oop_iterate".  The arguments to f are the same as above.
-// The "root_class" is the most general class to define; this may be
-// "OopClosure" in some applications and "OopsInGenClosure" in others.
-
-
-#define ALL_PAR_OOP_ITERATE_CLOSURES(f)                           \
-  f(ExtendedOopClosure,_v)                                        \
-  CMSGC_ONLY(SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f))
-
-// This macro applies an argument macro to all OopClosures for which we
-// want specialized bodies of a family of methods related to
-// "oops_since_save_marks_do".  The arguments to f are the same as above.
-// The "root_class" is the most general class to define; this may be
-// "OopClosure" in some applications and "OopsInGenClosure" in others.
-
-#define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG(f)  \
-  SERIALGC_ONLY(SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_S(f))   \
-     CMSGC_ONLY(SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG_P(f))
-
-#define SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f)                  \
-  SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES_YOUNG(f)
-
-// We separate these out, because sometime the general one has
-// a different definition from the specialized ones, and sometimes it
-// doesn't.
-
-#define ALL_SINCE_SAVE_MARKS_CLOSURES(f)                          \
-  f(OopsInGenClosure,_v)                                          \
-  SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(f)
-
 #endif // SHARE_VM_GC_SHARED_SPECIALIZED_OOP_CLOSURES_HPP

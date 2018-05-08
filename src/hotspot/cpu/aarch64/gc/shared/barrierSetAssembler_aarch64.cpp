@@ -30,6 +30,9 @@
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register dst, Address src, Register tmp1, Register tmp_thread) {
+
+  // LR is live.  It must be saved around calls.
+
   bool on_heap = (decorators & IN_HEAP) != 0;
   bool on_root = (decorators & IN_ROOT) != 0;
   switch (type) {

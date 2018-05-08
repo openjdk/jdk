@@ -31,7 +31,6 @@
 #include "classfile/compactHashtable.inline.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/sharedClassUtil.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -92,7 +91,7 @@ Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TR
   Handle empty;
   Handle manifest ;
   if (shared_jar_manifest(shared_path_index) == NULL) {
-    SharedClassPathEntryExt* ent = (SharedClassPathEntryExt*)FileMapInfo::shared_path(shared_path_index);
+    SharedClassPathEntry* ent = FileMapInfo::shared_path(shared_path_index);
     long size = ent->manifest_size();
     if (size <= 0) {
       return empty; // No manifest - return NULL handle
@@ -303,8 +302,7 @@ Handle SystemDictionaryShared::init_security_info(Handle class_loader, InstanceK
   if (ik != NULL) {
     int index = ik->shared_classpath_index();
     assert(index >= 0, "Sanity");
-    SharedClassPathEntryExt* ent =
-            (SharedClassPathEntryExt*)FileMapInfo::shared_path(index);
+    SharedClassPathEntry* ent = FileMapInfo::shared_path(index);
     Symbol* class_name = ik->name();
 
     if (ent->is_modules_image()) {
@@ -476,41 +474,38 @@ bool SystemDictionaryShared::is_shared_class_visible_for_classloader(
 //   [1] JVM_FindLoadedClass
 //   [2] java.lang.ClassLoader.findLoadedClass0()
 //   [3] java.lang.ClassLoader.findLoadedClass()
-//   [4] java.lang.ClassLoader.loadClass()
-//   [5] jdk.internal.loader.ClassLoaders$AppClassLoader_klass.loadClass()
+//   [4] jdk.internal.loader.BuiltinClassLoader.loadClassOrNull()
+//   [5] jdk.internal.loader.BuiltinClassLoader.loadClass()
+//   [6] jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(), or
+//       jdk.internal.loader.ClassLoaders$PlatformClassLoader.loadClass()
 //
-// Because AppCDS supports only the PlatformClassLoader and AppClassLoader, we make the following
-// assumptions (based on the JDK 8.0 source code):
+// AppCDS supports fast class loading for these 2 built-in class loaders:
+//    jdk.internal.loader.ClassLoaders$PlatformClassLoader
+//    jdk.internal.loader.ClassLoaders$AppClassLoader
+// with the following assumptions (based on the JDK core library source code):
 //
-// [a] these two loaders use the default implementation of
-//     ClassLoader.loadClass(String name, boolean resolve), which
-// [b] calls findLoadedClass(name), immediately followed by parent.loadClass(),
-//     immediately followed by findClass(name).
-// [c] If the requested class is a shared class of the current class loader, parent.loadClass()
-//     always returns null, and
-// [d] if AppCDS is not enabled, the class would be loaded by findClass() by decoding it from a
-//     JAR file and then parsed.
+// [a] these two loaders use the BuiltinClassLoader.loadClassOrNull() to
+//     load the named class.
+// [b] BuiltinClassLoader.loadClassOrNull() first calls findLoadedClass(name).
+// [c] At this point, if we can find the named class inside the
+//     shared_dictionary, we can perform further checks (see
+//     is_shared_class_visible_for_classloader() to ensure that this class
+//     was loaded by the same class loader during dump time.
 //
 // Given these assumptions, we intercept the findLoadedClass() call to invoke
 // SystemDictionaryShared::find_or_load_shared_class() to load the shared class from
-// the archive. The reasons are:
-//
-// + Because AppCDS is a commercial feature, we want to hide the implementation. There
-//   is currently no easy way to hide Java code, so we did it with native code.
-// + Start-up is improved because we avoid decoding the JAR file, and avoid delegating
-//   to the parent (since we know the parent will not find this class).
+// the archive for the 2 built-in class loaders. This way,
+// we can improve start-up because we avoid decoding the classfile,
+// and avoid delegating to the parent loader.
 //
 // NOTE: there's a lot of assumption about the Java code. If any of that change, this
 // needs to be redesigned.
-//
-// An alternative is to modify the Java code of AppClassLoader.loadClass().
-//
+
 InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
                  Symbol* name, Handle class_loader, TRAPS) {
   InstanceKlass* k = NULL;
   if (UseSharedSpaces) {
-    FileMapHeaderExt* header = (FileMapHeaderExt*)FileMapInfo::current_info()->header();
-    if (!header->has_platform_or_app_classes()) {
+    if (!FileMapInfo::current_info()->header()->has_platform_or_app_classes()) {
       return NULL;
     }
 
