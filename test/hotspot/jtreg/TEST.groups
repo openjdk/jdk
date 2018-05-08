@@ -54,6 +54,7 @@ hotspot_serviceability = \
 hotspot_misc = \
   / \
  -applications \
+ -vmTestbase \
  -:hotspot_compiler \
  -:hotspot_gc \
  -:hotspot_runtime \
