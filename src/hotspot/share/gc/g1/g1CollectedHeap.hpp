@@ -513,13 +513,13 @@ private:
   // allocated block, or else "NULL".
   HeapWord* expand_and_allocate(size_t word_size);
 
-  // Process any reference objects discovered during
-  // an incremental evacuation pause.
+  // Process any reference objects discovered.
   void process_discovered_references(G1ParScanThreadStateSet* per_thread_states);
 
-  // Enqueue any remaining discovered references
-  // after processing.
-  void enqueue_discovered_references(G1ParScanThreadStateSet* per_thread_states);
+  // If during an initial mark pause we may install a pending list head which is not
+  // otherwise reachable ensure that it is marked in the bitmap for concurrent marking
+  // to discover.
+  void make_pending_list_reachable();
 
   // Merges the information gathered on a per-thread basis for all worker threads
   // during GC into global variables.

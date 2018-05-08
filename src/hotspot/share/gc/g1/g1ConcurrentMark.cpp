@@ -1677,12 +1677,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
 
     assert(rp->num_queues() == active_workers, "why not");
 
-    rp->enqueue_discovered_references(executor, &pt);
-
     rp->verify_no_references_recorded();
-
-    pt.print_enqueue_phase();
-
     assert(!rp->discovery_enabled(), "Post condition");
   }
 

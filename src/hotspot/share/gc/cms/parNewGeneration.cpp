@@ -1054,17 +1054,9 @@ void ParNewGeneration::collect(bool   full,
   update_time_of_last_gc(now);
 
   rp->set_enqueuing_is_done(true);
-  if (rp->processing_is_mt()) {
-    ParNewRefProcTaskExecutor task_executor(*this, *_old_gen, thread_state_set);
-    rp->enqueue_discovered_references(&task_executor, &pt);
-  } else {
-    rp->enqueue_discovered_references(NULL, &pt);
-  }
   rp->verify_no_references_recorded();
 
   gch->trace_heap_after_gc(gc_tracer());
-
-  pt.print_enqueue_phase();
 
   _gc_timer->register_gc_end();
 

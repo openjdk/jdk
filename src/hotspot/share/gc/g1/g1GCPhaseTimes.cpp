@@ -129,7 +129,6 @@ void G1GCPhaseTimes::reset() {
   _cur_clear_ct_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
   _cur_ref_proc_time_ms = 0.0;
-  _cur_ref_enq_time_ms = 0.0;
   _cur_weak_ref_proc_time_ms = 0.0;
   _cur_collection_start_sec = 0.0;
   _root_region_scan_wait_time_ms = 0.0;
@@ -383,7 +382,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
                         _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         _cur_weak_ref_proc_time_ms +
-                        _cur_ref_enq_time_ms +
                         _cur_clear_ct_time_ms +
                         _recorded_merge_pss_time_ms +
                         _cur_strong_code_root_purge_time_ms +
@@ -415,9 +413,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set() const {
     trace_time("Recalculate Used", _cur_evac_fail_recalc_used);
     trace_time("Remove Self Forwards",_cur_evac_fail_remove_self_forwards);
   }
-
-  debug_time_for_reference("Reference Enqueuing", _cur_ref_enq_time_ms);
-  _ref_phase_times.print_enqueue_phase(2, false);
 
   debug_time("Merge Per-Thread State", _recorded_merge_pss_time_ms);
   debug_time("Code Roots Purge", _cur_strong_code_root_purge_time_ms);

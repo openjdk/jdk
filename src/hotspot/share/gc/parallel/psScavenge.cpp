@@ -430,16 +430,6 @@ bool PSScavenge::invoke_no_policy() {
 
       _gc_tracer.report_gc_reference_stats(stats);
       pt.print_all_references();
-
-      // Enqueue reference objects discovered during scavenge.
-      if (reference_processor()->processing_is_mt()) {
-        PSRefProcTaskExecutor task_executor;
-        reference_processor()->enqueue_discovered_references(&task_executor, &pt);
-      } else {
-        reference_processor()->enqueue_discovered_references(NULL, &pt);
-      }
-
-      pt.print_enqueue_phase();
     }
 
     assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
