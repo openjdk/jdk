@@ -23,7 +23,7 @@
 
 
 /* @test
-   @bug 4328745 5090704 8166111 8176510
+   @bug 4328745 5090704 8166111 8176510 8202767
    @summary exercise getLayoutFlags, getGlyphCharIndex, getGlyphCharIndices
  */
 
@@ -45,6 +45,9 @@ public class TestLayoutFlags {
     void runTest() {
 
         Font font = findFont("abcde");
+        if (font == null) {
+           return; // this system is no use for this test.
+        }
 
         String latin1 = "This is a latin1 string"; // none
         String hebrew = "\u05d0\u05d1\u05d2\u05d3"; // rtl
@@ -141,6 +144,9 @@ public class TestLayoutFlags {
 
     void test(String name, GlyphVector gv, boolean layout, int allowedFlags) {
 
+        if (gv == null) {
+            return;
+        }
         int iv = (layout) ? FLAG_HAS_POSITION_ADJUSTMENTS : 0;
 
         int computedFlags = computeFlags(gv, iv) & gv.FLAG_MASK;
