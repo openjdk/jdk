@@ -66,6 +66,7 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
+import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 import jdk.nashorn.internal.runtime.linker.NashornBeansLinker;
@@ -613,8 +614,13 @@ public final class NativeObject {
         final Object obj = Global.toObject(self);
 
         if (obj instanceof ScriptObject) {
-            final jdk.nashorn.internal.runtime.Property property = ((ScriptObject)obj).getMap().findProperty(str);
-            return property != null && property.isEnumerable();
+            final ScriptObject sobj = (ScriptObject) obj;
+            final Property property = sobj.getProperty(str);
+            if (property != null) {
+                return property.isEnumerable();
+            } else {
+                return (sobj.getArray().has(ArrayIndex.getArrayIndex(v)));
+            }
         }
 
         return false;
