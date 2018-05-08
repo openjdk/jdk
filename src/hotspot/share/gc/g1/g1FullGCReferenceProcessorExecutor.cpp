@@ -108,8 +108,4 @@ void G1FullGCReferenceProcessingExecutor::execute(STWGCTimer* timer, G1FullGCTra
   pt.print_all_references();
 
   assert(marker->oop_stack()->is_empty(), "Should be no oops on the stack");
-
-  // Now enqueue the references.
-  _reference_processor->enqueue_discovered_references(executor, &pt);
-  pt.print_enqueue_phase();
 }

@@ -261,10 +261,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_weak_ref_proc_time_ms = ms;
   }
 
-  void record_ref_enq_time(double ms) {
-    _cur_ref_enq_time_ms = ms;
-  }
-
   void record_root_region_scan_wait_time(double time_ms) {
     _root_region_scan_wait_time_ms = time_ms;
   }

@@ -143,6 +143,12 @@ public:
     }
   }
 
+  // Do enqueuing work, i.e. notifying the GC about the changed discovered pointers.
+  void enqueue();
+
+  // Move enqueued references to the reference pending list.
+  void complete_enqeue();
+
   // NULL out referent pointer.
   void clear_referent();
 
@@ -273,9 +279,6 @@ class ReferenceProcessor : public ReferenceDiscoverer {
                       OopClosure*        keep_alive,
                       VoidClosure*       complete_gc);
 
-  // Enqueue references with a certain reachability level
-  void enqueue_discovered_reflist(DiscoveredList& refs_list);
-
   // "Preclean" all the discovered reference lists
   // by removing references with strongly reachable referents.
   // The first argument is a predicate on an oop that indicates
@@ -294,9 +297,6 @@ class ReferenceProcessor : public ReferenceDiscoverer {
   // Returns the name of the discovered reference list
   // occupying the i / _num_queues slot.
   const char* list_name(uint i);
-
-  void enqueue_discovered_reflists(AbstractRefProcTaskExecutor* task_executor,
-                                   ReferenceProcessorPhaseTimes* phase_times);
 
   // "Preclean" the given discovered reference list
   // by removing references with strongly reachable referents.
@@ -387,8 +387,6 @@ public:
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots
 
-  // Balance each of the discovered lists.
-  void balance_all_queues();
   void verify_list(DiscoveredList& ref_list);
 
   // Discover a Reference object, using appropriate discovery criteria
@@ -404,10 +402,6 @@ public:
                                 VoidClosure*                  complete_gc,
                                 AbstractRefProcTaskExecutor*  task_executor,
                                 ReferenceProcessorPhaseTimes* phase_times);
-
-  // Enqueue references at end of GC (called by the garbage collector)
-  void enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor,
-                                     ReferenceProcessorPhaseTimes* phase_times);
 
   // If a discovery is in process that is being superceded, abandon it: all
   // the discovered lists will be empty, and all the objects on them will

@@ -5254,16 +5254,7 @@ void CMSCollector::refProcessingWork() {
   restore_preserved_marks_if_any();  // done single-threaded for now
 
   rp->set_enqueuing_is_done(true);
-  if (rp->processing_is_mt()) {
-    rp->balance_all_queues();
-    CMSRefProcTaskExecutor task_executor(*this);
-    rp->enqueue_discovered_references(&task_executor, &pt);
-  } else {
-    rp->enqueue_discovered_references(NULL, &pt);
-  }
   rp->verify_no_references_recorded();
-  pt.print_enqueue_phase();
-  assert(!rp->discovery_enabled(), "should have been disabled");
 }
 
 #ifndef PRODUCT

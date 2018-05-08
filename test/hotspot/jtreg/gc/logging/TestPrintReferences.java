@@ -93,9 +93,6 @@ public class TestPrintReferences {
                             gcLogTimeRegex + indent(8) + "Discovered: " + countRegex + "\n" +
                             gcLogTimeRegex + indent(8) + "Cleared: " + countRegex + "\n";
     String softRefDetailRegex = gcLogTimeRegex + indent(8) + phase1 + ": " + timeRegex + "\n" + refDetailRegex;
-    String enqueueRegex = gcLogTimeRegex + indent(4) + "Reference Enqueuing: " + timeRegex + "\n";
-    String enqueueDetailRegex = gcLogTimeRegex + indent(6) + "Reference Counts:  Soft: " + countRegex +
-                                "  Weak: " + countRegex + "  Final: " + countRegex + "  Phantom: " + countRegex + "\n";
 
     output.shouldMatch(/* Total Reference processing time */
                        totalRegex +
@@ -106,11 +103,7 @@ public class TestPrintReferences {
                        /* FinalReference processing */
                        finalRefRegex + balanceRegex + refDetailRegex +
                        /* PhantomReference processing */
-                       phantomRefRegex + balanceRegex + refDetailRegex +
-                       /* Total Enqueuing time */
-                       enqueueRegex +
-                         /* Enqueued Stats */
-                       enqueueDetailRegex
+                       phantomRefRegex + balanceRegex + refDetailRegex
                        );
   }
 
