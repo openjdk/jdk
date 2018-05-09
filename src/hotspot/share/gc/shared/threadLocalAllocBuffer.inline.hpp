@@ -76,7 +76,7 @@ inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
 inline size_t ThreadLocalAllocBuffer::compute_min_size(size_t obj_size) {
   const size_t aligned_obj_size = align_object_size(obj_size);
   const size_t size_with_reserve = aligned_obj_size + alignment_reserve();
-  return MAX2(size_with_reserve, MinTLABSize);
+  return MAX2(size_with_reserve, heap_word_size(MinTLABSize));
 }
 
 void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
