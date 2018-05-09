@@ -1158,8 +1158,8 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "UseDynamicNumberOfCompilerThreads")                              \
                                                                             \
   product(intx, CompilationPolicyChoice, 0,                                 \
-          "which compilation policy (0-3)")                                 \
-          range(0, 3)                                                       \
+          "which compilation policy (0-2)")                                 \
+          range(0, 2)                                                       \
                                                                             \
   develop(bool, UseStackBanging, true,                                      \
           "use stack banging for stack overflow checks (required for "      \

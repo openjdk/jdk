@@ -36,7 +36,6 @@
  *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseCounterDecay
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=compileonly,compiler.tiered.LevelTransitionTest$ExtendedTestCase$CompileMethodHolder::*
- *                   compiler.tiered.TransitionsTestExecutor
  *                   compiler.tiered.LevelTransitionTest
  */
 
