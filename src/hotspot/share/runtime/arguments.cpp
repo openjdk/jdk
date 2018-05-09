@@ -1603,9 +1603,9 @@ intx Arguments::scaled_freq_log(intx freq_log, double scale) {
 }
 
 void Arguments::set_tiered_flags() {
-  // With tiered, set default policy to AdvancedThresholdPolicy, which is 3.
+  // With tiered, set default policy to SimpleThresholdPolicy, which is 2.
   if (FLAG_IS_DEFAULT(CompilationPolicyChoice)) {
-    FLAG_SET_DEFAULT(CompilationPolicyChoice, 3);
+    FLAG_SET_DEFAULT(CompilationPolicyChoice, 2);
   }
   if (CompilationPolicyChoice < 2) {
     vm_exit_during_initialization(
