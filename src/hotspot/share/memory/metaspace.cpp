@@ -299,11 +299,11 @@ class ChunkManager : public CHeapObj<mtInternal> {
   void remove_chunk(Metachunk* chunk);
 
   // Return a single chunk of type index to the ChunkManager.
-  void return_single_chunk(ChunkIndex index, Metachunk* chunk);
+  void return_single_chunk(Metachunk* chunk);
 
   // Add the simple linked list of chunks to the freelist of chunks
   // of type index.
-  void return_chunk_list(ChunkIndex index, Metachunk* chunk);
+  void return_chunk_list(Metachunk* chunks);
 
   // Total of the space in the free chunks list
   size_t free_chunks_total_words();
@@ -1281,7 +1281,7 @@ class SpaceManager : public CHeapObj<mtClass> {
   // List of chunks in use by this SpaceManager.  Allocations
   // are done from the current chunk.  The list is used for deallocating
   // chunks when the SpaceManager is freed.
-  Metachunk* _chunks_in_use[NumberOfInUseLists];
+  Metachunk* _chunk_list;
   Metachunk* _current_chunk;
 
   // Maximum number of small chunks to allocate to a SpaceManager
@@ -1298,6 +1298,7 @@ class SpaceManager : public CHeapObj<mtClass> {
   size_t _overhead_words;
   size_t _capacity_words;
   size_t _used_words;
+  uintx _num_chunks_by_type[NumberOfInUseLists];
 
   // Free lists of blocks are per SpaceManager since they
   // are assumed to be in chunks in use by the SpaceManager
@@ -1307,10 +1308,7 @@ class SpaceManager : public CHeapObj<mtClass> {
 
  private:
   // Accessors
-  Metachunk* chunks_in_use(ChunkIndex index) const { return _chunks_in_use[index]; }
-  void set_chunks_in_use(ChunkIndex index, Metachunk* v) {
-    _chunks_in_use[index] = v;
-  }
+  Metachunk* chunk_list() const { return _chunk_list; }
 
   BlockFreelist* block_freelists() const { return _block_freelists; }
 
@@ -1337,9 +1335,6 @@ class SpaceManager : public CHeapObj<mtClass> {
 
   // Verify internal counters against the current state. Expects to be locked with lock().
   DEBUG_ONLY(void verify_metrics_locked() const;)
-
- protected:
-  void initialize();
 
  public:
   SpaceManager(Metaspace::MetadataType mdtype,
@@ -1393,7 +1388,7 @@ class SpaceManager : public CHeapObj<mtClass> {
   size_t get_initial_chunk_size(Metaspace::MetaspaceType type) const;
 
   // Todo: remove this once we have counters by chunk type.
-  size_t sum_count_in_chunks_in_use(ChunkIndex i);
+  uintx num_chunks_by_type(ChunkIndex chunk_type) const       { return _num_chunks_by_type[chunk_type]; }
 
   Metachunk* get_new_chunk(size_t chunk_word_size);
 
@@ -1619,7 +1614,7 @@ void VirtualSpaceNode::allocate_padding_chunks_until_top_is_at(MetaWord* target_
 
     // Return Chunk to freelist.
     inc_container_count();
-    chunk_manager->return_single_chunk(padding_chunk_type, padding_chunk);
+    chunk_manager->return_single_chunk(padding_chunk);
     // Please note: at this point, ChunkManager::return_single_chunk()
     // may already have merged the padding chunk with neighboring chunks, so
     // it may have vanished at this point. Do not reference the padding
@@ -2122,7 +2117,7 @@ void VirtualSpaceNode::retire(ChunkManager* chunk_manager) {
       if (chunk == NULL) {
         break;
       }
-      chunk_manager->return_single_chunk(index, chunk);
+      chunk_manager->return_single_chunk(chunk);
     }
     DEBUG_ONLY(verify_container_count();)
   }
@@ -3026,10 +3021,10 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
   return chunk;
 }
 
-void ChunkManager::return_single_chunk(ChunkIndex index, Metachunk* chunk) {
+void ChunkManager::return_single_chunk(Metachunk* chunk) {
+  const ChunkIndex index = chunk->get_chunk_type();
   assert_lock_strong(MetaspaceExpand_lock);
   DEBUG_ONLY(do_verify_chunk(chunk);)
-  assert(chunk->get_chunk_type() == index, "Chunk does not match expected index.");
   assert(chunk != NULL, "Expected chunk.");
   assert(chunk->container() != NULL, "Container should have been set.");
   assert(chunk->is_tagged_free() == false, "Chunk should be in use.");
@@ -3077,14 +3072,13 @@ void ChunkManager::return_single_chunk(ChunkIndex index, Metachunk* chunk) {
 
 }
 
-void ChunkManager::return_chunk_list(ChunkIndex index, Metachunk* chunks) {
-  index_bounds_check(index);
+void ChunkManager::return_chunk_list(Metachunk* chunks) {
   if (chunks == NULL) {
     return;
   }
   LogTarget(Trace, gc, metaspace, freelist) log;
   if (log.is_enabled()) { // tracing
-    log.print("returning list of %s chunks...", chunk_size_name(index));
+    log.print("returning list of chunks...");
   }
   unsigned num_chunks_returned = 0;
   size_t size_chunks_returned = 0;
@@ -3097,17 +3091,12 @@ void ChunkManager::return_chunk_list(ChunkIndex index, Metachunk* chunks) {
       num_chunks_returned ++;
       size_chunks_returned += cur->word_size();
     }
-    return_single_chunk(index, cur);
+    return_single_chunk(cur);
     cur = next;
   }
   if (log.is_enabled()) { // tracing
-    log.print("returned %u %s chunks to freelist, total word size " SIZE_FORMAT ".",
-        num_chunks_returned, chunk_size_name(index), size_chunks_returned);
-    if (index != HumongousIndex) {
-      log.print("updated freelist count: " SIZE_FORMAT ".", free_chunks(index)->size());
-    } else {
-      log.print("updated dictionary count " SIZE_FORMAT ".", _humongous_dictionary.total_count());
-    }
+    log.print("returned %u chunks to freelist, total word size " SIZE_FORMAT ".",
+        num_chunks_returned, size_chunks_returned);
   }
 }
 
@@ -3170,28 +3159,11 @@ size_t SpaceManager::get_initial_chunk_size(Metaspace::MetaspaceType type) const
   return adjusted;
 }
 
-size_t SpaceManager::sum_count_in_chunks_in_use(ChunkIndex i) {
-  size_t count = 0;
-  Metachunk* chunk = chunks_in_use(i);
-  while (chunk != NULL) {
-    count++;
-    chunk = chunk->next();
-  }
-  return count;
-}
-
 void SpaceManager::locked_print_chunks_in_use_on(outputStream* st) const {
 
   for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
-    Metachunk* chunk = chunks_in_use(i);
-    st->print("SpaceManager: %s " PTR_FORMAT,
-                 chunk_size_name(i), p2i(chunk));
-    if (chunk != NULL) {
-      st->print_cr(" free " SIZE_FORMAT,
-                   chunk->free_word_size());
-    } else {
-      st->cr();
-    }
+    st->print("SpaceManager: " UINTX_FORMAT " %s chunks.",
+        num_chunks_by_type(i), chunk_size_name(i));
   }
 
   chunk_manager()->locked_print_free_chunks(st);
@@ -3212,13 +3184,13 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
   // reduces space waste from 60+% to around 30%.
   if ((_space_type == Metaspace::AnonymousMetaspaceType || _space_type == Metaspace::ReflectionMetaspaceType) &&
       _mdtype == Metaspace::NonClassType &&
-      sum_count_in_chunks_in_use(SpecializedIndex) < _anon_and_delegating_metadata_specialize_chunk_limit &&
+      num_chunks_by_type(SpecializedIndex) < _anon_and_delegating_metadata_specialize_chunk_limit &&
       word_size + Metachunk::overhead() <= SpecializedChunk) {
     return SpecializedChunk;
   }
 
-  if (chunks_in_use(MediumIndex) == NULL &&
-      sum_count_in_chunks_in_use(SmallIndex) < _small_chunk_limit) {
+  if (num_chunks_by_type(MediumIndex) == 0 &&
+      num_chunks_by_type(SmallIndex) < _small_chunk_limit) {
     chunk_word_size = (size_t) small_chunk_size();
     if (word_size + Metachunk::overhead() > small_chunk_size()) {
       chunk_word_size = medium_chunk_size();
@@ -3324,9 +3296,13 @@ SpaceManager::SpaceManager(Metaspace::MetadataType mdtype,
   _used_words(0),
   _overhead_words(0),
   _block_freelists(NULL),
-  _lock(lock)
+  _lock(lock),
+  _chunk_list(NULL),
+  _current_chunk(NULL)
 {
-  initialize();
+  Metadebug::init_allocation_fail_alot_count();
+  memset(_num_chunks_by_type, 0, sizeof(_num_chunks_by_type));
+  log_trace(gc, metaspace, freelist)("SpaceManager(): " PTR_FORMAT, p2i(this));
 }
 
 void SpaceManager::account_for_new_chunk(const Metachunk* new_chunk) {
@@ -3335,6 +3311,8 @@ void SpaceManager::account_for_new_chunk(const Metachunk* new_chunk) {
 
   _capacity_words += new_chunk->word_size();
   _overhead_words += Metachunk::overhead();
+  DEBUG_ONLY(new_chunk->verify());
+  _num_chunks_by_type[new_chunk->get_chunk_type()] ++;
 
   // Adjust global counters:
   MetaspaceUtils::inc_capacity(mdtype(), new_chunk->word_size());
@@ -3360,15 +3338,6 @@ void SpaceManager::account_for_spacemanager_death() {
   MetaspaceUtils::dec_capacity(mdtype(), _capacity_words);
   MetaspaceUtils::dec_overhead(mdtype(), _overhead_words);
   MetaspaceUtils::dec_used(mdtype(), _used_words);
-}
-
-void SpaceManager::initialize() {
-  Metadebug::init_allocation_fail_alot_count();
-  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
-    _chunks_in_use[i] = NULL;
-  }
-  _current_chunk = NULL;
-  log_trace(gc, metaspace, freelist)("SpaceManager(): " PTR_FORMAT, p2i(this));
 }
 
 SpaceManager::~SpaceManager() {
@@ -3399,12 +3368,11 @@ SpaceManager::~SpaceManager() {
 
   // Follow each list of chunks-in-use and add them to the
   // free lists.  Each list is NULL terminated.
-
-  for (ChunkIndex i = ZeroIndex; i <= HumongousIndex; i = next_chunk_index(i)) {
-    Metachunk* chunks = chunks_in_use(i);
-    chunk_manager()->return_chunk_list(i, chunks);
-    set_chunks_in_use(i, NULL);
-  }
+  chunk_manager()->return_chunk_list(chunk_list());
+#ifdef ASSERT
+  _chunk_list = NULL;
+  _current_chunk = NULL;
+#endif
 
   chunk_manager()->slow_locked_verify();
 
@@ -3446,8 +3414,8 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
   }
 
   // Add the new chunk at the head of its respective chunk list.
-  new_chunk->set_next(chunks_in_use(index));
-  set_chunks_in_use(index, new_chunk);
+  new_chunk->set_next(_chunk_list);
+  _chunk_list = new_chunk;
 
   // Adjust counters.
   account_for_new_chunk(new_chunk);
@@ -3540,21 +3508,17 @@ MetaWord* SpaceManager::allocate_work(size_t word_size) {
 
   if (result != NULL) {
     account_for_allocation(word_size);
-    assert(result != (MetaWord*) chunks_in_use(MediumIndex),
-           "Head of the list is being allocated");
   }
 
   return result;
 }
 
 void SpaceManager::verify() {
-  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
-    Metachunk* curr = chunks_in_use(i);
-    while (curr != NULL) {
-      DEBUG_ONLY(do_verify_chunk(curr);)
-      assert(curr->is_tagged_free() == false, "Chunk should be tagged as in use.");
-      curr = curr->next();
-    }
+  Metachunk* curr = chunk_list();
+  while (curr != NULL) {
+    DEBUG_ONLY(do_verify_chunk(curr);)
+    assert(curr->is_tagged_free() == false, "Chunk should be tagged as in use.");
+    curr = curr->next();
   }
 }
 
@@ -3569,21 +3533,19 @@ void SpaceManager::verify_chunk_size(Metachunk* chunk) {
 
 void SpaceManager::add_to_statistics_locked(SpaceManagerStatistics* out) const {
   assert_lock_strong(lock());
-  for (ChunkIndex i = ZeroIndex; i < NumberOfInUseLists; i = next_chunk_index(i)) {
-    UsedChunksStatistics& chunk_stat = out->chunk_stats(i);
-    Metachunk* chunk = chunks_in_use(i);
-    while (chunk != NULL) {
-      chunk_stat.add_num(1);
-      chunk_stat.add_cap(chunk->word_size());
-      chunk_stat.add_overhead(Metachunk::overhead());
-      chunk_stat.add_used(chunk->used_word_size() - Metachunk::overhead());
-      if (chunk != current_chunk()) {
-        chunk_stat.add_waste(chunk->free_word_size());
-      } else {
-        chunk_stat.add_free(chunk->free_word_size());
-      }
-      chunk = chunk->next();
+  Metachunk* chunk = chunk_list();
+  while (chunk != NULL) {
+    UsedChunksStatistics& chunk_stat = out->chunk_stats(chunk->get_chunk_type());
+    chunk_stat.add_num(1);
+    chunk_stat.add_cap(chunk->word_size());
+    chunk_stat.add_overhead(Metachunk::overhead());
+    chunk_stat.add_used(chunk->used_word_size() - Metachunk::overhead());
+    if (chunk != current_chunk()) {
+      chunk_stat.add_waste(chunk->free_word_size());
+    } else {
+      chunk_stat.add_free(chunk->free_word_size());
     }
+    chunk = chunk->next();
   }
   if (block_freelists() != NULL) {
     out->add_free_blocks_info(block_freelists()->num_blocks(), block_freelists()->total_size());

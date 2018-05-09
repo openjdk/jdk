@@ -228,7 +228,7 @@ class Metachunk : public Metabase<Metachunk> {
   bool is_class() const                 { return _is_class; }
 
   DEBUG_ONLY(void mangle(juint word_value);)
-  DEBUG_ONLY(void verify();)
+  DEBUG_ONLY(void verify() const;)
 
 };
 
