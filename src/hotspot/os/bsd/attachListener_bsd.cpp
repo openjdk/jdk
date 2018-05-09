@@ -215,7 +215,8 @@ int BsdAttachListener::init() {
     RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
     if (res == 0) {
       // make sure the file is owned by the effective user and effective group
-      // (this is the default on linux, but not on mac os)
+      // e.g. default behavior on mac is that new files inherit the group of
+      // the directory that they are created in
       RESTARTABLE(::chown(initial_path, geteuid(), getegid()), res);
       if (res == 0) {
         res = ::rename(initial_path, path);
