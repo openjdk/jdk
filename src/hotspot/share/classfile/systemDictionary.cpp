@@ -2076,8 +2076,6 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   InstanceKlass::cast(WK_KLASS(FinalReference_klass))->set_reference_type(REF_FINAL);
   InstanceKlass::cast(WK_KLASS(PhantomReference_klass))->set_reference_type(REF_PHANTOM);
 
-  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(ReferenceQueue_klass), scan, CHECK);
-
   // JSR 292 classes
   WKID jsr292_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
   WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(VolatileCallSite_klass);
