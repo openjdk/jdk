@@ -671,6 +671,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCR_DLL])
       # Corresponds to --with-msvcp-dll
       BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_MSVCP_DLL])
+      # Corresponds to --with-ucrt-dll-dir
+      BASIC_EVAL_DEVKIT_VARIABLE([DEVKIT_UCRT_DLL_DIR])
     fi
 
     AC_MSG_CHECKING([for devkit])

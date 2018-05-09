@@ -65,6 +65,17 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       MACRO := copy-and-chmod))
 
   TARGETS += $(COPY_MSVCR) $(COPY_MSVCP)
+
+  ifneq ($(UCRT_DLL_DIR), )
+    $(eval $(call SetupCopyFiles, COPY_UCRT_DLLS, \
+        DEST := $(LIB_DST_DIR), \
+        SRC := $(UCRT_DLL_DIR), \
+        FILES := $(wildcard $(UCRT_DLL_DIR)/*.dll), \
+        MACRO := copy-and-chmod, \
+    ))
+
+    TARGETS += $(COPY_UCRT_DLLS)
+  endif
 endif
 
 ################################################################################

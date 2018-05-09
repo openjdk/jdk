@@ -76,6 +76,7 @@ VS_VERSION_INTERNAL_2017=141
 VS_MSVCR_2017=vcruntime140.dll
 VS_MSVCP_2017=msvcp140.dll
 VS_ENVVAR_2017="VS150COMNTOOLS"
+VS_USE_UCRT_2017="true"
 VS_VS_INSTALLDIR_2017="Microsoft Visual Studio/2017"
 VS_EDITIONS_2017="BuildTools Community Professional Enterprise"
 VS_SDK_INSTALLDIR_2017=
@@ -264,6 +265,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
     eval VS_VERSION_INTERNAL="\${VS_VERSION_INTERNAL_${VS_VERSION}}"
     eval MSVCR_NAME="\${VS_MSVCR_${VS_VERSION}}"
     eval MSVCP_NAME="\${VS_MSVCP_${VS_VERSION}}"
+    eval USE_UCRT="\${VS_USE_UCRT_${VS_VERSION}}"
     eval PLATFORM_TOOLSET="\${VS_VS_PLATFORM_NAME_${VS_VERSION}}"
     VS_PATH="$TOOLCHAIN_PATH:$PATH"
 
@@ -309,6 +311,7 @@ AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO],
       eval VS_VERSION_INTERNAL="\${VS_VERSION_INTERNAL_${VS_VERSION}}"
       eval MSVCR_NAME="\${VS_MSVCR_${VS_VERSION}}"
       eval MSVCP_NAME="\${VS_MSVCP_${VS_VERSION}}"
+      eval USE_UCRT="\${VS_USE_UCRT_${VS_VERSION}}"
       # The rest of the variables are already evaled while probing
       AC_MSG_NOTICE([Found $VS_DESCRIPTION])
       break
@@ -432,8 +435,11 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       VS_INCLUDE=`$ECHO "$VS_INCLUDE" | $SED -e 's/\\\\*;* *$//'`
       VS_LIB=`$ECHO "$VS_LIB" | $SED 's/\\\\*;* *$//'`
       VCINSTALLDIR=`$ECHO "$VCINSTALLDIR" | $SED 's/\\\\* *$//'`
-      WindowsSDKDir=`$ECHO "$WindowsSDKDir" | $SED 's/\\\\* *$//'`
+      WindowsSdkDir=`$ECHO "$WindowsSdkDir" | $SED 's/\\\\* *$//'`
       WINDOWSSDKDIR=`$ECHO "$WINDOWSSDKDIR" | $SED 's/\\\\* *$//'`
+      if test -z "$WINDOWSSDKDIR"; then
+        WINDOWSSDKDIR="$WindowsSdkDir"
+      fi
       # Remove any paths containing # (typically F#) as that messes up make. This
       # is needed if visual studio was installed with F# support.
       VS_PATH=`$ECHO "$VS_PATH" | $SED 's/[[^:#]]*#[^:]*://g'`
@@ -539,7 +545,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
   if test "x$MSVC_DLL" = x; then
     if test "x$VCINSTALLDIR" != x; then
       CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
-      BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(CYGWIN_VC_INSTALL_DIR)
+      BASIC_FIXUP_PATH(CYGWIN_VC_INSTALL_DIR)
       if test "$VS_VERSION" -lt 2017; then
         # Probe: Using well-known location from Visual Studio 12.0 and older
         if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
@@ -673,4 +679,41 @@ AC_DEFUN([TOOLCHAIN_SETUP_VS_RUNTIME_DLLS],
     fi
     AC_SUBST(MSVCP_DLL)
   fi
+
+  AC_ARG_WITH(ucrt-dll-dir, [AS_HELP_STRING([--with-ucrt-dll-dir],
+      [path to Microsoft Windows Kit UCRT DLL dir (Windows only) @<:@probed@:>@])])
+
+  if test "x$USE_UCRT" = "xtrue"; then
+    AC_MSG_CHECKING([for UCRT DLL dir])
+    if test "x$with_ucrt_dll_dir" != x; then
+      if test -z "$(ls -d "$with_ucrt_dll_dir/*.dll" 2> /dev/null)"; then
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([Could not find any dlls in $with_ucrt_dll_dir])
+      else
+        AC_MSG_RESULT([$with_ucrt_dll_dir])
+        UCRT_DLL_DIR="$with_ucrt_dll_dir"
+        BASIC_FIXUP_PATH([UCRT_DLL_DIR])
+      fi
+    elif test "x$DEVKIT_UCRT_DLL_DIR" != "x"; then
+      UCRT_DLL_DIR="$DEVKIT_UCRT_DLL_DIR"
+      AC_MSG_RESULT($UCRT_DLL_DIR)
+    else
+      CYGWIN_WINDOWSSDKDIR="${WINDOWSSDKDIR}"
+      BASIC_FIXUP_PATH([CYGWIN_WINDOWSSDKDIR])
+      dll_subdir=$OPENJDK_TARGET_CPU
+      if test "x$dll_subdir" = "xx86_64"; then
+        dll_subdir="x64"
+      fi
+      UCRT_DLL_DIR="$CYGWIN_WINDOWSSDKDIR/Redist/ucrt/DLLs/$dll_subdir"
+      if test -z "$(ls -d "$UCRT_DLL_DIR/"*.dll 2> /dev/null)"; then
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([Could not find any dlls in $UCRT_DLL_DIR])
+      else
+        AC_MSG_RESULT($UCRT_DLL_DIR)
+      fi
+    fi
+  else
+    UCRT_DLL_DIR=
+  fi
+  AC_SUBST(UCRT_DLL_DIR)
 ])
