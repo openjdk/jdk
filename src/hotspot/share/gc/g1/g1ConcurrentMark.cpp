@@ -1520,7 +1520,6 @@ public:
 
   // Executes the given task using concurrent marking worker threads.
   virtual void execute(ProcessTask& task);
-  virtual void execute(EnqueueTask& task);
 };
 
 class G1CMRefProcTaskProxy : public AbstractGangTask {
@@ -1563,36 +1562,6 @@ void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
   // how many workers to wait for.
   _cm->set_concurrency(_active_workers);
   _workers->run_task(&proc_task_proxy);
-}
-
-class G1CMRefEnqueueTaskProxy : public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::EnqueueTask EnqueueTask;
-  EnqueueTask& _enq_task;
-
-public:
-  G1CMRefEnqueueTaskProxy(EnqueueTask& enq_task) :
-    AbstractGangTask("Enqueue reference objects in parallel"),
-    _enq_task(enq_task) { }
-
-  virtual void work(uint worker_id) {
-    _enq_task.work(worker_id);
-  }
-};
-
-void G1CMRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
-  assert(_workers != NULL, "Need parallel worker threads.");
-  assert(_g1h->ref_processor_cm()->processing_is_mt(), "processing is not MT");
-
-  G1CMRefEnqueueTaskProxy enq_task_proxy(enq_task);
-
-  // Not strictly necessary but...
-  //
-  // We need to reset the concurrency level before each
-  // proxy task execution, so that the termination protocol
-  // and overflow handling in G1CMTask::do_marking_step() knows
-  // how many workers to wait for.
-  _cm->set_concurrency(_active_workers);
-  _workers->run_task(&enq_task_proxy);
 }
 
 void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {

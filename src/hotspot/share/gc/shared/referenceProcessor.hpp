@@ -589,11 +589,9 @@ public:
 
   // Abstract tasks to execute.
   class ProcessTask;
-  class EnqueueTask;
 
   // Executes a task using worker threads.
   virtual void execute(ProcessTask& task) = 0;
-  virtual void execute(EnqueueTask& task) = 0;
 
   // Switch to single threaded mode.
   virtual void set_single_threaded_mode() { };
@@ -626,29 +624,6 @@ protected:
   DiscoveredList*               _refs_lists;
   ReferenceProcessorPhaseTimes* _phase_times;
   const bool                    _marks_oops_alive;
-};
-
-// Abstract reference processing task to execute.
-class AbstractRefProcTaskExecutor::EnqueueTask {
-protected:
-  EnqueueTask(ReferenceProcessor&           ref_processor,
-              DiscoveredList                refs_lists[],
-              int                           n_queues,
-              ReferenceProcessorPhaseTimes* phase_times)
-    : _ref_processor(ref_processor),
-      _refs_lists(refs_lists),
-      _n_queues(n_queues),
-      _phase_times(phase_times)
-  { }
-
-public:
-  virtual void work(unsigned int work_id) = 0;
-
-protected:
-  ReferenceProcessor&           _ref_processor;
-  DiscoveredList*               _refs_lists;
-  ReferenceProcessorPhaseTimes* _phase_times;
-  int                           _n_queues;
 };
 
 #endif // SHARE_VM_GC_SHARED_REFERENCEPROCESSOR_HPP

@@ -148,27 +148,8 @@ void PSRefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
   _rp_task.work(_work_id, is_alive, keep_alive, evac_followers);
 }
 
-class PSRefEnqueueTaskProxy: public GCTask {
-  typedef AbstractRefProcTaskExecutor::EnqueueTask EnqueueTask;
-  EnqueueTask& _enq_task;
-  uint         _work_id;
-
-public:
-  PSRefEnqueueTaskProxy(EnqueueTask& enq_task, uint work_id)
-    : _enq_task(enq_task),
-      _work_id(work_id)
-  { }
-
-  virtual char* name() { return (char *)"Enqueue reference objects in parallel"; }
-  virtual void do_it(GCTaskManager* manager, uint which)
-  {
-    _enq_task.work(_work_id);
-  }
-};
-
 class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
   virtual void execute(ProcessTask& task);
-  virtual void execute(EnqueueTask& task);
 };
 
 void PSRefProcTaskExecutor::execute(ProcessTask& task)
@@ -184,17 +165,6 @@ void PSRefProcTaskExecutor::execute(ProcessTask& task)
     for (uint j = 0; j < manager->active_workers(); j++) {
       q->enqueue(new StealTask(&terminator));
     }
-  }
-  manager->execute_and_wait(q);
-}
-
-
-void PSRefProcTaskExecutor::execute(EnqueueTask& task)
-{
-  GCTaskQueue* q = GCTaskQueue::create();
-  GCTaskManager* manager = ParallelScavengeHeap::gc_task_manager();
-  for(uint i=0; i < manager->active_workers(); i++) {
-    q->enqueue(new PSRefEnqueueTaskProxy(task, i));
   }
   manager->execute_and_wait(q);
 }
