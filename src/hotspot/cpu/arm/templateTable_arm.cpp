@@ -398,7 +398,7 @@ void TemplateTable::sipush() {
 
 void TemplateTable::ldc(bool wide) {
   transition(vtos, vtos);
-  Label fastCase, Done;
+  Label fastCase, Condy, Done;
 
   const Register Rindex = R1_tmp;
   const Register Rcpool = R2_tmp;
@@ -450,15 +450,11 @@ void TemplateTable::ldc(bool wide) {
 
   // int, float, String
   __ bind(fastCase);
-#ifdef ASSERT
-  { Label L;
-    __ cmp(RtagType, JVM_CONSTANT_Integer);
-    __ cond_cmp(RtagType, JVM_CONSTANT_Float, ne);
-    __ b(L, eq);
-    __ stop("unexpected tag type in ldc");
-    __ bind(L);
-  }
-#endif // ASSERT
+
+  __ cmp(RtagType, JVM_CONSTANT_Integer);
+  __ cond_cmp(RtagType, JVM_CONSTANT_Float, ne);
+  __ b(Condy, ne);
+
   // itos, ftos
   __ add(Rtemp, Rcpool, AsmOperand(Rindex, lsl, LogBytesPerWord));
   __ ldr_u32(R0_tos, Address(Rtemp, base_offset));
@@ -466,6 +462,11 @@ void TemplateTable::ldc(bool wide) {
   // floats and ints are placed on stack in the same way, so
   // we can use push(itos) to transfer float value without VFP
   __ push(itos);
+  __ b(Done);
+
+  __ bind(Condy);
+  condy_helper(Done);
+
   __ bind(Done);
 }
 
@@ -489,6 +490,23 @@ void TemplateTable::fast_aldc(bool wide) {
   __ call_VM(R0_tos, entry, R1);
   __ bind(resolved);
 
+  { // Check for the null sentinel.
+    // If we just called the VM, that already did the mapping for us,
+    // but it's harmless to retry.
+    Label notNull;
+    Register result = R0;
+    Register tmp = R1;
+    Register rarg = R2;
+
+    // Stash null_sentinel address to get its value later
+    __ mov_slow(rarg, (uintptr_t)Universe::the_null_sentinel_addr());
+    __ ldr(tmp, Address(rarg));
+    __ cmp(result, tmp);
+    __ b(notNull, ne);
+    __ mov(result, 0);  // NULL object reference
+    __ bind(notNull);
+  }
+
   if (VerifyOops) {
     __ verify_oop(R0_tos);
   }
@@ -509,8 +527,9 @@ void TemplateTable::ldc2_w() {
 
   __ add(Rbase, Rcpool, AsmOperand(Rindex, lsl, LogBytesPerWord));
 
+  Label Condy, exit;
 #ifdef __ABI_HARD__
-  Label Long, exit;
+  Label Long;
   // get type from tags
   __ add(Rtemp, Rtags, tags_offset);
   __ ldrb(Rtemp, Address(Rtemp, Rindex));
@@ -523,6 +542,8 @@ void TemplateTable::ldc2_w() {
   __ bind(Long);
 #endif
 
+  __ cmp(Rtemp, JVM_CONSTANT_Long);
+  __ b(Condy, ne);
 #ifdef AARCH64
   __ ldr(R0_tos, Address(Rbase, base_offset));
 #else
@@ -530,10 +551,115 @@ void TemplateTable::ldc2_w() {
   __ ldr(R1_tos_hi, Address(Rbase, base_offset + 1 * wordSize));
 #endif // AARCH64
   __ push(ltos);
+  __ b(exit);
 
-#ifdef __ABI_HARD__
+  __ bind(Condy);
+  condy_helper(exit);
+
   __ bind(exit);
+}
+
+
+void TemplateTable::condy_helper(Label& Done)
+{
+  Register obj   = R0_tmp;
+  Register rtmp  = R1_tmp;
+  Register flags = R2_tmp;
+  Register off   = R3_tmp;
+
+  __ mov(rtmp, (int) bytecode());
+  __ call_VM(obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_ldc), rtmp);
+  __ get_vm_result_2(flags, rtmp);
+
+  // VMr = obj = base address to find primitive value to push
+  // VMr2 = flags = (tos, off) using format of CPCE::_flags
+  __ mov(off, flags);
+
+#ifdef AARCH64
+  __ andr(off, off, (unsigned)ConstantPoolCacheEntry::field_index_mask);
+#else
+  __ logical_shift_left( off, off, 32 - ConstantPoolCacheEntry::field_index_bits);
+  __ logical_shift_right(off, off, 32 - ConstantPoolCacheEntry::field_index_bits);
 #endif
+
+  const Address field(obj, off);
+
+  __ logical_shift_right(flags, flags, ConstantPoolCacheEntry::tos_state_shift);
+  // Make sure we don't need to mask flags after the above shift
+  ConstantPoolCacheEntry::verify_tos_state_shift();
+
+  switch (bytecode()) {
+    case Bytecodes::_ldc:
+    case Bytecodes::_ldc_w:
+      {
+        // tos in (itos, ftos, stos, btos, ctos, ztos)
+        Label notIntFloat, notShort, notByte, notChar, notBool;
+        __ cmp(flags, itos);
+        __ cond_cmp(flags, ftos, ne);
+        __ b(notIntFloat, ne);
+        __ ldr(R0_tos, field);
+        __ push(itos);
+        __ b(Done);
+
+        __ bind(notIntFloat);
+        __ cmp(flags, stos);
+        __ b(notShort, ne);
+        __ ldrsh(R0_tos, field);
+        __ push(stos);
+        __ b(Done);
+
+        __ bind(notShort);
+        __ cmp(flags, btos);
+        __ b(notByte, ne);
+        __ ldrsb(R0_tos, field);
+        __ push(btos);
+        __ b(Done);
+
+        __ bind(notByte);
+        __ cmp(flags, ctos);
+        __ b(notChar, ne);
+        __ ldrh(R0_tos, field);
+        __ push(ctos);
+        __ b(Done);
+
+        __ bind(notChar);
+        __ cmp(flags, ztos);
+        __ b(notBool, ne);
+        __ ldrsb(R0_tos, field);
+        __ push(ztos);
+        __ b(Done);
+
+        __ bind(notBool);
+        break;
+      }
+
+    case Bytecodes::_ldc2_w:
+      {
+        Label notLongDouble;
+        __ cmp(flags, ltos);
+        __ cond_cmp(flags, dtos, ne);
+        __ b(notLongDouble, ne);
+
+#ifdef AARCH64
+        __ ldr(R0_tos, field);
+#else
+        __ add(rtmp, obj, wordSize);
+        __ ldr(R0_tos_lo, Address(obj, off));
+        __ ldr(R1_tos_hi, Address(rtmp, off));
+#endif
+        __ push(ltos);
+        __ b(Done);
+
+        __ bind(notLongDouble);
+
+        break;
+      }
+
+    default:
+      ShouldNotReachHere();
+    }
+
+    __ stop("bad ldc/condy");
 }
 
 
