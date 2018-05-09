@@ -3556,34 +3556,6 @@ void java_lang_ref_SoftReference::set_clock(jlong value) {
   base->long_field_put(static_clock_offset, value);
 }
 
-// Support for java_lang_ref_ReferenceQueue
-
-oop java_lang_ref_ReferenceQueue::NULL_queue() {
-  InstanceKlass* ik = SystemDictionary::ReferenceQueue_klass();
-  oop mirror = ik->java_mirror();
-  return mirror->obj_field(static_NULL_queue_offset);
-}
-
-oop java_lang_ref_ReferenceQueue::ENQUEUED_queue() {
-  InstanceKlass* ik = SystemDictionary::ReferenceQueue_klass();
-  oop mirror = ik->java_mirror();
-  return mirror->obj_field(static_ENQUEUED_queue_offset);
-}
-
-void java_lang_ref_ReferenceQueue::compute_offsets() {
-  InstanceKlass* k = SystemDictionary::ReferenceQueue_klass();
-  compute_offset(static_NULL_queue_offset,
-                 k,
-                 vmSymbols::referencequeue_null_name(),
-                 vmSymbols::referencequeue_signature(),
-                 true /* is_static */);
-  compute_offset(static_ENQUEUED_queue_offset,
-                 k,
-                 vmSymbols::referencequeue_enqueued_name(),
-                 vmSymbols::referencequeue_signature(),
-                 true /* is_static */);
-}
-
 // Support for java_lang_invoke_DirectMethodHandle
 
 int java_lang_invoke_DirectMethodHandle::_member_offset;
@@ -4263,8 +4235,6 @@ int java_lang_ref_Reference::referent_offset;
 int java_lang_ref_Reference::queue_offset;
 int java_lang_ref_Reference::next_offset;
 int java_lang_ref_Reference::discovered_offset;
-int java_lang_ref_ReferenceQueue::static_NULL_queue_offset;
-int java_lang_ref_ReferenceQueue::static_ENQUEUED_queue_offset;
 int java_lang_ref_SoftReference::timestamp_offset;
 int java_lang_ref_SoftReference::static_clock_offset;
 int java_lang_ClassLoader::parent_offset;
@@ -4509,7 +4479,6 @@ void JavaClasses::compute_offsets() {
   java_lang_StackTraceElement::compute_offsets();
   java_lang_StackFrameInfo::compute_offsets();
   java_lang_LiveStackFrameInfo::compute_offsets();
-  java_lang_ref_ReferenceQueue::compute_offsets();
 
   // generated interpreter code wants to know about the offsets we just computed:
   AbstractAssembler::update_delayed_values();

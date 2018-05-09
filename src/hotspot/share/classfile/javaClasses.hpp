@@ -946,20 +946,6 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
   static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
-// Interface to java.lang.ref.ReferenceQueue objects
-
-class java_lang_ref_ReferenceQueue: public AllStatic {
-public:
-  static int static_NULL_queue_offset;
-  static int static_ENQUEUED_queue_offset;
-
-  // Accessors
-  static oop NULL_queue();
-  static oop ENQUEUED_queue();
-
-  static void compute_offsets();
-};
-
 // Interface to java.lang.invoke.MethodHandle objects
 
 class MethodHandleEntry;
