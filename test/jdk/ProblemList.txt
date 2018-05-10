@@ -731,8 +731,6 @@ javax/swing/text/html/parser/Parser/8078268/bug8078268.java 8199092 generic-all
 
 tools/pack200/CommandLineTests.java                             8059906 generic-all
 
-tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
-
 tools/jimage/JImageExtractTest.java                             8198405,8198819 generic-all
 tools/jimage/JImageListTest.java                                8198405 windows-all
 
