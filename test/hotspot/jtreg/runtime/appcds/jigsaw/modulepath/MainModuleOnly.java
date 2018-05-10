@@ -173,5 +173,14 @@ public class MainModuleOnly {
                        "-m", TEST_MODULE1)
             .assertAbnormalExit(
                 "A jar/jimage file is not the one used while building the shared archive file:");
+        // create an archive with a non-empty directory in the --module-path.
+        // The dumping process will exit with an error due to non-empty directory
+        // in the --module-path.
+        output = TestCommon.createArchive(destJar.toString(), appClasses,
+                                          "-Xlog:class+load=trace",
+                                          "--module-path", MODS_DIR.toString(),
+                                          "-m", TEST_MODULE1);
+        output.shouldHaveExitValue(1)
+              .shouldMatch("Error: non-empty directory.*com.simple");
     }
 }

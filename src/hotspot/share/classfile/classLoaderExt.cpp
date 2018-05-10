@@ -79,12 +79,11 @@ void ClassLoaderExt::setup_app_search_path() {
 }
 
 void ClassLoaderExt::process_module_table(ModuleEntryTable* met, TRAPS) {
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
   for (int i = 0; i < met->table_size(); i++) {
     for (ModuleEntry* m = met->bucket(i); m != NULL;) {
       char* path = m->location()->as_C_string();
-      if (strncmp(path, "file:", 5) == 0 && ClassLoader::string_ends_with(path, ".jar")) {
-        m->print();
+      if (strncmp(path, "file:", 5) == 0) {
         path = ClassLoader::skip_uri_protocol(path);
         ClassLoader::setup_module_search_path(path, THREAD);
       }
