@@ -199,6 +199,7 @@ class ObjectMonitor {
   static PerfLongVariable * _sync_MonExtant;
 
   static int Knob_ExitRelease;
+  static int Knob_InlineNotify;
   static int Knob_Verbose;
   static int Knob_VerifyInUse;
   static int Knob_VerifyMatch;
