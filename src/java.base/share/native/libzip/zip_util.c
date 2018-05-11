@@ -1094,7 +1094,7 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
  * jzentry for each zip.  This optimizes a common access pattern.
  */
 
-JNIEXPORT void JNICALL
+void
 ZIP_FreeEntry(jzfile *jz, jzentry *ze)
 {
     jzentry *last;
@@ -1115,7 +1115,7 @@ ZIP_FreeEntry(jzfile *jz, jzentry *ze)
  * Returns the zip entry corresponding to the specified name, or
  * NULL if not found.
  */
-JNIEXPORT jzentry *
+jzentry *
 ZIP_GetEntry(jzfile *zip, char *name, jint ulen)
 {
     if (ulen == 0) {
@@ -1254,7 +1254,7 @@ ZIP_GetNextEntry(jzfile *zip, jint n)
 /*
  * Locks the specified zip file for reading.
  */
-JNIEXPORT void JNICALL
+void
 ZIP_Lock(jzfile *zip)
 {
     MLOCK(zip->lock);
@@ -1263,7 +1263,7 @@ ZIP_Lock(jzfile *zip)
 /*
  * Unlocks the specified zip file.
  */
-JNIEXPORT void JNICALL
+void
 ZIP_Unlock(jzfile *zip)
 {
     MUNLOCK(zip->lock);
@@ -1310,7 +1310,7 @@ ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry)
  * The current implementation does not support reading an entry that
  * has the size bigger than 2**32 bytes in ONE invocation.
  */
-JNIEXPORT jint JNICALL
+jint
 ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len)
 {
     jlong entry_size;
