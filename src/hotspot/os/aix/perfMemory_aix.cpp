@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1246,7 +1246,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   *sizep = size;
 
   log_debug(perf, memops)("mapped " SIZE_FORMAT " bytes for vmid %d at "
-                          INTPTR_FORMAT "\n", size, vmid, p2i((void*)mapAddress));
+                          INTPTR_FORMAT, size, vmid, p2i((void*)mapAddress));
 }
 
 // create the PerfData memory region
