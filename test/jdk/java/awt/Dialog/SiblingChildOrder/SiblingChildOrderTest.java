@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,19 @@
 
 /**
  * @test
- * @bug 8190230
+ * @bug 8190230 8196360
  * @summary [macosx] Order of overlapping of modal dialogs is wrong
  * @key headful
  * @run main SiblingChildOrderTest
  */
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Robot;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 public class SiblingChildOrderTest
-
 {
     static Color[] colors = new Color[]{Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW};
     static int[] x = new int[]{200, 150, 100, 50};
@@ -45,7 +47,8 @@ public class SiblingChildOrderTest
         SwingUtilities.invokeAndWait(() -> {
             frame = new JFrame("FRAME");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setBounds(50, 50, 400, 400);
+            frame.setUndecorated(true);
+            frame.setBounds(50,50, 400, 400);
             frame.setVisible(true);
         });
 
@@ -55,18 +58,18 @@ public class SiblingChildOrderTest
                 dlgs[finalI] = new JDialog(frame, "DLG " + finalI, true);
                 dlgs[finalI].getContentPane().setBackground(colors[finalI]);
                 dlgs[finalI].setBounds(x[finalI], y[finalI], 200, 200);
+                dlgs[finalI].setUndecorated(true);
                 dlgs[finalI].setVisible(true);
-
             });
         }
 
         Robot robot = new Robot();
         robot.waitForIdle();
-        robot.delay(200);
+        robot.delay(1000);
 
         for (int i = 0; i < colors.length; i++) {
             Color c = robot.getPixelColor(x[i] + 190, y[i] + 190);
-            if (!c.equals(colors[i])) {
+        if (!c.equals(colors[i])) {
                 throw new RuntimeException("Expected " + colors[i] + " got " + c);
             }
         }
@@ -74,8 +77,6 @@ public class SiblingChildOrderTest
         for (int i = 0; i < colors.length; i++) {
             SwingUtilities.invokeLater(dlgs[i]::dispose);
         }
-
         SwingUtilities.invokeLater(frame::dispose);
-
     }
 }
