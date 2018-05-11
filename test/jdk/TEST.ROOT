@@ -17,7 +17,9 @@
 keys=2d dnd headful i18n intermittent printer randomness
 
 # Tests that must run in othervm mode
-othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print javax/management com/sun/awt sun/awt sun/java2d javax/xml/jaxp/testng/validation java/lang/ProcessHandle
+othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/swing javax/print \
+sun/applet com/apple/laf com/sun/java/accessibility com/sun/java/swing sanity/client \
+javax/management com/sun/awt sun/awt sun/java2d javax/xml/jaxp/testng/validation java/lang/ProcessHandle
 
 # Tests that cannot run concurrently
 exclusiveAccess.dirs=java/rmi/Naming java/util/prefs sun/management/jmxremote sun/tools/jstatd sun/security/mscapi java/util/stream java/util/Arrays/largeMemory java/util/BitSet/stream javax/rmi
