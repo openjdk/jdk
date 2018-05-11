@@ -2410,7 +2410,8 @@ public:
 #define INSN(NAME, opcode)                                              \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     starti;                                                             \
-    f(0, 31), f(0b001110, 29, 24), f(0, 21), f(0b001110, 15, 10);       \
+    f(0, 31), f(0b001110, 29, 24), f(0, 21), f(0, 15);                  \
+    f(opcode, 14, 12), f(0b10, 11, 10);                                 \
     rf(Vm, 16), rf(Vn, 5), rf(Vd, 0);                                   \
     f(T & 1, 30), f(T >> 1, 23, 22);                                    \
   }
