@@ -97,21 +97,25 @@ else
 endif
 JVMCFG := $(LIB_DST_DIR)/jvm.cfg
 
-# We have three potential VMs: client, server and minimal.
-# Historically we usually have both client and server and so that is what the
-# committed jvm.cfg expects (including platform specific ergonomics switches
-# to decide whether to use client or server by default). So when we have anything
-# other than client and server we need to define a new jvm.cfg file.
-# The main problem is deciding whether to use aliases for the VMs that are not
-# present and the current position is that we add aliases for client and server, but
-# not for minimal.
-CLIENT_AND_SERVER := $(call check-jvm-variant, client)+$(call check-jvm-variant, server)
-ifeq ($(CLIENT_AND_SERVER), true+true)
+ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
   COPY_JVM_CFG_FILE := true
 else
-  # For zero, the default jvm.cfg file is sufficient
-  ifeq ($(call check-jvm-variant, zero), true)
+  # On 32-bit machines we have three potential VMs: client, server and minimal.
+  # Historically we usually have both client and server and so that is what the
+  # committed jvm.cfg expects (including platform specific ergonomics switches
+  # to decide whether to use client or server by default). So when we have anything
+  # other than client and server we need to define a new jvm.cfg file.
+  # The main problem is deciding whether to use aliases for the VMs that are not
+  # present and the current position is that we add aliases for client and server, but
+  # not for minimal.
+  CLIENT_AND_SERVER := $(call check-jvm-variant, client)+$(call check-jvm-variant, server)
+  ifeq ($(CLIENT_AND_SERVER), true+true)
     COPY_JVM_CFG_FILE := true
+  else
+    # For zero, the default jvm.cfg file is sufficient
+    ifeq ($(call check-jvm-variant, zero), true)
+      COPY_JVM_CFG_FILE := true
+    endif
   endif
 endif
 
