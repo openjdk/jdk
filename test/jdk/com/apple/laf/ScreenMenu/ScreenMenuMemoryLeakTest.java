@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 /**
  * @test
  * @key headful
- * @bug 8158325 8180821
+ * @bug 8158325 8180821 8202878
  * @summary Memory leak in com.apple.laf.ScreenMenu: removed JMenuItems are still referenced
  * @requires (os.family == "mac")
+ * @library /javax/swing/regtesthelpers
+ * @build Util
  * @run main/timeout=300/othervm -Xmx16m ScreenMenuMemoryLeakTest
  */
 
@@ -43,8 +45,6 @@ import javax.swing.JMenuItem;
 import javax.swing.WindowConstants;
 
 public class ScreenMenuMemoryLeakTest {
-
-    private static byte[] sBytes;
 
     private static WeakReference<JMenuItem> sMenuItem;
     private static JFrame sFrame;
@@ -65,9 +65,8 @@ public class ScreenMenuMemoryLeakTest {
                 removeMenuItemFromMenu();
             }
         });
-        System.gc();
-        System.runFinalization();
-        Thread.sleep(1000);
+
+        Util.generateOOME();
         JMenuItem menuItem = sMenuItem.get();
         EventQueue.invokeAndWait(new Runnable() {
             @Override
