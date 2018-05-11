@@ -39,16 +39,16 @@ $(eval $(call IncludeCustomExtension, CreateJmods.gmk))
 JMODS_DIR := $(IMAGES_OUTPUTDIR)/jmods
 JMODS_TEMPDIR := $(SUPPORT_OUTPUTDIR)/jmods
 
-LIBS_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+LIBS_DIR ?= $(firstword $(wildcard $(addsuffix /$(MODULE), \
     $(SUPPORT_OUTPUTDIR)/modules_libs $(IMPORT_MODULES_LIBS))))
-CMDS_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+CMDS_DIR ?= $(firstword $(wildcard $(addsuffix /$(MODULE), \
     $(SUPPORT_OUTPUTDIR)/modules_cmds $(IMPORT_MODULES_CMDS))))
-CONF_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+CONF_DIR ?= $(firstword $(wildcard $(addsuffix /$(MODULE), \
     $(SUPPORT_OUTPUTDIR)/modules_conf $(IMPORT_MODULES_CONF))))
-CLASSES_DIR := $(wildcard $(JDK_OUTPUTDIR)/modules/$(MODULE))
-INCLUDE_HEADERS_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+CLASSES_DIR ?= $(wildcard $(JDK_OUTPUTDIR)/modules/$(MODULE))
+INCLUDE_HEADERS_DIR ?= $(firstword $(wildcard $(addsuffix /$(MODULE), \
     $(SUPPORT_OUTPUTDIR)/modules_include $(IMPORT_MODULES_INCLUDE_HEADERS))))
-MAN_DIR := $(firstword $(wildcard $(addsuffix /$(MODULE), \
+MAN_DIR ?= $(firstword $(wildcard $(addsuffix /$(MODULE), \
     $(SUPPORT_OUTPUTDIR)/modules_man $(IMPORT_MODULES_MAN))))
 
 $(eval $(call FillCacheFind, \
