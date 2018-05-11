@@ -3035,14 +3035,14 @@ public class Attr extends JCTree.Visitor {
                         targetError = false;
                 }
 
-                JCDiagnostic detailsDiag = ((Resolve.ResolveError)refSym.baseSymbol()).getDiagnostic(JCDiagnostic.DiagnosticType.FRAGMENT,
+                JCDiagnostic detailsDiag = ((Resolve.ResolveError)refSym.baseSymbol())
+                        .getDiagnostic(JCDiagnostic.DiagnosticType.FRAGMENT,
                                 that, exprType.tsym, exprType, that.name, argtypes, typeargtypes);
 
-                JCDiagnostic.DiagnosticType diagKind = targetError ?
-                        JCDiagnostic.DiagnosticType.FRAGMENT : JCDiagnostic.DiagnosticType.ERROR;
-
-                JCDiagnostic diag = diags.create(diagKind, log.currentSource(), that,
-                        "invalid.mref", Kinds.kindName(that.getMode()), detailsDiag);
+                JCDiagnostic diag = diags.create(log.currentSource(), that,
+                        targetError ?
+                            Fragments.InvalidMref(Kinds.kindName(that.getMode()), detailsDiag) :
+                            Errors.InvalidMref(Kinds.kindName(that.getMode()), detailsDiag));
 
                 if (targetError && currentTarget == Type.recoveryType) {
                     //a target error doesn't make sense during recovery stage
