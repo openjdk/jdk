@@ -268,15 +268,15 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified, 
 JNIEXPORT void
 ZIP_Close(jzfile *zip);
 
-JNIEXPORT jzentry *
+jzentry *
 ZIP_GetEntry(jzfile *zip, char *name, jint ulen);
-JNIEXPORT void JNICALL
+void
 ZIP_Lock(jzfile *zip);
-JNIEXPORT void JNICALL
+void
 ZIP_Unlock(jzfile *zip);
-JNIEXPORT jint JNICALL
+jint
 ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len);
-JNIEXPORT void JNICALL
+void
 ZIP_FreeEntry(jzfile *zip, jzentry *ze);
 jlong ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry);
 jzentry * ZIP_GetEntry2(jzfile *zip, char *name, jint ulen, jboolean addSlash);
