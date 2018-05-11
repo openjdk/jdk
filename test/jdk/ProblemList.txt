@@ -260,7 +260,6 @@ java/awt/Component/CreateImage/CreateImage.java 8198334  windows-all
 java/awt/Component/GetScreenLocTest/GetScreenLocTest.java 4753654 generic-all
 java/awt/Choice/SelectCurrentItemTest/SelectCurrentItemTest.html 8192929 windows-all
 java/awt/Clipboard/HTMLTransferTest/HTMLTransferTest.html 8017454 macosx-all
-java/awt/Dialog/SiblingChildOrder/SiblingChildOrderTest.java 8193940 windows-all
 java/awt/Focus/NonFocusableWindowTest/NoEventsTest.java 8000171 windows-all
 java/awt/Frame/MiscUndecorated/RepaintTest.java 8079267 windows-all
 java/awt/Robot/ModifierRobotKey/ModifierRobotKeyTest.java 8157173 windows-all
