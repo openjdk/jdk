@@ -221,7 +221,6 @@ java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 macosx-all
 java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all,linux-all
 java/awt/font/TextLayout/CombiningPerf.java 8192931 generic-all
 java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
-java/awt/font/MonospacedGlyphWidth/MonospacedGlyphWidthTest.java 8198412 linux-all,solaris-all
 java/awt/font/StyledMetrics/BoldSpace.java 8198422 linux-all
 java/awt/FontMetrics/FontCrash.java 8198336 windows-all
 java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 generic-all
