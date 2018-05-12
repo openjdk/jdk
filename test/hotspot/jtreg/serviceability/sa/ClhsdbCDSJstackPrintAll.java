@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8174994
- * @summary Test the clhsdb commands 'jstack', 'printall' with CDS enabled
+ * @summary Test the clhsdb commands 'jstack', 'printall', 'where' with CDS enabled
  * @requires vm.cds
  * @library /test/lib
  * @run main/othervm/timeout=2400 -Xmx1g ClhsdbCDSJstackPrintAll
@@ -77,7 +77,7 @@ public class ClhsdbCDSJstackPrintAll {
                 return;
             }
 
-            cmds = List.of("jstack -v", "printall");
+            cmds = List.of("jstack -v", "printall", "where -a");
 
             Map<String, List<String>> expStrMap = new HashMap<>();
             Map<String, List<String>> unExpStrMap = new HashMap<>();
@@ -92,6 +92,9 @@ public class ClhsdbCDSJstackPrintAll {
                 "No suitable match for type of address"));
             expStrMap.put("printall", List.of(
                 "aload_0",
+                "_nofast_aload_0",
+                "_nofast_getfield",
+                "_nofast_putfield",
                 "Constant Pool of",
                 "public static void main(java.lang.String[])",
                 "Bytecode",
@@ -100,7 +103,15 @@ public class ClhsdbCDSJstackPrintAll {
                 "Exception Table",
                 "invokedynamic"));
             unExpStrMap.put("printall", List.of(
-                "No suitable match for type of address"));
+                "No suitable match for type of address",
+                "illegal code",
+                "Failure occurred at bci"));
+            expStrMap.put("where -a", List.of(
+                "Java Stack Trace for main",
+                "public static void main"));
+            unExpStrMap.put("where -a", List.of(
+                "illegal code",
+                "Failure occurred at bci"));
             test.run(theApp.getPid(), cmds, expStrMap, unExpStrMap);
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
