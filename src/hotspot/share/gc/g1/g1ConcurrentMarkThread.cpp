@@ -57,6 +57,7 @@ STATIC_ASSERT(ConcurrentGCPhaseManager::UNCONSTRAINED_PHASE <
   expander(SCAN_ROOT_REGIONS,, "Concurrent Scan Root Regions")             \
   expander(CONCURRENT_MARK,, "Concurrent Mark")                            \
   expander(MARK_FROM_ROOTS,, "Concurrent Mark From Roots")                 \
+  expander(PRECLEAN,, "Concurrent Preclean")                               \
   expander(BEFORE_REMARK,, NULL)                                           \
   expander(REMARK,, NULL)                                                  \
   expander(REBUILD_REMEMBERED_SETS,, "Concurrent Rebuild Remembered Sets") \
@@ -309,7 +310,12 @@ void G1ConcurrentMarkThread::run_service() {
             break;
           }
 
-          // Provide a control point after mark_from_roots.
+          if (G1UseReferencePrecleaning) {
+            G1ConcPhase p(G1ConcurrentPhase::PRECLEAN, this);
+            _cm->preclean();
+          }
+
+          // Provide a control point before remark.
           {
             G1ConcPhaseManager p(G1ConcurrentPhase::BEFORE_REMARK, this);
           }
