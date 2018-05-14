@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Shdr;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Sym;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Rela;
 
-public class JELFRelocObject {
+public abstract class JELFRelocObject {
 
     private final BinaryContainer binContainer;
 
@@ -54,10 +54,20 @@ public class JELFRelocObject {
 
     private final int segmentSize;
 
-    public JELFRelocObject(BinaryContainer binContainer, String outputFileName) {
+    protected JELFRelocObject(BinaryContainer binContainer, String outputFileName) {
         this.binContainer = binContainer;
         this.elfContainer = new ElfContainer(outputFileName);
         this.segmentSize = binContainer.getCodeSegmentSize();
+    }
+
+    public static JELFRelocObject newInstance(BinaryContainer binContainer, String outputFileName) {
+        String archStr = System.getProperty("os.arch").toLowerCase();
+        if (archStr.equals("amd64") || archStr.equals("x86_64")) {
+            return new AMD64JELFRelocObject(binContainer, outputFileName);
+        } else  if (archStr.equals("aarch64")) {
+            return new AArch64JELFRelocObject(binContainer, outputFileName);
+        }
+        throw new InternalError("Unsupported platform: " + archStr);
     }
 
     private static ElfSection createByteSection(ArrayList<ElfSection> sections,
@@ -295,75 +305,6 @@ public class JELFRelocObject {
         return (elfRelocTable);
     }
 
-    private static void createRelocation(Symbol symbol, Relocation reloc, ElfRelocTable elfRelocTable) {
-        RelocType relocType = reloc.getType();
-
-        int elfRelocType = getELFRelocationType(relocType);
-        ElfSymbol sym = (ElfSymbol) symbol.getNativeSymbol();
-        int symno = sym.getIndex();
-        int sectindex = reloc.getSection().getSectionId();
-        int offset = reloc.getOffset();
-        int addend = 0;
-
-        switch (relocType) {
-            case JAVA_CALL_DIRECT:
-            case STUB_CALL_DIRECT:
-            case FOREIGN_CALL_INDIRECT_GOT: {
-                // Create relocation entry
-                addend = -4; // Size in bytes of the patch location
-                // Relocation should be applied at the location after call operand
-                offset = offset + reloc.getSize() + addend;
-                break;
-            }
-            case JAVA_CALL_INDIRECT:
-            case METASPACE_GOT_REFERENCE:
-            case EXTERNAL_PLT_TO_GOT: {
-                addend = -4; // Size of 32-bit address of the GOT
-                /*
-                 * Relocation should be applied before the test instruction to the move instruction.
-                 * reloc.getOffset() points to the test instruction after the instruction that loads the address of
-                 * polling page. So set the offset appropriately.
-                 */
-                offset = offset + addend;
-                break;
-            }
-            case EXTERNAL_GOT_TO_PLT: {
-                // this is load time relocations
-                break;
-            }
-            default:
-                throw new InternalError("Unhandled relocation type: " + relocType);
-        }
-        elfRelocTable.createRelocationEntry(sectindex, offset, symno, elfRelocType, addend);
-    }
-
-    private static int getELFRelocationType(RelocType relocType) {
-        int elfRelocType = 0; // R_<ARCH>_NONE if #define'd to 0 for all values of ARCH
-        switch (ElfTargetInfo.getElfArch()) {
-            case Elf64_Ehdr.EM_X86_64:
-                // Return R_X86_64_* entries based on relocType
-                if (relocType == RelocType.JAVA_CALL_DIRECT ||
-                    relocType == RelocType.FOREIGN_CALL_INDIRECT_GOT) {
-                    elfRelocType = Elf64_Rela.R_X86_64_PLT32;
-                } else if (relocType == RelocType.STUB_CALL_DIRECT) {
-                    elfRelocType = Elf64_Rela.R_X86_64_PC32;
-                } else if (relocType == RelocType.JAVA_CALL_INDIRECT) {
-                    elfRelocType = Elf64_Rela.R_X86_64_NONE;
-                } else if (relocType == RelocType.METASPACE_GOT_REFERENCE ||
-                           relocType == RelocType.EXTERNAL_PLT_TO_GOT) {
-                    elfRelocType = Elf64_Rela.R_X86_64_PC32;
-                } else if (relocType == RelocType.EXTERNAL_GOT_TO_PLT) {
-                    elfRelocType = Elf64_Rela.R_X86_64_64;
-                } else {
-                    assert false : "Unhandled relocation type: " + relocType;
-                }
-                break;
-            default:
-                System.out.println("Relocation Type mapping: Unhandled architecture");
-        }
-        return elfRelocType;
-    }
-
     private static void createElfRelocSections(ArrayList<ElfSection> sections,
                                                ElfRelocTable elfRelocTable,
                                                int symtabsectidx) {
@@ -383,4 +324,7 @@ public class JELFRelocObject {
             }
         }
     }
+
+    abstract void createRelocation(Symbol symbol, Relocation reloc, ElfRelocTable elfRelocTable);
+
 }
