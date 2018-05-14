@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -563,7 +563,7 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
       nameAddr = entryAddr.getAddressAt(longConstantEntryNameOffset);
       if (nameAddr != null) {
         String name = CStringUtilities.getString(nameAddr);
-        int value = (int) entryAddr.getCIntegerAt(longConstantEntryValueOffset, C_INT64_SIZE, true);
+        long value = entryAddr.getCIntegerAt(longConstantEntryValueOffset, C_INT64_SIZE, true);
 
         // Be a little resilient
         Long oldValue = lookupLongConstant(name, false);
