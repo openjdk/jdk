@@ -1366,6 +1366,8 @@ public:
   virtual const char* const* concurrent_phases() const;
   virtual bool request_concurrent_phase(const char* phase);
 
+  virtual WorkGang* get_safepoint_workers() { return _workers; }
+
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption
   // parameter. The values for that parameter, and their meanings,
