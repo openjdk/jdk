@@ -413,10 +413,37 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
   Node* trunc1 = NULL;
   Node* trunc2 = NULL;
   const TypeInt* iv_trunc_t = NULL;
+  Node* orig_incr = incr;
   if (!(incr = CountedLoopNode::match_incr_with_optional_truncation(incr, &trunc1, &trunc2, &iv_trunc_t))) {
     return false; // Funny increment opcode
   }
   assert(incr->Opcode() == Op_AddI, "wrong increment code");
+
+  const TypeInt* limit_t = gvn->type(limit)->is_int();
+  if (trunc1 != NULL) {
+    // When there is a truncation, we must be sure that after the truncation
+    // the trip counter will end up higher than the limit, otherwise we are looking
+    // at an endless loop. Can happen with range checks.
+
+    // Example:
+    // int i = 0;
+    // while (true)
+    //    sum + = array[i];
+    //    i++;
+    //    i = i && 0x7fff;
+    //  }
+    //
+    // If the array is shorter than 0x8000 this exits through a AIOOB
+    //  - Counted loop transformation is ok
+    // If the array is longer then this is an endless loop
+    //  - No transformation can be done.
+
+    const TypeInt* incr_t = gvn->type(orig_incr)->is_int();
+    if (limit_t->_hi > incr_t->_hi) {
+      // if the limit can have a higher value than the increment (before the phi)
+      return false;
+    }
+  }
 
   // Get merge point
   Node *xphi = incr->in(1);
@@ -499,7 +526,6 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
   }
 
   const TypeInt* init_t = gvn->type(init_trip)->is_int();
-  const TypeInt* limit_t = gvn->type(limit)->is_int();
 
   if (stride_con > 0) {
     jlong init_p = (jlong)init_t->_lo + stride_con;
