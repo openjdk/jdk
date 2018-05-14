@@ -1112,8 +1112,6 @@ void TemplateTable::aastore() {
   __ load_klass(rax, rdx);
   __ movptr(rax, Address(rax,
                          ObjArrayKlass::element_klass_offset()));
-  // Compress array + index*oopSize + 12 into a single register.  Frees rcx.
-  __ lea(rdx, element_address);
 
   // Generate subtype check.  Blows rcx, rdi
   // Superklass in rax.  Subklass in rbx.
@@ -1128,8 +1126,9 @@ void TemplateTable::aastore() {
 
   // Get the value we will store
   __ movptr(rax, at_tos());
+  __ movl(rcx, at_tos_p1()); // index
   // Now store using the appropriate barrier
-  do_oop_store(_masm, Address(rdx, 0), rax, IN_HEAP_ARRAY);
+  do_oop_store(_masm, element_address, rax, IN_HEAP_ARRAY);
   __ jmp(done);
 
   // Have a NULL in rax, rdx=array, ecx=index.  Store NULL at ary[idx]
