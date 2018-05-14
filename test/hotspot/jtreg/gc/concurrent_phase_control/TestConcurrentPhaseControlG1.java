@@ -51,6 +51,7 @@ public class TestConcurrentPhaseControlG1 {
         {"CONCURRENT_MARK", "Concurrent Mark [^FR]"},
         {"IDLE", null},  // Resume IDLE before testing subphases
         {"MARK_FROM_ROOTS", "Concurrent Mark From Roots"},
+        {"PRECLEAN", "Concurrent Preclean"},
         {"BEFORE_REMARK", null},
         {"REMARK", "Pause Remark"},
         {"REBUILD_REMEMBERED_SETS", "Concurrent Rebuild Remembered Sets"},

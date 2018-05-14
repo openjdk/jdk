@@ -594,19 +594,33 @@ private:
   bool _clear_referent;
 };
 
+void ReferenceProcessor::log_reflist(const char* prefix, DiscoveredList list[], uint num_active_queues) {
+  LogTarget(Trace, gc, ref) lt;
+
+  if (!lt.is_enabled()) {
+    return;
+  }
+
+  size_t total = 0;
+
+  LogStream ls(lt);
+  ls.print("%s", prefix);
+  for (uint i = 0; i < num_active_queues; i++) {
+    ls.print(SIZE_FORMAT " ", list[i].length());
+    total += list[i].length();
+  }
+  ls.print_cr("(" SIZE_FORMAT ")", total);
+}
+
 #ifndef PRODUCT
-void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], uint active_length, size_t total_refs) {
+void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], uint num_active_queues) {
   if (!log_is_enabled(Trace, gc, ref)) {
     return;
   }
 
-  stringStream st;
-  for (uint i = 0; i < active_length; ++i) {
-    st.print(SIZE_FORMAT " ", ref_lists[i].length());
-  }
-  log_develop_trace(gc, ref)("%s= " SIZE_FORMAT, st.as_string(), total_refs);
+  log_reflist("", ref_lists, num_active_queues);
 #ifdef ASSERT
-  for (uint i = active_length; i < _max_num_queues; i++) {
+  for (uint i = num_active_queues; i < _max_num_queues; i++) {
     assert(ref_lists[i].length() == 0, SIZE_FORMAT " unexpected References in %u",
            ref_lists[i].length(), i);
   }
@@ -629,10 +643,11 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
   size_t total_refs = 0;
   log_develop_trace(gc, ref)("Balance ref_lists ");
 
+  log_reflist_counts(ref_lists, _max_num_queues);
+
   for (uint i = 0; i < _max_num_queues; ++i) {
     total_refs += ref_lists[i].length();
   }
-  log_reflist_counts(ref_lists, _max_num_queues, total_refs);
   size_t avg_refs = total_refs / _num_queues + 1;
   uint to_idx = 0;
   for (uint from_idx = 0; from_idx < _max_num_queues; from_idx++) {
@@ -693,11 +708,11 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
     }
   }
 #ifdef ASSERT
+  log_reflist_counts(ref_lists, _num_queues);
   size_t balanced_total_refs = 0;
   for (uint i = 0; i < _num_queues; ++i) {
     balanced_total_refs += ref_lists[i].length();
   }
-  log_reflist_counts(ref_lists, _num_queues, balanced_total_refs);
   assert(total_refs == balanced_total_refs, "Balancing was incomplete");
 #endif
 }
@@ -1011,63 +1026,79 @@ bool ReferenceProcessor::has_discovered_references() {
   return false;
 }
 
-// Preclean the discovered references by removing those
-// whose referents are alive, and by marking from those that
-// are not active. These lists can be handled here
-// in any order and, indeed, concurrently.
-void ReferenceProcessor::preclean_discovered_references(
-  BoolObjectClosure* is_alive,
-  OopClosure* keep_alive,
-  VoidClosure* complete_gc,
-  YieldClosure* yield,
-  GCTimer* gc_timer) {
+void ReferenceProcessor::preclean_discovered_references(BoolObjectClosure* is_alive,
+                                                        OopClosure* keep_alive,
+                                                        VoidClosure* complete_gc,
+                                                        YieldClosure* yield,
+                                                        GCTimer* gc_timer) {
+  // These lists can be handled here in any order and, indeed, concurrently.
 
   // Soft references
   {
     GCTraceTime(Debug, gc, ref) tm("Preclean SoftReferences", gc_timer);
+    log_reflist("SoftRef before: ", _discoveredSoftRefs, _max_num_queues);
     for (uint i = 0; i < _max_num_queues; i++) {
       if (yield->should_return()) {
         return;
       }
-      preclean_discovered_reflist(_discoveredSoftRefs[i], is_alive,
-                                  keep_alive, complete_gc, yield);
+      if (preclean_discovered_reflist(_discoveredSoftRefs[i], is_alive,
+                                      keep_alive, complete_gc, yield)) {
+        log_reflist("SoftRef abort: ", _discoveredSoftRefs, _max_num_queues);
+        return;
+      }
     }
+    log_reflist("SoftRef after: ", _discoveredSoftRefs, _max_num_queues);
   }
 
   // Weak references
   {
     GCTraceTime(Debug, gc, ref) tm("Preclean WeakReferences", gc_timer);
+    log_reflist("WeakRef before: ", _discoveredWeakRefs, _max_num_queues);
     for (uint i = 0; i < _max_num_queues; i++) {
       if (yield->should_return()) {
         return;
       }
-      preclean_discovered_reflist(_discoveredWeakRefs[i], is_alive,
-                                  keep_alive, complete_gc, yield);
+      if (preclean_discovered_reflist(_discoveredWeakRefs[i], is_alive,
+                                      keep_alive, complete_gc, yield)) {
+        log_reflist("WeakRef abort: ", _discoveredWeakRefs, _max_num_queues);
+        return;
+      }
     }
+    log_reflist("WeakRef after: ", _discoveredWeakRefs, _max_num_queues);
   }
 
   // Final references
   {
     GCTraceTime(Debug, gc, ref) tm("Preclean FinalReferences", gc_timer);
+    log_reflist("FinalRef before: ", _discoveredFinalRefs, _max_num_queues);
     for (uint i = 0; i < _max_num_queues; i++) {
       if (yield->should_return()) {
         return;
       }
-      preclean_discovered_reflist(_discoveredFinalRefs[i], is_alive,
-                                  keep_alive, complete_gc, yield);
+      if (preclean_discovered_reflist(_discoveredFinalRefs[i], is_alive,
+                                      keep_alive, complete_gc, yield)) {
+        log_reflist("FinalRef abort: ", _discoveredFinalRefs, _max_num_queues);
+        return;
+      }
     }
+    log_reflist("FinalRef after: ", _discoveredFinalRefs, _max_num_queues);
   }
 
   // Phantom references
   {
     GCTraceTime(Debug, gc, ref) tm("Preclean PhantomReferences", gc_timer);
+    log_reflist("PhantomRef before: ", _discoveredPhantomRefs, _max_num_queues);
     for (uint i = 0; i < _max_num_queues; i++) {
       if (yield->should_return()) {
         return;
       }
-      preclean_discovered_reflist(_discoveredPhantomRefs[i], is_alive,
-                                  keep_alive, complete_gc, yield);
+      if (preclean_discovered_reflist(_discoveredPhantomRefs[i], is_alive,
+                                      keep_alive, complete_gc, yield)) {
+        log_reflist("PhantomRef abort: ", _discoveredPhantomRefs, _max_num_queues);
+        return;
+      }
     }
+    log_reflist("PhantomRef after: ", _discoveredPhantomRefs, _max_num_queues);
   }
 }
 
@@ -1079,19 +1110,20 @@ void ReferenceProcessor::preclean_discovered_references(
 // java.lang.Reference. As a result, we need to be careful below
 // that ref removal steps interleave safely with ref discovery steps
 // (in this thread).
-void
-ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
-                                                BoolObjectClosure* is_alive,
-                                                OopClosure*        keep_alive,
-                                                VoidClosure*       complete_gc,
-                                                YieldClosure*      yield) {
+bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
+                                                     BoolObjectClosure* is_alive,
+                                                     OopClosure*        keep_alive,
+                                                     VoidClosure*       complete_gc,
+                                                     YieldClosure*      yield) {
   DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
+    if (yield->should_return_fine_grain()) {
+      return true;
+    }
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
     oop obj = iter.obj();
     oop next = java_lang_ref_Reference::next(obj);
-    if (iter.referent() == NULL || iter.is_referent_alive() ||
-        next != NULL) {
+    if (iter.referent() == NULL || iter.is_referent_alive() || next != NULL) {
       // The referent has been cleared, or is alive, or the Reference is not
       // active; we need to trace and mark its cohort.
       log_develop_trace(gc, ref)("Precleaning Reference (" INTPTR_FORMAT ": %s)",
@@ -1121,6 +1153,7 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
         iter.removed(), iter.processed(), p2i(&refs_list));
     }
   )
+  return false;
 }
 
 const char* ReferenceProcessor::list_name(uint i) {
