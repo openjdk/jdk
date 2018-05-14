@@ -253,6 +253,12 @@ $(eval $(call SetupBuildDemo, Font2DTest, \
     DEMO_SUBDIR := jfc, \
 ))
 
+$(eval $(call SetupBuildDemo, J2Ddemo, \
+    DEMO_SUBDIR := jfc, \
+    MAIN_CLASS := java2d.J2Ddemo, \
+    JAR_NAME := J2Ddemo, \
+))
+
 $(eval $(call SetupBuildDemo, Metalworks, \
     DEMO_SUBDIR := jfc, \
 ))
