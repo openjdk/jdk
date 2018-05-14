@@ -591,6 +591,9 @@ JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle
   // Get instructions and constants CodeSections early because we need it.
   _instructions = buffer.insts();
   _constants = buffer.consts();
+#if INCLUDE_AOT
+  buffer.set_immutable_PIC(_immutable_pic_compilation);
+#endif
 
   initialize_fields(target(), JNIHandles::resolve(compiled_code_obj), CHECK_OK);
   JVMCIEnv::CodeInstallResult result = initialize_buffer(buffer, false, CHECK_OK);
@@ -624,6 +627,9 @@ JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Hand
   // Get instructions and constants CodeSections early because we need it.
   _instructions = buffer.insts();
   _constants = buffer.consts();
+#if INCLUDE_AOT
+  buffer.set_immutable_PIC(_immutable_pic_compilation);
+#endif
 
   initialize_fields(target(), JNIHandles::resolve(compiled_code_obj), CHECK_OK);
   JVMCIEnv::CodeInstallResult result = initialize_buffer(buffer, true, CHECK_OK);
