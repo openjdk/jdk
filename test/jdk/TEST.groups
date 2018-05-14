@@ -359,13 +359,17 @@ jdk_sound = \
 jdk_imageio = \
     javax/imageio
 
+jfc_demo = \
+     demo/jfc
+
 jdk_desktop = \
     :jdk_awt \
     :jdk_2d \
     :jdk_beans \
     :jdk_swing \
     :jdk_sound \
-    :jdk_imageio
+    :jdk_imageio \
+    :jfc_demo
 
 # SwingSet3 tests.
 jdk_client_sanity = \
