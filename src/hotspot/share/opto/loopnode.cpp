@@ -3218,10 +3218,16 @@ void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
 void PhaseIdealLoop::recompute_dom_depth() {
   uint no_depth_marker = C->unique();
   uint i;
-  // Initialize depth to "no depth yet"
+  // Initialize depth to "no depth yet" and realize all lazy updates
   for (i = 0; i < _idom_size; i++) {
+    // Only indices with a _dom_depth has a Node* or NULL (otherwise uninitalized).
     if (_dom_depth[i] > 0 && _idom[i] != NULL) {
-     _dom_depth[i] = no_depth_marker;
+      _dom_depth[i] = no_depth_marker;
+
+      // heal _idom if it has a fwd mapping in _nodes
+      if (_idom[i]->in(0) == NULL) {
+        idom(i);
+      }
     }
   }
   if (_dom_stk == NULL) {
