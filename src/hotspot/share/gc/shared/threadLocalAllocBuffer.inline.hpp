@@ -53,6 +53,19 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
   return NULL;
 }
 
+inline bool ThreadLocalAllocBuffer::undo_allocate(HeapWord* obj, size_t size) {
+  invariants();
+
+  if (!is_last_allocation(obj, size)) {
+    return false;
+  }
+
+  set_top(obj);
+
+  invariants();
+  return true;
+}
+
 inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
   // Compute the size for the new TLAB.
   // The "last" tlab may be smaller to reduce fragmentation.
