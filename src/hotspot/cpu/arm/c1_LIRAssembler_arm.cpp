@@ -3285,7 +3285,8 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
 }
 
 
-void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest) {
+void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info) {
+  assert(patch_code == lir_patch_none, "Patch code not supported");
   LIR_Address* addr = addr_opr->as_address_ptr();
   if (addr->index()->is_illegal()) {
     jint c = addr->disp();

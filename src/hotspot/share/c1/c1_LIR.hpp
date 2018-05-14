@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2074,7 +2074,7 @@ class LIR_List: public CompilationResourceObj {
   void branch_destination(Label* lbl)            { append(new LIR_OpLabel(lbl)); }
 
   void negate(LIR_Opr from, LIR_Opr to)          { append(new LIR_Op1(lir_neg, from, to)); }
-  void leal(LIR_Opr from, LIR_Opr result_reg)    { append(new LIR_Op1(lir_leal, from, result_reg)); }
+  void leal(LIR_Opr from, LIR_Opr result_reg, LIR_PatchCode patch_code = lir_patch_none, CodeEmitInfo* info = NULL) { append(new LIR_Op1(lir_leal, from, result_reg, T_ILLEGAL, patch_code, info)); }
 
   // result is a stack location for old backend and vreg for UseLinearScan
   // stack_loc_temp is an illegal register for old backend
