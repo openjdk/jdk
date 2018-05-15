@@ -123,4 +123,7 @@ vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses023/TestDescrip
 vmTestbase/nsk/jdi/EventQueue/remove_l/remove_l005/TestDescription.java 8068225 generic-all
 vmTestbase/nsk/jdi/stress/ClassPrepareEvents/ClassPrepareEvents001/ClassPrepareEvents001.java 6426321 generic-all
 
+vmTestbase/heapdump/JMapHeapCore/TestDescription.java 8023376,8001227,8051445 generic-all
+vmTestbase/heapdump/JMapMetaspaceCore/TestDescription.java 8023376,8001227,8051445 generic-all
+
 #############################################################################
