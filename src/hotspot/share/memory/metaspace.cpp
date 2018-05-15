@@ -185,7 +185,7 @@ static const char* space_type_name(Metaspace::MetaspaceType t) {
   return s;
 }
 
-volatile intptr_t MetaspaceGC::_capacity_until_GC = 0;
+volatile size_t MetaspaceGC::_capacity_until_GC = 0;
 uint MetaspaceGC::_shrink_factor = 0;
 bool MetaspaceGC::_should_concurrent_collect = false;
 
@@ -2417,16 +2417,16 @@ size_t MetaspaceGC::capacity_until_GC() {
 bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size_t* old_cap_until_GC) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
-  intptr_t capacity_until_GC = _capacity_until_GC;
-  intptr_t new_value = capacity_until_GC + v;
+  size_t capacity_until_GC = _capacity_until_GC;
+  size_t new_value = capacity_until_GC + v;
 
   if (new_value < capacity_until_GC) {
     // The addition wrapped around, set new_value to aligned max value.
     new_value = align_down(max_uintx, Metaspace::commit_alignment());
   }
 
-  intptr_t expected = _capacity_until_GC;
-  intptr_t actual = Atomic::cmpxchg(new_value, &_capacity_until_GC, expected);
+  size_t expected = _capacity_until_GC;
+  size_t actual = Atomic::cmpxchg(new_value, &_capacity_until_GC, expected);
 
   if (expected != actual) {
     return false;
@@ -2444,7 +2444,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
 size_t MetaspaceGC::dec_capacity_until_GC(size_t v) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
-  return (size_t)Atomic::sub((intptr_t)v, &_capacity_until_GC);
+  return Atomic::sub(v, &_capacity_until_GC);
 }
 
 void MetaspaceGC::initialize() {
