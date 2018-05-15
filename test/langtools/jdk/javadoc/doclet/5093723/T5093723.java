@@ -40,6 +40,7 @@ public class T5093723 extends JavadocTester {
 
     @Test
     void test() {
+        setAutomaticCheckLinks(false); // @ignore JDK-8202617
         javadoc("-d", "out",
                 "-Xdoclint:none",
                 testSrc("DocumentedClass.java"),
