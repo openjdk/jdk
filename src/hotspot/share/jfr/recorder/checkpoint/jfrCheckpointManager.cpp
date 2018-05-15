@@ -39,6 +39,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 typedef JfrCheckpointManager::Buffer* BufferPtr;

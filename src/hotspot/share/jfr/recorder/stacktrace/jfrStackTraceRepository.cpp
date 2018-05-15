@@ -31,6 +31,7 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/task.hpp"
 #include "runtime/vframe.inline.hpp"
