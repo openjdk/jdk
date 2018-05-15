@@ -3975,41 +3975,48 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   movk(dst, nk & 0xffff);
 }
 
-void MacroAssembler::load_heap_oop(Register dst, Address src)
-{
-  if (UseCompressedOops) {
-    ldrw(dst, src);
-    decode_heap_oop(dst);
+void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
+                                    Register dst, Address src,
+                                    Register tmp1, Register thread_tmp) {
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bool as_raw = (decorators & AS_RAW) != 0;
+  if (as_raw) {
+    bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
   } else {
-    ldr(dst, src);
+    bs->load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
   }
 }
 
-void MacroAssembler::load_heap_oop_not_null(Register dst, Address src)
-{
-  if (UseCompressedOops) {
-    ldrw(dst, src);
-    decode_heap_oop_not_null(dst);
+void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
+                                     Address dst, Register src,
+                                     Register tmp1, Register thread_tmp) {
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bool as_raw = (decorators & AS_RAW) != 0;
+  if (as_raw) {
+    bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
   } else {
-    ldr(dst, src);
+    bs->store_at(this, decorators, type, dst, src, tmp1, thread_tmp);
   }
 }
 
-void MacroAssembler::store_heap_oop(Address dst, Register src) {
-  if (UseCompressedOops) {
-    assert(!dst.uses(src), "not enough registers");
-    encode_heap_oop(src);
-    strw(src, dst);
-  } else
-    str(src, dst);
+void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
+                                   Register thread_tmp, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
+}
+
+void MacroAssembler::load_heap_oop_not_null(Register dst, Address src, Register tmp1,
+                                            Register thread_tmp, DecoratorSet decorators) {
+  access_load_at(T_OBJECT, IN_HEAP | OOP_NOT_NULL | decorators, dst, src, tmp1, thread_tmp);
+}
+
+void MacroAssembler::store_heap_oop(Address dst, Register src, Register tmp1,
+                                    Register thread_tmp, DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
 }
 
 // Used for storing NULLs.
 void MacroAssembler::store_heap_oop_null(Address dst) {
-  if (UseCompressedOops) {
-    strw(zr, dst);
-  } else
-    str(zr, dst);
+  access_store_at(T_OBJECT, IN_HEAP, dst, noreg, noreg, noreg);
 }
 
 Address MacroAssembler::allocate_metadata_address(Metadata* obj) {
