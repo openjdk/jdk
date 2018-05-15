@@ -318,8 +318,11 @@ class VoidClosure : public StackObj {
 // by means of checking the return value from the polling
 // call.
 class YieldClosure : public StackObj {
-  public:
-   virtual bool should_return() = 0;
+public:
+ virtual bool should_return() = 0;
+
+ // Yield on a fine-grain level. The check in case of not yielding should be very fast.
+ virtual bool should_return_fine_grain() { return false; }
 };
 
 // Abstract closure for serializing data (read or write).

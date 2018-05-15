@@ -32,9 +32,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1Allocator.inline.hpp"
-#endif
 
 bool always_do_update_barrier = false;
 
@@ -214,9 +211,3 @@ void oopDesc::release_float_field_put(int offset, jfloat value)       { HeapAcce
 
 jdouble oopDesc::double_field_acquire(int offset) const               { return HeapAccess<MO_ACQUIRE>::load_at(as_oop(), offset); }
 void oopDesc::release_double_field_put(int offset, jdouble value)     { HeapAccess<MO_RELEASE>::store_at(as_oop(), offset, value); }
-
-#if INCLUDE_CDS_JAVA_HEAP
-bool oopDesc::is_archive_object(oop p) {
-  return (p == NULL) ? false : G1ArchiveAllocator::is_archive_object(p);
-}
-#endif

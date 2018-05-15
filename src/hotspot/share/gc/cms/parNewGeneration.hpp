@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,7 +297,6 @@ class ParNewRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
 
   // Executes a task using worker threads.
   virtual void execute(ProcessTask& task);
-  virtual void execute(EnqueueTask& task);
   // Switch to single threaded mode.
   virtual void set_single_threaded_mode();
 };

@@ -39,7 +39,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Properties;
@@ -172,6 +171,15 @@ public class ReflectionFactory {
      */
     public FieldAccessor newFieldAccessor(Field field, boolean override) {
         checkInitted();
+
+        Field root = langReflectAccess.getRoot(field);
+        if (root != null) {
+            // FieldAccessor will use the root unless the modifiers have
+            // been overrridden
+            if (root.getModifiers() == field.getModifiers() || !override) {
+                field = root;
+            }
+        }
         return UnsafeFieldAccessorFactory.newFieldAccessor(field, override);
     }
 
@@ -183,6 +191,12 @@ public class ReflectionFactory {
             if (altMethod != null) {
                 method = altMethod;
             }
+        }
+
+        // use the root Method that will not cache caller class
+        Method root = langReflectAccess.getRoot(method);
+        if (root != null) {
+            method = root;
         }
 
         if (noInflation && !ReflectUtil.isVMAnonymousClass(method.getDeclaringClass())) {
@@ -214,6 +228,13 @@ public class ReflectionFactory {
             return new InstantiationExceptionConstructorAccessorImpl
                 ("Can not instantiate java.lang.Class");
         }
+
+        // use the root Constructor that will not cache caller class
+        Constructor<?> root = langReflectAccess.getRoot(c);
+        if (root != null) {
+            c = root;
+        }
+
         // Bootstrapping issue: since we use Class.newInstance() in
         // the ConstructorAccessor generation process, we have to
         // break the cycle here.

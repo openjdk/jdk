@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ final class Linker {
                 if (name.endsWith(".so")) {
                     objectFileName = name.substring(0, name.length() - ".so".length());
                 }
+                objectFileName = objectFileName + ".o";
                 linkerPath = (options.linkerpath != null) ? options.linkerpath : "ld";
                 linkerCmd = linkerPath + " -shared -z noexecstack -o " + libraryFileName + " " + objectFileName;
                 linkerCheck = linkerPath + " -v";
@@ -130,7 +131,8 @@ final class Linker {
             throw new InternalError(errorMessage);
         }
         File objFile = new File(objectFileName);
-        if (objFile.exists()) {
+        boolean keepObjFile = Boolean.parseBoolean(System.getProperty("aot.keep.objFile", "false"));
+        if (objFile.exists() && !keepObjFile) {
             if (!objFile.delete()) {
                 throw new InternalError("Failed to delete " + objectFileName + " file");
             }

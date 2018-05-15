@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,14 @@
 #undef  CHECK_BAILOUT
 #define CHECK_BAILOUT() { if (ce->compilation()->bailed_out()) return; }
 
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index,
-                               bool throw_index_out_of_bounds_exception) :
-  _throw_index_out_of_bounds_exception(throw_index_out_of_bounds_exception),
-  _index(index) {
+RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
+  : _throw_index_out_of_bounds_exception(false), _index(index), _array(array) {
+  assert(info != NULL, "must have info");
+  _info = new CodeEmitInfo(info);
+}
+
+RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
+  : _throw_index_out_of_bounds_exception(true), _index(index), _array(NULL) {
   assert(info != NULL, "must have info");
   _info = new CodeEmitInfo(info);
 }
@@ -71,6 +75,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
     stub_id = Runtime1::throw_index_exception_id;
   } else {
     stub_id = Runtime1::throw_range_check_failed_id;
+    __ lgr_if_needed(Z_R0_scratch, _array->as_pointer_register());
   }
   ce->emit_call_c(Runtime1::entry_for (stub_id));
   CHECK_BAILOUT();

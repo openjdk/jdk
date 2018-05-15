@@ -25,23 +25,33 @@
 # Tiered testing definitions
 #
 
+# When adding tests to tier1, make sure they end up in one of the tier1_partX groups
 tier1 = \
-    :jdk_lang \
+    :tier1_part1 \
+    :tier1_part2 \
+    :tier1_part3
+    
+tier1_part1 = \
+    :jdk_lang
+
+tier1_part2 = \
     :jdk_util \
-    :jdk_svc_sanity \
-    :build_sanity \
-    sun/nio/cs/ISO8859x.java \
-    java/nio/Buffer \
-    com/sun/crypto/provider/Cipher \
-    :jdk_math \
-    tools/pack200 \
     -java/util/Arrays/TimSortStackSize2.java
 
+tier1_part3 = \
+    :build_sanity \
+    :jdk_math \
+    :jdk_svc_sanity \
+    java/nio/Buffer \
+    com/sun/crypto/provider/Cipher \
+    sun/nio/cs/ISO8859x.java \
+    tools/pack200
+
+# When adding tests to tier2, make sure they end up in one of the tier2_partX groups
 tier2 = \
     :tier2_part1 \
     :tier2_part2 \
-    :tier2_part3 \
-    java/util/Arrays/TimSortStackSize2.java
+    :tier2_part3
 
 # com/sun/crypto/provider/Cipher is in tier1 because of JDK-8132855
 tier2_part1 = \
@@ -58,7 +68,9 @@ tier2_part2 = \
     -sun/nio/cs/ISO8859x.java \
     :jdk_other \
     :jdk_text \
-    :jdk_time
+    :jdk_time \
+    java/util/Arrays/TimSortStackSize2.java
+
 
 tier2_part3 = \
     :jdk_net

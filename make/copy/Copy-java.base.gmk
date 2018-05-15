@@ -65,6 +65,17 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       MACRO := copy-and-chmod))
 
   TARGETS += $(COPY_MSVCR) $(COPY_MSVCP)
+
+  ifneq ($(UCRT_DLL_DIR), )
+    $(eval $(call SetupCopyFiles, COPY_UCRT_DLLS, \
+        DEST := $(LIB_DST_DIR), \
+        SRC := $(UCRT_DLL_DIR), \
+        FILES := $(wildcard $(UCRT_DLL_DIR)/*.dll), \
+        MACRO := copy-and-chmod, \
+    ))
+
+    TARGETS += $(COPY_UCRT_DLLS)
+  endif
 endif
 
 ################################################################################
@@ -117,23 +128,23 @@ else
 	$(RM) $(@)
         # Now check for other permutations
         ifeq ($(call check-jvm-variant, server), true)
-	  $(PRINTF) "-server KNOWN\n">>$(@)
-	  $(PRINTF) "-client ALIASED_TO -server\n">>$(@)
+	  $(PRINTF) -- "-server KNOWN\n">>$(@)
+	  $(PRINTF) -- "-client ALIASED_TO -server\n">>$(@)
           ifeq ($(call check-jvm-variant, minimal), true)
-	    $(PRINTF) "-minimal KNOWN\n">>$(@)
+	    $(PRINTF) -- "-minimal KNOWN\n">>$(@)
           endif
         else
           ifeq ($(call check-jvm-variant, client), true)
-	    $(PRINTF) "-client KNOWN\n">>$(@)
-	    $(PRINTF) "-server ALIASED_TO -client\n">>$(@)
+	    $(PRINTF) -- "-client KNOWN\n">>$(@)
+	    $(PRINTF) -- "-server ALIASED_TO -client\n">>$(@)
             ifeq ($(call check-jvm-variant, minimal), true)
-	      $(PRINTF) "-minimal KNOWN\n">>$(@)
+	      $(PRINTF) -- "-minimal KNOWN\n">>$(@)
             endif
           else
             ifeq ($(call check-jvm-variant, minimal), true)
-	      $(PRINTF) "-minimal KNOWN\n">>$(@)
-	      $(PRINTF) "-server ALIASED_TO -minimal\n">>$(@)
-	      $(PRINTF) "-client ALIASED_TO -minimal\n">>$(@)
+	      $(PRINTF) -- "-minimal KNOWN\n">>$(@)
+	      $(PRINTF) -- "-server ALIASED_TO -minimal\n">>$(@)
+	      $(PRINTF) -- "-client ALIASED_TO -minimal\n">>$(@)
             endif
           endif
         endif

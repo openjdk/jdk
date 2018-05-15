@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,18 +185,16 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(const char* name) {
+address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   address entry = __ pc();
 
   // index is in R4_ArrayIndexOutOfBounds_index
-
-  InlinedString Lname(name);
 
   // expression stack must be empty before entering the VM if an exception happened
   __ empty_expression_stack();
 
   // setup parameters
-  __ ldr_literal(R1, Lname);
+  // Array expected in R1.
   __ mov(R2, R4_ArrayIndexOutOfBounds_index);
 
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException), R1, R2);
@@ -204,7 +202,6 @@ address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(con
   __ nop(); // to avoid filling CPU pipeline with invalid instructions
   __ nop();
   __ should_not_reach_here();
-  __ bind_literal(Lname);
 
   return entry;
 }

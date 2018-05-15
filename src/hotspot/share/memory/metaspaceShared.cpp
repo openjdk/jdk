@@ -1922,6 +1922,10 @@ void MetaspaceShared::archive_klass_objects(Thread* THREAD) {
   }
 }
 
+bool MetaspaceShared::is_archive_object(oop p) {
+  return (p == NULL) ? false : G1ArchiveAllocator::is_archive_object(p);
+}
+
 void MetaspaceShared::fixup_mapped_heap_regions() {
   FileMapInfo *mapinfo = FileMapInfo::current_info();
   mapinfo->fixup_mapped_heap_regions();

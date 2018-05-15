@@ -138,12 +138,36 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 
   // Check is all offsets and lengths are non negative
   if (src_pos < 0 || dst_pos < 0 || length < 0) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
+    // Pass specific exception reason.
+    ResourceMark rm;
+    stringStream ss;
+    if (src_pos < 0) {
+      ss.print("arraycopy: source index %d out of bounds for %s[%d]",
+               src_pos, type2name_tab[ArrayKlass::cast(s->klass())->element_type()], s->length());
+    } else if (dst_pos < 0) {
+      ss.print("arraycopy: destination index %d out of bounds for %s[%d]",
+               dst_pos, type2name_tab[ArrayKlass::cast(d->klass())->element_type()], d->length());
+    } else {
+      ss.print("arraycopy: length %d is negative", length);
+    }
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
   // Check if the ranges are valid
-  if  ( (((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length())
-     || (((unsigned int) length + (unsigned int) dst_pos) > (unsigned int) d->length()) ) {
-    THROW(vmSymbols::java_lang_ArrayIndexOutOfBoundsException());
+  if ((((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length()) ||
+      (((unsigned int) length + (unsigned int) dst_pos) > (unsigned int) d->length())) {
+    // Pass specific exception reason.
+    ResourceMark rm;
+    stringStream ss;
+    if (((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length()) {
+      ss.print("arraycopy: last source index %u out of bounds for %s[%d]",
+               (unsigned int) length + (unsigned int) src_pos,
+               type2name_tab[ArrayKlass::cast(s->klass())->element_type()], s->length());
+    } else {
+      ss.print("arraycopy: last destination index %u out of bounds for %s[%d]",
+               (unsigned int) length + (unsigned int) dst_pos,
+               type2name_tab[ArrayKlass::cast(d->klass())->element_type()], d->length());
+    }
+    THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
   // Check zero copy
   if (length == 0)
@@ -156,7 +180,6 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
   void* dst = (char*) (d->base(element_type())) + ((size_t)dst_pos << l2es);
   HeapAccess<ARRAYCOPY_ATOMIC>::arraycopy(s, d, src, dst, (size_t)length << l2es);
 }
-
 
 // create a klass of array holding typeArrays
 Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
@@ -240,16 +263,11 @@ void TypeArrayKlass::print_on(outputStream* st) const {
 void TypeArrayKlass::print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   st->print("{type array ");
-  switch (element_type()) {
-    case T_BOOLEAN: st->print("bool");    break;
-    case T_CHAR:    st->print("char");    break;
-    case T_FLOAT:   st->print("float");   break;
-    case T_DOUBLE:  st->print("double");  break;
-    case T_BYTE:    st->print("byte");    break;
-    case T_SHORT:   st->print("short");   break;
-    case T_INT:     st->print("int");     break;
-    case T_LONG:    st->print("long");    break;
-    default: ShouldNotReachHere();
+  BasicType bt = element_type();
+  if (bt == T_BOOLEAN) {
+    st->print("bool");
+  } else {
+    st->print("%s", type2name_tab[bt]);
   }
   st->print("}");
 }

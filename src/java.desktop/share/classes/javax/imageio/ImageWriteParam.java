@@ -1243,7 +1243,7 @@ public class ImageWriteParam extends IIOParam {
             throw new IllegalStateException("No compression type set!");
         }
         if (quality < 0.0F || quality > 1.0F) {
-            throw new IllegalArgumentException("Quality out-of-bounds!");
+            throw new IllegalArgumentException("Quality out of bounds!");
         }
         this.compressionQuality = quality;
     }
@@ -1341,7 +1341,7 @@ public class ImageWriteParam extends IIOParam {
             throw new IllegalStateException("No compression type set!");
         }
         if (quality < 0.0F || quality > 1.0F) {
-            throw new IllegalArgumentException("Quality out-of-bounds!");
+            throw new IllegalArgumentException("Quality out of bounds!");
         }
         return -1.0F;
     }

@@ -127,12 +127,6 @@ void java_lang_ref_Reference::set_discovered_raw(oop ref, oop value) {
 HeapWord* java_lang_ref_Reference::discovered_addr_raw(oop ref) {
   return ref->obj_field_addr_raw<HeapWord>(discovered_offset);
 }
-oop java_lang_ref_Reference::queue(oop ref) {
-  return ref->obj_field(queue_offset);
-}
-void java_lang_ref_Reference::set_queue(oop ref, oop value) {
-  return ref->obj_field_put(queue_offset, value);
-}
 bool java_lang_ref_Reference::is_phantom(oop ref) {
   return InstanceKlass::cast(ref->klass())->reference_type() == REF_PHANTOM;
 }

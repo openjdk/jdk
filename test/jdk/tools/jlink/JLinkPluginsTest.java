@@ -77,14 +77,6 @@ public class JLinkPluginsTest {
             helper.checkImage(imageDir, moduleName, res, null);
         }
         {
-            // Optimize Class.forName
-            String[] userOptions = {"--class-for-name"};
-            String moduleName = "classforname";
-            helper.generateDefaultJModule(moduleName, "composite2");
-            Path imageDir = helper.generateDefaultImage(userOptions, moduleName).assertSuccess();
-            helper.checkImage(imageDir, moduleName, null, null);
-        }
-        {
             // disable generate jli classes - JDK-8160063
             String[] userOptions = {"--disable-plugin", "generate-jli-classes"};
             String moduleName = "jlidisabled";

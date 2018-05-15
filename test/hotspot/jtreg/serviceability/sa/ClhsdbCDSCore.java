@@ -166,6 +166,9 @@ public class ClhsdbCDSCore {
                 "No suitable match for type of address"));
             expStrMap.put("printall", List.of(
                 "aload_0",
+                "_nofast_aload_0",
+                "_nofast_getfield",
+                "_nofast_putfield",
                 "Constant Pool of",
                 "public static void main(java.lang.String[])",
                 "Bytecode",
@@ -175,6 +178,8 @@ public class ClhsdbCDSCore {
                 "invokedynamic"));
             unExpStrMap.put("printall", List.of(
                 "sun.jvm.hotspot.types.WrongTypeException",
+                "illegal code",
+                "Failure occurred at bci",
                 "No suitable match for type of address"));
             test.runOnCore(TEST_CDS_CORE_FILE_NAME, cmds, expStrMap, unExpStrMap);
         } catch (Exception ex) {

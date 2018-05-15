@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -19,6 +19,8 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl.dtd;
+
+import java.util.Iterator;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.RevalidationHandler;
@@ -51,7 +53,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentFilter;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
-import java.util.Iterator;
 
 /**
  * The DTD validator. The validator implements a document
@@ -84,7 +85,7 @@ import java.util.Iterator;
  * @author Jeffrey Rodriguez IBM
  * @author Neil Graham, IBM
  *
- * @LastModified: Nov 2017
+ * @LastModified: May 2018
  */
 public class XMLDTDValidator
         implements XMLComponent, XMLDocumentFilter, XMLDTDValidatorFilter, RevalidationHandler {
@@ -92,11 +93,6 @@ public class XMLDTDValidator
     //
     // Constants
     //
-
-    /** Symbol: "&lt;&lt;datatypes>>". */
-
-    /** Top level scope (-1). */
-    private static final int TOP_LEVEL_SCOPE = -1;
 
     // feature identifiers
 
@@ -120,9 +116,8 @@ public class XMLDTDValidator
     protected static final String WARN_ON_DUPLICATE_ATTDEF =
         Constants.XERCES_FEATURE_PREFIX + Constants.WARN_ON_DUPLICATE_ATTDEF_FEATURE;
 
-        protected static final String PARSER_SETTINGS =
-                Constants.XERCES_FEATURE_PREFIX + Constants.PARSER_SETTINGS;
-
+    protected static final String PARSER_SETTINGS =
+        Constants.XERCES_FEATURE_PREFIX + Constants.PARSER_SETTINGS;
 
 
     // property identifiers
@@ -348,7 +343,7 @@ public class XMLDTDValidator
     private final QName fTempQName = new QName();
 
     /** Temporary string buffers. */
-    private final StringBuffer fBuffer = new StringBuffer();
+    private final StringBuilder fBuffer = new StringBuilder();
 
     // symbols: general
 
@@ -492,11 +487,6 @@ public class XMLDTDValidator
      *
      * @param featureId The feature identifier.
      * @param state     The state of the feature.
-     *
-     * @throws SAXNotRecognizedException The component should not throw
-     *                                   this exception.
-     * @throws SAXNotSupportedException The component should not throw
-     *                                  this exception.
      */
     public void setFeature(String featureId, boolean state)
     throws XMLConfigurationException {
@@ -520,11 +510,6 @@ public class XMLDTDValidator
      *
      * @param propertyId The property identifier.
      * @param value      The value of the property.
-     *
-     * @throws SAXNotRecognizedException The component should not throw
-     *                                   this exception.
-     * @throws SAXNotSupportedException The component should not throw
-     *                                  this exception.
      */
     public void setProperty(String propertyId, Object value)
     throws XMLConfigurationException {
@@ -1198,7 +1183,7 @@ public class XMLDTDValidator
 
                     // add attribute
                     fTempQName.setValues(attPrefix, attLocalpart, attRawName, fTempAttDecl.name.uri);
-                    int newAttr = attributes.addAttribute(fTempQName, attType, attValue);
+                    attributes.addAttribute(fTempQName, attType, attValue);
                 }
             }
             // get next att decl in the Grammar for this element
@@ -1232,14 +1217,12 @@ public class XMLDTDValidator
                     }
                 }
             }
-            int attDefIndex = -1;
             int position =
             fDTDGrammar.getFirstAttributeDeclIndex(elementIndex);
             while (position != -1) {
                 fDTDGrammar.getAttributeDecl(position, fTempAttDecl);
                 if (fTempAttDecl.name.rawname == attrRawName) {
                     // found the match att decl,
-                    attDefIndex = position;
                     declared = true;
                     break;
                 }
@@ -1385,7 +1368,7 @@ public class XMLDTDValidator
                     }
 
                 if (!found) {
-                    StringBuffer enumValueString = new StringBuffer();
+                    StringBuilder enumValueString = new StringBuilder();
                     if (enumVals != null)
                         for (int i = 0; i < enumVals.length; i++) {
                             enumValueString.append(enumVals[i]+" ");
@@ -1509,7 +1492,6 @@ public class XMLDTDValidator
         boolean spaceStart = false;
         boolean readingNonSpace = false;
         int count = 0;
-        int eaten = 0;
         String attrValue = attributes.getValue(index);
         char[] attValue = new char[attrValue.length()];
 
@@ -1530,33 +1512,7 @@ public class XMLDTDValidator
                     fBuffer.append(attValue[i]);
                     count++;
                 }
-                else {
-                    if (leadingSpace || !spaceStart) {
-                        eaten ++;
-                        /*** BUG #3512 ***
-                        int entityCount = attributes.getEntityCount(index);
-                        for (int j = 0;  j < entityCount; j++) {
-                            int offset = attributes.getEntityOffset(index, j);
-                            int length = attributes.getEntityLength(index, j);
-                            if (offset <= i-eaten+1) {
-                                if (offset+length >= i-eaten+1) {
-                                    if (length > 0)
-                                        length--;
-                                }
-                            }
-                            else {
-                                if (offset > 0)
-                                    offset--;
-                            }
-                            attributes.setEntityOffset(index, j, offset);
-                            attributes.setEntityLength(index, j, length);
-                        }
-                        /***/
-                    }
-                }
-
-            }
-            else {
+            } else {
                 readingNonSpace = true;
                 spaceStart = false;
                 leadingSpace = false;
@@ -1568,23 +1524,6 @@ public class XMLDTDValidator
         // check if the last appended character is a space.
         if (count > 0 && fBuffer.charAt(count-1) == ' ') {
             fBuffer.setLength(count-1);
-            /*** BUG #3512 ***
-            int entityCount = attributes.getEntityCount(index);
-            for (int j=0;  j < entityCount; j++) {
-                int offset = attributes.getEntityOffset(index, j);
-                int length = attributes.getEntityLength(index, j);
-                if (offset < count-1) {
-                    if (offset+length == count) {
-                        length--;
-                    }
-                }
-                else {
-                    offset--;
-                }
-                attributes.setEntityOffset(index, j, offset);
-                attributes.setEntityLength(index, j, length);
-            }
-            /***/
         }
         String newValue = fBuffer.toString();
         attributes.setValue(index, newValue);
@@ -1644,9 +1583,6 @@ public class XMLDTDValidator
                              int childCount) throws XNIException {
 
         fDTDGrammar.getElementDecl(elementIndex, fTempElementDecl);
-
-        // Get the element name index from the element
-        final String elementType = fCurrentElement.rawname;
 
         // Get out the content spec for this element
         final int contentType = fCurrentContentSpecType;
@@ -1711,18 +1647,6 @@ public class XMLDTDValidator
 
     } // checkContent(int,int,QName[]):int
 
-    /** Returns the content spec type for an element index. */
-    private int getContentSpecType(int elementIndex) {
-
-        int contentSpecType = -1;
-        if (elementIndex > -1) {
-            if (fDTDGrammar.getElementDecl(elementIndex,fTempElementDecl)) {
-                contentSpecType = fTempElementDecl.type;
-            }
-        }
-        return contentSpecType;
-    }
-
     /** Character data in content. */
     private void charDataInContent() {
 
@@ -1754,7 +1678,11 @@ public class XMLDTDValidator
                 return attrDecl.simpleType.list ? XMLSymbols.fENTITIESSymbol : XMLSymbols.fENTITYSymbol;
             }
         case XMLSimpleType.TYPE_ENUMERATION: {
-                StringBuffer buffer = new StringBuffer();
+                int totalLength = 2;
+                for (int i = 0; i < attrDecl.simpleType.enumeration.length; i++) {
+                    totalLength += attrDecl.simpleType.enumeration[i].length() + 1;
+                }
+                StringBuilder buffer = new StringBuilder(totalLength);
                 buffer.append('(');
                 for (int i=0; i<attrDecl.simpleType.enumeration.length ; i++) {
                     if (i > 0) {

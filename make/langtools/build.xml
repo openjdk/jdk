@@ -232,7 +232,6 @@
         <pathconvert pathsep=" " property="source.files" refid="source.fileset"/>
         <echo file="${build.dir}/sources.txt">${source.files}</echo>
         <exec executable="${langtools.jdk.home}/bin/javac" failonerror="true">
-            <arg line="-source ${javac.source} -target ${javac.target}" />
             <arg value="-d" />
             <arg value="${build.modules}" />
             <arg line="${javac.opts}" />

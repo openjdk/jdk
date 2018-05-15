@@ -538,6 +538,57 @@ final class StringLatin1 {
             newString(value, st, len - st) : null;
     }
 
+    public static int indexOfNonWhitespace(byte[] value) {
+        int length = value.length;
+        int left = 0;
+        while (left < length) {
+            char ch = (char)(value[left] & 0xff);
+            if (ch != ' ' && ch != '\t' && !Character.isWhitespace(ch)) {
+                break;
+            }
+            left++;
+        }
+        return left;
+    }
+
+    public static int lastIndexOfNonWhitespace(byte[] value) {
+        int length = value.length;
+        int right = length;
+        while (0 < right) {
+            char ch = (char)(value[right - 1] & 0xff);
+            if (ch != ' ' && ch != '\t' && !Character.isWhitespace(ch)) {
+                break;
+            }
+            right--;
+        }
+        return right;
+    }
+
+    public static String strip(byte[] value) {
+        int left = indexOfNonWhitespace(value);
+        if (left == value.length) {
+            return "";
+        }
+        int right = lastIndexOfNonWhitespace(value);
+        return ((left > 0) || (right < value.length)) ? newString(value, left, right - left) : null;
+    }
+
+    public static String stripLeading(byte[] value) {
+        int left = indexOfNonWhitespace(value);
+        if (left == value.length) {
+            return "";
+        }
+        return (left != 0) ? newString(value, left, value.length - left) : null;
+    }
+
+    public static String stripTrailing(byte[] value) {
+        int right = lastIndexOfNonWhitespace(value);
+        if (right == 0) {
+            return "";
+        }
+        return (right != value.length) ? newString(value, 0, right) : null;
+    }
+
     public static void putChar(byte[] val, int index, int c) {
         //assert (canEncode(c));
         val[index] = (byte)(c);

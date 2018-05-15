@@ -182,6 +182,8 @@ void GenCollectedHeap::post_initialize() {
   initialize_size_policy(def_new_gen->eden()->capacity(),
                          _old_gen->capacity(),
                          def_new_gen->from()->capacity());
+
+  MarkSweep::initialize();
 }
 
 void GenCollectedHeap::ref_processing_init() {

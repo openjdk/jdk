@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,11 @@ int CompiledStaticCall::reloc_to_interp_stub() {
   return 10;  // 4 in emit_to_interp_stub + 1 in Java_Static_Call
 }
 #endif // COMPILER2_OR_JVMCI
+
+int CompiledStaticCall::to_trampoline_stub_size() {
+  // ARM doesn't use trampolines.
+  return 0;
+}
 
 // size of C2 call stub, compiled java to interpretor
 int CompiledStaticCall::to_interp_stub_size() {

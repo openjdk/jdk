@@ -35,6 +35,9 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, Hand
     return pc_offset + NativeCall::instruction_size;
   } else if (inst->is_general_jump()) {
     return pc_offset + NativeGeneralJump::instruction_size;
+  } else if (NativeInstruction::is_adrp_at((address)inst)) {
+    // adrp; add; blr
+    return pc_offset + 3 * NativeInstruction::instruction_size;
   } else {
     JVMCI_ERROR_0("unsupported type of instruction for call site");
   }
@@ -81,7 +84,8 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, T
 void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset, TRAPS) {
   address pc = _instructions->start() + pc_offset;
   NativeInstruction* inst = nativeInstruction_at(pc);
-  if (inst->is_adr_aligned() || inst->is_ldr_literal()) {
+  if (inst->is_adr_aligned() || inst->is_ldr_literal()
+      || (NativeInstruction::maybe_cpool_ref(pc))) {
     address dest = _constants->start() + data_offset;
     _instructions->relocate(pc, section_word_Relocation::spec((address) dest, CodeBuffer::SECT_CONSTS));
     TRACE_jvmci_3("relocating at " PTR_FORMAT " (+%d) with destination at %d", p2i(pc), pc_offset, data_offset);
@@ -104,6 +108,10 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
     NativeGeneralJump* jump = nativeGeneralJump_at(pc);
     jump->set_jump_destination((address) foreign_call_destination);
     _instructions->relocate(jump->instruction_address(), runtime_call_Relocation::spec());
+  } else if (NativeInstruction::is_adrp_at((address)inst)) {
+    // adrp; add; blr
+    MacroAssembler::pd_patch_instruction_size((address)inst,
+                                              (address)foreign_call_destination);
   } else {
     JVMCI_ERROR("unknown call or jump instruction at " PTR_FORMAT, p2i(pc));
   }

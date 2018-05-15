@@ -98,13 +98,14 @@
 // The knob* variables are effectively final.  Once set they should
 // never be modified hence.  Consider using __read_mostly with GCC.
 
-int ObjectMonitor::Knob_ExitRelease = 0;
-int ObjectMonitor::Knob_Verbose     = 0;
-int ObjectMonitor::Knob_VerifyInUse = 0;
-int ObjectMonitor::Knob_VerifyMatch = 0;
-int ObjectMonitor::Knob_SpinLimit   = 5000;    // derived by an external tool -
-static int Knob_ReportSettings      = 0;
+int ObjectMonitor::Knob_ExitRelease  = 0;
+int ObjectMonitor::Knob_InlineNotify = 1;
+int ObjectMonitor::Knob_Verbose      = 0;
+int ObjectMonitor::Knob_VerifyInUse  = 0;
+int ObjectMonitor::Knob_VerifyMatch  = 0;
+int ObjectMonitor::Knob_SpinLimit    = 5000;    // derived by an external tool -
 
+static int Knob_ReportSettings      = 0;
 static int Knob_SpinBase            = 0;       // Floor AKA SpinMin
 static int Knob_SpinBackOff         = 0;       // spin-loop backoff
 static int Knob_CASPenalty          = -1;      // Penalty for failed CAS
@@ -2319,6 +2320,7 @@ void ObjectMonitor::DeferredInitialize() {
   #define SETKNOB(x) { Knob_##x = kvGetInt(knobs, #x, Knob_##x); }
   SETKNOB(ReportSettings);
   SETKNOB(ExitRelease);
+  SETKNOB(InlineNotify);
   SETKNOB(Verbose);
   SETKNOB(VerifyInUse);
   SETKNOB(VerifyMatch);

@@ -94,7 +94,7 @@ class VerifyErrorCases {
                  "Bad type on operand stack"),
 
         new Case("case02", "stackMapFrame.cpp", true, "get_local",
-                 "local index out-of-bounds",
+                 "local index out of bounds",
                  "Local variable table overflow"),
 
         new Case("case03", "stackMapFrame.cpp", true, "get_local",
@@ -102,7 +102,7 @@ class VerifyErrorCases {
                  "Bad local variable type"),
 
         new Case("case04", "stackMapFrame.cpp", true, "get_local_2",
-                 "local index out-of-bounds [type2]",
+                 "local index out of bounds [type2]",
                  "get long/double overflows locals"),
 
         new Case("case05", "stackMapFrame.cpp", true, "get_local_2",
@@ -115,11 +115,11 @@ class VerifyErrorCases {
                  "Bad local variable type"),
 
         new Case("case07", "stackMapFrame.cpp", true, "set_local",
-                 "local index out-of-bounds",
+                 "local index out of bounds",
                  "Local variable table overflow"),
 
         new Case("case08", "stackMapFrame.cpp", true, "set_local_2",
-                 "local index out-of-bounds [type2]",
+                 "local index out of bounds [type2]",
                  "Local variable table overflow"),
 
         new Case("case09", "stackMapFrame.hpp", true, "push_stack",
@@ -322,7 +322,7 @@ class VerifyErrorCases {
                  "Stack map does not match the one at exception handler "),
 
         new Case("case54", "verifier.cpp", true, "verify_cp_index",
-                 "constant pool index is out-of-bounds",
+                 "constant pool index is out of bounds",
                  "Illegal constant pool index "),
 
         new Case("case55", "verifier.cpp", true, "verify_cp_type",

@@ -114,9 +114,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_PARALLELGC
-#include "gc/parallel/pcTasks.hpp"
-#endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -1470,7 +1467,6 @@ bool jvmci_counters_include(JavaThread* thread) {
 
 void JavaThread::collect_counters(typeArrayOop array) {
   if (JVMCICounterSize > 0) {
-    MutexLocker tl(Threads_lock);
     JavaThreadIteratorWithHandle jtiwh;
     for (int i = 0; i < array->length(); i++) {
       array->long_at_put(i, _jvmci_old_thread_counters[i]);
@@ -3436,13 +3432,25 @@ void Threads::non_java_threads_do(ThreadClosure* tc) {
   // If CompilerThreads ever become non-JavaThreads, add them here
 }
 
-// All JavaThreads + all non-JavaThreads (i.e., every thread in the system).
-void Threads::threads_do(ThreadClosure* tc) {
+// All JavaThreads
+void Threads::java_threads_do(ThreadClosure* tc) {
   assert_locked_or_safepoint(Threads_lock);
   // ALL_JAVA_THREADS iterates through all JavaThreads.
   ALL_JAVA_THREADS(p) {
     tc->do_thread(p);
   }
+}
+
+void Threads::java_threads_and_vm_thread_do(ThreadClosure* tc) {
+  assert_locked_or_safepoint(Threads_lock);
+  java_threads_do(tc);
+  tc->do_thread(VMThread::vm_thread());
+}
+
+// All JavaThreads + all non-JavaThreads (i.e., every thread in the system).
+void Threads::threads_do(ThreadClosure* tc) {
+  assert_locked_or_safepoint(Threads_lock);
+  java_threads_do(tc);
   non_java_threads_do(tc);
 }
 
@@ -4464,24 +4472,6 @@ void Threads::possibly_parallel_oops_do(bool is_par, OopClosure* f, CodeBlobClos
   ParallelOopsDoThreadClosure tc(f, cf);
   possibly_parallel_threads_do(is_par, &tc);
 }
-
-#if INCLUDE_PARALLELGC
-// Used by ParallelScavenge
-void Threads::create_thread_roots_tasks(GCTaskQueue* q) {
-  ALL_JAVA_THREADS(p) {
-    q->enqueue(new ThreadRootsTask(p));
-  }
-  q->enqueue(new ThreadRootsTask(VMThread::vm_thread()));
-}
-
-// Used by Parallel Old
-void Threads::create_thread_roots_marking_tasks(GCTaskQueue* q) {
-  ALL_JAVA_THREADS(p) {
-    q->enqueue(new ThreadRootsMarkingTask(p));
-  }
-  q->enqueue(new ThreadRootsMarkingTask(VMThread::vm_thread()));
-}
-#endif // INCLUDE_PARALLELGC
 
 void Threads::nmethods_do(CodeBlobClosure* cf) {
   ALL_JAVA_THREADS(p) {

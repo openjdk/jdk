@@ -79,6 +79,10 @@
           "draining concurrent marking work queues.")                       \
           range(1, INT_MAX)                                                 \
                                                                             \
+  experimental(bool, G1UseReferencePrecleaning, true,                       \
+               "Concurrently preclean java.lang.ref.references instances "  \
+               "before the Remark pause.")                                  \
+                                                                            \
   experimental(double, G1LastPLABAverageOccupancy, 50.0,                    \
                "The expected average occupancy of the last PLAB in "        \
                "percent.")                                                  \

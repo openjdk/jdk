@@ -86,7 +86,6 @@
   template(java_lang_ref_FinalReference,              "java/lang/ref/FinalReference")             \
   template(java_lang_ref_PhantomReference,            "java/lang/ref/PhantomReference")           \
   template(java_lang_ref_Finalizer,                   "java/lang/ref/Finalizer")                  \
-  template(java_lang_ref_ReferenceQueue,              "java/lang/ref/ReferenceQueue")             \
   template(java_lang_reflect_AccessibleObject,        "java/lang/reflect/AccessibleObject")       \
   template(java_lang_reflect_Method,                  "java/lang/reflect/Method")                 \
   template(java_lang_reflect_Constructor,             "java/lang/reflect/Constructor")            \
@@ -439,8 +438,6 @@
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \
-  template(referencequeue_null_name,                  "NULL")                                     \
-  template(referencequeue_enqueued_name,              "ENQUEUED")                                 \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -534,8 +531,6 @@
   template(string_signature,                          "Ljava/lang/String;")                                       \
   template(string_array_signature,                    "[Ljava/lang/String;")                                      \
   template(reference_signature,                       "Ljava/lang/ref/Reference;")                                \
-  template(referencequeue_signature,                  "Ljava/lang/ref/ReferenceQueue;")                           \
-  template(sun_misc_Cleaner_signature,                "Lsun/misc/Cleaner;")                                       \
   template(executable_signature,                      "Ljava/lang/reflect/Executable;")                           \
   template(module_signature,                          "Ljava/lang/Module;")                                       \
   template(concurrenthashmap_signature,               "Ljava/util/concurrent/ConcurrentHashMap;")                 \

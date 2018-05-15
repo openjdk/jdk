@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,7 +276,8 @@ void LIR_Assembler::emit_lir_list(LIR_List* list) {
       // branches since they include block and stub names.  Also print
       // patching moves since they generate funny looking code.
       if (op->code() == lir_branch ||
-          (op->code() == lir_move && op->as_Op1()->patch_code() != lir_patch_none)) {
+          (op->code() == lir_move && op->as_Op1()->patch_code() != lir_patch_none) ||
+          (op->code() == lir_leal && op->as_Op1()->patch_code() != lir_patch_none)) {
         stringStream st;
         op->print_on(&st);
         _masm->block_comment(st.as_string());
@@ -554,7 +555,7 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       break;
 
     case lir_leal:
-      leal(op->in_opr(), op->result_opr());
+      leal(op->in_opr(), op->result_opr(), op->patch_code(), op->info());
       break;
 
     case lir_null_check: {

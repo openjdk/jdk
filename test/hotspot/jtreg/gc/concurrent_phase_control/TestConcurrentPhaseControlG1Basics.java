@@ -51,6 +51,7 @@ public class TestConcurrentPhaseControlG1Basics {
         "SCAN_ROOT_REGIONS",
         "CONCURRENT_MARK",
         "MARK_FROM_ROOTS",
+        "PRECLEAN",
         "BEFORE_REMARK",
         "REMARK",
         "REBUILD_REMEMBERED_SETS",

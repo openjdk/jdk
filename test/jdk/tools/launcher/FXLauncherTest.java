@@ -23,18 +23,27 @@
 
 /*
  * @test
- * @bug 8001533 8004547 8035782
+ * @library /test/lib
+ * @build FXLauncherTest jdk.test.lib.compiler.CompilerUtils
+ * @bug 8001533 8004547 8035782 8202553
  * @summary Test launching FX application with java -jar
- * Test uses main method and blank main method, a jfx app class and an incorrest
+ * Test uses main method and blank main method, a jfx app class and an incorrect
  * jfx app class, a main-class for the manifest, a bogus one and none.
+ * Now that FX is no longer bundled with the JDK, this test uses a
+ * "mock" javafx.graphics module to test the FX launcher. It also verifies
+ * that FX is, in fact, not included with the JDK.
  * All should execute except the incorrect fx app class entries.
  * @run main/othervm FXLauncherTest
- * @key intermittent headful
  */
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import jdk.test.lib.compiler.CompilerUtils;
 
 public class FXLauncherTest extends TestHelper {
     private static final String FX_MARKER_CLASS = "javafx.application.Application";
@@ -46,11 +55,20 @@ public class FXLauncherTest extends TestHelper {
     private static final File ManifestFile = new File("manifest.txt");
     private static final File ScratchDir = new File(".");
 
+    private static final Path SRC_DIR =
+        TEST_SOURCES_DIR.toPath().resolve("mockfx/src");
+    private static final Path MODS_DIR = Paths.get("mods");
+    private static final String MODULE_DIR = MODS_DIR.toString();
+
     /* standard main class can be used as java main for fx app class */
     static final String StdMainClass = "helloworld.HelloWorld";
     static final String ExtMainClass = "helloworld.ExtHello";
     static final String NonFXMainClass = "helloworld.HelloJava";
     static int testcount = 0;
+
+    static final String LAUNCH_MODE_CLASS = "LM_CLASS";
+    static final String LAUNCH_MODE_JAR = "LM_JAR";
+    static final String LAUNCH_MODE_MODULE = "LM_MODULE";
 
     /* a main method and a blank. */
     static final String[] MAIN_METHODS = {
@@ -68,41 +86,19 @@ public class FXLauncherTest extends TestHelper {
             List<String> contents = new ArrayList<>();
             contents.add("package helloworld;");
             contents.add("import javafx.application.Application;");
-            contents.add("import javafx.event.ActionEvent;");
-            contents.add("import javafx.event.EventHandler;");
-            contents.add("import javafx.scene.Scene;");
-            contents.add("import javafx.scene.control.Button;");
-            contents.add("import javafx.scene.layout.StackPane;");
             contents.add("import javafx.stage.Stage;");
             contents.add("public class HelloWorld extends Application {");
             contents.add(mainmethod);
             contents.add("@Override");
             contents.add("public void start(Stage primaryStage) {");
-            contents.add("    primaryStage.setTitle(\"Hello World!\");");
-            contents.add("    Button btn = new Button();");
-            contents.add("    btn.setText(\"Say 'Hello World'\");");
-            contents.add("    btn.setOnAction(new EventHandler<ActionEvent>() {");
-            contents.add("        @Override");
-            contents.add("        public void handle(ActionEvent event) {");
-            contents.add("            System.out.println(\"Hello World!\");");
-            contents.add("        }");
-            contents.add("    });");
-            contents.add("    StackPane root = new StackPane();");
-            contents.add("    root.getChildren().add(btn);");
-            contents.add("    primaryStage.setScene(new Scene(root, 300, 250));");
-            contents.add("//    primaryStage.show(); no GUI for auto tests. ");
-            contents.add("    System.out.println(\"HelloWorld.primaryStage.show();\");");
-            contents.add("    System.out.println(\"Parameters:\");" );
-            contents.add("    for(String p : getParameters().getUnnamed())");
-            contents.add("        System.out.println(\"parameter: \" + p );" );
-            contents.add("    System.exit(0);");
+            contents.add("    throw new InternalError(\"should never get here\");");
             contents.add("}");
             contents.add("}");
 
             // Create and compile java source.
             MainJavaFile = new File(mainClass + JAVA_FILE_EXT);
             createFile(MainJavaFile, contents);
-            compile("-d", ".", mainClass + JAVA_FILE_EXT);
+            doFxCompile("-d", ".", mainClass + JAVA_FILE_EXT);
         } catch (java.io.IOException ioe) {
             ioe.printStackTrace();
             throw new RuntimeException("Failed creating HelloWorld.");
@@ -123,7 +119,7 @@ public class FXLauncherTest extends TestHelper {
             // Create and compile java source.
             MainJavaFile = new File(mainClass + JAVA_FILE_EXT);
             createFile(MainJavaFile, contents);
-            compile("-cp", ".", "-d", ".", mainClass + JAVA_FILE_EXT);
+            doFxCompile("-cp", ".", "-d", ".", mainClass + JAVA_FILE_EXT);
         } catch (java.io.IOException ioe) {
             ioe.printStackTrace();
             throw new RuntimeException("Failed creating ExtHello.");
@@ -148,7 +144,7 @@ public class FXLauncherTest extends TestHelper {
             // Create and compile java source.
             MainJavaFile = new File(mainClass + JAVA_FILE_EXT);
             createFile(MainJavaFile, contents);
-            compile("-cp", ".", "-d", ".", mainClass + JAVA_FILE_EXT);
+            doFxCompile("-cp", ".", "-d", ".", mainClass + JAVA_FILE_EXT);
         } catch (java.io.IOException ioe) {
             ioe.printStackTrace();
             throw new RuntimeException("Failed creating HelloJava.");
@@ -206,6 +202,41 @@ public class FXLauncherTest extends TestHelper {
         }
     }
 
+    public static void compileFXModule() {
+        final String JAVAFX_GRAPHICS_MODULE = "javafx.graphics";
+
+        try {
+            // Compile mockfx/src/javafx.graphics/** into mods/javafx.graphics
+            boolean compiled
+                = CompilerUtils.compile(SRC_DIR.resolve(JAVAFX_GRAPHICS_MODULE),
+                                        MODS_DIR.resolve(JAVAFX_GRAPHICS_MODULE));
+
+            if (!compiled) {
+                throw new RuntimeException("Error compiling mock javafx.graphics module");
+            }
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+
+    static void doFxCompile(String...compilerArgs) {
+        compileFXModule();
+
+        List<String> fxCompilerArgs = new ArrayList<>();
+        fxCompilerArgs.add("--module-path=" + MODULE_DIR);
+        fxCompilerArgs.add("--add-modules=javafx.graphics");
+        fxCompilerArgs.addAll(Arrays.asList(compilerArgs));
+        compile(fxCompilerArgs.toArray(new String[fxCompilerArgs.size()]));
+    }
+
+    static TestResult doFxExec(String...cmds) {
+        List<String> fxCmds = new ArrayList<>();
+        fxCmds.addAll(Arrays.asList(cmds));
+        fxCmds.add(1, "--module-path=" + MODULE_DIR);
+        fxCmds.add(2, "--add-modules=javafx.graphics");
+        return doExec(fxCmds.toArray(new String[fxCmds.size()]));
+    }
+
     /*
      * Set Main-Class and iterate main_methods.
      * Try launching with both -jar and -cp methods, with and without FX main
@@ -240,14 +271,21 @@ public class FXLauncherTest extends TestHelper {
             createFile(ManifestFile, createManifestContents(StdMainClass, fxMC));
             createJar(FXtestJar, ManifestFile);
             String sTestJar = FXtestJar.getAbsolutePath();
+            String launchMode;
             final TestResult tr;
             if (useCP) {
-                tr = doExec(javaCmd, "-cp", sTestJar, StdMainClass, APP_PARMS[0], APP_PARMS[1]);
+                tr = doFxExec(javaCmd, "-cp", sTestJar, StdMainClass, APP_PARMS[0], APP_PARMS[1]);
+                launchMode = LAUNCH_MODE_CLASS;
             } else {
-                tr = doExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
+                tr = doFxExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
+                launchMode = LAUNCH_MODE_JAR;
             }
             tr.checkPositive();
-            if (tr.testStatus && tr.contains("HelloWorld.primaryStage.show()")) {
+            if (tr.testStatus) {
+                if (!tr.contains(launchMode)) {
+                    System.err.println("ERROR: Did not find "
+                            + launchMode + " in output!");
+                }
                 for (String p : APP_PARMS) {
                     if (!tr.contains(p)) {
                         System.err.println("ERROR: Did not find "
@@ -291,14 +329,21 @@ public class FXLauncherTest extends TestHelper {
             createFile(ManifestFile, createManifestContents(ExtMainClass, fxMC));
             createJar(FXtestJar, ManifestFile);
             String sTestJar = FXtestJar.getAbsolutePath();
+            String launchMode;
             final TestResult tr;
             if (useCP) {
-                tr = doExec(javaCmd, "-cp", sTestJar, ExtMainClass, APP_PARMS[0], APP_PARMS[1]);
+                tr = doFxExec(javaCmd, "-cp", sTestJar, ExtMainClass, APP_PARMS[0], APP_PARMS[1]);
+                launchMode = LAUNCH_MODE_CLASS;
             } else {
-                tr = doExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
+                tr = doFxExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
+                launchMode = LAUNCH_MODE_JAR;
             }
             tr.checkPositive();
-            if (tr.testStatus && tr.contains("HelloWorld.primaryStage.show()")) {
+            if (tr.testStatus) {
+                if (!tr.contains(launchMode)) {
+                    System.err.println("ERROR: Did not find "
+                            + launchMode + " in output!");
+                }
                 for (String p : APP_PARMS) {
                     if (!tr.contains(p)) {
                         System.err.println("ERROR: Did not find "
@@ -323,7 +368,7 @@ public class FXLauncherTest extends TestHelper {
         createFile(ManifestFile, createManifestContents(null, StdMainClass)); // No MC, but supply JAC
         createJar(FXtestJar, ManifestFile);
         String sTestJar = FXtestJar.getAbsolutePath();
-        TestResult tr = doExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
+        TestResult tr = doFxExec(javaCmd, "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
         tr.checkNegative(); // should abort if no Main-Class
         if (tr.testStatus) {
             if (!tr.contains("no main manifest attribute")) {
@@ -363,9 +408,9 @@ public class FXLauncherTest extends TestHelper {
         final TestResult tr;
 
         if (useCP) {
-            tr = doExec(javaCmd, "-verbose:class", "-cp", sTestJar, NonFXMainClass, APP_PARMS[0], APP_PARMS[1]);
+            tr = doFxExec(javaCmd, "-verbose:class", "-cp", sTestJar, NonFXMainClass, APP_PARMS[0], APP_PARMS[1]);
         } else {
-            tr = doExec(javaCmd, "-verbose:class", "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
+            tr = doFxExec(javaCmd, "-verbose:class", "-jar", sTestJar, APP_PARMS[0], APP_PARMS[1]);
         }
         tr.checkPositive();
         if (tr.testStatus) {
@@ -390,7 +435,8 @@ public class FXLauncherTest extends TestHelper {
     }
 
     public static void main(String... args) throws Exception {
-        //check if fx is part of jdk
+
+        // Ensure that FX is not part of jdk
         Class<?> fxClass = null;
         try {
             fxClass = Class.forName(FX_MARKER_CLASS);
@@ -398,20 +444,20 @@ public class FXLauncherTest extends TestHelper {
             // do nothing
         }
         if (fxClass != null) {
-            FXLauncherTest fxt = new FXLauncherTest();
-            fxt.run(args);
-            if (testExitValue > 0) {
-                System.out.println("Total of " + testExitValue
-                        + " failed. Test cases covered: "
-                        + FXLauncherTest.testcount);
-                System.exit(1);
-            } else {
-                System.out.println("All tests pass. Test cases covered: "
-                        + FXLauncherTest.testcount);
-            }
+            throw new RuntimeException("JavaFX modules erroneously included in the JDK");
+        }
+
+        FXLauncherTest fxt = new FXLauncherTest();
+        fxt.run(args);
+        if (testExitValue > 0) {
+            System.out.println("Total of " + testExitValue
+                    + " failed. Test cases covered: "
+                    + FXLauncherTest.testcount);
+            System.exit(1);
         } else {
-            System.err.println("Warning: JavaFX components missing or not supported");
-            System.err.println("         test passes vacuously.");
-         }
+            System.out.println("All tests pass. Test cases covered: "
+                    + FXLauncherTest.testcount);
+        }
     }
+
 }

@@ -215,7 +215,12 @@ int LinuxAttachListener::init() {
   if (res == 0) {
     RESTARTABLE(::chmod(initial_path, S_IREAD|S_IWRITE), res);
     if (res == 0) {
-      res = ::rename(initial_path, path);
+      // make sure the file is owned by the effective user and effective group
+      // e.g. the group could be inherited from the directory in case the s bit is set
+      RESTARTABLE(::chown(initial_path, geteuid(), getegid()), res);
+      if (res == 0) {
+        res = ::rename(initial_path, path);
+      }
     }
   }
   if (res == -1) {

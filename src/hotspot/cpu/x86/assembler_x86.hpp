@@ -1813,6 +1813,7 @@ private:
 
   void testq(Register dst, int32_t imm32);
   void testq(Register dst, Register src);
+  void testq(Register dst, Address src);
 
   // BMI - count trailing zeros
   void tzcntl(Register dst, Register src);

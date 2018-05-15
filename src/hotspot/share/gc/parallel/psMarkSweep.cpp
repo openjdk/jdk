@@ -71,6 +71,7 @@ void PSMarkSweep::initialize() {
   _span_based_discoverer.set_span(ParallelScavengeHeap::heap()->reserved_region());
   set_ref_processor(new ReferenceProcessor(&_span_based_discoverer));     // a vanilla ref proc
   _counters = new CollectorCounters("PSMarkSweep", 1);
+  MarkSweep::initialize();
 }
 
 // This method contains all heap specific policy for invoking mark sweep.
@@ -292,7 +293,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
         assert(young_gen->max_size() >
           young_gen->from_space()->capacity_in_bytes() +
           young_gen->to_space()->capacity_in_bytes(),
-          "Sizes of space in young gen are out-of-bounds");
+          "Sizes of space in young gen are out of bounds");
 
         size_t young_live = young_gen->used_in_bytes();
         size_t eden_live = young_gen->eden_space()->used_in_bytes();

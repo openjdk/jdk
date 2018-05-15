@@ -1241,7 +1241,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   *sizep = size;
 
   log_debug(perf, memops)("mapped " SIZE_FORMAT " bytes for vmid %d at "
-                          INTPTR_FORMAT "\n", size, vmid, p2i((void*)mapAddress));
+                          INTPTR_FORMAT, size, vmid, p2i((void*)mapAddress));
 }
 
 // create the PerfData memory region

@@ -52,7 +52,7 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
   Unimplemented();
 }
 
-void CodeInstaller::pd_relocate_JavaMethod(Handle hotspot_method, jint pc_offset, TRAPS) {
+void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, Handle hotspot_method, jint pc_offset, TRAPS) {
   Unimplemented();
 }
 

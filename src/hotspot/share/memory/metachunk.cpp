@@ -107,7 +107,7 @@ void Metachunk::mangle(juint word_value) {
   Copy::fill_to_words(start, size, word_value);
 }
 
-void Metachunk::verify() {
+void Metachunk::verify() const {
   assert(is_valid_sentinel(), "Chunk " PTR_FORMAT ": sentinel invalid", p2i(this));
   const ChunkIndex chunk_type = get_chunk_type();
   assert(is_valid_chunktype(chunk_type), "Chunk " PTR_FORMAT ": Invalid chunk type.", p2i(this));

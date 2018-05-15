@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,19 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
 
     private static final byte[] zeroSlot = new byte[8];
     // -1 represents Universe::non_oop_word() value
-    private static final byte[] minusOneSlot = {-1, -1, -1, -1, -1, -1, -1, -1};
+    private static final byte[] minusOneSlot;
+
+    static {
+        String archStr = System.getProperty("os.arch").toLowerCase();
+        if (archStr.equals("aarch64")) {
+            // AArch64 is a special case: it uses 48-bit addresses.
+            byte[] non_oop_word = {-1, -1, -1, -1, -1, -1, 0, 0};
+            minusOneSlot = non_oop_word;
+        } else {
+            byte[] non_oop_word = {-1, -1, -1, -1, -1, -1, -1, -1};
+            minusOneSlot = non_oop_word;
+        }
+    }
 
     JavaCallSiteRelocationSymbol(CompiledMethodInfo mi, Call call, CallSiteRelocationInfo callSiteRelocation, BinaryContainer binaryContainer) {
         super(createPltEntrySymbol(binaryContainer, mi, call, callSiteRelocation));
@@ -123,6 +135,7 @@ final class JavaCallSiteRelocationSymbol extends CallSiteRelocationSymbol {
      */
     private static String getResolveSymbolName(CompiledMethodInfo mi, Call call) {
         String resolveSymbolName;
+        String name = call.target.toString();
         if (CallInfo.isStaticCall(call)) {
             assert mi.hasMark(call, MarkId.INVOKESTATIC);
             resolveSymbolName = BinaryContainer.getResolveStaticEntrySymbolName();

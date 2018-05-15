@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,16 +333,17 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(
-        const char* name) {
+address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   address entry = __ pc();
   // expression stack must be empty before entering the VM if an
   // exception happened
   __ empty_expression_stack();
   // setup parameters
+
   // ??? convention: expect aberrant index in register r1
   __ movw(c_rarg2, r1);
-  __ mov(c_rarg1, (address)name);
+  // ??? convention: expect array in register r3
+  __ mov(c_rarg1, r3);
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address,
                               InterpreterRuntime::
@@ -483,7 +484,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
 #if INCLUDE_JVMCI
   // Check if we need to take lock at entry of synchronized method.  This can
   // only occur on method entry so emit it only for vtos with step 0.
-  if (EnableJVMCI && state == vtos && step == 0) {
+  if ((EnableJVMCI || UseAOT) && state == vtos && step == 0) {
     Label L;
     __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
     __ cbz(rscratch1, L);

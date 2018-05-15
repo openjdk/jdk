@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,8 +314,8 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   __ save_return_pc(return_pc);
 
   // Push a new frame (includes stack linkage).
-  // use return_pc as scratch for push_frame. Z_R0_scratch (the default) and Z_R1_scratch are
-  // illegally used to pass parameters (SAPJVM extension) by RangeCheckStub::emit_code().
+  // Use return_pc as scratch for push_frame. Z_R0_scratch (the default) and Z_R1_scratch are
+  // illegally used to pass parameters by RangeCheckStub::emit_code().
   __ push_frame(frame_size_in_bytes, return_pc);
   // We have to restore return_pc right away.
   // Nobody else will. Furthermore, return_pc isn't necessarily the default (Z_R14).

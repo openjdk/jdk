@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 
 final class CompiledMethodInfo {
+
+    static final String archStr = System.getProperty("os.arch").toLowerCase();
 
     private static final int UNINITIALIZED_OFFSET = -1;
 
@@ -304,10 +306,17 @@ final class CompiledMethodInfo {
 
     boolean hasMark(Site call, MarkId id) {
         for (Mark m : compilationResult.getMarks()) {
-            // TODO: X64-specific code.
-            // Call instructions are aligned to 8
-            // bytes - 1 on x86 to patch address atomically,
-            int adjOffset = (m.pcOffset & (-8)) + 7;
+            int adjOffset = m.pcOffset;
+            if (archStr.equals("aarch64")) {
+                // The mark is at the end of a group of three instructions:
+                // adrp; add; ldr
+                adjOffset += 12;
+            } else {
+                // X64-specific code.
+                // Call instructions are aligned to 8
+                // bytes - 1 on x86 to patch address atomically,
+                adjOffset = (adjOffset & (-8)) + 7;
+            }
             // Mark points before aligning nops.
             if ((call.pcOffset == adjOffset) && MarkId.getEnum((int) m.id) == id) {
                 return true;

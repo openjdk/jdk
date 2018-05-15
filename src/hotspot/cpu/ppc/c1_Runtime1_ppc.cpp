@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,8 +502,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case throw_range_check_failed_id:
       {
         __ set_info("range_check_failed", dont_gc_arguments); // Arguments will be discarded.
-        __ std(R0, -8, R1_SP); // Pass index on stack.
-        oop_maps = generate_exception_throw_with_stack_parms(sasm, CAST_FROM_FN_PTR(address, throw_range_check_exception), 1);
+        oop_maps = generate_exception_throw_with_stack_parms(sasm, CAST_FROM_FN_PTR(address, throw_range_check_exception), 2);
       }
       break;
 

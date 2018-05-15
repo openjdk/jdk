@@ -64,7 +64,7 @@ inline HeapWord* G1Allocator::attempt_allocation_force(size_t word_size) {
 
 inline PLAB* G1PLABAllocator::alloc_buffer(InCSetState dest) {
   assert(dest.is_valid(),
-         "Allocation buffer index out-of-bounds: " CSETSTATE_FORMAT, dest.value());
+         "Allocation buffer index out of bounds: " CSETSTATE_FORMAT, dest.value());
   assert(_alloc_buffers[dest.value()] != NULL,
          "Allocation buffer is NULL: " CSETSTATE_FORMAT, dest.value());
   return _alloc_buffers[dest.value()];

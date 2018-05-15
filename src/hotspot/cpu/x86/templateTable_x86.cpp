@@ -757,10 +757,13 @@ void TemplateTable::index_check_without_pop(Register array, Register index) {
     assert(rbx != array, "different registers");
     __ movl(rbx, index);
   }
-  __ jump_cc(Assembler::aboveEqual,
-             ExternalAddress(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry));
+  Label skip;
+  __ jccb(Assembler::below, skip);
+  // Pass array to create more detailed exceptions.
+  __ mov(NOT_LP64(rax) LP64_ONLY(c_rarg1), array);
+  __ jump(ExternalAddress(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry));
+  __ bind(skip);
 }
-
 
 void TemplateTable::iaload() {
   transition(itos, itos);
@@ -1109,8 +1112,6 @@ void TemplateTable::aastore() {
   __ load_klass(rax, rdx);
   __ movptr(rax, Address(rax,
                          ObjArrayKlass::element_klass_offset()));
-  // Compress array + index*oopSize + 12 into a single register.  Frees rcx.
-  __ lea(rdx, element_address);
 
   // Generate subtype check.  Blows rcx, rdi
   // Superklass in rax.  Subklass in rbx.
@@ -1125,8 +1126,9 @@ void TemplateTable::aastore() {
 
   // Get the value we will store
   __ movptr(rax, at_tos());
+  __ movl(rcx, at_tos_p1()); // index
   // Now store using the appropriate barrier
-  do_oop_store(_masm, Address(rdx, 0), rax, IN_HEAP_ARRAY);
+  do_oop_store(_masm, element_address, rax, IN_HEAP_ARRAY);
   __ jmp(done);
 
   // Have a NULL in rax, rdx=array, ecx=index.  Store NULL at ary[idx]
