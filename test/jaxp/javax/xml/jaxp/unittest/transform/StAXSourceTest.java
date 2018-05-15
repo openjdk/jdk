@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 package transform;
 
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
 import java.io.StringReader;
 import java.io.StringWriter;
-
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLInputFactory;
@@ -48,14 +48,44 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8152530
+ * @bug 8152530 8202426
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @modules java.xml
+ * @modules java.xml/com.sun.org.apache.xerces.internal.impl
+ * @modules java.xml/com.sun.org.apache.xerces.internal.xni.parser
+ * @modules java.xml/com.sun.xml.internal.stream
+ * @clean MyXMLInputFactoryImpl MyXMLStreamReader
+ * @build MyXMLInputFactoryImpl MyXMLStreamReader
  * @run testng/othervm -DrunSecMngr=true transform.StAXSourceTest
  * @run testng/othervm transform.StAXSourceTest
  * @summary Test parsing from StAXSource.
  */
-@Listeners({jaxp.library.FilePolicy.class})
+@Listeners({jaxp.library.JAXPTestPolicy.class})
 public class StAXSourceTest {
+    /**
+     * @bug 8202426
+     * Verifies that a null Attribute type is handled. NPE was thrown before the fix.
+     */
+    @Test
+    public final void testAttributeTypeNull() throws Exception {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n" +
+            "<t:test xmlns:t=\"http://www.example.org/Test\" attr=\"value\" /> ";
+        setSystemProperty("javax.xml.stream.XMLInputFactory", "transform.MyXMLInputFactoryImpl");
+        XMLInputFactory xif = XMLInputFactory.newInstance();
+        XMLStreamReader xsr = xif.createXMLStreamReader(new StringReader(xml));
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer t = tf.newTransformer();
+
+        while (xsr.hasNext()) {
+            xsr.next();
+            if (xsr.getEventType() == XMLStreamConstants.START_ELEMENT) {
+                t.reset();
+                DOMResult result = new DOMResult();
+                t.transform(new StAXSource(xsr), result);
+            }
+        }
+    }
+
     /**
      * @bug 8152530
      * Verifies that StAXSource handles empty namespace properly. NPE was thrown
