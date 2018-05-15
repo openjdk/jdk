@@ -142,7 +142,6 @@ java/awt/Focus/TypeAhead/TestFocusFreeze.java 8198622 macosx-all
 java/awt/Focus/WrongKeyTypedConsumedTest/WrongKeyTypedConsumedTest.java 8169096 macosx-all
 java/awt/event/KeyEvent/CorrectTime/CorrectTime.java 6626492 generic-all
 java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
-java/awt/Frame/MaximizedToUnmaximized/MaximizedToUnmaximized.java 8129569 generic-all
 java/awt/Frame/ExceptionOnSetExtendedStateTest/ExceptionOnSetExtendedStateTest.java 8198237 macosx-all
 java/awt/Frame/ShapeNotSetSometimes/ShapeNotSetSometimes.java 8144030 macosx-all
 java/awt/Frame/UnfocusableMaximizedFrameResizablity/UnfocusableMaximizedFrameResizablity.java 7158623 macosx-all
@@ -157,7 +156,6 @@ java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
 java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
 java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 8194765 generic-all
 java/awt/Mixing/AWT_Mixing/JInternalFrameMoveOverlapping.java 6986109 windows-all
-java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 8194765 windows-all,macosx-all
 java/awt/Mixing/AWT_Mixing/MixingPanelsResizing.java 8049405 generic-all
 java/awt/Mixing/AWT_Mixing/JComboBoxOverlapping.java 8049405 macosx-all
 java/awt/Mixing/AWT_Mixing/JPopupMenuOverlapping.java 8049405 macosx-all
@@ -168,8 +166,8 @@ java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
 java/awt/Toolkit/ScreenInsetsTest/ScreenInsetsTest.java 6829250 windows-all
 java/awt/Toolkit/RealSync/Test.java 6849383 macosx-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
-java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 6990210 generic-all
-java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.html 4931413 windows-all
+java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8203047 macosx-all
+java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.html 8073636 macosx-all
 java/awt/FullScreen/FullScreenInsets/FullScreenInsets.java 7019055 windows-all,linux-all
 java/awt/Focus/8013611/JDK8013611.java 8175366 windows-all,macosx-all
 java/awt/Focus/6378278/InputVerifierTest.java 8198616 macosx-all
@@ -208,14 +206,13 @@ java/awt/TrayIcon/TrayIconPopup/TrayIconPopupClickTest.java 8150540 windows-all,
 java/awt/TrayIcon/TrayIconPopup/TrayIconPopupTest.java 8150540 windows-all
 java/awt/TrayIcon/PopupMenuLeakTest/PopupMenuLeakTest.java 8196440 linux-all
 java/awt/Window/Grab/GrabTest.java 8196019 windows-all
-java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8196020 windows-all
 java/awt/Window/ShapedAndTranslucentWindows/FocusAWTTest.java 8061236 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/Shaped.java 8078999 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedByAPI.java 8078999 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucent.java 8078999 macosx-all
-java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8196020 macosx-all
+java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 8013450 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java 8165218 macosx-all
 java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 macosx-all
 java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all,linux-all
@@ -240,10 +237,10 @@ sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.j
 sun/java2d/GdiRendering/InsetClipping.java 8196181 windows-all
 java/awt/Graphics2D/CopyAreaOOB.java 7001973 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all
-sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191506 generic-all
+sun/java2d/SunGraphics2D/DrawImageBilinear.java 8191406 generic-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
 sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
-sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196191 windows-all,macosx-all
+sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
 sun/java2d/pipe/InterpolationQualityTest.java 8171303 windows-all,linux-all,macosx-all
 java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469 windows-all
 java/awt/Graphics/ClippedCopyAreaTest/ClippedCopyAreaTest.java 8196436 linux-all
@@ -464,7 +461,7 @@ java/awt/Modal/OnTop/OnTopTKModal3Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopTKModal4Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopTKModal5Test.java 8198666 macosx-all
 java/awt/Modal/OnTop/OnTopTKModal6Test.java 8198666 macosx-all
-java/awt/List/SingleModeDeselect/SingleModeDeselect.java 8196301 windows-all
+java/awt/List/SingleModeDeselect/SingleModeDeselect.java 8196367 windows-all
 java/awt/SplashScreen/MultiResolutionSplash/MultiResolutionSplashTest.java 8061235 macosx-all
 javax/print/PrintSEUmlauts/PrintSEUmlauts.java 8135174 generic-all
 java/awt/font/TextLayout/LigatureCaretTest.java 8197821 generic-all
