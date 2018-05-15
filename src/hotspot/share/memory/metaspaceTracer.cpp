@@ -24,10 +24,9 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/metaspaceTracer.hpp"
 #include "oops/oop.inline.hpp"
-#include "trace/tracing.hpp"
-#include "trace/traceBackend.hpp"
 
 void MetaspaceTracer::report_gc_threshold(size_t old_val,
                                           size_t new_val,

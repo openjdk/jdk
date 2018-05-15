@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
-#include "trace/tracing.hpp"
+#include "jfr/jfrEvents.hpp"
 
 void HeapRegionTracer::send_region_type_change(uint index,
                                                G1HeapRegionTraceType::Type from,

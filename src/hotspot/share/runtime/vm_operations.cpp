@@ -42,7 +42,6 @@
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/threadService.hpp"
-#include "trace/tracing.hpp"
 
 #define VM_OP_NAME_INITIALIZE(name) #name,
 

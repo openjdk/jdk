@@ -30,7 +30,6 @@
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "runtime/perfData.hpp"
-#include "trace/tracing.hpp"
 #include "utilities/stack.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
@@ -252,7 +251,7 @@ class CompileBroker: AllStatic {
 #endif
 
   static void invoke_compiler_on_method(CompileTask* task);
-  static void post_compile(CompilerThread* thread, CompileTask* task, EventCompilation& event, bool success, ciEnv* ci_env);
+  static void post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env);
   static void set_last_compile(CompilerThread *thread, const methodHandle& method, bool is_osr, int comp_level);
   static void push_jni_handle_block();
   static void pop_jni_handle_block();

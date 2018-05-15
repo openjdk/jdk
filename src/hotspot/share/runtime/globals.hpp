@@ -2597,12 +2597,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   experimental(bool, AlwaysAtomicAccesses, false,                           \
           "Accesses to all variables should always be atomic")              \
                                                                             \
-  product(bool, EnableTracing, false,                                       \
-          "Enable event-based tracing")                                     \
-                                                                            \
-  product(bool, UseLockedTracing, false,                                    \
-          "Use locked-tracing when doing event-based tracing")              \
-                                                                            \
   diagnostic(bool, UseUnalignedAccesses, false,                             \
           "Use unaligned memory accesses in Unsafe")                        \
                                                                             \
@@ -2650,6 +2644,18 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   experimental(bool, UseSwitchProfiling, true,                              \
           "leverage profiling for table/lookup switch")                     \
+                                                                            \
+  JFR_ONLY(product(bool, FlightRecorder, false,                             \
+          "Enable Flight Recorder"))                                        \
+                                                                            \
+  JFR_ONLY(product(ccstr, FlightRecorderOptions, NULL,                      \
+          "Flight Recorder options"))                                       \
+                                                                            \
+  JFR_ONLY(product(ccstr, StartFlightRecording, NULL,                       \
+          "Start flight recording with options"))                           \
+                                                                            \
+  experimental(bool, UseFastUnorderedTimeStamps, false,                     \
+          "Use platform unstable time where supported for timestamps only")
 
 #define VM_FLAGS(develop,                                                   \
                  develop_pd,                                                \

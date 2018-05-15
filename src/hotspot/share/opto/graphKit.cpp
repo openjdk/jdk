@@ -49,7 +49,7 @@
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
-#endif // INCLUDE_ALL_GCS
+#endif // INCLUDE_G1GC
 
 //----------------------------GraphKit-----------------------------------------
 // Main utility constructor.

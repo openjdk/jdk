@@ -223,7 +223,7 @@ class BuildConfig {
         sysDefines.add("_WINDOWS");
         sysDefines.add("HOTSPOT_BUILD_USER=\\\""+System.getProperty("user.name")+"\\\"");
         sysDefines.add("HOTSPOT_BUILD_TARGET=\\\""+get("Build")+"\\\"");
-        sysDefines.add("INCLUDE_TRACE=1");
+        sysDefines.add("INCLUDE_JFR=1");
         sysDefines.add("_JNI_IMPLEMENTATION_");
         if (vars.get("PlatformName").equals("Win32")) {
             sysDefines.add("HOTSPOT_LIB_ARCH=\\\"i386\\\"");

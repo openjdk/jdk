@@ -31,12 +31,12 @@
 #include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
 #include "runtime/mutex.hpp"
-#include "trace/traceMacros.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_TRACE
-#include "utilities/ticks.hpp"
+#if INCLUDE_JFR
+#include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
+
 
 //
 // A class loader represents a linkset. Conceptually, a linkset identifies
@@ -85,7 +85,6 @@ class ClassLoaderDataGraph : public AllStatic {
 
   static ClassLoaderData* add_to_graph(Handle class_loader, bool anonymous);
   static ClassLoaderData* add(Handle class_loader, bool anonymous);
-  static void post_class_unload_events();
  public:
   static ClassLoaderData* find_or_create(Handle class_loader);
   static void purge();
@@ -166,12 +165,6 @@ class ClassLoaderDataGraph : public AllStatic {
 
 #ifndef PRODUCT
   static bool contains_loader_data(ClassLoaderData* loader_data);
-#endif
-
-#if INCLUDE_TRACE
- private:
-  static Ticks _class_unload_time;
-  static void class_unload_event(Klass* const k);
 #endif
 };
 
@@ -268,7 +261,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // JFR support
   Klass*  _class_loader_klass;
   Symbol* _class_loader_name;
-  TRACE_DEFINE_TRACE_ID_FIELD;
+  JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
   void set_next(ClassLoaderData* next) { _next = next; }
   ClassLoaderData* next() const        { return _next; }
@@ -410,7 +403,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   Klass* class_loader_klass() const { return _class_loader_klass; }
   Symbol* class_loader_name() const { return _class_loader_name; }
-  TRACE_DEFINE_TRACE_ID_METHODS;
+  JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 };
 
 // An iterator that distributes Klasses to parallel worker threads.

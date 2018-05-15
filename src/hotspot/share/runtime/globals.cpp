@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -34,7 +35,6 @@
 #include "runtime/flags/jvmFlagRangeList.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "trace/tracing.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"

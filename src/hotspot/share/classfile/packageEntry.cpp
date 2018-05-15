@@ -29,7 +29,6 @@
 #include "memory/resourceArea.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
-#include "trace/traceMacros.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
@@ -200,7 +199,7 @@ PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, Modu
   assert(Module_lock->owned_by_self(), "should have the Module_lock");
   PackageEntry* entry = (PackageEntry*)Hashtable<Symbol*, mtModule>::allocate_new_entry(hash, name);
 
-  TRACE_INIT_ID(entry);
+  JFR_ONLY(INIT_ID(entry);)
 
   // Initialize fields specific to a PackageEntry
   entry->init();
@@ -283,7 +282,7 @@ void PackageEntryTable::verify_javabase_packages(GrowableArray<Symbol*> *pkg_lis
 }
 
 // iteration of qualified exports
-void PackageEntry::package_exports_do(ModuleClosure* const f) {
+void PackageEntry::package_exports_do(ModuleClosure* f) {
   assert_locked_or_safepoint(Module_lock);
   assert(f != NULL, "invariant");
 

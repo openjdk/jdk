@@ -33,6 +33,7 @@
 #include "compiler/compileBroker.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "opto/idealGraphPrinter.hpp"
@@ -42,7 +43,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
-#include "trace/tracing.hpp"
 #include "utilities/ticks.hpp"
 
 class AddPNode;

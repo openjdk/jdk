@@ -473,11 +473,6 @@ template class BasicHashtable<mtSymbol>;
 template class BasicHashtable<mtCode>;
 template class BasicHashtable<mtInternal>;
 template class BasicHashtable<mtModule>;
-#if INCLUDE_TRACE
-template class Hashtable<Symbol*, mtTracing>;
-template class HashtableEntry<Symbol*, mtTracing>;
-template class BasicHashtable<mtTracing>;
-#endif
 template class BasicHashtable<mtCompiler>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);

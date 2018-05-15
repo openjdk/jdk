@@ -32,7 +32,6 @@
 #include "compiler/methodLiveness.hpp"
 #include "prims/methodHandles.hpp"
 #include "utilities/bitMap.hpp"
-#include "trace/tracing.hpp"
 
 class ciMethodBlocks;
 class MethodLiveness;
@@ -362,10 +361,6 @@ class ciMethod : public ciMetadata {
   void print_short_name(outputStream* st = tty);
 
   static bool is_consistent_info(ciMethod* declared_method, ciMethod* resolved_method);
-
-#if INCLUDE_TRACE
-  TraceStructCalleeMethod to_trace_struct() const;
-#endif
 };
 
 #endif // SHARE_VM_CI_CIMETHOD_HPP

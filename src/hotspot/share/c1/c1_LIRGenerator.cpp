@@ -42,9 +42,6 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
-#ifdef TRACE_HAVE_INTRINSICS
-#include "trace/traceMacros.hpp"
-#endif
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
@@ -2916,7 +2913,7 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
 }
 
-#ifdef TRACE_HAVE_INTRINSICS
+#ifdef JFR_HAVE_INTRINSICS
 void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
   CodeEmitInfo* info = state_for(x);
   CodeEmitInfo* info2 = new CodeEmitInfo(info); // Clone for the second null check
@@ -2928,7 +2925,7 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
   LIR_Opr klass = new_register(T_METADATA);
   __ move(new LIR_Address(arg.result(), java_lang_Class::klass_offset_in_bytes(), T_ADDRESS), klass, info);
   LIR_Opr id = new_register(T_LONG);
-  ByteSize offset = TRACE_KLASS_TRACE_ID_OFFSET;
+  ByteSize offset = KLASS_TRACE_ID_OFFSET;
   LIR_Address* trace_id_addr = new LIR_Address(klass, in_bytes(offset), T_LONG);
 
   __ move(trace_id_addr, id);
@@ -2938,18 +2935,18 @@ void LIRGenerator::do_ClassIDIntrinsic(Intrinsic* x) {
 #ifdef TRACE_ID_META_BITS
   __ logical_and(id, LIR_OprFact::longConst(~TRACE_ID_META_BITS), id);
 #endif
-#ifdef TRACE_ID_CLASS_SHIFT
-  __ unsigned_shift_right(id, TRACE_ID_CLASS_SHIFT, id);
+#ifdef TRACE_ID_SHIFT
+  __ unsigned_shift_right(id, TRACE_ID_SHIFT, id);
 #endif
 
   __ move(id, rlock_result(x));
 }
 
-void LIRGenerator::do_getBufferWriter(Intrinsic* x) {
+void LIRGenerator::do_getEventWriter(Intrinsic* x) {
   LabelObj* L_end = new LabelObj();
 
   LIR_Address* jobj_addr = new LIR_Address(getThreadPointer(),
-                                           in_bytes(TRACE_THREAD_DATA_WRITER_OFFSET),
+                                           in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR),
                                            T_OBJECT);
   LIR_Opr result = rlock_result(x);
   __ move_wide(jobj_addr, result);
@@ -2987,15 +2984,15 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     break;
   }
 
-#ifdef TRACE_HAVE_INTRINSICS
+#ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_getClassId:
     do_ClassIDIntrinsic(x);
     break;
-  case vmIntrinsics::_getBufferWriter:
-    do_getBufferWriter(x);
+  case vmIntrinsics::_getEventWriter:
+    do_getEventWriter(x);
     break;
   case vmIntrinsics::_counterTime:
-    do_RuntimeCall(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), x);
+    do_RuntimeCall(CAST_FROM_FN_PTR(address, JFR_TIME_FUNCTION), x);
     break;
 #endif
 

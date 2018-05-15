@@ -33,7 +33,6 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "trace/traceMacros.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.inline.hpp"
@@ -215,7 +214,7 @@ void ModuleEntry::purge_reads() {
   }
 }
 
-void ModuleEntry::module_reads_do(ModuleClosure* const f) {
+void ModuleEntry::module_reads_do(ModuleClosure* f) {
   assert_locked_or_safepoint(Module_lock);
   assert(f != NULL, "invariant");
 
@@ -279,7 +278,7 @@ ModuleEntry* ModuleEntry::new_unnamed_module_entry(Handle module_handle, ClassLo
   entry->set_loader_data(cld);
   entry->_is_open = true;
 
-  TRACE_INIT_ID(entry);
+  JFR_ONLY(INIT_ID(entry);)
 
   return entry;
 }
@@ -367,7 +366,7 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
     }
   }
 
-  TRACE_INIT_ID(entry);
+  JFR_ONLY(INIT_ID(entry);)
 
   return entry;
 }
