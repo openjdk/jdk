@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "c1/c1_ValueType.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jfr/support/jfrIntrinsics.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -41,6 +42,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/macros.hpp"
 
 
 Compiler::Compiler() : AbstractCompiler(compiler_c1) {
@@ -222,10 +224,10 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_compareAndSetObject:
   case vmIntrinsics::_getCharStringU:
   case vmIntrinsics::_putCharStringU:
-#ifdef TRACE_HAVE_INTRINSICS
+#ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
-  case vmIntrinsics::_getBufferWriter:
-#if defined(_LP64) || !defined(TRACE_ID_CLASS_SHIFT)
+  case vmIntrinsics::_getEventWriter:
+#if defined(_LP64) || !defined(TRACE_ID_SHIFT)
   case vmIntrinsics::_getClassId:
 #endif
 #endif

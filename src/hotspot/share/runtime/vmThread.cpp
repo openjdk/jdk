@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
@@ -39,7 +41,6 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/runtimeService.hpp"
-#include "trace/tracing.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
@@ -339,6 +340,23 @@ void VMThread::wait_for_vm_thread_exit() {
   }
 }
 
+static void post_vm_operation_event(EventExecuteVMOperation* event, VM_Operation* op) {
+  assert(event != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  assert(op != NULL, "invariant");
+  const bool is_concurrent = op->evaluate_concurrently();
+  const bool evaluate_at_safepoint = op->evaluate_at_safepoint();
+  event->set_operation(op->type());
+  event->set_safepoint(evaluate_at_safepoint);
+  event->set_blocking(!is_concurrent);
+  // Only write caller thread information for non-concurrent vm operations.
+  // For concurrent vm operations, the thread id is set to 0 indicating thread is unknown.
+  // This is because the caller thread could have exited already.
+  event->set_caller(is_concurrent ? 0 : JFR_THREAD_ID(op->calling_thread()));
+  event->set_safepointId(evaluate_at_safepoint ? SafepointSynchronize::safepoint_counter() : 0);
+  event->commit();
+}
+
 void VMThread::evaluate_operation(VM_Operation* op) {
   ResourceMark rm;
 
@@ -349,21 +367,9 @@ void VMThread::evaluate_operation(VM_Operation* op) {
                      op->evaluation_mode());
 
     EventExecuteVMOperation event;
-
     op->evaluate();
-
     if (event.should_commit()) {
-      const bool is_concurrent = op->evaluate_concurrently();
-      const bool evaluate_at_safepoint = op->evaluate_at_safepoint();
-      event.set_operation(op->type());
-      event.set_safepoint(evaluate_at_safepoint);
-      event.set_blocking(!is_concurrent);
-      // Only write caller thread information for non-concurrent vm operations.
-      // For concurrent vm operations, the thread id is set to 0 indicating thread is unknown.
-      // This is because the caller thread could have exited already.
-      event.set_caller(is_concurrent ? 0 : THREAD_TRACE_ID(op->calling_thread()));
-      event.set_safepointId(evaluate_at_safepoint ? SafepointSynchronize::safepoint_counter() : 0);
-      event.commit();
+      post_vm_operation_event(&event, op);
     }
 
     HOTSPOT_VMOPS_END(

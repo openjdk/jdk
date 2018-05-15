@@ -30,6 +30,7 @@
 #include "c1/c1_LIR.hpp"
 #include "ci/ciMethodData.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "jfr/support/jfrIntrinsics.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 
@@ -459,9 +460,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   SwitchRangeArray* create_lookup_ranges(LookupSwitch* x);
   void do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegin* default_sux);
 
-#ifdef TRACE_HAVE_INTRINSICS
+#ifdef JFR_HAVE_INTRINSICS
   void do_ClassIDIntrinsic(Intrinsic* x);
-  void do_getBufferWriter(Intrinsic* x);
+  void do_getEventWriter(Intrinsic* x);
 #endif
 
   void do_RuntimeCall(address routine, Intrinsic* x);

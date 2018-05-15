@@ -30,6 +30,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/resourceArea.hpp"
+#include "jfr/support/jfrIntrinsics.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
@@ -54,9 +55,8 @@
 #include "prims/unsafe.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
-#ifdef TRACE_HAVE_INTRINSICS
-#include "trace/traceMacros.hpp"
-#endif
+#include "utilities/macros.hpp"
+
 
 class LibraryIntrinsic : public InlineCallGenerator {
   // Extend the set of intrinsics known to the runtime:
@@ -258,9 +258,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_currentThread();
 
   bool inline_native_time_funcs(address method, const char* funcName);
-#ifdef TRACE_HAVE_INTRINSICS
+#ifdef JFR_HAVE_INTRINSICS
   bool inline_native_classID();
-  bool inline_native_getBufferWriter();
+  bool inline_native_getEventWriter();
 #endif
   bool inline_native_isInterrupted();
   bool inline_native_Class_query(vmIntrinsics::ID id);
@@ -746,10 +746,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_isInterrupted:            return inline_native_isInterrupted();
 
-#ifdef TRACE_HAVE_INTRINSICS
-  case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), "counterTime");
+#ifdef JFR_HAVE_INTRINSICS
+  case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JFR_TIME_FUNCTION), "counterTime");
   case vmIntrinsics::_getClassId:               return inline_native_classID();
-  case vmIntrinsics::_getBufferWriter:          return inline_native_getBufferWriter();
+  case vmIntrinsics::_getEventWriter:           return inline_native_getEventWriter();
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
@@ -3286,7 +3286,7 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
   return true;
 }
 
-#ifdef TRACE_HAVE_INTRINSICS
+#ifdef JFR_HAVE_INTRINSICS
 
 /*
 * oop -> myklass
@@ -3298,7 +3298,7 @@ bool LibraryCallKit::inline_native_classID() {
   Node* kls = load_klass_from_mirror(cls, false, NULL, 0);
   kls = null_check(kls, T_OBJECT);
 
-  ByteSize offset = TRACE_KLASS_TRACE_ID_OFFSET;
+  ByteSize offset = KLASS_TRACE_ID_OFFSET;
   Node* insp = basic_plus_adr(kls, in_bytes(offset));
   Node* tvalue = make_load(NULL, insp, TypeLong::LONG, T_LONG, MemNode::unordered);
 
@@ -3311,8 +3311,8 @@ bool LibraryCallKit::inline_native_classID() {
   Node* mbits = longcon(~TRACE_ID_META_BITS);
   tvalue = _gvn.transform(new AndLNode(tvalue, mbits));
 #endif
-#ifdef TRACE_ID_CLASS_SHIFT
-  Node* cbits = intcon(TRACE_ID_CLASS_SHIFT);
+#ifdef TRACE_ID_SHIFT
+  Node* cbits = intcon(TRACE_ID_SHIFT);
   tvalue = _gvn.transform(new URShiftLNode(tvalue, cbits));
 #endif
 
@@ -3321,11 +3321,11 @@ bool LibraryCallKit::inline_native_classID() {
 
 }
 
-bool LibraryCallKit::inline_native_getBufferWriter() {
+bool LibraryCallKit::inline_native_getEventWriter() {
   Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
 
   Node* jobj_ptr = basic_plus_adr(top(), tls_ptr,
-                                  in_bytes(TRACE_THREAD_DATA_WRITER_OFFSET)
+                                  in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR)
                                   );
 
   Node* jobj = make_load(control(), jobj_ptr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
@@ -3358,7 +3358,7 @@ bool LibraryCallKit::inline_native_getBufferWriter() {
   return true;
 }
 
-#endif
+#endif // JFR_HAVE_INTRINSICS
 
 //------------------------inline_native_currentThread------------------
 bool LibraryCallKit::inline_native_currentThread() {

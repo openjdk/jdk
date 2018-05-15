@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/padded.hpp"
@@ -46,8 +47,6 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
-#include "trace/traceMacros.hpp"
-#include "trace/tracing.hpp"
 #include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -127,10 +126,6 @@ int ObjectSynchronizer::gOmInUseCount = 0;
 static volatile intptr_t gListLock = 0;      // protects global monitor lists
 static volatile int gMonitorFreeCount  = 0;  // # on gFreeList
 static volatile int gMonitorPopulation = 0;  // # Extant -- in circulation
-
-static void post_monitor_inflate_event(EventJavaMonitorInflate&,
-                                       const oop,
-                                       const ObjectSynchronizer::InflateCause);
 
 #define CHAINMARKER (cast_to_oop<intptr_t>(-1))
 
@@ -1365,6 +1360,17 @@ void ObjectSynchronizer::omFlush(Thread * Self) {
   TEVENT(omFlush);
 }
 
+static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
+                                       const oop obj,
+                                       ObjectSynchronizer::InflateCause cause) {
+  assert(event != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  event->set_monitorClass(obj->klass());
+  event->set_address((uintptr_t)(void*)obj);
+  event->set_cause((u1)cause);
+  event->commit();
+}
+
 // Fast path code shared by multiple functions
 ObjectMonitor* ObjectSynchronizer::inflate_helper(oop obj) {
   markOop mark = obj->mark();
@@ -1519,7 +1525,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
         }
       }
       if (event.should_commit()) {
-        post_monitor_inflate_event(event, object, cause);
+        post_monitor_inflate_event(&event, object, cause);
       }
       return m;
     }
@@ -1570,7 +1576,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
       }
     }
     if (event.should_commit()) {
-      post_monitor_inflate_event(event, object, cause);
+      post_monitor_inflate_event(&event, object, cause);
     }
     return m;
   }
@@ -1895,18 +1901,6 @@ const char* ObjectSynchronizer::inflate_cause_name(const InflateCause cause) {
       ShouldNotReachHere();
   }
   return "Unknown";
-}
-
-static void post_monitor_inflate_event(EventJavaMonitorInflate& event,
-                                       const oop obj,
-                                       const ObjectSynchronizer::InflateCause cause) {
-#if INCLUDE_TRACE
-  assert(event.should_commit(), "check outside");
-  event.set_monitorClass(obj->klass());
-  event.set_address((TYPE_ADDRESS)(uintptr_t)(void*)obj);
-  event.set_cause((u1)cause);
-  event.commit();
-#endif
 }
 
 //------------------------------------------------------------------------------

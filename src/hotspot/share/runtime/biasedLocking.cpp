@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrThreadId.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
@@ -37,7 +39,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
-#include "trace/tracing.hpp"
+
 
 static bool _biased_locking_enabled = false;
 BiasedLockingCounters BiasedLocking::_counters;
@@ -540,7 +542,7 @@ public:
       JavaThread* biased_locker = NULL;
       _status_code = revoke_bias((*_obj)(), false, false, _requesting_thread, &biased_locker);
       if (biased_locker != NULL) {
-        _biased_locker_id = THREAD_TRACE_ID(biased_locker);
+        _biased_locker_id = JFR_THREAD_ID(biased_locker);
       }
       clean_up_cached_monitor_info();
       return;
@@ -582,6 +584,41 @@ public:
   }
 };
 
+template <typename E>
+static void set_safepoint_id(E* event) {
+  assert(event != NULL, "invariant");
+  // Subtract 1 to match the id of events committed inside the safepoint
+  event->set_safepointId(SafepointSynchronize::safepoint_counter() - 1);
+}
+
+static void post_self_revocation_event(EventBiasedLockSelfRevocation* event, Klass* k) {
+  assert(event != NULL, "invariant");
+  assert(k != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  event->set_lockClass(k);
+  event->commit();
+}
+
+static void post_revocation_event(EventBiasedLockRevocation* event, Klass* k, VM_RevokeBias* revoke) {
+  assert(event != NULL, "invariant");
+  assert(k != NULL, "invariant");
+  assert(revoke != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  event->set_lockClass(k);
+  set_safepoint_id(event);
+  event->set_previousOwner(revoke->biased_locker());
+  event->commit();
+}
+
+static void post_class_revocation_event(EventBiasedLockClassRevocation* event, Klass* k, bool disabled_bias) {
+  assert(event != NULL, "invariant");
+  assert(k != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  event->set_revokedClass(k);
+  event->set_disableBiasing(disabled_bias);
+  set_safepoint_id(event);
+  event->commit();
+}
 
 BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attempt_rebias, TRAPS) {
   assert(!SafepointSynchronize::is_at_safepoint(), "must not be called while at safepoint");
@@ -669,20 +706,15 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
       ((JavaThread*) THREAD)->set_cached_monitor_info(NULL);
       assert(cond == BIAS_REVOKED, "why not?");
       if (event.should_commit()) {
-        event.set_lockClass(k);
-        event.commit();
+        post_self_revocation_event(&event, k);
       }
       return cond;
     } else {
       EventBiasedLockRevocation event;
       VM_RevokeBias revoke(&obj, (JavaThread*) THREAD);
       VMThread::execute(&revoke);
-      if (event.should_commit() && (revoke.status_code() != NOT_BIASED)) {
-        event.set_lockClass(k);
-        // Subtract 1 to match the id of events committed inside the safepoint
-        event.set_safepointId(SafepointSynchronize::safepoint_counter() - 1);
-        event.set_previousOwner(revoke.biased_locker());
-        event.commit();
+      if (event.should_commit() && revoke.status_code() != NOT_BIASED) {
+        post_revocation_event(&event, k, &revoke);
       }
       return revoke.status_code();
     }
@@ -696,11 +728,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
                                 attempt_rebias);
   VMThread::execute(&bulk_revoke);
   if (event.should_commit()) {
-    event.set_revokedClass(obj->klass());
-    event.set_disableBiasing((heuristics != HR_BULK_REBIAS));
-    // Subtract 1 to match the id of events committed inside the safepoint
-    event.set_safepointId(SafepointSynchronize::safepoint_counter() - 1);
-    event.commit();
+    post_class_revocation_event(&event, obj->klass(), heuristics != HR_BULK_REBIAS);
   }
   return bulk_revoke.status_code();
 }

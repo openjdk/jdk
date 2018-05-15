@@ -509,6 +509,15 @@ jdk.localedata_COPY += _dict _th
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product
 jdk.localedata_EXCLUDE_FILES += sun/text/resources/ext/BreakIteratorRules_th.java
+################################################################################
+
+# There is an issue in sjavac that triggers a warning in jdk.jfr that isn't
+# triggered without sjavac.
+ifeq ($(ENABLE_SJAVAC), yes)
+  jdk.jfr_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+endif
+jdk.jfr_COPY := .xsd .xml .dtd
+jdk.jfr_ADD_JAVAC_FLAGS := -XDstringConcat=inline -Xlint:-exports
 
 ################################################################################
 # If this is an imported module that has prebuilt classes, only compile
