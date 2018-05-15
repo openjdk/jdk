@@ -285,8 +285,6 @@ private:
                                  TRAPS);
 
 public:
-  static void initialize(TRAPS);
-
   // Called by PLATFORM/APP loader only
   static InstanceKlass* find_or_load_shared_class(Symbol* class_name,
                                                Handle class_loader,

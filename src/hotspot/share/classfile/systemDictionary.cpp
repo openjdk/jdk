@@ -149,8 +149,6 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
                          CHECK);
 
   _java_platform_loader = (oop)result.get_jobject();
-
-  CDS_ONLY(SystemDictionaryShared::initialize(CHECK);)
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader) {
