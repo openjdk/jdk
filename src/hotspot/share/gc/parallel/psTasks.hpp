@@ -81,11 +81,10 @@ class ScavengeRootsTask : public GCTask {
 
 class ThreadRootsTask : public GCTask {
  private:
-  JavaThread* _java_thread;
-  VMThread* _vm_thread;
+  Thread* _thread;
+
  public:
-  ThreadRootsTask(JavaThread* root) : _java_thread(root), _vm_thread(NULL) {}
-  ThreadRootsTask(VMThread* root) : _java_thread(NULL), _vm_thread(root) {}
+  ThreadRootsTask(Thread* root) : _thread(root) {}
 
   char* name() { return (char *)"thread-roots-task"; }
 

@@ -37,26 +37,12 @@
  *     -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
  *     -extraopt -XX:-UseCompressedOops
  *     -extraopt -XX:CompileCommand=dontinline,compiler.whitebox.SimpleTestCaseHelper::*
- * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation -XX:CompilationPolicyChoice=2
- *     -XX:-UseCounterDecay -XX:-UseCompressedOops
- *     -XX:-Inline
- *     -XX:AOTLibrary=./libRecompilationTest1.so -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Dcompiler.aot.RecompilationTest.check_level=1
- *     compiler.aot.RecompilationTest
  * @run driver compiler.aot.AotCompiler -libname libRecompilationTest2.so
  *     -class compiler.whitebox.SimpleTestCaseHelper
  *     -extraopt -Dgraal.TieredAOT=false
  *     -extraopt -XX:+UnlockDiagnosticVMOptions -extraopt -XX:+WhiteBoxAPI -extraopt -Xbootclasspath/a:.
  *     -extraopt -XX:-UseCompressedOops
  *     -extraopt -XX:CompileCommand=dontinline,compiler.whitebox.SimpleTestCaseHelper::*
- * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:+TieredCompilation -XX:CompilationPolicyChoice=2
- *     -XX:-UseCounterDecay -XX:-UseCompressedOops
- *     -XX:-Inline
- *     -XX:AOTLibrary=./libRecompilationTest2.so -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -Dcompiler.aot.RecompilationTest.check_level=-1
- *     compiler.aot.RecompilationTest
  * @run main/othervm -Xmixed -Xbatch -XX:+UseAOT -XX:-TieredCompilation
  *     -XX:-UseCounterDecay -XX:-UseCompressedOops
  *     -XX:-Inline

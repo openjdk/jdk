@@ -147,16 +147,14 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators) {
   assert(val == noreg || val == r0, "parameter is just for looks");
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->store_at(_masm, decorators, T_OBJECT, dst, val, /*tmp1*/ r10, /*tmp2*/ r1);
+  __ store_heap_oop(dst, val, r10, r1, decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
                         Address src,
                         Register dst,
                         DecoratorSet decorators) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(_masm, decorators, T_OBJECT, dst, src, /*tmp1*/ r10, /*tmp_thread*/ r1);
+  __ load_heap_oop(dst, src, r10, r1, decorators);
 }
 
 Address TemplateTable::at_bcp(int offset) {
@@ -747,6 +745,8 @@ void TemplateTable::index_check(Register array, Register index)
   }
   Label ok;
   __ br(Assembler::LO, ok);
+    // ??? convention: move array into r3 for exception message
+  __ mov(r3, array);
   __ mov(rscratch1, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
   __ br(rscratch1);
   __ bind(ok);

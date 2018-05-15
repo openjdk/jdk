@@ -53,6 +53,19 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
   return NULL;
 }
 
+inline bool ThreadLocalAllocBuffer::undo_allocate(HeapWord* obj, size_t size) {
+  invariants();
+
+  if (!is_last_allocation(obj, size)) {
+    return false;
+  }
+
+  set_top(obj);
+
+  invariants();
+  return true;
+}
+
 inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
   // Compute the size for the new TLAB.
   // The "last" tlab may be smaller to reduce fragmentation.
@@ -76,7 +89,7 @@ inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
 inline size_t ThreadLocalAllocBuffer::compute_min_size(size_t obj_size) {
   const size_t aligned_obj_size = align_object_size(obj_size);
   const size_t size_with_reserve = aligned_obj_size + alignment_reserve();
-  return MAX2(size_with_reserve, MinTLABSize);
+  return MAX2(size_with_reserve, heap_word_size(MinTLABSize));
 }
 
 void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {

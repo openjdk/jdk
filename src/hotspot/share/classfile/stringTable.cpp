@@ -28,12 +28,13 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
@@ -44,9 +45,6 @@
 #include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1StringDedup.hpp"
-#endif
 
 // the number of buckets a thread claims
 const int ClaimChunkSize = 32;
@@ -260,14 +258,10 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
     string = java_lang_String::create_from_unicode(name, len, CHECK_NULL);
   }
 
-#if INCLUDE_G1GC
-  if (G1StringDedup::is_enabled()) {
-    // Deduplicate the string before it is interned. Note that we should never
-    // deduplicate a string after it has been interned. Doing so will counteract
-    // compiler optimizations done on e.g. interned string literals.
-    G1StringDedup::deduplicate(string());
-  }
-#endif
+  // Deduplicate the string before it is interned. Note that we should never
+  // deduplicate a string after it has been interned. Doing so will counteract
+  // compiler optimizations done on e.g. interned string literals.
+  Universe::heap()->deduplicate_string(string());
 
   // Grab the StringTable_lock before getting the_table() because it could
   // change at safepoint.

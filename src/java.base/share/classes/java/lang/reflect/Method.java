@@ -198,11 +198,8 @@ public final class Method extends Executable {
         checkCanSetAccessible(caller, clazz);
     }
 
-    /**
-     * Used by Excecutable for annotation sharing.
-     */
     @Override
-    Executable getRoot() {
+    Method getRoot() {
         return root;
     }
 

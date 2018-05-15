@@ -4417,10 +4417,11 @@ bool os::dir_is_empty(const char* path) {
     return false;
   }
   strcpy(search_path, path);
+  os::native_path(search_path);
   // Append "*", or possibly "\\*", to path
-  if (path[1] == ':' &&
-    (path[2] == '\0' ||
-    (path[2] == '\\' && path[3] == '\0'))) {
+  if (search_path[1] == ':' &&
+       (search_path[2] == '\0' ||
+         (search_path[2] == '\\' && search_path[3] == '\0'))) {
     // No '\\' needed for cases like "Z:" or "Z:\"
     strcat(search_path, "*");
   }

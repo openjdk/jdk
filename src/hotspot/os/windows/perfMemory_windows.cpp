@@ -1697,7 +1697,7 @@ static void open_file_mapping(const char* user, int vmid,
   CloseHandle(fmh);
 
   log_debug(perf, memops)("mapped " SIZE_FORMAT " bytes for vmid %d at "
-                          INTPTR_FORMAT "\n", size, vmid, mapAddress);
+                          INTPTR_FORMAT, size, vmid, mapAddress);
 }
 
 // this method unmaps the the mapped view of the the

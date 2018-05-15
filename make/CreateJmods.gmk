@@ -121,11 +121,21 @@ else # not java.base
   ifeq ($(OPENJDK_TARGET_OS), windows)
     # Only java.base needs to include the MSVC*_DLLs. Make sure no other module
     # tries to include them (typically imported ones).
-    ifneq ($(wildcard $(LIBS_DIR)/$(notdir $(MSVCR_DLL))), )
-      JMOD_FLAGS += --exclude '$(notdir $(MSVCR_DLL))'
+    ifneq ($(MSVCR_DLL), )
+      ifneq ($(wildcard $(LIBS_DIR)/$(notdir $(MSVCR_DLL))), )
+        JMOD_FLAGS += --exclude '$(notdir $(MSVCR_DLL))'
+      endif
     endif
-    ifneq ($(wildcard $(LIBS_DIR)/$(notdir $(MSVCP_DLL))), )
-      JMOD_FLAGS += --exclude '$(notdir $(MSVCP_DLL))'
+    ifneq ($(MSVCP_DLL), )
+      ifneq ($(wildcard $(LIBS_DIR)/$(notdir $(MSVCP_DLL))), )
+        JMOD_FLAGS += --exclude '$(notdir $(MSVCP_DLL))'
+      endif
+    endif
+    ifneq ($(UCRT_DLL_DIR), )
+      UCRT_DLL_FILES := $(notdir $(wildcard $(UCRT_DLL_DIR)/*.dll))
+      ifneq ($(wildcard $(LIBS_DIR)/$(firstword $(UCRT_DLL_FILES))), )
+        JMOD_FLAGS += $(patsubst %, --exclude '%', $(UCRT_DLL_FILES))
+      endif
     endif
   endif
 endif

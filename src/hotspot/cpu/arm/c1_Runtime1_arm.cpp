@@ -366,11 +366,15 @@ void Runtime1::initialize_pd() {
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
   OopMap* oop_map = save_live_registers(sasm);
 
+  int call_offset;
   if (has_argument) {
     __ ldr(R1, Address(SP, arg1_offset));
+    __ ldr(R2, Address(SP, arg2_offset));
+    call_offset = __ call_RT(noreg, noreg, target, R1, R2);
+  } else {
+    call_offset = __ call_RT(noreg, noreg, target);
   }
 
-  int call_offset = __ call_RT(noreg, noreg, target);
   OopMapSet* oop_maps = new OopMapSet();
   oop_maps->add_gc_map(call_offset, oop_map);
 

@@ -173,7 +173,7 @@ void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
                                 " units = %d, dsize = " SIZE_FORMAT ", vlen = " SIZE_FORMAT ","
                                 " pad_length = " SIZE_FORMAT ", size = " SIZE_FORMAT ", on_c_heap = %s,"
                                 " address = " INTPTR_FORMAT ","
-                                " data address = " INTPTR_FORMAT "\n",
+                                " data address = " INTPTR_FORMAT,
                                 cname, dtype, variability(),
                                 units(), dsize, vlen,
                                 pad_length, size, is_on_c_heap() ? "TRUE":"FALSE",

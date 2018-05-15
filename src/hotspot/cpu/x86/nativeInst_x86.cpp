@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,6 +436,8 @@ address NativeMovRegMem::next_instruction_address() const {
   case instruction_code_reg2memb:       // 0x88
   case instruction_code_mem2regb:       // 0x8a
 
+  case instruction_code_lea:            // 0x8d
+
   case instruction_code_float_s:        // 0xd9 fld_s a
   case instruction_code_float_d:        // 0xdd fld_d a
 
@@ -506,6 +508,9 @@ void NativeMovRegMem::verify() {
     case instruction_code_xmm_load:  // 0x10 movsd xmm, a
     case instruction_code_xmm_store: // 0x11 movsd a, xmm
     case instruction_code_xmm_lpd:   // 0x12 movlpd xmm, a
+      break;
+
+    case instruction_code_lea:       // 0x8d lea r, a
       break;
 
     default:

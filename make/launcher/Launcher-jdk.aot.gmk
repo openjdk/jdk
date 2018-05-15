@@ -41,6 +41,7 @@ $(eval $(call SetupBuildLauncher, jaotc, \
     , \
     JAVA_ARGS := --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.amd64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
+        --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.aarch64=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot.sparc=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.meta=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \
         --add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=$(call CommaList, jdk.internal.vm.compiler  jdk.aot) \

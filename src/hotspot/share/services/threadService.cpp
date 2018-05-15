@@ -122,6 +122,9 @@ void ThreadService::add_thread(JavaThread* thread, bool daemon) {
 
 void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
   Atomic::dec(&_exiting_threads_count);
+  if (daemon) {
+    Atomic::dec(&_exiting_daemon_threads_count);
+  }
 
   if (thread->is_hidden_from_external_view() ||
       thread->is_jvmti_agent_thread()) {
@@ -129,10 +132,8 @@ void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
   }
 
   _live_threads_count->set_value(_live_threads_count->get_value() - 1);
-
   if (daemon) {
     _daemon_threads_count->set_value(_daemon_threads_count->get_value() - 1);
-    Atomic::dec(&_exiting_daemon_threads_count);
   }
 }
 

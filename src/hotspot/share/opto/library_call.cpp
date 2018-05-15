@@ -52,6 +52,7 @@
 #include "opto/subnode.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/unsafe.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #ifdef TRACE_HAVE_INTRINSICS
 #include "trace/traceMacros.hpp"
@@ -545,7 +546,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_notify:
   case vmIntrinsics::_notifyAll:
-    if (InlineNotify) {
+    if (ObjectMonitor::Knob_InlineNotify) {
       return inline_notify(intrinsic_id());
     }
     return false;

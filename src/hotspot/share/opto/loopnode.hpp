@@ -852,27 +852,35 @@ private:
   // Array of immediate dominance info for each CFG node indexed by node idx
 private:
   uint _idom_size;
-  Node **_idom;                 // Array of immediate dominators
-  uint *_dom_depth;           // Used for fast LCA test
+  Node **_idom;                  // Array of immediate dominators
+  uint *_dom_depth;              // Used for fast LCA test
   GrowableArray<uint>* _dom_stk; // For recomputation of dom depth
 
   Node* idom_no_update(Node* d) const {
-    assert(d->_idx < _idom_size, "oob");
-    Node* n = _idom[d->_idx];
+    return idom_no_update(d->_idx);
+  }
+
+  Node* idom_no_update(uint didx) const {
+    assert(didx < _idom_size, "oob");
+    Node* n = _idom[didx];
     assert(n != NULL,"Bad immediate dominator info.");
-    while (n->in(0) == NULL) {  // Skip dead CFG nodes
-      //n = n->in(1);
+    while (n->in(0) == NULL) { // Skip dead CFG nodes
       n = (Node*)(((intptr_t)_nodes[n->_idx]) & ~1);
       assert(n != NULL,"Bad immediate dominator info.");
     }
     return n;
   }
+
   Node *idom(Node* d) const {
-    uint didx = d->_idx;
-    Node *n = idom_no_update(d);
-    _idom[didx] = n;            // Lazily remove dead CFG nodes from table.
+    return idom(d->_idx);
+  }
+
+  Node *idom(uint didx) const {
+    Node *n = idom_no_update(didx);
+    _idom[didx] = n; // Lazily remove dead CFG nodes from table.
     return n;
   }
+
   uint dom_depth(Node* d) const {
     guarantee(d != NULL, "Null dominator info.");
     guarantee(d->_idx < _idom_size, "");

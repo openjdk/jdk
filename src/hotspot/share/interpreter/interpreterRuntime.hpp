@@ -83,7 +83,7 @@ class InterpreterRuntime: AllStatic {
                                                            Klass* interfaceKlass);
   static void    throw_StackOverflowError(JavaThread* thread);
   static void    throw_delayed_StackOverflowError(JavaThread* thread);
-  static void    throw_ArrayIndexOutOfBoundsException(JavaThread* thread, char* name, jint index);
+  static void    throw_ArrayIndexOutOfBoundsException(JavaThread* thread, arrayOopDesc* a, jint index);
   static void    throw_ClassCastException(JavaThread* thread, oopDesc* obj);
   static void    create_exception(JavaThread* thread, char* name, char* message);
   static void    create_klass_exception(JavaThread* thread, char* name, oopDesc* obj);

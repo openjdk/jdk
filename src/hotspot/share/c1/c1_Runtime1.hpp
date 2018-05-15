@@ -149,7 +149,7 @@ class Runtime1: public AllStatic {
 
   static address exception_handler_for_pc(JavaThread* thread);
 
-  static void throw_range_check_exception(JavaThread* thread, int index);
+  static void throw_range_check_exception(JavaThread* thread, int index, arrayOopDesc* a);
   static void throw_index_exception(JavaThread* thread, int index);
   static void throw_div0_exception(JavaThread* thread);
   static void throw_null_pointer_exception(JavaThread* thread);

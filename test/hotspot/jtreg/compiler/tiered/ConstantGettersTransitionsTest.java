@@ -34,7 +34,6 @@
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:-UseCounterDecay
  *      -XX:CompileCommand=compileonly,compiler.tiered.ConstantGettersTransitionsTest$ConstantGettersTestCase$TrivialMethods::*
- *      compiler.tiered.TransitionsTestExecutor
  *      compiler.tiered.ConstantGettersTransitionsTest
  */
 

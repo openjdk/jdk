@@ -103,11 +103,8 @@ public final class Constructor<T> extends Executable {
     // occur in annotation code.
     private Constructor<T>      root;
 
-    /**
-     * Used by Excecutable for annotation sharing.
-     */
     @Override
-    Executable getRoot() {
+    Constructor<T> getRoot() {
         return root;
     }
 

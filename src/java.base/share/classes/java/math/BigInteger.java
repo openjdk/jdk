@@ -52,19 +52,17 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * and a few other miscellaneous operations.
  *
  * <p>Semantics of arithmetic operations exactly mimic those of Java's integer
- * arithmetic operators, as defined in <i>The Java Language Specification</i>.
+ * arithmetic operators, as defined in <i>The Java&trade; Language Specification</i>.
  * For example, division by zero throws an {@code ArithmeticException}, and
  * division of a negative by a positive yields a negative (or zero) remainder.
- * All of the details in the Spec concerning overflow are ignored, as
- * BigIntegers are made as large as necessary to accommodate the results of an
- * operation.
  *
  * <p>Semantics of shift operations extend those of Java's shift operators
  * to allow for negative shift distances.  A right-shift with a negative
  * shift distance results in a left shift, and vice-versa.  The unsigned
- * right shift operator ({@code >>>}) is omitted, as this operation makes
- * little sense in combination with the "infinite word size" abstraction
- * provided by this class.
+ * right shift operator ({@code >>>}) is omitted since this operation
+ * only makes sense for a fixed sized word and not for a
+ * representation conceptually having an infinite number of leading
+ * virtual sign bits.
  *
  * <p>Semantics of bitwise logical operations exactly mimic those of Java's
  * bitwise integer operators.  The binary operators ({@code and},
@@ -84,8 +82,8 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * extended so that it contains the designated bit.  None of the single-bit
  * operations can produce a BigInteger with a different sign from the
  * BigInteger being operated on, as they affect only a single bit, and the
- * "infinite word size" abstraction provided by this class ensures that there
- * are infinitely many "virtual sign bits" preceding each BigInteger.
+ * arbitrarily large abstraction provided by this class ensures that conceptually
+ * there are infinitely many "virtual sign bits" preceding each BigInteger.
  *
  * <p>For the sake of brevity and clarity, pseudo-code is used throughout the
  * descriptions of BigInteger methods.  The pseudo-code expression
@@ -105,13 +103,18 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * +2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive)
  * and may support values outside of that range.
  *
+ * An {@code ArithmeticException} is thrown when a BigInteger
+ * constructor or method would generate a value outside of the
+ * supported range.
+ *
  * The range of probable prime values is limited and may be less than
  * the full supported positive range of {@code BigInteger}.
  * The range must be at least 1 to 2<sup>500000000</sup>.
  *
  * @implNote
- * BigInteger constructors and operations throw {@code ArithmeticException} when
- * the result is out of the supported range of
+ * In the reference implementation, BigInteger constructors and
+ * operations throw {@code ArithmeticException} when the result is out
+ * of the supported range of
  * -2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive) to
  * +2<sup>{@code Integer.MAX_VALUE}</sup> (exclusive).
  *

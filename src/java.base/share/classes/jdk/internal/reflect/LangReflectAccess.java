@@ -115,4 +115,7 @@ public interface LangReflectAccess {
 
     /** Makes a "child" copy of a Constructor */
     public <T> Constructor<T> copyConstructor(Constructor<T> arg);
+
+    /** Gets the root of the given AccessibleObject object; null if arg is the root */
+    public <T extends AccessibleObject> T getRoot(T obj);
 }

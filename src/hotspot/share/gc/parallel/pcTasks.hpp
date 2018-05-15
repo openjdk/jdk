@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,10 @@ class ParallelTaskTerminator;
 
 class ThreadRootsMarkingTask : public GCTask {
  private:
-  JavaThread* _java_thread;
-  VMThread* _vm_thread;
+  Thread* _thread;
+
  public:
-  ThreadRootsMarkingTask(JavaThread* root) : _java_thread(root), _vm_thread(NULL) {}
-  ThreadRootsMarkingTask(VMThread* root) : _java_thread(NULL), _vm_thread(root) {}
+  ThreadRootsMarkingTask(Thread* root) : _thread(root) {}
 
   char* name() { return (char *)"thread-roots-marking-task"; }
 
@@ -133,32 +132,6 @@ private:
 };
 
 
-
-//
-// RefEnqueueTaskProxy
-//
-// This task is used as a proxy to parallel reference processing tasks .
-//
-
-class RefEnqueueTaskProxy: public GCTask {
-  typedef AbstractRefProcTaskExecutor::EnqueueTask EnqueueTask;
-  EnqueueTask& _enq_task;
-  uint         _work_id;
-
-public:
-  RefEnqueueTaskProxy(EnqueueTask& enq_task, uint work_id)
-    : _enq_task(enq_task),
-      _work_id(work_id)
-  { }
-
-  virtual char* name() { return (char *)"Enqueue reference objects in parallel"; }
-  virtual void do_it(GCTaskManager* manager, uint which)
-  {
-    _enq_task.work(_work_id);
-  }
-};
-
-
 //
 // RefProcTaskExecutor
 //
@@ -168,7 +141,6 @@ public:
 
 class RefProcTaskExecutor: public AbstractRefProcTaskExecutor {
   virtual void execute(ProcessTask& task);
-  virtual void execute(EnqueueTask& task);
 };
 
 

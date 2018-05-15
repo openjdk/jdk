@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2108, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,8 @@ class NativeInstruction {
   void set_ptr_at (int offset, address  ptr)  { *(address*) addr_at(offset) = ptr; }
   void set_oop_at (int offset, oop  o)        { *(oop*) addr_at(offset) = o; }
 
+  void wrote(int offset);
+
  public:
 
   // unit test stuff
@@ -148,6 +150,46 @@ inline NativeInstruction* nativeInstruction_at(uint32_t *address) {
   return (NativeInstruction*)address;
 }
 
+class NativePltCall: public NativeInstruction {
+public:
+  enum Arm_specific_constants {
+    instruction_size           =    4,
+    instruction_offset         =    0,
+    displacement_offset        =    1,
+    return_address_offset      =    4
+  };
+  address instruction_address() const { return addr_at(instruction_offset); }
+  address next_instruction_address() const { return addr_at(return_address_offset); }
+  address displacement_address() const { return addr_at(displacement_offset); }
+  int displacement() const { return (jint) int_at(displacement_offset); }
+  address return_address() const { return addr_at(return_address_offset); }
+  address destination() const;
+  address plt_entry() const;
+  address plt_jump() const;
+  address plt_load_got() const;
+  address plt_resolve_call() const;
+  address plt_c2i_stub() const;
+  void set_stub_to_clean();
+
+  void  reset_to_plt_resolve_call();
+  void  set_destination_mt_safe(address dest);
+
+  void verify() const;
+};
+
+inline NativePltCall* nativePltCall_at(address address) {
+  NativePltCall* call = (NativePltCall*) address;
+#ifdef ASSERT
+  call->verify();
+#endif
+  return call;
+}
+
+inline NativePltCall* nativePltCall_before(address addr) {
+  address at = addr - NativePltCall::instruction_size;
+  return nativePltCall_at(at);
+}
+
 inline NativeCall* nativeCall_at(address address);
 // The NativeCall is an abstraction for accessing/manipulating native
 // call instructions (used to manipulate inline caches, primitive &
@@ -169,7 +211,7 @@ class NativeCall: public NativeInstruction {
   address return_address() const            { return addr_at(return_address_offset); }
   address destination() const;
 
-  void  set_destination(address dest)       {
+  void set_destination(address dest)        {
     int offset = dest - instruction_address();
     unsigned int insn = 0b100101 << 26;
     assert((offset & 3) == 0, "should be");
@@ -190,6 +232,12 @@ class NativeCall: public NativeInstruction {
   static bool is_call_before(address return_address) {
     return is_call_at(return_address - NativeCall::return_address_offset);
   }
+
+#if INCLUDE_AOT
+  static bool is_far_call(address instr, address target) {
+    return !Assembler::reachable_from_branch_at(instr, target);
+  }
+#endif
 
   // MT-safe patching of a call instruction.
   static void insert(address code_pos, address entry);
@@ -381,6 +429,39 @@ class NativeLoadAddress: public NativeInstruction {
   static void test() {}
 };
 
+//   adrp    x16, #page
+//   add     x16, x16, #offset
+//   ldr     x16, [x16]
+class NativeLoadGot: public NativeInstruction {
+public:
+  enum AArch64_specific_constants {
+    instruction_length = 4 * NativeInstruction::instruction_size,
+    offset_offset = 0,
+  };
+
+  address instruction_address() const { return addr_at(0); }
+  address return_address() const { return addr_at(instruction_length); }
+  address got_address() const;
+  address next_instruction_address() const { return return_address(); }
+  intptr_t data() const;
+  void set_data(intptr_t data) {
+    intptr_t *addr = (intptr_t *) got_address();
+    *addr = data;
+  }
+
+  void verify() const;
+private:
+  void report_and_fail() const;
+};
+
+inline NativeLoadGot* nativeLoadGot_at(address addr) {
+  NativeLoadGot* load = (NativeLoadGot*) addr;
+#ifdef ASSERT
+  load->verify();
+#endif
+  return load;
+}
+
 class NativeJump: public NativeInstruction {
  public:
   enum AArch64_specific_constants {
@@ -438,6 +519,31 @@ public:
 inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   NativeGeneralJump* jump = (NativeGeneralJump*)(address);
   debug_only(jump->verify();)
+  return jump;
+}
+
+class NativeGotJump: public NativeInstruction {
+public:
+  enum AArch64_specific_constants {
+    instruction_size = 4 * NativeInstruction::instruction_size,
+  };
+
+  void verify() const;
+  address instruction_address() const { return addr_at(0); }
+  address destination() const;
+  address return_address() const { return addr_at(instruction_size); }
+  address got_address() const;
+  address next_instruction_address() const { return addr_at(instruction_size); }
+  bool is_GotJump() const;
+
+  void set_jump_destination(address dest)  {
+    address* got = (address *)got_address();
+    *got = dest;
+  }
+};
+
+inline NativeGotJump* nativeGotJump_at(address addr) {
+  NativeGotJump* jump = (NativeGotJump*)(addr);
   return jump;
 }
 

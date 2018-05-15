@@ -56,11 +56,6 @@ public abstract class Executable extends AccessibleObject
     abstract byte[] getAnnotationBytes();
 
     /**
-     * Accessor method to allow code sharing
-     */
-    abstract Executable getRoot();
-
-    /**
      * Does the Executable have generic information.
      */
     abstract boolean hasGenericInformation();
@@ -602,7 +597,7 @@ public abstract class Executable extends AccessibleObject
         if ((declAnnos = declaredAnnotations) == null) {
             synchronized (this) {
                 if ((declAnnos = declaredAnnotations) == null) {
-                    Executable root = getRoot();
+                    Executable root = (Executable)getRoot();
                     if (root != null) {
                         declAnnos = root.declaredAnnotations();
                     } else {

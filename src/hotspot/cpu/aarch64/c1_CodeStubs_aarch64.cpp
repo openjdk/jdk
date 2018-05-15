@@ -48,11 +48,14 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ b(_continuation);
 }
 
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index,
-                               bool throw_index_out_of_bounds_exception)
-  : _throw_index_out_of_bounds_exception(throw_index_out_of_bounds_exception)
-  , _index(index)
-{
+RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
+  : _throw_index_out_of_bounds_exception(false), _index(index), _array(array) {
+  assert(info != NULL, "must have info");
+  _info = new CodeEmitInfo(info);
+}
+
+RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
+  : _throw_index_out_of_bounds_exception(true), _index(index), _array(NULL) {
   assert(info != NULL, "must have info");
   _info = new CodeEmitInfo(info);
 }
@@ -69,14 +72,16 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   }
 
   if (_index->is_cpu_register()) {
-    __ mov(rscratch1, _index->as_register());
+    __ mov(r22, _index->as_register());
   } else {
-    __ mov(rscratch1, _index->as_jint());
+    __ mov(r22, _index->as_jint());
   }
   Runtime1::StubID stub_id;
   if (_throw_index_out_of_bounds_exception) {
     stub_id = Runtime1::throw_index_exception_id;
   } else {
+    assert(_array != NULL, "sanity");
+    __ mov(r23, _array->as_pointer_register());
     stub_id = Runtime1::throw_range_check_failed_id;
   }
   __ far_call(RuntimeAddress(Runtime1::entry_for(stub_id)), NULL, rscratch2);

@@ -339,8 +339,6 @@ class oopDesc {
     assert(has_klass_gap(), "only applicable to compressed klass pointers");
     return klass_offset_in_bytes() + sizeof(narrowKlass);
   }
-
-  static bool is_archive_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 };
 
 #endif // SHARE_VM_OOPS_OOP_HPP

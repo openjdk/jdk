@@ -563,6 +563,9 @@ public:
   // Do concurrent phase of marking, to a tentative transitive closure.
   void mark_from_roots();
 
+  // Do concurrent preclean work.
+  void preclean();
+
   void remark();
 
   void cleanup();

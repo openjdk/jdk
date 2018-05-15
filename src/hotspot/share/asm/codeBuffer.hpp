@@ -382,6 +382,10 @@ class CodeBuffer: public StackObj {
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
+#if INCLUDE_AOT
+  bool         _immutable_PIC;
+#endif
+
   address      _decode_begin;   // start address for decode
   address      decode_begin();
 
@@ -396,6 +400,9 @@ class CodeBuffer: public StackObj {
     _overflow_arena  = NULL;
     _code_strings    = CodeStrings();
     _last_insn       = NULL;
+#if INCLUDE_AOT
+    _immutable_PIC   = false;
+#endif
   }
 
   void initialize(address code_start, csize_t code_size) {
@@ -628,6 +635,13 @@ class CodeBuffer: public StackObj {
 
   // Log a little info about section usage in the CodeBuffer
   void log_section_sizes(const char* name);
+
+#if INCLUDE_AOT
+  // True if this is a code buffer used for immutable PIC, i.e. AOT
+  // compilation.
+  bool immutable_PIC() { return _immutable_PIC; }
+  void set_immutable_PIC(bool pic) { _immutable_PIC = pic; }
+#endif
 
 #ifndef PRODUCT
  public:

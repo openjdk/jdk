@@ -641,10 +641,12 @@ address Runtime1::exception_handler_for_pc(JavaThread* thread) {
 }
 
 
-JRT_ENTRY(void, Runtime1::throw_range_check_exception(JavaThread* thread, int index))
+JRT_ENTRY(void, Runtime1::throw_range_check_exception(JavaThread* thread, int index, arrayOopDesc* a))
   NOT_PRODUCT(_throw_range_check_exception_count++;)
-  char message[jintAsStringSize];
-  sprintf(message, "%d", index);
+  const int len = 35;
+  assert(len < strlen("Index %d out of bounds for length %d"), "Must allocate more space for message.");
+  char message[2 * jintAsStringSize + len];
+  sprintf(message, "Index %d out of bounds for length %d", index, a->length());
   SharedRuntime::throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), message);
 JRT_END
 

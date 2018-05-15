@@ -196,6 +196,13 @@ public enum ToolOption {
         }
     },
 
+    ENABLE_PREVIEW("--enable-preview", STANDARD) {
+        @Override
+        public void process(Helper helper) throws InvalidValueException {
+            Option.PREVIEW.process(helper.getOptionHelper(), primaryName);
+        }
+    },
+
     // ----- doclet options -----
 
     DOCLET("-doclet", STANDARD, true), // handled in setDocletInvoker
@@ -404,7 +411,7 @@ public enum ToolOption {
 
     void process(Helper helper, String arg) throws OptionException, Option.InvalidValueException { }
 
-    void process(Helper helper) throws OptionException { }
+    void process(Helper helper) throws OptionException, Option.InvalidValueException { }
 
     List<String> getNames() {
         return names;

@@ -58,6 +58,7 @@
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -446,17 +447,16 @@ IRT_ENTRY(void, InterpreterRuntime::create_klass_exception(JavaThread* thread, c
   thread->set_vm_result(exception());
 IRT_END
 
-
-IRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* thread, char* name, jint index))
-  char message[jintAsStringSize];
-  // lookup exception klass
-  TempNewSymbol s = SymbolTable::new_symbol(name, CHECK);
+IRT_ENTRY(void, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException(JavaThread* thread, arrayOopDesc* a, jint index))
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_range_check, CHECK);
   }
-  // create exception
-  sprintf(message, "%d", index);
-  THROW_MSG(s, message);
+
+  ResourceMark rm(thread);
+  stringStream ss;
+  ss.print("Index %d out of bounds for length %d", index, a->length());
+
+  THROW_MSG(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
 IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(

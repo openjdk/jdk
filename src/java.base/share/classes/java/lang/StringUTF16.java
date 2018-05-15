@@ -856,6 +856,61 @@ final class StringUTF16 {
             null;
     }
 
+
+    public static int indexOfNonWhitespace(byte[] value) {
+        int length = value.length >> 1;
+        int left = 0;
+        while (left < length) {
+            int codepoint = codePointAt(value, left, length);
+            if (codepoint != ' ' && codepoint != '\t' && !Character.isWhitespace(codepoint)) {
+                break;
+            }
+            left += Character.charCount(codepoint);
+        }
+        return left;
+    }
+
+    public static int lastIndexOfNonWhitespace(byte[] value) {
+        int length = value.length >> 1;
+        int right = length;
+        while (0 < right) {
+            int codepoint = codePointBefore(value, right);
+            if (codepoint != ' ' && codepoint != '\t' && !Character.isWhitespace(codepoint)) {
+                break;
+            }
+            right -= Character.charCount(codepoint);
+        }
+        return right;
+    }
+
+    public static String strip(byte[] value) {
+        int length = value.length >> 1;
+        int left = indexOfNonWhitespace(value);
+        if (left == length) {
+            return "";
+        }
+        int right = lastIndexOfNonWhitespace(value);
+        return ((left > 0) || (right < length)) ? newString(value, left, right - left) : null;
+    }
+
+    public static String stripLeading(byte[] value) {
+        int length = value.length >> 1;
+        int left = indexOfNonWhitespace(value);
+        if (left == length) {
+            return "";
+        }
+        return (left != 0) ? newString(value, left, length - left) : null;
+    }
+
+    public static String stripTrailing(byte[] value) {
+        int length = value.length >> 1;
+        int right = lastIndexOfNonWhitespace(value);
+        if (right == 0) {
+            return "";
+        }
+        return (right != length) ? newString(value, 0, right) : null;
+    }
+
     private static void putChars(byte[] val, int index, char[] str, int off, int end) {
         while (off < end) {
             putChar(val, index++, str[off++]);

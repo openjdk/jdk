@@ -2164,6 +2164,14 @@ jlong G1CollectedHeap::millis_since_last_gc() {
   return ret_val;
 }
 
+void G1CollectedHeap::deduplicate_string(oop str) {
+  assert(java_lang_String::is_instance(str), "invariant");
+
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::deduplicate(str);
+  }
+}
+
 void G1CollectedHeap::prepare_for_verify() {
   _verifier->prepare_for_verify();
 }
@@ -3783,7 +3791,6 @@ public:
 
   // Executes the given task using concurrent marking worker threads.
   virtual void execute(ProcessTask& task);
-  virtual void execute(EnqueueTask& task);
 };
 
 // Gang task for possibly parallel reference processing
@@ -3846,35 +3853,6 @@ void G1STWRefProcTaskExecutor::execute(ProcessTask& proc_task) {
   G1STWRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _pss, _queues, &terminator);
 
   _workers->run_task(&proc_task_proxy);
-}
-
-// Gang task for parallel reference enqueueing.
-
-class G1STWRefEnqueueTaskProxy: public AbstractGangTask {
-  typedef AbstractRefProcTaskExecutor::EnqueueTask EnqueueTask;
-  EnqueueTask& _enq_task;
-
-public:
-  G1STWRefEnqueueTaskProxy(EnqueueTask& enq_task) :
-    AbstractGangTask("Enqueue reference objects in parallel"),
-    _enq_task(enq_task)
-  { }
-
-  virtual void work(uint worker_id) {
-    _enq_task.work(worker_id);
-  }
-};
-
-// Driver routine for parallel reference enqueueing.
-// Creates an instance of the ref enqueueing gang
-// task and has the worker threads execute it.
-
-void G1STWRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
-  assert(_workers != NULL, "Need parallel worker threads.");
-
-  G1STWRefEnqueueTaskProxy enq_task_proxy(enq_task);
-
-  _workers->run_task(&enq_task_proxy);
 }
 
 // End of weak reference support closures

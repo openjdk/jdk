@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,15 +60,7 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
   ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
   MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
 
-  if (_java_thread != NULL)
-    _java_thread->oops_do(
-        &mark_and_push_closure,
-        &mark_and_push_in_blobs);
-
-  if (_vm_thread != NULL)
-    _vm_thread->oops_do(
-        &mark_and_push_closure,
-        &mark_and_push_in_blobs);
+  _thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
 
   // Do the real work
   cm->follow_marking_stacks();
@@ -171,17 +163,6 @@ void RefProcTaskExecutor::execute(ProcessTask& task)
         q->enqueue(new StealMarkingTask(&terminator));
       }
     }
-  }
-  PSParallelCompact::gc_task_manager()->execute_and_wait(q);
-}
-
-void RefProcTaskExecutor::execute(EnqueueTask& task)
-{
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  uint parallel_gc_threads = heap->gc_task_manager()->workers();
-  GCTaskQueue* q = GCTaskQueue::create();
-  for(uint i=0; i<parallel_gc_threads; i++) {
-    q->enqueue(new RefEnqueueTaskProxy(task, i));
   }
   PSParallelCompact::gc_task_manager()->execute_and_wait(q);
 }

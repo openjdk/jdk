@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,7 +528,7 @@ public final class BinaryContainer implements SymbolTable {
         switch (osName) {
             case "Linux":
             case "SunOS":
-                JELFRelocObject elfobj = new JELFRelocObject(this, outputFileName);
+                JELFRelocObject elfobj = JELFRelocObject.newInstance(this, outputFileName);
                 elfobj.createELFRelocObject(relocationTable, symbolTable.values());
                 break;
             case "Mac OS X":
@@ -576,7 +576,7 @@ public final class BinaryContainer implements SymbolTable {
      * @param info relocation information to be added
      */
     public void addRelocation(Relocation info) {
-        // System.out.println("# Relocation [" + symName + "] [" + info.getOffset() + "] [" +
+        // System.out.println("# Relocation [" + info.getSymbol() + "] [" + info.getOffset() + "] [" +
         // info.getSection().getContainerName() + "] [" + info.getSymbol().getName() + "] [" +
         // info.getSymbol().getOffset() + " @ " + info.getSymbol().getSection().getContainerName() +
         // "]");

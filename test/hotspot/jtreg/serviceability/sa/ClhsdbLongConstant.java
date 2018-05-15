@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,12 +71,56 @@ public class ClhsdbLongConstant {
             unExpStrMap.put("longConstant jtreg::test", List.of(
                     "Error: java.lang.RuntimeException: No long constant named"));
 
-            test.run(theApp.getPid(), cmds, expStrMap, unExpStrMap);
+            String longConstantOutput = test.run(theApp.getPid(), cmds, expStrMap, unExpStrMap);
+
+            if (longConstantOutput == null) {
+                // Output could be null due to attach permission issues
+                // and if we are skipping this.
+                return;
+            }
+            checkForTruncation(longConstantOutput);
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
             LingeredApp.stopApp(theApp);
         }
         System.out.println("Test PASSED");
+    }
+
+    private static void checkForTruncation(String longConstantOutput) throws Exception {
+
+        // Expected values obtained from the hash_mask_in_place definition in markOop.hpp
+
+        // Expected output snippet is of the form (on x64-64):
+        // ...
+        // longConstant VM_Version::CPU_SHA 17179869184
+        // longConstant markOopDesc::biased_lock_bits 1
+        // longConstant markOopDesc::age_shift 3
+        // longConstant markOopDesc::hash_mask_in_place 549755813632
+        // ...
+
+        checkLongValue("markOopDesc::hash_mask_in_place",
+                       longConstantOutput,
+                       Platform.is64bit() ? 549755813632L: 4294967168L);
+
+        String arch = System.getProperty("os.arch");
+        if (arch.equals("amd64") || arch.equals("i386") || arch.equals("x86")) {
+            // Expected value obtained from the CPU_SHA definition in vm_version_x86.hpp
+            checkLongValue("VM_Version::CPU_SHA",
+                           longConstantOutput,
+                           17179869184L);
+        }
+    }
+
+    private static void checkLongValue(String constName, String longConstantOutput,
+                                       long checkValue) throws Exception {
+
+        String[] snippets = longConstantOutput.split(constName);
+        String[] words = snippets[1].split("\\R");
+        long readValue = Long.parseLong(words[0].trim());
+        if (readValue != checkValue) {
+            throw new Exception ("Reading " + constName + ". Expected " + checkValue +
+                                 ". Obtained " + readValue + " instead.");
+        }
     }
 }

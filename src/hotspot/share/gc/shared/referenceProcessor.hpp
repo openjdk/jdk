@@ -279,15 +279,15 @@ class ReferenceProcessor : public ReferenceDiscoverer {
                       OopClosure*        keep_alive,
                       VoidClosure*       complete_gc);
 
-  // "Preclean" all the discovered reference lists
-  // by removing references with strongly reachable referents.
+  // "Preclean" all the discovered reference lists by removing references that
+  // are active (e.g. due to the mutator calling enqueue()) or with NULL or
+  // strongly reachable referents.
   // The first argument is a predicate on an oop that indicates
-  // its (strong) reachability and the second is a closure that
+  // its (strong) reachability and the fourth is a closure that
   // may be used to incrementalize or abort the precleaning process.
   // The caller is responsible for taking care of potential
   // interference with concurrent operations on these lists
-  // (or predicates involved) by other threads. Currently
-  // only used by the CMS collector.
+  // (or predicates involved) by other threads.
   void preclean_discovered_references(BoolObjectClosure* is_alive,
                                       OopClosure*        keep_alive,
                                       VoidClosure*       complete_gc,
@@ -298,15 +298,17 @@ class ReferenceProcessor : public ReferenceDiscoverer {
   // occupying the i / _num_queues slot.
   const char* list_name(uint i);
 
-  // "Preclean" the given discovered reference list
-  // by removing references with strongly reachable referents.
-  // Currently used in support of CMS only.
-  void preclean_discovered_reflist(DiscoveredList&    refs_list,
+private:
+  // "Preclean" the given discovered reference list by removing references with
+  // the attributes mentioned in preclean_discovered_references().
+  // Supports both normal and fine grain yielding.
+  // Returns whether the operation should be aborted.
+  bool preclean_discovered_reflist(DiscoveredList&    refs_list,
                                    BoolObjectClosure* is_alive,
                                    OopClosure*        keep_alive,
                                    VoidClosure*       complete_gc,
                                    YieldClosure*      yield);
-private:
+
   // round-robin mod _num_queues (not: _not_ mod _max_num_queues)
   uint next_id() {
     uint id = _next_id;
@@ -323,7 +325,8 @@ private:
 
   void clear_discovered_references(DiscoveredList& refs_list);
 
-  void log_reflist_counts(DiscoveredList ref_lists[], uint active_length, size_t total_count) PRODUCT_RETURN;
+  void log_reflist(const char* prefix, DiscoveredList list[], uint num_active_queues);
+  void log_reflist_counts(DiscoveredList ref_lists[], uint num_active_queues) PRODUCT_RETURN;
 
   // Balances reference queues.
   void balance_queues(DiscoveredList ref_lists[]);
@@ -589,11 +592,9 @@ public:
 
   // Abstract tasks to execute.
   class ProcessTask;
-  class EnqueueTask;
 
   // Executes a task using worker threads.
   virtual void execute(ProcessTask& task) = 0;
-  virtual void execute(EnqueueTask& task) = 0;
 
   // Switch to single threaded mode.
   virtual void set_single_threaded_mode() { };
@@ -626,29 +627,6 @@ protected:
   DiscoveredList*               _refs_lists;
   ReferenceProcessorPhaseTimes* _phase_times;
   const bool                    _marks_oops_alive;
-};
-
-// Abstract reference processing task to execute.
-class AbstractRefProcTaskExecutor::EnqueueTask {
-protected:
-  EnqueueTask(ReferenceProcessor&           ref_processor,
-              DiscoveredList                refs_lists[],
-              int                           n_queues,
-              ReferenceProcessorPhaseTimes* phase_times)
-    : _ref_processor(ref_processor),
-      _refs_lists(refs_lists),
-      _n_queues(n_queues),
-      _phase_times(phase_times)
-  { }
-
-public:
-  virtual void work(unsigned int work_id) = 0;
-
-protected:
-  ReferenceProcessor&           _ref_processor;
-  DiscoveredList*               _refs_lists;
-  ReferenceProcessorPhaseTimes* _phase_times;
-  int                           _n_queues;
 };
 
 #endif // SHARE_VM_GC_SHARED_REFERENCEPROCESSOR_HPP

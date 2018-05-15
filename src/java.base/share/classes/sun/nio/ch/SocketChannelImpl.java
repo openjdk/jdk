@@ -867,11 +867,22 @@ class SocketChannelImpl
         // set state to ST_KILLPENDING
         synchronized (stateLock) {
             assert state == ST_CLOSING;
-            // if connected, and the channel is registered with a Selector, we
-            // shutdown the output so that the peer reads EOF
+            // if connected and the channel is registered with a Selector then
+            // shutdown the output if possible so that the peer reads EOF. If
+            // SO_LINGER is enabled and set to a non-zero value then it needs to
+            // be disabled so that the Selector does not wait when it closes
+            // the socket.
             if (connected && isRegistered()) {
                 try {
-                    Net.shutdown(fd, Net.SHUT_WR);
+                    SocketOption<Integer> opt = StandardSocketOptions.SO_LINGER;
+                    int interval = (int) Net.getSocketOption(fd, Net.UNSPEC, opt);
+                    if (interval != 0) {
+                        if (interval > 0) {
+                            // disable SO_LINGER
+                            Net.setSocketOption(fd, Net.UNSPEC, opt, -1);
+                        }
+                        Net.shutdown(fd, Net.SHUT_WR);
+                    }
                 } catch (IOException ignore) { }
             }
             state = ST_KILLPENDING;

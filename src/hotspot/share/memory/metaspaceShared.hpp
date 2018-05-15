@@ -113,6 +113,9 @@ class MetaspaceShared : AllStatic {
   static oop archive_heap_object(oop obj, Thread* THREAD);
   static void archive_klass_objects(Thread* THREAD);
 #endif
+
+  static bool is_archive_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
+
   static bool is_heap_object_archiving_allowed() {
     CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)
     NOT_CDS_JAVA_HEAP(return false;)

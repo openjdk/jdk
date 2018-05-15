@@ -154,4 +154,9 @@ class ReflectAccess implements jdk.internal.reflect.LangReflectAccess {
     public <T> Constructor<T> copyConstructor(Constructor<T> arg) {
         return arg.copy();
     }
+
+    @SuppressWarnings("unchecked")
+    public <T extends AccessibleObject> T getRoot(T obj) {
+        return (T) obj.getRoot();
+    }
 }

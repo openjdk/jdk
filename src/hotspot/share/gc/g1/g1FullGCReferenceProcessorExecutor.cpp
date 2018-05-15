@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,14 +63,6 @@ void G1FullGCReferenceProcessingExecutor::G1RefProcTaskProxy::work(uint worker_i
                   *marker->stack_closure());
 }
 
-G1FullGCReferenceProcessingExecutor::G1RefEnqueueTaskProxy::G1RefEnqueueTaskProxy(EnqueueTask& enq_task) :
-  AbstractGangTask("G1 reference enqueue task"),
-  _enq_task(enq_task) { }
-
-void G1FullGCReferenceProcessingExecutor::G1RefEnqueueTaskProxy::work(uint worker_id) {
-  _enq_task.work(worker_id);
-}
-
 void G1FullGCReferenceProcessingExecutor::run_task(AbstractGangTask* task) {
   G1CollectedHeap::heap()->workers()->run_task(task, _collector->workers());
 }
@@ -78,12 +70,6 @@ void G1FullGCReferenceProcessingExecutor::run_task(AbstractGangTask* task) {
 void G1FullGCReferenceProcessingExecutor::execute(ProcessTask& proc_task) {
   G1RefProcTaskProxy proc_task_proxy(proc_task, _collector);
   run_task(&proc_task_proxy);
-}
-
-// Driver routine for parallel reference processing.
-void G1FullGCReferenceProcessingExecutor::execute(EnqueueTask& enq_task) {
-  G1RefEnqueueTaskProxy enq_task_proxy(enq_task);
-  run_task(&enq_task_proxy);
 }
 
 void G1FullGCReferenceProcessingExecutor::execute(STWGCTimer* timer, G1FullGCTracer* tracer) {
