@@ -33,8 +33,8 @@ import jdk.test.lib.JDKToolFinder;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:MaxMetaspaceSize=201M -XX:+VerifyMetaspace -XX:+UseCompressedClassPointers PrintMetaspaceDcmd with-compressed-class-space
- * @run main/othervm -XX:MaxMetaspaceSize=201M -XX:+VerifyMetaspace -XX:-UseCompressedClassPointers PrintMetaspaceDcmd without-compressed-class-space
+ * @run main/othervm -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers PrintMetaspaceDcmd with-compressed-class-space
+ * @run main/othervm -XX:MaxMetaspaceSize=201M -Xmx100M -XX:-UseCompressedOops -XX:-UseCompressedClassPointers PrintMetaspaceDcmd without-compressed-class-space
  */
 
 public class PrintMetaspaceDcmd {
