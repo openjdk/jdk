@@ -789,10 +789,19 @@ public:
   void resolve_oop_handle(Register result, Register tmp = r5);
   void load_mirror(Register dst, Register method, Register tmp = r5);
 
-  void load_heap_oop(Register dst, Address src);
+  void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
+                      Register tmp1, Register tmp_thread);
 
-  void load_heap_oop_not_null(Register dst, Address src);
-  void store_heap_oop(Address dst, Register src);
+  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
+                       Register tmp1, Register tmp_thread);
+
+  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
+                     Register thread_tmp = noreg, DecoratorSet decorators = 0);
+
+  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
+                              Register thread_tmp = noreg, DecoratorSet decorators = 0);
+  void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
+                      Register tmp_thread = noreg, DecoratorSet decorators = 0);
 
   // currently unimplemented
   // Used for storing NULL. All other oop constants should be
