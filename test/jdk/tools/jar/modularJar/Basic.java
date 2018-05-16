@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static java.lang.System.out;
 
 /*
  * @test
- * @bug 8167328 8171830 8165640 8174248 8176772 8196748
+ * @bug 8167328 8171830 8165640 8174248 8176772 8196748 8191533
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
@@ -666,6 +666,17 @@ public class Basic {
             "-C", modClasses.toString(), "jdk/test/baz/BazService.class",
             "-C", modClasses.toString(), "jdk/test/baz/internal/BazServiceImpl.class")
             .assertSuccess();
+
+        for (String option : new String[]  {"--describe-module", "-d" }) {
+            jar(option,
+                "--file=" + modularJar.toString())
+                .assertSuccess()
+                .resultChecker(r ->
+                    assertTrue(r.output.contains("provides jdk.test.baz.BazService with jdk.test.baz.internal.BazServiceImpl"),
+                               "Expected to find ", "provides jdk.test.baz.BazService with jdk.test.baz.internal.BazServiceImpl",
+                               " in [", r.output, "]")
+                );
+        }
     }
 
     @Test
