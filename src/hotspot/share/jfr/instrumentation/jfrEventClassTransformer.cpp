@@ -1232,7 +1232,7 @@ static u1* new_bytes_for_lazy_instrumentation(const InstanceKlass* ik,
   // This means the original constant pool contents are copied unmodified
   writer.bytes(orig_stream->buffer(), orig_access_flag_offset);
   assert(writer.is_valid(), "invariant");
-  assert(writer.current_offset() == orig_access_flag_offset, "invariant"); // same positions
+  assert(writer.current_offset() == (intptr_t)orig_access_flag_offset, "invariant"); // same positions
   // Our writer now sits just after the last original constant pool entry.
   // I.e. we are in a good position to append new constant pool entries
   // This array will contain the resolved indexes
