@@ -592,6 +592,13 @@ vmTestbase_nsk_monitoring_quick = \
 vmTestbase_nsk_jdi = \
   vmTestbase/nsk/jdi
 
+
+# Stress tests for classes loading/unloading
+# NSK tests for functionality of the HS system dictionary
+vmTestbase_nsk_sysdict = \
+  vmTestbase/nsk/sysdict/vm/stress
+
+
 vmTestbase_nsk_jdi_quick = \
   vmTestbase/nsk/jdi/Argument/description/description001/TestDescription.java \
   vmTestbase/nsk/jdi/Argument/isValid/isvalid001/TestDescription.java \
