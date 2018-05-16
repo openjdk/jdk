@@ -39,6 +39,11 @@
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/support/jfrTraceIdExtension.hpp"
+#endif
+
 
 // A Method represents a Java method.
 //
@@ -89,7 +94,7 @@ class Method : public Metadata {
   };
   mutable u2 _flags;
 
-  TRACE_DEFINE_FLAG;
+  JFR_ONLY(DEFINE_TRACE_FLAG;)
 
 #ifndef PRODUCT
   int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
@@ -879,7 +884,7 @@ class Method : public Metadata {
     _flags = x ? (_flags | _reserved_stack_access) : (_flags & ~_reserved_stack_access);
   }
 
-  TRACE_DEFINE_FLAG_ACCESSOR;
+  JFR_ONLY(DEFINE_TRACE_FLAG_ACCESSOR;)
 
   ConstMethod::MethodType method_type() const {
       return _constMethod->method_type();

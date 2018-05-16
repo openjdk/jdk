@@ -27,14 +27,9 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
-
-#ifdef _MSC_VER
-#define ALIGNED_(x) __declspec(align(x))
-#else
-#define ALIGNED_(x) __attribute__ ((aligned(x)))
-#endif
+#include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 /******************************************************************************/
 //                     ALGORITHM DESCRIPTION - EXP()
@@ -72,7 +67,7 @@
 
 #ifdef _LP64
 // The 64 bit code is at most SSE2 compliant
-ALIGNED_(16) juint _cv[] =
+ATTRIBUTE_ALIGNED(16) juint _cv[] =
 {
     0x652b82feUL, 0x40571547UL, 0x652b82feUL, 0x40571547UL, 0xfefa0000UL,
     0x3f862e42UL, 0xfefa0000UL, 0x3f862e42UL, 0xbc9e3b3aUL, 0x3d1cf79aUL,
@@ -81,22 +76,22 @@ ALIGNED_(16) juint _cv[] =
     0xc090cf0fUL, 0x3f811115UL, 0x55548ba1UL, 0x3fc55555UL
 };
 
-ALIGNED_(16) juint _shifter[] =
+ATTRIBUTE_ALIGNED(16) juint _shifter[] =
 {
     0x00000000UL, 0x43380000UL, 0x00000000UL, 0x43380000UL
 };
 
-ALIGNED_(16) juint _mmask[] =
+ATTRIBUTE_ALIGNED(16) juint _mmask[] =
 {
     0xffffffc0UL, 0x00000000UL, 0xffffffc0UL, 0x00000000UL
 };
 
-ALIGNED_(16) juint _bias[] =
+ATTRIBUTE_ALIGNED(16) juint _bias[] =
 {
     0x0000ffc0UL, 0x00000000UL, 0x0000ffc0UL, 0x00000000UL
 };
 
-ALIGNED_(16) juint _Tbl_addr[] =
+ATTRIBUTE_ALIGNED(16) juint _Tbl_addr[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x0e03754dUL,
     0x3cad7bbfUL, 0x3e778060UL, 0x00002c9aUL, 0x3567f613UL, 0x3c8cd252UL,
@@ -152,37 +147,37 @@ ALIGNED_(16) juint _Tbl_addr[] =
     0x000fa7c1UL
 };
 
-ALIGNED_(16) juint _ALLONES[] =
+ATTRIBUTE_ALIGNED(16) juint _ALLONES[] =
 {
     0xffffffffUL, 0xffffffffUL, 0xffffffffUL, 0xffffffffUL
 };
 
-ALIGNED_(16) juint _ebias[] =
+ATTRIBUTE_ALIGNED(16) juint _ebias[] =
 {
     0x00000000UL, 0x3ff00000UL, 0x00000000UL, 0x3ff00000UL
 };
 
-ALIGNED_(4) juint _XMAX[] =
+ATTRIBUTE_ALIGNED(4) juint _XMAX[] =
 {
     0xffffffffUL, 0x7fefffffUL
 };
 
-ALIGNED_(4) juint _XMIN[] =
+ATTRIBUTE_ALIGNED(4) juint _XMIN[] =
 {
     0x00000000UL, 0x00100000UL
 };
 
-ALIGNED_(4) juint _INF[] =
+ATTRIBUTE_ALIGNED(4) juint _INF[] =
 {
     0x00000000UL, 0x7ff00000UL
 };
 
-ALIGNED_(4) juint _ZERO[] =
+ATTRIBUTE_ALIGNED(4) juint _ZERO[] =
 {
     0x00000000UL, 0x00000000UL
 };
 
-ALIGNED_(4) juint _ONE_val[] =
+ATTRIBUTE_ALIGNED(4) juint _ONE_val[] =
 {
     0x00000000UL, 0x3ff00000UL
 };
@@ -411,7 +406,7 @@ void MacroAssembler::fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 }
 #else
 // The 32 bit code is at most SSE2 compliant
-ALIGNED_(16) juint _static_const_table[] =
+ATTRIBUTE_ALIGNED(16) juint _static_const_table[] =
 {
     0x00000000UL, 0xfff00000UL, 0x00000000UL, 0xfff00000UL, 0xffffffc0UL,
     0x00000000UL, 0xffffffc0UL, 0x00000000UL, 0x0000ffc0UL, 0x00000000UL,

@@ -29,6 +29,7 @@
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logConfiguration.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
@@ -42,13 +43,16 @@
 #include "runtime/vm_operations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
-#include "trace/traceMacros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/errorReporter.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 #ifndef PRODUCT
 #include <signal.h>
@@ -1321,7 +1325,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       e.commit();
     }
 
-    TRACE_VM_ERROR();
+    JFR_ONLY(Jfr::on_vm_shutdown(true);)
 
   } else {
     // If UseOsErrorReporting we call this for each level of the call stack

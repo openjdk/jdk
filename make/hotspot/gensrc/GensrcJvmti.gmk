@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ TOOL_JVMTI_GEN := $(JAVA_SMALL) -cp $(JVMTI_TOOLS_OUTPUTDIR) jvmtiGen
 TOOL_JVMTI_ENV_FILL := $(JAVA_SMALL) -cp $(JVMTI_TOOLS_OUTPUTDIR) jvmtiEnvFill
 
 ################################################################################
-# Setup make rules for an xml transform for jvmti/trace file generation.
+# Setup make rules for an xml transform for jvmti file generation.
 #
 # Parameter 1 is the name of the rule. This name is used as variable prefix,
 # and the targets generated are listed in a variable by that name. This name is
@@ -126,48 +126,3 @@ ifeq ($(JVM_VARIANT), $(firstword $(JVM_VARIANTS)))
 
   TARGETS += $(COPY_JVMTI_H)
 endif
-
-################################################################################
-# Create trace files in gensrc/tracefiles
-
-TRACE_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/tracefiles
-TRACE_SRCDIR := $(TOPDIR)/src/hotspot/share/trace
-
-# Append list of XSL files to search (might have been set by custom extensions)
-TRACE_XSL_FILES += $(wildcard $(TRACE_SRCDIR)/*.xsl)
-
-TRACE_XML ?= $(TRACE_SRCDIR)/trace.xml
-
-# Changing these will trigger a rebuild of generated trace files.
-TRACE_DEPS += \
-    $(TRACE_XML) \
-    $(TRACE_SRCDIR)/tracetypes.xml \
-    $(TRACE_SRCDIR)/tracerelationdecls.xml \
-    $(TRACE_SRCDIR)/traceevents.xml \
-    $(TRACE_SRCDIR)/trace.dtd \
-    $(TRACE_SRCDIR)/xinclude.mod \
-    #
-
-# Setup rule for generating a trace file
-#
-# $1 is generated source file name in $(TRACE_OUTPUTDIR)
-define SetupTraceGeneration
-  $$(eval $$(call SetupXslTransform, $1, \
-      XML_FILE := $$(TRACE_XML), \
-      XSL_FILE := $$(firstword $$(filter %/$$(basename $1).xsl, $$(TRACE_XSL_FILES))), \
-      OUTPUT_DIR := $$(TRACE_OUTPUTDIR), \
-      DEPS := $$(TRACE_DEPS), \
-  ))
-endef
-
-# Append files to generated (might have been set by custom extensions)
-TRACE_GENSRC_FILES += \
-    traceEventClasses.hpp \
-    traceEventIds.hpp \
-    traceTypes.hpp \
-    #
-
-# Call SetupTraceGeneration for all trace gensrc files
-$(foreach tracefile, $(TRACE_GENSRC_FILES), \
-  $(eval $(call SetupTraceGeneration, $(tracefile))) \
-)

@@ -36,7 +36,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/ticks.inline.hpp"
+#include "utilities/ticks.hpp"
 
 #include "unittest.hpp"
 

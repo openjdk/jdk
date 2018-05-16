@@ -35,7 +35,11 @@
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/handles.inline.hpp"
-#include "trace/traceMacros.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/support/jfrKlassExtension.hpp"
+#endif
+
 
 // called during initial loading of a shared class
 InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
@@ -228,7 +232,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
     result->store_fingerprint(stream->compute_fingerprint());
   }
 
-  TRACE_KLASS_CREATION(result, parser, THREAD);
+  JFR_ONLY(ON_KLASS_CREATION(result, parser, THREAD);)
 
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {

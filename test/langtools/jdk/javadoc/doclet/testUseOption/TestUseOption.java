@@ -37,6 +37,7 @@ public class TestUseOption extends JavadocTester {
 
     public static void main(String... args) throws Exception {
         TestUseOption tester = new TestUseOption();
+        tester.setAutomaticCheckLinks(false); // @ignore JDK-8202626
         tester.runTests();
     }
 

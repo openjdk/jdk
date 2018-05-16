@@ -32,7 +32,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
-#include "utilities/ticks.inline.hpp"
+#include "utilities/ticks.hpp"
 
 class G1ResetHumongousClosure : public HeapRegionClosure {
   G1CMBitMap* _bitmap;

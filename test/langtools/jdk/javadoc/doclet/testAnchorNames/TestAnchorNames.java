@@ -52,12 +52,14 @@ public class TestAnchorNames extends JavadocTester {
 
     @Test
     void testHtml4(Path ignore) {
+        setAutomaticCheckLinks(false); // @ignore JDK-8202622
         javadoc("-d", "out-html4",
                 "-html4",
                 "-sourcepath", testSrc,
                 "-source", "8", //so that '_' can be used as an identifier
                 "-use",
                 "pkg1");
+        setAutomaticCheckLinks(true); // @ignore JDK-8202622
         checkExit(Exit.OK);
 
         // Test some section markers and links to these markers

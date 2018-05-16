@@ -37,6 +37,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -62,13 +63,78 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/runtimeService.hpp"
-#include "trace/tracing.hpp"
-#include "trace/traceMacros.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif
+
+template <typename E>
+static void set_current_safepoint_id(E* event, int adjustment = 0) {
+  assert(event != NULL, "invariant");
+  event->set_safepointId(SafepointSynchronize::safepoint_counter() + adjustment);
+}
+
+static void post_safepoint_begin_event(EventSafepointBegin* event,
+                                       int thread_count,
+                                       int critical_thread_count) {
+  assert(event != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  set_current_safepoint_id(event);
+  event->set_totalThreadCount(thread_count);
+  event->set_jniCriticalThreadCount(critical_thread_count);
+  event->commit();
+}
+
+static void post_safepoint_cleanup_event(EventSafepointCleanup* event) {
+  assert(event != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  set_current_safepoint_id(event);
+  event->commit();
+}
+
+static void post_safepoint_synchronize_event(EventSafepointStateSynchronization* event,
+                                             int initial_number_of_threads,
+                                             int threads_waiting_to_block,
+                                             unsigned int iterations) {
+  assert(event != NULL, "invariant");
+  if (event->should_commit()) {
+    // Group this event together with the ones committed after the counter is increased
+    set_current_safepoint_id(event, 1);
+    event->set_initialThreadCount(initial_number_of_threads);
+    event->set_runningThreadCount(threads_waiting_to_block);
+    event->set_iterations(iterations);
+    event->commit();
+  }
+}
+
+static void post_safepoint_wait_blocked_event(EventSafepointWaitBlocked* event,
+                                              int initial_threads_waiting_to_block) {
+  assert(event != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  set_current_safepoint_id(event);
+  event->set_runningThreadCount(initial_threads_waiting_to_block);
+  event->commit();
+}
+
+static void post_safepoint_cleanup_task_event(EventSafepointCleanupTask* event,
+                                              const char* name) {
+  assert(event != NULL, "invariant");
+  if (event->should_commit()) {
+    set_current_safepoint_id(event);
+    event->set_name(name);
+    event->commit();
+  }
+}
+
+static void post_safepoint_end_event(EventSafepointEnd* event) {
+  assert(event != NULL, "invariant");
+  if (event->should_commit()) {
+    // Group this event together with the ones committed before the counter increased
+    set_current_safepoint_id(event, -1);
+    event->commit();
+  }
+}
 
 // --------------------------------------------------------------------------------------------------
 // Implementation of Safepoint begin/end
@@ -339,16 +405,10 @@ void SafepointSynchronize::begin() {
     if (PrintSafepointStatistics) {
       update_statistics_on_spin_end();
     }
-
     if (sync_event.should_commit()) {
-      // Group this event together with the ones committed after the counter is increased
-      sync_event.set_safepointId(safepoint_counter() + 1);
-      sync_event.set_initialThreadCount(initial_running);
-      sync_event.set_runningThreadCount(_waiting_to_block);
-      sync_event.set_iterations(iterations);
-      sync_event.commit();
+      post_safepoint_synchronize_event(&sync_event, initial_running, _waiting_to_block, iterations);
     }
-  } // EventSafepointStateSynchronization destroyed here.
+  }
 
   // wait until all threads are stopped
   {
@@ -391,13 +451,10 @@ void SafepointSynchronize::begin() {
     _state = _synchronized;
 
     OrderAccess::fence();
-
     if (wait_blocked_event.should_commit()) {
-      wait_blocked_event.set_safepointId(safepoint_counter());
-      wait_blocked_event.set_runningThreadCount(initial_waiting_to_block);
-      wait_blocked_event.commit();
+      post_safepoint_wait_blocked_event(&wait_blocked_event, initial_waiting_to_block);
     }
-  } // EventSafepointWaitBlocked
+  }
 
 #ifdef ASSERT
   // Make sure all the threads were visited.
@@ -421,8 +478,7 @@ void SafepointSynchronize::begin() {
     EventSafepointCleanup cleanup_event;
     do_cleanup_tasks();
     if (cleanup_event.should_commit()) {
-      cleanup_event.set_safepointId(safepoint_counter());
-      cleanup_event.commit();
+      post_safepoint_cleanup_event(&cleanup_event);
     }
   }
 
@@ -430,22 +486,18 @@ void SafepointSynchronize::begin() {
     // Record how much time spend on the above cleanup tasks
     update_statistics_on_cleanup_end(os::javaTimeNanos());
   }
+
   if (begin_event.should_commit()) {
-    begin_event.set_safepointId(safepoint_counter());
-    begin_event.set_totalThreadCount(nof_threads);
-    begin_event.set_jniCriticalThreadCount(_current_jni_active_count);
-    begin_event.commit();
+    post_safepoint_begin_event(&begin_event, nof_threads, _current_jni_active_count);
   }
 }
 
 // Wake up all threads, so they are ready to resume execution after the safepoint
 // operation has been carried out
 void SafepointSynchronize::end() {
-  EventSafepointEnd event;
-  int safepoint_id = safepoint_counter(); // Keep the odd counter as "id"
-
   assert(Threads_lock->owned_by_self(), "must hold Threads_lock");
   assert((_safepoint_counter & 0x1) == 1, "must be odd");
+  EventSafepointEnd event;
   _safepoint_counter ++;
   // memory fence isn't required here since an odd _safepoint_counter
   // value can do no harm and a fence is issued below anyway.
@@ -541,10 +593,8 @@ void SafepointSynchronize::end() {
   // record this time so VMThread can keep track how much time has elapsed
   // since last safepoint.
   _end_of_last_safepoint = os::javaTimeMillis();
-
   if (event.should_commit()) {
-    event.set_safepointId(safepoint_id);
-    event.commit();
+    post_safepoint_end_event(&event);
   }
 }
 
@@ -554,14 +604,6 @@ bool SafepointSynchronize::is_cleanup_needed() {
   // Need a safepoint if some inline cache buffers is non-empty
   if (!InlineCacheBuffer::is_empty()) return true;
   return false;
-}
-
-static void event_safepoint_cleanup_task_commit(EventSafepointCleanupTask& event, const char* name) {
-  if (event.should_commit()) {
-    event.set_safepointId(SafepointSynchronize::safepoint_counter());
-    event.set_name(name);
-    event.commit();
-  }
 }
 
 class ParallelSPCleanupThreadClosure : public ThreadClosure {
@@ -607,7 +649,9 @@ public:
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
       ObjectSynchronizer::deflate_idle_monitors(_counters);
-      event_safepoint_cleanup_task_commit(event, name);
+      if (event.should_commit()) {
+        post_safepoint_cleanup_task_event(&event, name);
+      }
     }
 
     if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
@@ -615,7 +659,9 @@ public:
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
       InlineCacheBuffer::update_inline_caches();
-      event_safepoint_cleanup_task_commit(event, name);
+      if (event.should_commit()) {
+        post_safepoint_cleanup_task_event(&event, name);
+      }
     }
 
     if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
@@ -623,7 +669,9 @@ public:
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
       CompilationPolicy::policy()->do_safepoint_work();
-      event_safepoint_cleanup_task_commit(event, name);
+      if (event.should_commit()) {
+        post_safepoint_cleanup_task_event(&event, name);
+      }
     }
 
     if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
@@ -632,7 +680,9 @@ public:
         EventSafepointCleanupTask event;
         TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
         SymbolTable::rehash_table();
-        event_safepoint_cleanup_task_commit(event, name);
+        if (event.should_commit()) {
+          post_safepoint_cleanup_task_event(&event, name);
+        }
       }
     }
 
@@ -642,7 +692,9 @@ public:
         EventSafepointCleanupTask event;
         TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
         StringTable::rehash_table();
-        event_safepoint_cleanup_task_commit(event, name);
+        if (event.should_commit()) {
+          post_safepoint_cleanup_task_event(&event, name);
+        }
       }
     }
 
@@ -653,7 +705,9 @@ public:
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
       ClassLoaderDataGraph::purge_if_needed();
-      event_safepoint_cleanup_task_commit(event, name);
+      if (event.should_commit()) {
+        post_safepoint_cleanup_task_event(&event, name);
+      }
     }
 
     if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE)) {
@@ -661,7 +715,9 @@ public:
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
       ClassLoaderDataGraph::resize_if_needed();
-      event_safepoint_cleanup_task_commit(event, name);
+      if (event.should_commit()) {
+        post_safepoint_cleanup_task_event(&event, name);
+      }
     }
     _subtasks.all_tasks_completed(_num_workers);
   }

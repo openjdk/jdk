@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -22,6 +22,7 @@
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
 import com.sun.org.apache.xalan.internal.xsltc.runtime.Constants;
+import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -194,14 +195,16 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
             // checking if Namespace processing is being done
             String attQName = attrs.getQName(i);
             String attURI = attrs.getURI(i);
+            String type = (attrs.getType(i) == null) ?
+                    XMLSymbols.fCDATASymbol : attrs.getType(i);
             if (attrs.getLocalName(i).equals("")) {
                 tmp.setAttribute(attQName, attrs.getValue(i));
-                if (attrs.getType(i).equals("ID")) {
+                if (type.equals("ID")) {
                     tmp.setIdAttribute(attQName, true);
                 }
             } else {
                 tmp.setAttributeNS(attURI, attQName, attrs.getValue(i));
-                if (attrs.getType(i).equals("ID")) {
+                if (type.equals("ID")) {
                     tmp.setIdAttributeNS(attURI, attrs.getLocalName(i), true);
                 }
             }

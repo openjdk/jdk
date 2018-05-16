@@ -31,7 +31,6 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/shared/referenceProcessor.hpp"
-#include "utilities/ticks.hpp"
 
 class G1CollectedHeap;
 class G1CMBitMap;

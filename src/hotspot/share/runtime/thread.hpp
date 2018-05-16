@@ -44,14 +44,16 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/unhandledOops.hpp"
-#include "trace/traceBackend.hpp"
-#include "trace/traceMacros.hpp"
 #include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #ifdef ZERO
 # include "stack_zero.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/support/jfrThreadExtension.hpp"
+#endif
+
 
 class SafeThreadsListPtr;
 class ThreadSafepointState;
@@ -337,7 +339,7 @@ class Thread: public ThreadShadow {
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
 
-  mutable TRACE_DATA _trace_data;               // Thread-local data for tracing
+  JFR_ONLY(DEFINE_THREAD_LOCAL_FIELD_JFR;)      // Thread-local data for jfr
 
   int   _vm_operation_started_count;            // VM_Operation support
   int   _vm_operation_completed_count;          // VM_Operation support
@@ -515,8 +517,8 @@ class Thread: public ThreadShadow {
   void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
   inline jlong cooked_allocated_bytes();
 
-  TRACE_DEFINE_THREAD_TRACE_DATA_OFFSET;
-  TRACE_DATA* trace_data() const        { return &_trace_data; }
+  JFR_ONLY(DEFINE_THREAD_LOCAL_ACCESSOR_JFR;)
+
   bool is_trace_suspend()               { return (_suspend_flags & _trace_flag) != 0; }
 
   // VM operation support
@@ -697,6 +699,8 @@ protected:
 #undef TLAB_FIELD_OFFSET
 
   static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
+
+  JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
  public:
   volatile intptr_t _Stalled;

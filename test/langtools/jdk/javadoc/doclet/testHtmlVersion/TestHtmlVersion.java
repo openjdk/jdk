@@ -41,12 +41,14 @@ public class TestHtmlVersion extends JavadocTester {
 
     @Test
     void test1() {
+        setAutomaticCheckLinks(false); // @ignore JDK-8202624
         javadoc("-d", "out-1",
                 "-private",
                 "-linksource",
                 "-sourcepath", testSrc,
                 "-use",
                 "pkg", "pkg1", "pkg2", "pkg3");
+        setAutomaticCheckLinks(true); // @ignore JDK-8202624
         checkExit(Exit.OK);
 
         html5Output();
@@ -55,6 +57,7 @@ public class TestHtmlVersion extends JavadocTester {
 
     @Test
     void test2() {
+        setAutomaticCheckLinks(false); // @ignore JDK-8202624
         javadoc("-d", "out-2",
                 "-html4",
                 "-private",
@@ -62,6 +65,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-use",
                 "pkg", "pkg1", "pkg2", "pkg3");
+        setAutomaticCheckLinks(true); // @ignore JDK-8202624
         checkExit(Exit.OK);
 
         html4Output();
@@ -70,6 +74,7 @@ public class TestHtmlVersion extends JavadocTester {
 
     @Test
     void test3() {
+        setAutomaticCheckLinks(false); // @ignore JDK-8202624
         javadoc("-d", "out-3",
                 "-html4",
                 "-private",
@@ -77,6 +82,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "-sourcepath", testSrc,
                 "-use",
                 "pkg", "pkg1", "pkg2", "pkg3");
+        setAutomaticCheckLinks(true); // @ignore JDK-8202624
         checkExit(Exit.OK);
 
         html4Output();

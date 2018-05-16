@@ -28,10 +28,8 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "runtime/os.hpp"
-#include "trace/traceBackend.hpp"
-#include "trace/tracing.hpp"
-#include "tracefiles/traceEventClasses.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/evacuationInfo.hpp"
@@ -160,8 +158,8 @@ void OldGCTracer::send_old_gc_event() const {
   }
 }
 
-static TraceStructCopyFailed to_trace_struct(const CopyFailedInfo& cf_info) {
-  TraceStructCopyFailed failed_info;
+static JfrStructCopyFailed to_struct(const CopyFailedInfo& cf_info) {
+  JfrStructCopyFailed failed_info;
   failed_info.set_objectCount(cf_info.failed_count());
   failed_info.set_firstSize(cf_info.first_size());
   failed_info.set_smallestSize(cf_info.smallest_size());
@@ -173,7 +171,7 @@ void YoungGCTracer::send_promotion_failed_event(const PromotionFailedInfo& pf_in
   EventPromotionFailed e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
-    e.set_promotionFailed(to_trace_struct(pf_info));
+    e.set_promotionFailed(to_struct(pf_info));
     e.set_thread(pf_info.thread_trace_id());
     e.commit();
   }
@@ -231,14 +229,14 @@ void G1NewTracer::send_evacuation_failed_event(const EvacuationFailedInfo& ef_in
   EventEvacuationFailed e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
-    e.set_evacuationFailed(to_trace_struct(ef_info));
+    e.set_evacuationFailed(to_struct(ef_info));
     e.commit();
   }
 }
 
-static TraceStructG1EvacuationStatistics
+static JfrStructG1EvacuationStatistics
 create_g1_evacstats(unsigned gcid, const G1EvacSummary& summary) {
-  TraceStructG1EvacuationStatistics s;
+  JfrStructG1EvacuationStatistics s;
   s.set_gcId(gcid);
   s.set_allocated(summary.allocated() * HeapWordSize);
   s.set_wasted(summary.wasted() * HeapWordSize);
@@ -313,8 +311,8 @@ void G1NewTracer::send_adaptive_ihop_statistics(size_t threshold,
 
 #endif // INCLUDE_G1GC
 
-static TraceStructVirtualSpace to_trace_struct(const VirtualSpaceSummary& summary) {
-  TraceStructVirtualSpace space;
+static JfrStructVirtualSpace to_struct(const VirtualSpaceSummary& summary) {
+  JfrStructVirtualSpace space;
   space.set_start((TraceAddress)summary.start());
   space.set_committedEnd((TraceAddress)summary.committed_end());
   space.set_committedSize(summary.committed_size());
@@ -323,8 +321,8 @@ static TraceStructVirtualSpace to_trace_struct(const VirtualSpaceSummary& summar
   return space;
 }
 
-static TraceStructObjectSpace to_trace_struct(const SpaceSummary& summary) {
-  TraceStructObjectSpace space;
+static JfrStructObjectSpace to_struct(const SpaceSummary& summary) {
+  JfrStructObjectSpace space;
   space.set_start((TraceAddress)summary.start());
   space.set_end((TraceAddress)summary.end());
   space.set_used(summary.used());
@@ -344,7 +342,7 @@ class GCHeapSummaryEventSender : public GCHeapSummaryVisitor {
     if (e.should_commit()) {
       e.set_gcId(GCId::current());
       e.set_when((u1)_when);
-      e.set_heapSpace(to_trace_struct(heap_space));
+      e.set_heapSpace(to_struct(heap_space));
       e.set_heapUsed(heap_summary->used());
       e.commit();
     }
@@ -380,12 +378,12 @@ class GCHeapSummaryEventSender : public GCHeapSummaryVisitor {
       e.set_gcId(GCId::current());
       e.set_when((u1)_when);
 
-      e.set_oldSpace(to_trace_struct(ps_heap_summary->old()));
-      e.set_oldObjectSpace(to_trace_struct(ps_heap_summary->old_space()));
-      e.set_youngSpace(to_trace_struct(ps_heap_summary->young()));
-      e.set_edenSpace(to_trace_struct(ps_heap_summary->eden()));
-      e.set_fromSpace(to_trace_struct(ps_heap_summary->from()));
-      e.set_toSpace(to_trace_struct(ps_heap_summary->to()));
+      e.set_oldSpace(to_struct(ps_heap_summary->old()));
+      e.set_oldObjectSpace(to_struct(ps_heap_summary->old_space()));
+      e.set_youngSpace(to_struct(ps_heap_summary->young()));
+      e.set_edenSpace(to_struct(ps_heap_summary->eden()));
+      e.set_fromSpace(to_struct(ps_heap_summary->from()));
+      e.set_toSpace(to_struct(ps_heap_summary->to()));
       e.commit();
     }
   }
@@ -396,8 +394,8 @@ void GCTracer::send_gc_heap_summary_event(GCWhen::Type when, const GCHeapSummary
   heap_summary.accept(&visitor);
 }
 
-static TraceStructMetaspaceSizes to_trace_struct(const MetaspaceSizes& sizes) {
-  TraceStructMetaspaceSizes meta_sizes;
+static JfrStructMetaspaceSizes to_struct(const MetaspaceSizes& sizes) {
+  JfrStructMetaspaceSizes meta_sizes;
 
   meta_sizes.set_committed(sizes.committed());
   meta_sizes.set_used(sizes.used());
@@ -412,9 +410,9 @@ void GCTracer::send_meta_space_summary_event(GCWhen::Type when, const MetaspaceS
     e.set_gcId(GCId::current());
     e.set_when((u1) when);
     e.set_gcThreshold(meta_space_summary.capacity_until_GC());
-    e.set_metaspace(to_trace_struct(meta_space_summary.meta_space()));
-    e.set_dataSpace(to_trace_struct(meta_space_summary.data_space()));
-    e.set_classSpace(to_trace_struct(meta_space_summary.class_space()));
+    e.set_metaspace(to_struct(meta_space_summary.meta_space()));
+    e.set_dataSpace(to_struct(meta_space_summary.data_space()));
+    e.set_classSpace(to_struct(meta_space_summary.class_space()));
     e.commit();
   }
 }

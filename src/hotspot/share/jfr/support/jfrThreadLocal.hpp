@@ -1,0 +1,225 @@
+/*
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#ifndef SHARE_VM_JFR_SUPPORT_JFRTHREADLOCAL_HPP
+#define SHARE_VM_JFR_SUPPORT_JFRTHREADLOCAL_HPP
+
+#include "jfr/recorder/checkpoint/jfrCheckpointBlob.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
+#include "utilities/sizes.hpp"
+
+class JavaThread;
+class JfrBuffer;
+class JfrStackFrame;
+
+class JfrThreadLocal {
+ private:
+  jobject _java_event_writer;
+  mutable JfrBuffer* _java_buffer;
+  mutable JfrBuffer* _native_buffer;
+  JfrBuffer* _shelved_buffer;
+  mutable JfrStackFrame* _stackframes;
+  mutable traceid _trace_id;
+  JfrCheckpointBlobHandle _thread_cp;
+  u8 _data_lost;
+  traceid _stack_trace_id;
+  jlong _user_time;
+  jlong _cpu_time;
+  jlong _wallclock_time;
+  unsigned int _stack_trace_hash;
+  mutable u4 _stackdepth;
+  volatile jint _entering_suspend_flag;
+
+  JfrBuffer* install_native_buffer() const;
+  JfrBuffer* install_java_buffer() const;
+  JfrStackFrame* install_stackframes() const;
+
+ public:
+  JfrThreadLocal();
+
+  JfrBuffer* native_buffer() const {
+    return _native_buffer != NULL ? _native_buffer : install_native_buffer();
+  }
+
+  bool has_native_buffer() const {
+    return _native_buffer != NULL;
+  }
+
+  void set_native_buffer(JfrBuffer* buffer) {
+    _native_buffer = buffer;
+  }
+
+  JfrBuffer* java_buffer() const {
+    return _java_buffer != NULL ? _java_buffer : install_java_buffer();
+  }
+
+  bool has_java_buffer() const {
+    return _java_buffer != NULL;
+  }
+
+  void set_java_buffer(JfrBuffer* buffer) {
+    _java_buffer = buffer;
+  }
+
+  JfrBuffer* shelved_buffer() const {
+    return _shelved_buffer;
+  }
+
+  void shelve_buffer(JfrBuffer* buffer) {
+    _shelved_buffer = buffer;
+  }
+
+  bool has_java_event_writer() const {
+    return _java_event_writer != NULL;
+  }
+
+  jobject java_event_writer() {
+    return _java_event_writer;
+  }
+
+  void set_java_event_writer(jobject java_event_writer) {
+    _java_event_writer = java_event_writer;
+  }
+
+  JfrStackFrame* stackframes() const {
+    return _stackframes != NULL ? _stackframes : install_stackframes();
+  }
+
+  void set_stackframes(JfrStackFrame* frames) {
+    _stackframes = frames;
+  }
+
+  u4 stackdepth() const {
+    return _stackdepth;
+  }
+
+  void set_stackdepth(u4 depth) {
+    _stackdepth = depth;
+  }
+
+  traceid thread_id() const {
+    return _trace_id;
+  }
+
+  void set_thread_id(traceid thread_id) {
+    _trace_id = thread_id;
+  }
+
+  void set_cached_stack_trace_id(traceid id, unsigned int hash = 0) {
+    _stack_trace_id = id;
+    _stack_trace_hash = hash;
+  }
+
+  bool has_cached_stack_trace() const {
+    return _stack_trace_id != max_julong;
+  }
+
+  void clear_cached_stack_trace() {
+    _stack_trace_id = max_julong;
+    _stack_trace_hash = 0;
+  }
+
+  traceid cached_stack_trace_id() const {
+    return _stack_trace_id;
+  }
+
+  unsigned int cached_stack_trace_hash() const {
+    return _stack_trace_hash;
+  }
+
+  void set_trace_block() {
+    _entering_suspend_flag = 1;
+  }
+
+  void clear_trace_block() {
+    _entering_suspend_flag = 0;
+  }
+
+  bool is_trace_block() const {
+    return _entering_suspend_flag != 0;
+  }
+
+  u8 data_lost() const {
+    return _data_lost;
+  }
+
+  u8 add_data_lost(u8 value);
+
+  jlong get_user_time() const {
+    return _user_time;
+  }
+
+  void set_user_time(jlong user_time) {
+    _user_time = user_time;
+  }
+
+  jlong get_cpu_time() const {
+    return _cpu_time;
+  }
+
+  void set_cpu_time(jlong cpu_time) {
+    _cpu_time = cpu_time;
+  }
+
+  jlong get_wallclock_time() const {
+    return _wallclock_time;
+  }
+
+  void set_wallclock_time(jlong wallclock_time) {
+    _wallclock_time = wallclock_time;
+  }
+
+  traceid trace_id() const {
+    return _trace_id;
+  }
+
+  traceid* const trace_id_addr() const {
+    return &_trace_id;
+  }
+
+  void set_trace_id(traceid id) const {
+    _trace_id = id;
+  }
+
+  bool has_thread_checkpoint() const;
+  void set_thread_checkpoint(const JfrCheckpointBlobHandle& handle);
+  const JfrCheckpointBlobHandle& thread_checkpoint() const;
+
+  static JfrBuffer* acquire(Thread* t, size_t size = 0);
+  static void release(JfrBuffer* buffer, Thread* t);
+  static void destroy_stackframes(Thread* t);
+  static void on_exit(JavaThread* t);
+  static void on_destruct(Thread* t);
+
+  // Code generation
+  static ByteSize trace_id_offset() {
+    return in_ByteSize(offset_of(JfrThreadLocal, _trace_id));
+  }
+
+  static ByteSize java_event_writer_offset() {
+    return in_ByteSize(offset_of(JfrThreadLocal, _java_event_writer));
+  }
+};
+
+#endif // SHARE_VM_JFR_SUPPORT_JFRTHREADLOCAL_HPP

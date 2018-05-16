@@ -272,4 +272,14 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define NOINLINE     __attribute__ ((noinline))
 #define ALWAYSINLINE inline __attribute__ ((always_inline))
 
+// Alignment
+//
+// NOTE! The "+0" below is a workaround for a known bug in older GCC versions
+// (known to fail with 4.6.0, fixed in 4.9.0). This bug affects systems such as
+// RedHat/Oracle Linux 7.5, which ships with GCC 4.8.5. For more details, see
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55382 and
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53017
+//
+#define ATTRIBUTE_ALIGNED(x) __attribute__((aligned(x+0)))
+
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_GCC_HPP

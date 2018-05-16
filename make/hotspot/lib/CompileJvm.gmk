@@ -177,6 +177,13 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     PRECOMPILED_HEADER_EXCLUDE := $(JVM_PRECOMPILED_HEADER_EXCLUDE), \
 ))
 
+# Always recompile vm_version.cpp if libjvm needs to be relinked. This ensures
+# that the internal vm version is updated as it relies on __DATE__ and __TIME__
+# macros.
+VM_VERSION_OBJ := $(JVM_OUTPUTDIR)/objs/vm_version$(OBJ_SUFFIX)
+$(VM_VERSION_OBJ): $(filter-out $(VM_VERSION_OBJ) $(JVM_MAPFILE), \
+    $(BUILD_LIBJVM_TARGET_DEPS))
+
 ifeq ($(OPENJDK_TARGET_OS), windows)
   # It doesn't matter which jvm.lib file gets exported, but we need
   # to pick just one.

@@ -35,6 +35,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -57,11 +58,11 @@
 #include "runtime/sweeper.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "trace/tracing.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -1945,8 +1946,7 @@ static void codecache_print(outputStream* out, bool detailed) {
   }
 }
 
-void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, EventCompilation& event, bool success, ciEnv* ci_env) {
-
+void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env) {
   if (success) {
     task->mark_success();
     if (ci_env != NULL) {
@@ -1959,19 +1959,21 @@ void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, Even
       }
     }
   }
-
   // simulate crash during compilation
   assert(task->compile_id() != CICrashAt, "just as planned");
-  if (event.should_commit()) {
-    event.set_method(task->method());
-    event.set_compileId(task->compile_id());
-    event.set_compileLevel(task->comp_level());
-    event.set_succeded(task->is_success());
-    event.set_isOsr(task->osr_bci() != CompileBroker::standard_entry_bci);
-    event.set_codeSize((task->code() == NULL) ? 0 : task->code()->total_size());
-    event.set_inlinedBytes(task->num_inlined_bytecodes());
-    event.commit();
-  }
+}
+
+static void post_compilation_event(EventCompilation* event, CompileTask* task) {
+  assert(event != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  event->set_method(task->method());
+  event->set_compileId(task->compile_id());
+  event->set_compileLevel(task->comp_level());
+  event->set_succeded(task->is_success());
+  event->set_isOsr(task->osr_bci() != CompileBroker::standard_entry_bci);
+  event->set_codeSize((task->code() == NULL) ? 0 : task->code()->total_size());
+  event->set_inlinedBytes(task->num_inlined_bytecodes());
+  event->commit();
 }
 
 int DirectivesStack::_depth = 0;
@@ -2066,7 +2068,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
           compilable = ciEnv::MethodCompilable_not_at_tier;
         }
     }
-    post_compile(thread, task, event, task->code() != NULL, NULL);
+    post_compile(thread, task, task->code() != NULL, NULL);
+    if (event.should_commit()) {
+      post_compilation_event(&event, task);
+    }
 
   } else
 #endif // INCLUDE_JVMCI
@@ -2123,7 +2128,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       ci_env.report_failure(failure_reason);
     }
 
-    post_compile(thread, task, event, !ci_env.failing(), &ci_env);
+    post_compile(thread, task, !ci_env.failing(), &ci_env);
+    if (event.should_commit()) {
+      post_compilation_event(&event, task);
+    }
   }
   // Remove the JNI handle block after the ciEnv destructor has run in
   // the previous block.

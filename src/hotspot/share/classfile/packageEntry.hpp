@@ -29,7 +29,12 @@
 #include "oops/symbol.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_JFR
+#include "jfr/support/jfrTraceIdExtension.hpp"
+#endif
+
 
 // A PackageEntry basically represents a Java package.  It contains:
 //   - Symbol* containing the package's name.
@@ -104,7 +109,7 @@ private:
   // Contains list of modules this package is qualifiedly exported to.  Access
   // to this list is protected by the Module_lock.
   GrowableArray<ModuleEntry*>* _qualified_exports;
-  TRACE_DEFINE_TRACE_ID_FIELD;
+  JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
   // Initial size of a package entry's list of qualified exports.
   enum {QUAL_EXP_SIZE = 43};
@@ -197,9 +202,9 @@ public:
   }
 
   // iteration of qualified exports
-  void package_exports_do(ModuleClosure* const f);
+  void package_exports_do(ModuleClosure* f);
 
-  TRACE_DEFINE_TRACE_ID_METHODS;
+  JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
   // Purge dead weak references out of exported list when any given class loader is unloaded.
   void purge_qualified_exports();

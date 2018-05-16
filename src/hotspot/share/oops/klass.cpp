@@ -44,7 +44,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
-#include "trace/traceMacros.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -467,7 +466,7 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
 
 void Klass::remove_unshareable_info() {
   assert (DumpSharedSpaces, "only called for DumpSharedSpaces");
-  TRACE_REMOVE_ID(this);
+  JFR_ONLY(REMOVE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
     ResourceMark rm;
     log_trace(cds, unshareable)("remove: %s", external_name());
@@ -495,7 +494,7 @@ void Klass::remove_java_mirror() {
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(is_shared(), "must be set");
-  TRACE_RESTORE_ID(this);
+  JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
     ResourceMark rm;
     log_trace(cds, unshareable)("restore: %s", external_name());

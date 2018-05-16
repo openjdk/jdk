@@ -32,10 +32,13 @@
 #include "oops/symbol.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "trace/traceMacros.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_JFR
+#include "jfr/support/jfrTraceIdExtension.hpp"
+#endif
 
 #define UNNAMED_MODULE "Unnamed Module"
 #define JAVAPKG "java"
@@ -69,7 +72,7 @@ private:
   bool _must_walk_reads;               // walk module's reads list at GC safepoints to purge out dead modules
   bool _is_open;                       // whether the packages in the module are all unqualifiedly exported
   bool _is_patched;                    // whether the module is patched via --patch-module
-  TRACE_DEFINE_TRACE_ID_FIELD;
+  JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
   enum {MODULE_READS_SIZE = 101};      // Initial size of list of modules that the module can read.
 
 public:
@@ -164,8 +167,6 @@ public:
   // iteration support for readability
   void module_reads_do(ModuleClosure* const f);
 
-  TRACE_DEFINE_TRACE_ID_METHODS;
-
   // Purge dead weak references out of reads list when any given class loader is unloaded.
   void purge_reads();
   void delete_reads();
@@ -178,12 +179,14 @@ public:
 
   void print(outputStream* st = tty);
   void verify();
+
+  JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 };
 
 // Iterator interface
 class ModuleClosure: public StackObj {
  public:
-  virtual void do_module(ModuleEntry* const module) = 0;
+  virtual void do_module(ModuleEntry* module) = 0;
 };
 
 

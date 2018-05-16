@@ -1,0 +1,94 @@
+#
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+$(eval $(call IncludeCustomExtension, hotspot/gensrc/GensrcJfr.gmk))
+
+################################################################################
+# Build tools needed for the Jfr source code generation
+
+JFR_TOOLS_SRCDIR := $(TOPDIR)/src/hotspot/share/jfr/metadata
+JFR_TOOLS_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/tools/jfr
+
+$(eval $(call SetupJavaCompiler, GENERATE_JFRBYTECODE, \
+    JAVAC := $(JAVAC), \
+    FLAGS := $(DISABLE_WARNINGS), \
+    SERVER_DIR := $(SJAVAC_SERVER_DIR), \
+    SERVER_JVM := $(SJAVAC_SERVER_JAVA), \
+    DISABLE_SJAVAC := true, \
+))
+
+$(eval $(call SetupJavaCompilation, BUILD_JFR_TOOLS, \
+    SETUP := GENERATE_JFRBYTECODE, \
+    SRC := $(JFR_TOOLS_SRCDIR), \
+    INCLUDE_FILES := GenerateJfrFiles.java, \
+    BIN := $(JFR_TOOLS_OUTPUTDIR), \
+))
+
+TOOL_JFR_GEN := $(JAVA_SMALL) -cp $(JFR_TOOLS_OUTPUTDIR) GenerateJfrFiles
+
+################################################################################
+# Setup make rules for Jfr file file generation.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name. This name is
+# also used as the name of the output file.
+#
+# Remaining parameters are named arguments. These include:
+#   XML_FILE -- The input source file to use
+#   XSD_FILE -- The input schema for validation
+#   OUTPUT_DIR -- The directory to put the generated file in
+SetupJfrGeneration = $(NamedParamsMacroTemplate)
+define SetupJfrGenerationBody
+  $$($1_OUTPUT_DIR)/$1: $$($1_XML_FILE) $$($1_XSD_FILE) $$(BUILD_JFR_TOOLS)
+	$$(call LogInfo, Generating $$(@F))
+	$$(call MakeDir, $$(@D))
+	$$(call ExecuteWithLog, $$@, $$(TOOL_JFR_GEN) $$($1_XML_FILE) $$($1_XSD_FILE) $$($1_OUTPUT_DIR))
+	test -f $$@
+
+  TARGETS += $$($1_OUTPUT_DIR)/$1
+
+endef
+
+################################################################################
+# Create files in gensrc/jfrfiles
+
+JFR_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jfrfiles
+JFR_SRCDIR := $(TOPDIR)/src/hotspot/share/jfr/metadata
+
+METADATA_XML ?= $(JFR_SRCDIR)/metadata.xml
+METADATA_XSD ?= $(JFR_SRCDIR)/metadata.xsd
+
+# Changing these will trigger a rebuild of generated jfr files.
+JFR_DEPS += \
+    $(METADATA_XML) \
+    $(METADATA_XSD) \
+    #
+
+# our generator will generate all files in one go, so only need to setup one target rule
+$(eval $(call SetupJfrGeneration, jfrEventClasses.hpp, \
+    XML_FILE := $(METADATA_XML), \
+    XSD_FILE := $(METADATA_XSD), \
+    OUTPUT_DIR := $(JFR_OUTPUTDIR), \
+))

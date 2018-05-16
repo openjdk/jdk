@@ -29,6 +29,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/parse.hpp"
@@ -484,6 +485,25 @@ const char* InlineTree::check_can_parse(ciMethod* callee) {
   return NULL;
 }
 
+static void post_inlining_event(int compile_id,const char* msg, bool success, int bci, ciMethod* caller, ciMethod* callee) {
+  assert(caller != NULL, "invariant");
+  assert(callee != NULL, "invariant");
+  EventCompilerInlining event;
+  if (event.should_commit()) {
+    JfrStructCalleeMethod callee_struct;
+    callee_struct.set_type(callee->holder()->name()->as_utf8());
+    callee_struct.set_name(callee->name()->as_utf8());
+    callee_struct.set_descriptor(callee->signature()->as_symbol()->as_utf8());
+    event.set_compileId(compile_id);
+    event.set_message(msg);
+    event.set_succeeded(success);
+    event.set_bci(bci);
+    event.set_caller(caller->get_Method());
+    event.set_callee(callee_struct);
+    event.commit();
+  }
+}
+
 //------------------------------print_inlining---------------------------------
 void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
                                 ciMethod* caller_method, bool success) const {
@@ -507,18 +527,7 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
       //tty->print("  bcs: %d+%d  invoked: %d", top->count_inline_bcs(), callee_method->code_size(), callee_method->interpreter_invocation_count());
     }
   }
-#if INCLUDE_TRACE
-  EventCompilerInlining event;
-  if (event.should_commit()) {
-    event.set_compileId(C->compile_id());
-    event.set_message(inline_msg);
-    event.set_succeeded(success);
-    event.set_bci(caller_bci);
-    event.set_caller(caller_method->get_Method());
-    event.set_callee(callee_method->to_trace_struct());
-    event.commit();
-  }
-#endif // INCLUDE_TRACE
+  post_inlining_event(C->compile_id(), inline_msg, success, caller_bci, caller_method, callee_method);
 }
 
 //------------------------------ok_to_inline-----------------------------------

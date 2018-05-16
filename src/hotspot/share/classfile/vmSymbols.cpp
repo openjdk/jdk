@@ -350,7 +350,7 @@ vmIntrinsics::ID vmIntrinsics::for_raw_conversion(BasicType src, BasicType dest)
 bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
-#ifdef TRACE_HAVE_INTRINSICS
+#ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
   case vmIntrinsics::_currentTimeMillis:
@@ -388,7 +388,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
 bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
-#ifdef TRACE_HAVE_INTRINSICS
+#ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getClassId:
 #endif
@@ -424,7 +424,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
 bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
-#ifdef TRACE_HAVE_INTRINSICS
+#ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
 #endif
   case vmIntrinsics::_currentTimeMillis:

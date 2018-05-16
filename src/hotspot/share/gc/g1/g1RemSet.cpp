@@ -44,11 +44,12 @@
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/intHisto.hpp"
 #include "utilities/stack.inline.hpp"
-#include "utilities/ticks.inline.hpp"
+#include "utilities/ticks.hpp"
 
 // Collects information about the overall remembered set scan progress during an evacuation.
 class G1RemSetScanState : public CHeapObj<mtGC> {
@@ -428,15 +429,15 @@ void G1RemSet::scan_rem_set(G1ParScanThreadState* pss, uint worker_i) {
 
   G1GCPhaseTimes* p = _g1p->phase_times();
 
-  p->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, TicksToTimeHelper::seconds(cl.rem_set_root_scan_time()));
-  p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_i, TicksToTimeHelper::seconds(cl.rem_set_trim_partially_time()));
+  p->record_time_secs(G1GCPhaseTimes::ScanRS, worker_i, cl.rem_set_root_scan_time().seconds());
+  p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_i, cl.rem_set_trim_partially_time().seconds());
 
   p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_scanned(), G1GCPhaseTimes::ScanRSScannedCards);
   p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_claimed(), G1GCPhaseTimes::ScanRSClaimedCards);
   p->record_thread_work_item(G1GCPhaseTimes::ScanRS, worker_i, cl.cards_skipped(), G1GCPhaseTimes::ScanRSSkippedCards);
 
-  p->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, TicksToTimeHelper::seconds(cl.strong_code_root_scan_time()));
-  p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_i, TicksToTimeHelper::seconds(cl.strong_code_root_trim_partially_time()));
+  p->record_time_secs(G1GCPhaseTimes::CodeRoots, worker_i, cl.strong_code_root_scan_time().seconds());
+  p->add_time_secs(G1GCPhaseTimes::ObjCopy, worker_i, cl.strong_code_root_trim_partially_time().seconds());
 }
 
 // Closure used for updating rem sets. Only called during an evacuation pause.
@@ -935,7 +936,7 @@ public:
                                         "TARS " PTR_FORMAT,
                                         region_idx,
                                         _cm->liveness(region_idx) * HeapWordSize,
-                                        TicksToTimeHelper::seconds(time) * 1000.0,
+                                        time.seconds() * 1000.0,
                                         marked_bytes,
                                         p2i(hr->bottom()),
                                         p2i(top_at_mark_start),
