@@ -1911,12 +1911,16 @@ public class Main {
         return true;
     }
 
-    static <T> String toString(Collection<T> set) {
+    static <T> String toLowerCaseString(Collection<T> set) {
         if (set.isEmpty()) { return ""; }
         return " " + set.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
                   .sorted().collect(joining(" "));
     }
 
+    static <T> String toString(Collection<T> set) {
+        if (set.isEmpty()) { return ""; }
+        return " " + set.stream().map(e -> e.toString()).sorted().collect(joining(" "));
+    }
 
     private void describeModule(InputStream entryInputStream, String uriString)
         throws IOException
@@ -1952,12 +1956,14 @@ public class Main {
                 .sorted(Comparator.comparing(Exports::source))
                 .filter(e -> !e.isQualified())
                 .forEach(e -> sb.append("exports ").append(e.source())
-                                .append(toString(e.modifiers())).append("\n"));
+                                .append(toLowerCaseString(e.modifiers()))
+                                .append("\n"));
 
         // dependences
         md.requires().stream().sorted()
                 .forEach(r -> sb.append("requires ").append(r.name())
-                                .append(toString(r.modifiers())).append("\n"));
+                                .append(toLowerCaseString(r.modifiers()))
+                                .append("\n"));
 
         // service use and provides
         md.uses().stream().sorted()
@@ -1975,7 +1981,7 @@ public class Main {
                 .sorted(Comparator.comparing(Exports::source))
                 .filter(Exports::isQualified)
                 .forEach(e -> sb.append("qualified exports ").append(e.source())
-                                .append(" to").append(toString(e.targets()))
+                                .append(" to").append(toLowerCaseString(e.targets()))
                                 .append("\n"));
 
         // open packages
@@ -1983,15 +1989,15 @@ public class Main {
                 .sorted(Comparator.comparing(Opens::source))
                 .filter(o -> !o.isQualified())
                 .forEach(o -> sb.append("opens ").append(o.source())
-                                 .append(toString(o.modifiers()))
+                                 .append(toLowerCaseString(o.modifiers()))
                                  .append("\n"));
 
         md.opens().stream()
                 .sorted(Comparator.comparing(Opens::source))
                 .filter(Opens::isQualified)
                 .forEach(o -> sb.append("qualified opens ").append(o.source())
-                                 .append(toString(o.modifiers()))
-                                 .append(" to").append(toString(o.targets()))
+                                 .append(toLowerCaseString(o.modifiers()))
+                                 .append(" to").append(toLowerCaseString(o.targets()))
                                  .append("\n"));
 
         // non-exported/non-open packages
