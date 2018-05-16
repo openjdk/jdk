@@ -34,7 +34,7 @@
 #include "oops/klass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 
 template <typename T>
