@@ -1284,16 +1284,18 @@ void LIRGenerator::do_If(If* x) {
     yin->load_item();
   }
 
-  // add safepoint before generating condition code so it can be recomputed
-  if (x->is_safepoint()) {
-    // increment backedge counter if needed
-    increment_backedge_counter(state_for(x, x->state_before()), x->profiled_bci());
-    __ safepoint(LIR_OprFact::illegalOpr, state_for(x, x->state_before()));
-  }
   set_no_result(x);
 
   LIR_Opr left = xin->result();
   LIR_Opr right = yin->result();
+
+  // add safepoint before generating condition code so it can be recomputed
+  if (x->is_safepoint()) {
+    // increment backedge counter if needed
+    increment_backedge_counter_conditionally(lir_cond(cond), left, right, state_for(x, x->state_before()),
+        x->tsux()->bci(), x->fsux()->bci(), x->profiled_bci());
+    __ safepoint(LIR_OprFact::illegalOpr, state_for(x, x->state_before()));
+  }
 
   __ cmp(lir_cond(cond), left, right);
   // Generate branch profiling. Profiling code doesn't kill flags.
