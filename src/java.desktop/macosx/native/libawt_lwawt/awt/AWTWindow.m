@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,7 +262,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
         } else {
             [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorDefault];
         }
-    } 
+    }
 }
 
 - (id) initWithPlatformWindow:(JNFWeakJObjectWrapper *)platformWindow
@@ -465,7 +465,7 @@ AWT_ASSERT_APPKIT_THREAD;
 // Tests whether window is blocked by modal dialog/window
 - (BOOL) isBlocked {
     BOOL isBlocked = NO;
-    
+
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
     if (platformWindow != NULL) {
@@ -473,7 +473,7 @@ AWT_ASSERT_APPKIT_THREAD;
         isBlocked = JNFCallBooleanMethod(env, platformWindow, jm_isBlocked) == JNI_TRUE ? YES : NO;
         (*env)->DeleteLocalRef(env, platformWindow);
     }
-    
+
     return isBlocked;
 }
 
@@ -679,7 +679,7 @@ AWT_ASSERT_APPKIT_THREAD;
         JNFCallVoidMethod(env, platformWindow, jm_windowWillMiniaturize);
         (*env)->DeleteLocalRef(env, platformWindow);
     }
-    // Excplicitly make myself a key window to avoid possible
+    // Explicitly make myself a key window to avoid possible
     // negative visual effects during iconify operation
     [self.nsWindow makeKeyAndOrderFront:self.nsWindow];
     [self iconifyChildWindows:YES];
@@ -713,13 +713,47 @@ AWT_ASSERT_APPKIT_THREAD;
     }
 }
 
+- (void) windowDidBecomeMain: (NSNotification *) notification {
+AWT_ASSERT_APPKIT_THREAD;
+    [AWTToolkit eventCountPlusPlus];
+#ifdef DEBUG
+    NSLog(@"became main: %d %@ %@", [self.nsWindow isKeyWindow], [self.nsWindow title], [self menuBarForWindow]);
+#endif
+
+    if (![self.nsWindow isKeyWindow]) {
+        [self activateWindowMenuBar];
+    }
+
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
+    if (platformWindow != NULL) {
+        static JNF_MEMBER_CACHE(jm_windowDidBecomeMain, jc_CPlatformWindow, "windowDidBecomeMain", "()V");
+        JNFCallVoidMethod(env, platformWindow, jm_windowDidBecomeMain);
+        (*env)->DeleteLocalRef(env, platformWindow);
+    }
+}
 
 - (void) windowDidBecomeKey: (NSNotification *) notification {
 AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
+#ifdef DEBUG
+    NSLog(@"became key: %d %@ %@", [self.nsWindow isMainWindow], [self.nsWindow title], [self menuBarForWindow]);
+#endif
     AWTWindow *opposite = [AWTWindow lastKeyWindow];
 
-    // Finds appropriate menubar in our hierarchy,
+    if (![self.nsWindow isMainWindow]) {
+        [self activateWindowMenuBar];
+    }
+
+    [AWTWindow setLastKeyWindow:nil];
+
+    [self _deliverWindowFocusEvent:YES oppositeWindow: opposite];
+    [self orderChildWindows:YES];
+}
+
+- (void) activateWindowMenuBar {
+AWT_ASSERT_APPKIT_THREAD;
+    // Finds appropriate menubar in our hierarchy
     AWTWindow *awtWindow = self;
     while (awtWindow.ownerWindow != nil) {
         awtWindow = awtWindow.ownerWindow;
@@ -738,26 +772,48 @@ AWT_ASSERT_APPKIT_THREAD;
     }
 
     [CMenuBar activate:menuBar modallyDisabled:isDisabled];
-
-    [AWTWindow setLastKeyWindow:nil];
-
-    [self _deliverWindowFocusEvent:YES oppositeWindow: opposite];
-    [self orderChildWindows:YES];
 }
+
+#ifdef DEBUG
+- (CMenuBar *) menuBarForWindow {
+AWT_ASSERT_APPKIT_THREAD;
+    AWTWindow *awtWindow = self;
+    while (awtWindow.ownerWindow != nil) {
+        awtWindow = awtWindow.ownerWindow;
+    }
+    return awtWindow.javaMenuBar;
+}
+#endif
 
 - (void) windowDidResignKey: (NSNotification *) notification {
     // TODO: check why sometimes at start is invoked *not* on AppKit main thread.
 AWT_ASSERT_APPKIT_THREAD;
     [AWTToolkit eventCountPlusPlus];
-    [self.javaMenuBar deactivate];
-
-    // In theory, this might cause flickering if the window gaining focus
-    // has its own menu. However, I couldn't reproduce it on practice, so
-    // perhaps this is a non issue.
-    CMenuBar* defaultMenu = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
-    if (defaultMenu != nil) {
-        [CMenuBar activate:defaultMenu modallyDisabled:NO];
+#ifdef DEBUG
+    NSLog(@"resigned key: %d %@ %@", [self.nsWindow isMainWindow], [self.nsWindow title], [self menuBarForWindow]);
+#endif
+    if (![self.nsWindow isMainWindow]) {
+        [self deactivateWindow];
     }
+}
+
+- (void) windowDidResignMain: (NSNotification *) notification {
+AWT_ASSERT_APPKIT_THREAD;
+    [AWTToolkit eventCountPlusPlus];
+#ifdef DEBUG
+    NSLog(@"resigned main: %d %@ %@", [self.nsWindow isKeyWindow], [self.nsWindow title], [self menuBarForWindow]);
+#endif
+    if (![self.nsWindow isKeyWindow]) {
+        [self deactivateWindow];
+    }
+}
+
+- (void) deactivateWindow {
+AWT_ASSERT_APPKIT_THREAD;
+#ifdef DEBUG
+    NSLog(@"deactivating window: %@", [self.nsWindow title]);
+#endif
+    [self.javaMenuBar deactivate];
 
     // the new key window
     NSWindow *keyWindow = [NSApp keyWindow];
@@ -771,19 +827,6 @@ AWT_ASSERT_APPKIT_THREAD;
 
     [self _deliverWindowFocusEvent:NO oppositeWindow: opposite];
     [self orderChildWindows:NO];
-}
-
-- (void) windowDidBecomeMain: (NSNotification *) notification {
-AWT_ASSERT_APPKIT_THREAD;
-    [AWTToolkit eventCountPlusPlus];
-
-    JNIEnv *env = [ThreadUtilities getJNIEnv];
-    jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
-    if (platformWindow != NULL) {
-        static JNF_MEMBER_CACHE(jm_windowDidBecomeMain, jc_CPlatformWindow, "windowDidBecomeMain", "()V");
-        JNFCallVoidMethod(env, platformWindow, jm_windowDidBecomeMain);
-        (*env)->DeleteLocalRef(env, platformWindow);
-    }
 }
 
 - (BOOL)windowShouldClose:(id)sender {
@@ -1040,7 +1083,7 @@ JNF_COCOA_ENTER(env);
 
         AWTWindow *window = (AWTWindow*)[nsWindow delegate];
 
-        if ([nsWindow isKeyWindow]) {
+        if ([nsWindow isKeyWindow] || [nsWindow isMainWindow]) {
             [window.javaMenuBar deactivate];
         }
 
@@ -1051,7 +1094,7 @@ JNF_COCOA_ENTER(env);
             actualMenuBar = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
         }
 
-        if ([nsWindow isKeyWindow]) {
+        if ([nsWindow isKeyWindow] || [nsWindow isMainWindow]) {
             [CMenuBar activate:actualMenuBar modallyDisabled:NO];
         }
     }];

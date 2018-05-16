@@ -64,6 +64,14 @@ else
   endif
 endif
 
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libTestMainKeyWindow := -ObjC
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libTestMainKeyWindow := -framework JavaVM \
+      -framework Cocoa -framework JavaNativeFoundation
+else
+  BUILD_JDK_JTREG_EXCLUDE += libTestMainKeyWindow.c
+endif
+
 $(eval $(call SetupTestFilesCompilation, BUILD_JDK_JTREG_LIBRARIES, \
     TYPE := LIBRARY, \
     SOURCE_DIRS := $(BUILD_JDK_JTREG_NATIVE_SRC), \
