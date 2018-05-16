@@ -22,52 +22,33 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "jfr/utilities/jfrTime.hpp"
-#include "runtime/os.hpp"
-#if defined(X86) && !defined(ZERO)
-#include "rdtsc_x86.hpp"
-#endif
+#ifndef CPU_ZERO_VM_VM_VERSION_EXT_ZERO_HPP
+#define CPU_ZERO_VM_VM_VERSION_EXT_ZERO_HPP
 
-#include OS_HEADER_INLINE(os)
+#include "utilities/macros.hpp"
+#include "vm_version_zero.hpp"
 
-bool JfrTime::_ft_enabled = false;
+class VM_Version_Ext : public VM_Version {
+ private:
+  static const size_t      CPU_TYPE_DESC_BUF_SIZE = 256;
+  static const size_t      CPU_DETAILED_DESC_BUF_SIZE = 4096;
 
-bool JfrTime::initialize() {
-  static bool initialized = false;
-  if (!initialized) {
-#if defined(X86) && !defined(ZERO)
-    _ft_enabled = Rdtsc::initialize();
-#else
-    _ft_enabled = false;
-#endif
-    initialized = true;
-  }
-  return initialized;
-}
+  static int               _no_of_threads;
+  static int               _no_of_cores;
+  static int               _no_of_sockets;
+  static bool              _initialized;
+  static char              _cpu_name[CPU_TYPE_DESC_BUF_SIZE];
+  static char              _cpu_desc[CPU_DETAILED_DESC_BUF_SIZE];
 
-bool JfrTime::is_ft_supported() {
-#if defined(X86) && !defined(ZERO)
-  return Rdtsc::is_supported();
-#else
-  return false;
-#endif
-}
+ public:
+  static int number_of_threads(void);
+  static int number_of_cores(void);
+  static int number_of_sockets(void);
 
+  static const char* cpu_name(void);
+  static const char* cpu_description(void);
+  static void initialize_cpu_information(void);
 
-const void* JfrTime::time_function() {
-#if defined(X86) && !defined(ZERO)
-  return _ft_enabled ? (const void*)Rdtsc::elapsed_counter : (const void*)os::elapsed_counter;
-#else
-  return (const void*)os::elapsed_counter;
-#endif
-}
+};
 
-jlong JfrTime::frequency() {
-#if defined(X86) && !defined(ZERO)
-  return _ft_enabled ? Rdtsc::frequency() : os::elapsed_frequency();
-#else
-  return os::elapsed_frequency();
-#endif
-}
-
+#endif // CPU_ZERO_VM_VM_VERSION_EXT_ZERO_HPP
