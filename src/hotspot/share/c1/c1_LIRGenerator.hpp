@@ -391,17 +391,23 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void profile_branch(If* if_instr, If::Condition cond);
   void increment_event_counter_impl(CodeEmitInfo* info,
-                                    ciMethod *method, int frequency,
+                                    ciMethod *method, LIR_Opr step, int frequency,
                                     int bci, bool backedge, bool notify);
-  void increment_event_counter(CodeEmitInfo* info, int bci, bool backedge);
+  void increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int bci, bool backedge);
   void increment_invocation_counter(CodeEmitInfo *info) {
     if (compilation()->count_invocations()) {
-      increment_event_counter(info, InvocationEntryBci, false);
+      increment_event_counter(info, LIR_OprFact::intConst(InvocationCounter::count_increment), InvocationEntryBci, false);
     }
   }
   void increment_backedge_counter(CodeEmitInfo* info, int bci) {
     if (compilation()->count_backedges()) {
-      increment_event_counter(info, bci, true);
+      increment_event_counter(info, LIR_OprFact::intConst(InvocationCounter::count_increment), bci, true);
+    }
+  }
+  void increment_backedge_counter_conditionally(LIR_Condition cond, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info, int left_bci, int right_bci, int bci);
+  void increment_backedge_counter(CodeEmitInfo* info, LIR_Opr step, int bci) {
+    if (compilation()->count_backedges()) {
+      increment_event_counter(info, step, bci, true);
     }
   }
   void decrement_age(CodeEmitInfo* info);
