@@ -55,7 +55,17 @@ void JfrStringPoolBuffer::set_string_pos(uint64_t value) {
 }
 
 void JfrStringPoolBuffer::increment(uint64_t value) {
+#if !(defined(ARM) || defined(IA32))
   Atomic::add(value, &_string_count_pos);
+#else
+  // TODO: This should be fixed in Atomic::add handling for 32-bit platforms,
+  // see JDK-8203283. We workaround the absence of support right here.
+  uint64_t cur, val;
+  do {
+     cur = Atomic::load(&_string_count_top);
+     val = cur + value;
+  } while (Atomic::cmpxchg(val, &_string_count_pos, cur) != cur);
+#endif
 }
 
 void JfrStringPoolBuffer::set_string_top(uint64_t value) {
