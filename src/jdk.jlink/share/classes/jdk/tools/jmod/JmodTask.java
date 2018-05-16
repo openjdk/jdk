@@ -320,10 +320,15 @@ public class JmodTask {
         }
     }
 
-    static <T> String toString(Collection<T> c) {
+    static <T> String toLowerCaseString(Collection<T> c) {
         if (c.isEmpty()) { return ""; }
         return " " + c.stream().map(e -> e.toString().toLowerCase(Locale.ROOT))
                 .sorted().collect(joining(" "));
+    }
+
+    static <T> String toString(Collection<T> c) {
+        if (c.isEmpty()) { return ""; }
+        return " " + c.stream().map(e -> e.toString()).sorted().collect(joining(" "));
     }
 
     private void describeModule(ModuleDescriptor md,
@@ -346,12 +351,12 @@ public class JmodTask {
                 .sorted(Comparator.comparing(Exports::source))
                 .filter(e -> !e.isQualified())
                 .forEach(e -> sb.append("exports ").append(e.source())
-                                .append(toString(e.modifiers())).append("\n"));
+                                .append(toLowerCaseString(e.modifiers())).append("\n"));
 
         // dependences
         md.requires().stream().sorted()
                 .forEach(r -> sb.append("requires ").append(r.name())
-                                .append(toString(r.modifiers())).append("\n"));
+                                .append(toLowerCaseString(r.modifiers())).append("\n"));
 
         // service use and provides
         md.uses().stream().sorted()
@@ -369,7 +374,7 @@ public class JmodTask {
                 .sorted(Comparator.comparing(Exports::source))
                 .filter(Exports::isQualified)
                 .forEach(e -> sb.append("qualified exports ").append(e.source())
-                                .append(" to").append(toString(e.targets()))
+                                .append(" to").append(toLowerCaseString(e.targets()))
                                 .append("\n"));
 
         // open packages
@@ -377,15 +382,15 @@ public class JmodTask {
                 .sorted(Comparator.comparing(Opens::source))
                 .filter(o -> !o.isQualified())
                 .forEach(o -> sb.append("opens ").append(o.source())
-                                 .append(toString(o.modifiers()))
+                                 .append(toLowerCaseString(o.modifiers()))
                                  .append("\n"));
 
         md.opens().stream()
                 .sorted(Comparator.comparing(Opens::source))
                 .filter(Opens::isQualified)
                 .forEach(o -> sb.append("qualified opens ").append(o.source())
-                                 .append(toString(o.modifiers()))
-                                 .append(" to").append(toString(o.targets()))
+                                 .append(toLowerCaseString(o.modifiers()))
+                                 .append(" to").append(toLowerCaseString(o.targets()))
                                  .append("\n"));
 
         // non-exported/non-open packages
