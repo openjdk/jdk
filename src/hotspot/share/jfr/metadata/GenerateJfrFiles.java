@@ -450,6 +450,7 @@ public class GenerateJfrFiles {
             out.write("#ifndef JFRFILES_JFREVENTCLASSES_HPP");
             out.write("#define JFRFILES_JFREVENTCLASSES_HPP");
             out.write("");
+            out.write("#include \"oops/klass.hpp\"");
             out.write("#include \"jfrfiles/jfrTypes.hpp\"");
             out.write("#include \"jfr/utilities/jfrTypes.hpp\"");
             out.write("#include \"utilities/macros.hpp\"");

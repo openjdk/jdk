@@ -26,6 +26,7 @@
 #define SHARE_VM_JFR_SUPPORT_JFRTHREADID_HPP
 
 #include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadLocal.hpp"
