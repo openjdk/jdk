@@ -37,7 +37,15 @@
 #include "utilities/globalDefinitions.hpp"
 #include "vm_version_ppc.hpp"
 
-# include <sys/sysinfo.h>
+#include <sys/sysinfo.h>
+
+#if defined(LINUX) && defined(VM_LITTLE_ENDIAN)
+#include <sys/auxv.h>
+
+#ifndef PPC_FEATURE2_HTM_NOSC
+#define PPC_FEATURE2_HTM_NOSC (1 << 24)
+#endif
+#endif
 
 bool VM_Version::_is_determine_features_test_running = false;
 uint64_t VM_Version::_dscr_val = 0;
@@ -123,7 +131,7 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_fsqrt()   ? " fsqrt"   : ""),
                (has_isel()    ? " isel"    : ""),
                (has_lxarxeh() ? " lxarxeh" : ""),
@@ -136,7 +144,6 @@ void VM_Version::initialize() {
                (has_lqarx()   ? " lqarx"   : ""),
                (has_vcipher() ? " aes"     : ""),
                (has_vpmsumb() ? " vpmsumb" : ""),
-               (has_tcheck()  ? " tcheck"  : ""),
                (has_mfdscr()  ? " mfdscr"  : ""),
                (has_vsx()     ? " vsx"     : ""),
                (has_ldbrx()   ? " ldbrx"   : ""),
@@ -304,15 +311,15 @@ void VM_Version::initialize() {
 
   // Adjust RTM (Restricted Transactional Memory) flags.
   if (UseRTMLocking) {
-    // If CPU or OS are too old:
+    // If CPU or OS do not support TM:
     // Can't continue because UseRTMLocking affects UseBiasedLocking flag
     // setting during arguments processing. See use_biased_locking().
     // VM_Version_init() is executed after UseBiasedLocking is used
     // in Thread::allocate().
-    if (!has_tcheck()) {
-      vm_exit_during_initialization("RTM instructions are not available on this CPU");
+    if (PowerArchitecturePPC64 < 8) {
+      vm_exit_during_initialization("RTM instructions are not available on this CPU.");
     }
-    bool os_too_old = true;
+    bool os_support_tm = false;
 #ifdef AIX
     // Actually, this is supported since AIX 7.1.. Unfortunately, this first
     // contained bugs, so that it can only be enabled after AIX 7.1.3.30.
@@ -322,22 +329,25 @@ void VM_Version::initialize() {
     // So the tests can not check on subversion 3.30, and we only enable RTM
     // with AIX 7.2.
     if (os::Aix::os_version() >= 0x07020000) { // At least AIX 7.2.
-      os_too_old = false;
+      os_support_tm = true;
     }
 #endif
-#ifdef LINUX
-    // At least Linux kernel 4.2, as the problematic behavior of syscalls
-    // being called in the middle of a transaction has been addressed.
-    // Please, refer to commit b4b56f9ecab40f3b4ef53e130c9f6663be491894
-    // in Linux kernel source tree: https://goo.gl/Kc5i7A
-    if (os::Linux::os_version_is_known()) {
-      if (os::Linux::os_version() >= 0x040200)
-        os_too_old = false;
-    } else {
-      vm_exit_during_initialization("RTM can not be enabled: kernel version is unknown.");
+#if defined(LINUX) && defined(VM_LITTLE_ENDIAN)
+    unsigned long auxv = getauxval(AT_HWCAP2);
+
+    if (auxv & PPC_FEATURE2_HTM_NOSC) {
+      if (auxv & PPC_FEATURE2_HAS_HTM) {
+        // TM on POWER8 and POWER9 in compat mode (VM) is supported by the JVM.
+        // TM on POWER9 DD2.1 NV (baremetal) is not supported by the JVM (TM on
+        // POWER9 DD2.1 NV has a few issues that need a couple of firmware
+        // and kernel workarounds, so there is a new mode only supported
+        // on non-virtualized P9 machines called HTM with no Suspend Mode).
+        // TM on POWER9 D2.2+ NV is not supported at all by Linux.
+        os_support_tm = true;
+      }
     }
 #endif
-    if (os_too_old) {
+    if (!os_support_tm) {
       vm_exit_during_initialization("RTM is not supported on this OS version.");
     }
   }
@@ -680,12 +690,11 @@ void VM_Version::determine_features() {
   a->lqarx_unchecked(R6, R3_ARG1, R4_ARG2, 1); // code[9]  -> lqarx_m
   a->vcipher(VR0, VR1, VR2);                   // code[10] -> vcipher
   a->vpmsumb(VR0, VR1, VR2);                   // code[11] -> vpmsumb
-  a->tcheck(0);                                // code[12] -> tcheck
-  a->mfdscr(R0);                               // code[13] -> mfdscr
-  a->lxvd2x(VSR0, R3_ARG1);                    // code[14] -> vsx
-  a->ldbrx(R7, R3_ARG1, R4_ARG2);              // code[15] -> ldbrx
-  a->stdbrx(R7, R3_ARG1, R4_ARG2);             // code[16] -> stdbrx
-  a->vshasigmaw(VR0, VR1, 1, 0xF);             // code[17] -> vshasig
+  a->mfdscr(R0);                               // code[12] -> mfdscr
+  a->lxvd2x(VSR0, R3_ARG1);                    // code[13] -> vsx
+  a->ldbrx(R7, R3_ARG1, R4_ARG2);              // code[14] -> ldbrx
+  a->stdbrx(R7, R3_ARG1, R4_ARG2);             // code[15] -> stdbrx
+  a->vshasigmaw(VR0, VR1, 1, 0xF);             // code[16] -> vshasig
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
@@ -732,7 +741,6 @@ void VM_Version::determine_features() {
   if (code[feature_cntr++]) features |= lqarx_m;
   if (code[feature_cntr++]) features |= vcipher_m;
   if (code[feature_cntr++]) features |= vpmsumb_m;
-  if (code[feature_cntr++]) features |= tcheck_m;
   if (code[feature_cntr++]) features |= mfdscr_m;
   if (code[feature_cntr++]) features |= vsx_m;
   if (code[feature_cntr++]) features |= ldbrx_m;
