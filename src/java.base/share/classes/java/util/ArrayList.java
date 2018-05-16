@@ -314,14 +314,23 @@ public class ArrayList<E> extends AbstractList<E>
      * or -1 if there is no such index.
      */
     public int indexOf(Object o) {
+        return indexOfRange(o, 0, size);
+    }
+
+    int indexOfRange(Object o, int start, int end) {
+        Object[] es = elementData;
         if (o == null) {
-            for (int i = 0; i < size; i++)
-                if (elementData[i]==null)
+            for (int i = start; i < end; i++) {
+                if (es[i] == null) {
                     return i;
+                }
+            }
         } else {
-            for (int i = 0; i < size; i++)
-                if (o.equals(elementData[i]))
+            for (int i = start; i < end; i++) {
+                if (o.equals(es[i])) {
                     return i;
+                }
+            }
         }
         return -1;
     }
@@ -334,14 +343,23 @@ public class ArrayList<E> extends AbstractList<E>
      * or -1 if there is no such index.
      */
     public int lastIndexOf(Object o) {
+        return lastIndexOfRange(o, 0, size);
+    }
+
+    int lastIndexOfRange(Object o, int start, int end) {
+        Object[] es = elementData;
         if (o == null) {
-            for (int i = size-1; i >= 0; i--)
-                if (elementData[i]==null)
+            for (int i = end - 1; i >= start; i--) {
+                if (es[i] == null) {
                     return i;
+                }
+            }
         } else {
-            for (int i = size-1; i >= 0; i--)
-                if (o.equals(elementData[i]))
+            for (int i = end - 1; i >= start; i--) {
+                if (o.equals(es[i])) {
                     return i;
+                }
+            }
         }
         return -1;
     }
@@ -521,6 +539,93 @@ public class ArrayList<E> extends AbstractList<E>
         fastRemove(es, index);
 
         return oldValue;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+
+        if (!(o instanceof List)) {
+            return false;
+        }
+
+        final int expectedModCount = modCount;
+        // ArrayList can be subclassed and given arbitrary behavior, but we can
+        // still deal with the common case where o is ArrayList precisely
+        boolean equal = (o.getClass() == ArrayList.class)
+            ? equalsArrayList((ArrayList<?>) o)
+            : equalsRange((List<?>) o, 0, size);
+
+        checkForComodification(expectedModCount);
+        return equal;
+    }
+
+    boolean equalsRange(List<?> other, int from, int to) {
+        final Object[] es = elementData;
+        if (to > es.length) {
+            throw new ConcurrentModificationException();
+        }
+        var oit = other.iterator();
+        for (; from < to; from++) {
+            if (!oit.hasNext() || !Objects.equals(es[from], oit.next())) {
+                return false;
+            }
+        }
+        return !oit.hasNext();
+    }
+
+    private boolean equalsArrayList(ArrayList<?> other) {
+        final int otherModCount = other.modCount;
+        final int s = size;
+        boolean equal;
+        if (equal = (s == other.size)) {
+            final Object[] otherEs = other.elementData;
+            final Object[] es = elementData;
+            if (s > es.length || s > otherEs.length) {
+                throw new ConcurrentModificationException();
+            }
+            for (int i = 0; i < s; i++) {
+                if (!Objects.equals(es[i], otherEs[i])) {
+                    equal = false;
+                    break;
+                }
+            }
+        }
+        other.checkForComodification(otherModCount);
+        return equal;
+    }
+
+    private void checkForComodification(final int expectedModCount) {
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public int hashCode() {
+        int expectedModCount = modCount;
+        int hash = hashCodeRange(0, size);
+        checkForComodification(expectedModCount);
+        return hash;
+    }
+
+    int hashCodeRange(int from, int to) {
+        final Object[] es = elementData;
+        if (to > es.length) {
+            throw new ConcurrentModificationException();
+        }
+        int hashCode = 1;
+        for (int i = from; i < to; i++) {
+            Object e = es[i];
+            hashCode = 31 * hashCode + (e == null ? 0 : e.hashCode());
+        }
+        return hashCode;
     }
 
     /**
@@ -1158,6 +1263,42 @@ public class ArrayList<E> extends AbstractList<E>
             if (a.length > size)
                 a[size] = null;
             return a;
+        }
+
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            }
+
+            if (!(o instanceof List)) {
+                return false;
+            }
+
+            boolean equal = root.equalsRange((List<?>)o, offset, offset + size);
+            checkForComodification();
+            return equal;
+        }
+
+        public int hashCode() {
+            int hash = root.hashCodeRange(offset, offset + size);
+            checkForComodification();
+            return hash;
+        }
+
+        public int indexOf(Object o) {
+            int index = root.indexOfRange(o, offset, offset + size);
+            checkForComodification();
+            return index >= 0 ? index - offset : -1;
+        }
+
+        public int lastIndexOf(Object o) {
+            int index = root.lastIndexOfRange(o, offset, offset + size);
+            checkForComodification();
+            return index >= 0 ? index - offset : -1;
+        }
+
+        public boolean contains(Object o) {
+            return indexOf(o) >= 0;
         }
 
         public Iterator<E> iterator() {
