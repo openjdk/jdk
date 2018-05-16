@@ -27,15 +27,10 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "macroAssembler_x86.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "stubRoutines_x86.hpp"
-#include "macroAssembler_x86.hpp"
-
-#ifdef _MSC_VER
-#define ALIGNED_(x) __declspec(align(x))
-#else
-#define ALIGNED_(x) __attribute__ ((aligned(x)))
-#endif
+#include "utilities/globalDefinitions.hpp"
 
 /******************************************************************************/
 //                     ALGORITHM DESCRIPTION - SIN()
@@ -183,22 +178,22 @@
 
 #ifdef _LP64
 // The 64 bit code is at most SSE2 compliant
-ALIGNED_(16) juint StubRoutines::x86::_ONEHALF[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_ONEHALF[] =
 {
     0x00000000UL, 0x3fe00000UL, 0x00000000UL, 0x3fe00000UL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_P_2[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_P_2[] =
 {
     0x1a600000UL, 0x3d90b461UL, 0x1a600000UL, 0x3d90b461UL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_SC_4[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_SC_4[] =
 {
     0xa556c734UL, 0x3ec71de3UL, 0x1a01a01aUL, 0x3efa01a0UL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_Ctable[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_Ctable[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
     0x00000000UL, 0x00000000UL, 0x3ff00000UL, 0x176d6d31UL, 0xbf73b92eUL,
@@ -305,22 +300,22 @@ ALIGNED_(16) juint StubRoutines::x86::_Ctable[] =
     0x00000000UL, 0x3ff00000UL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_SC_2[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_SC_2[] =
 {
     0x11111111UL, 0x3f811111UL, 0x55555555UL, 0x3fa55555UL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_SC_3[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_SC_3[] =
 {
     0x1a01a01aUL, 0xbf2a01a0UL, 0x16c16c17UL, 0xbf56c16cUL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_SC_1[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_SC_1[] =
 {
     0x55555555UL, 0xbfc55555UL, 0x00000000UL, 0xbfe00000UL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_PI_INV_TABLE[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_PI_INV_TABLE[] =
 {
     0x00000000UL, 0x00000000UL, 0xa2f9836eUL, 0x4e441529UL, 0xfc2757d1UL,
     0xf534ddc0UL, 0xdb629599UL, 0x3c439041UL, 0xfe5163abUL, 0xdebbc561UL,
@@ -333,52 +328,52 @@ ALIGNED_(16) juint StubRoutines::x86::_PI_INV_TABLE[] =
     0xf0cfbc21UL
 };
 
-ALIGNED_(8) juint StubRoutines::x86::_PI_4[] =
+ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_PI_4[] =
 {
     0x40000000UL, 0x3fe921fbUL, 0x18469899UL, 0x3e64442dUL
 };
 
-ALIGNED_(8) juint StubRoutines::x86::_PI32INV[] =
+ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_PI32INV[] =
 {
     0x6dc9c883UL, 0x40245f30UL
 };
 
-ALIGNED_(8) juint _SHIFTER[] =
+ATTRIBUTE_ALIGNED(8) juint _SHIFTER[] =
 {
     0x00000000UL, 0x43380000UL
 };
 
-ALIGNED_(8) juint StubRoutines::x86::_SIGN_MASK[] =
+ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_SIGN_MASK[] =
 {
     0x00000000UL, 0x80000000UL
 };
 
-ALIGNED_(8) juint StubRoutines::x86::_P_3[] =
+ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_P_3[] =
 {
     0x2e037073UL, 0x3b63198aUL
 };
 
-ALIGNED_(8) juint _ALL_ONES[] =
+ATTRIBUTE_ALIGNED(8) juint _ALL_ONES[] =
 {
     0xffffffffUL, 0x3fefffffUL
 };
 
-ALIGNED_(8) juint _TWO_POW_55[] =
+ATTRIBUTE_ALIGNED(8) juint _TWO_POW_55[] =
 {
     0x00000000UL, 0x43600000UL
 };
 
-ALIGNED_(8) juint _TWO_POW_M55[] =
+ATTRIBUTE_ALIGNED(8) juint _TWO_POW_M55[] =
 {
     0x00000000UL, 0x3c800000UL
 };
 
-ALIGNED_(8) juint StubRoutines::x86::_P_1[] =
+ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_P_1[] =
 {
     0x54400000UL, 0x3fb921fbUL
 };
 
-ALIGNED_(8) juint StubRoutines::x86::_NEG_ZERO[] =
+ATTRIBUTE_ALIGNED(8) juint StubRoutines::x86::_NEG_ZERO[] =
 {
     0x00000000UL, 0x80000000UL
 };
@@ -853,54 +848,54 @@ void MacroAssembler::fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 }
 #else
 // The 32 bit code is at most SSE2 compliant
-ALIGNED_(8) juint _zero_none[] =
+ATTRIBUTE_ALIGNED(8) juint _zero_none[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0xbff00000UL
 };
 
-ALIGNED_(4) juint __4onpi_d[] =
+ATTRIBUTE_ALIGNED(4) juint __4onpi_d[] =
 {
     0x6dc9c883UL, 0x3ff45f30UL
 };
 
-ALIGNED_(4) juint _TWO_32H[] =
+ATTRIBUTE_ALIGNED(4) juint _TWO_32H[] =
 {
     0x00000000UL, 0x41f80000UL
 };
 
-ALIGNED_(4) juint _pi04_3d[] =
+ATTRIBUTE_ALIGNED(4) juint _pi04_3d[] =
 {
     0x54442d00UL, 0x3fe921fbUL, 0x98cc5180UL, 0x3ce84698UL, 0xcbb5bf6cUL,
     0xb9dfc8f8UL
 };
 
-ALIGNED_(4) juint _pi04_5d[] =
+ATTRIBUTE_ALIGNED(4) juint _pi04_5d[] =
 {
     0x54400000UL, 0x3fe921fbUL, 0x1a600000UL, 0x3dc0b461UL, 0x2e000000UL,
     0x3b93198aUL, 0x25200000UL, 0x396b839aUL, 0x533e63a0UL, 0x37027044UL
 };
 
-ALIGNED_(4) juint _SCALE[] =
+ATTRIBUTE_ALIGNED(4) juint _SCALE[] =
 {
     0x00000000UL, 0x32600000UL
 };
 
-ALIGNED_(4) juint _zeros[] =
+ATTRIBUTE_ALIGNED(4) juint _zeros[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x80000000UL
 };
 
-ALIGNED_(4) juint _pi04_2d[] =
+ATTRIBUTE_ALIGNED(4) juint _pi04_2d[] =
 {
     0x54400000UL, 0x3fe921fbUL, 0x1a626331UL, 0x3dc0b461UL
 };
 
-ALIGNED_(4) juint _TWO_12H[] =
+ATTRIBUTE_ALIGNED(4) juint _TWO_12H[] =
 {
     0x00000000UL, 0x40b80000UL
 };
 
-ALIGNED_(2) jushort __4onpi_31l[] =
+ATTRIBUTE_ALIGNED(2) jushort __4onpi_31l[] =
 {
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x836e, 0xa2f9,
     0x40d8, 0x0000, 0x0000, 0x0000, 0x2a50, 0x9c88, 0x40b7, 0x0000, 0x0000, 0x0000,
@@ -1629,29 +1624,29 @@ void MacroAssembler::libm_reduce_pi04l(Register eax, Register ecx, Register edx,
   ret(0);
 }
 
-ALIGNED_(16) juint StubRoutines::x86::_L_2il0floatpacket_0[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_L_2il0floatpacket_0[] =
 {
     0xffffffffUL, 0x7fffffffUL, 0x00000000UL, 0x00000000UL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_Pi4Inv[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_Pi4Inv[] =
 {
     0x6dc9c883UL, 0x3ff45f30UL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_Pi4x3[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_Pi4x3[] =
 {
     0x54443000UL, 0xbfe921fbUL, 0x3b39a000UL, 0x3d373dcbUL, 0xe0e68948UL,
     0xba845c06UL
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_Pi4x4[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_Pi4x4[] =
 {
     0x54400000UL, 0xbfe921fbUL, 0x1a600000UL, 0xbdc0b461UL, 0x2e000000UL,
     0xbb93198aUL, 0x252049c1UL, 0xb96b839aUL
 };
 
-ALIGNED_(16) jushort _SP[] =
+ATTRIBUTE_ALIGNED(16) jushort _SP[] =
 {
     0xaaab, 0xaaaa, 0xaaaa, 0xaaaa, 0xbffc, 0x0000, 0x8887, 0x8888, 0x8888, 0x8888,
     0x3ff8, 0x0000, 0xc527, 0x0d00, 0x00d0, 0xd00d, 0xbff2, 0x0000, 0x45f6, 0xb616,
@@ -1660,7 +1655,7 @@ ALIGNED_(16) jushort _SP[] =
     0xbfd6, 0x0000, 0x8610, 0x307f, 0x62a1, 0xc921, 0x3fce, 0x0000
 };
 
-ALIGNED_(16) jushort _CP[] =
+ATTRIBUTE_ALIGNED(16) jushort _CP[] =
 {
     0x0000, 0x0000, 0x0000, 0x8000, 0xbffe, 0x0000, 0xaaa5, 0xaaaa, 0xaaaa, 0xaaaa,
     0x3ffa, 0x0000, 0x9c2f, 0x0b60, 0x60b6, 0xb60b, 0xbff5, 0x0000, 0xf024, 0x0cac,
@@ -1669,7 +1664,7 @@ ALIGNED_(16) jushort _CP[] =
     0xbfda, 0x0000, 0x3ac6, 0x0ba0, 0x07ce, 0xd585, 0x3fd2, 0x0000
 };
 
-ALIGNED_(16) juint StubRoutines::x86::_ones[] =
+ATTRIBUTE_ALIGNED(16) juint StubRoutines::x86::_ones[] =
 {
     0x00000000UL, 0x3ff00000UL, 0x00000000UL, 0xbff00000UL
 };
@@ -2197,7 +2192,7 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   jmp(B1_15);
 }
 
-ALIGNED_(16) juint _static_const_table_sin[] =
+ATTRIBUTE_ALIGNED(16) juint _static_const_table_sin[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
     0x00000000UL, 0x00000000UL, 0x3ff00000UL, 0x176d6d31UL, 0xbf73b92eUL,

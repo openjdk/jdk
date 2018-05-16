@@ -28,6 +28,7 @@
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -43,9 +44,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vm_operations.hpp"
 #include "runtime/vmThread.hpp"
-#include "trace/tracing.hpp"
 #include "utilities/events.hpp"
-#include "utilities/ticks.inline.hpp"
 #include "utilities/xmlstream.hpp"
 
 #ifdef ASSERT
@@ -410,6 +409,24 @@ void NMethodSweeper::possibly_sweep() {
   }
 }
 
+static void post_sweep_event(EventSweepCodeCache* event,
+                             const Ticks& start,
+                             const Ticks& end,
+                             s4 traversals,
+                             int swept,
+                             int flushed,
+                             int zombified) {
+  assert(event != NULL, "invariant");
+  assert(event->should_commit(), "invariant");
+  event->set_starttime(start);
+  event->set_endtime(end);
+  event->set_sweepId(traversals);
+  event->set_sweptCount(swept);
+  event->set_flushedCount(flushed);
+  event->set_zombifiedCount(zombified);
+  event->commit();
+}
+
 void NMethodSweeper::sweep_code_cache() {
   ResourceMark rm;
   Ticks sweep_start_counter = Ticks::now();
@@ -496,15 +513,10 @@ void NMethodSweeper::sweep_code_cache() {
     _total_nof_c2_methods_reclaimed += flushed_c2_count;
     _peak_sweep_time = MAX2(_peak_sweep_time, _total_time_this_sweep);
   }
+
   EventSweepCodeCache event(UNTIMED);
   if (event.should_commit()) {
-    event.set_starttime(sweep_start_counter);
-    event.set_endtime(sweep_end_counter);
-    event.set_sweepId(_traversals);
-    event.set_sweptCount(swept_count);
-    event.set_flushedCount(flushed_count);
-    event.set_zombifiedCount(zombified_count);
-    event.commit();
+    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count);
   }
 
 #ifdef ASSERT

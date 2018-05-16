@@ -86,7 +86,6 @@ class STWGCTimer;
 class G1NewTracer;
 class EvacuationFailedInfo;
 class nmethod;
-class Ticks;
 class WorkGang;
 class G1Allocator;
 class G1ArchiveAllocator;

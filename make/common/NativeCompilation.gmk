@@ -391,6 +391,13 @@ endef
 #   STRIPFLAGS Optionally change the flags given to the strip command
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
+#
+# After being called, some variables are exported from this macro, all prefixed
+# with parameter 1 followed by a '_':
+#   TARGET The library or executable created by the macro
+#   TARGET_DEPS All prerequisites for the target calculated by the macro
+#   ALL_OBJS All object files
+#   IMPORT_LIBRARY The import library created for a shared library on Windows
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
 
@@ -874,7 +881,9 @@ define SetupNativeCompilationBody
       endif
     endif
 
-    $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE) $$(STATIC_MAPFILE_DEP)
+    $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE) $$(STATIC_MAPFILE_DEP)
+
+    $$($1_TARGET): $$($1_TARGET_DEPS)
 	$$(call LogInfo, Building static library $$($1_BASENAME))
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
 	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
@@ -964,8 +973,10 @@ define SetupNativeCompilationBody
       endif
     endif
 
-    $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
+    $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
         $$($1_REAL_MAPFILE) $$($1_VARDEPS_FILE)
+
+    $$($1_TARGET): $$($1_TARGET_DEPS)
                 ifneq ($$($1_OBJ_FILE_LIST), )
                   ifeq ($$($1_LINK_OBJS_RELATIVE), true)
 		    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS_RELATIVE, $$($1_OBJ_FILE_LIST)))

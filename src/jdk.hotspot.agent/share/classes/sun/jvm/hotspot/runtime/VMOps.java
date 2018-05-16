@@ -79,7 +79,6 @@ public enum VMOps {
   HeapWalkOperation,
   HeapIterateOperation,
   ReportJavaOutOfMemory,
-  JFRCheckpoint,
   Exit,
   LinuxDllLoad,
   Terminating

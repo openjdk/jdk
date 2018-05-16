@@ -76,8 +76,10 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#if INCLUDE_TRACE
-#include "trace/tracing.hpp"
+#include "utilities/ticks.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#include "jfr/jfrEvents.hpp"
 #endif
 
 volatile size_t ClassLoaderDataGraph::_num_array_classes = 0;
@@ -161,7 +163,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
 
   NOT_PRODUCT(_dependency_count = 0); // number of class loader dependencies
 
-  TRACE_INIT_ID(this);
+  JFR_ONLY(INIT_ID(this);)
 }
 
 ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
@@ -1276,6 +1278,28 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 }
 #endif // PRODUCT
 
+#if INCLUDE_JFR
+static Ticks class_unload_time;
+static void post_class_unload_event(Klass* const k) {
+  assert(k != NULL, "invariant");
+  EventClassUnload event(UNTIMED);
+  event.set_endtime(class_unload_time);
+  event.set_unloadedClass(k);
+  event.set_definingClassLoader(k->class_loader_data());
+  event.commit();
+}
+
+static void post_class_unload_events() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  if (Jfr::is_enabled()) {
+    if (EventClassUnload::is_enabled()) {
+      class_unload_time = Ticks::now();
+      ClassLoaderDataGraph::classes_unloading_do(&post_class_unload_event);
+    }
+    Jfr::on_unloading_classes();
+  }
+}
+#endif // INCLUDE_JFR
 
 // Move class loader data from main list to the unloaded list for unloading
 // and deallocation later.
@@ -1353,8 +1377,7 @@ bool ClassLoaderDataGraph::do_unloading(bool clean_previous_versions) {
       }
       data = data->next();
     }
-
-    post_class_unload_events();
+    JFR_ONLY(post_class_unload_events();)
   }
 
   log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
@@ -1391,20 +1414,6 @@ int ClassLoaderDataGraph::resize_if_needed() {
     }
   }
   return resized;
-}
-
-void ClassLoaderDataGraph::post_class_unload_events() {
-#if INCLUDE_TRACE
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
-  if (Tracing::enabled()) {
-    if (Tracing::is_event_enabled(TraceClassUnloadEvent)) {
-      assert(_unloading != NULL, "need class loader data unload list!");
-      _class_unload_time = Ticks::now();
-      classes_unloading_do(&class_unload_event);
-    }
-    Tracing::on_unloading_classes();
-  }
-#endif
 }
 
 ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()
@@ -1490,20 +1499,3 @@ void ClassLoaderDataGraph::print_on(outputStream * const out) {
   }
 }
 #endif // PRODUCT
-
-#if INCLUDE_TRACE
-
-Ticks ClassLoaderDataGraph::_class_unload_time;
-
-void ClassLoaderDataGraph::class_unload_event(Klass* const k) {
-  assert(k != NULL, "invariant");
-
-  // post class unload event
-  EventClassUnload event(UNTIMED);
-  event.set_endtime(_class_unload_time);
-  event.set_unloadedClass(k);
-  event.set_definingClassLoader(k->class_loader_data());
-  event.commit();
-}
-
-#endif // INCLUDE_TRACE

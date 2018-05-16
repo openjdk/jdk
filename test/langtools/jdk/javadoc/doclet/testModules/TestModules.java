@@ -244,11 +244,13 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testAggregatorModuleSummary() {
+        setAutomaticCheckLinks(false); // @ignore JDK-8202628
         javadoc("-d", "out-aggregatorModuleSummary",
                 "-use",
                 "--module-source-path", testSrc,
                 "--expand-requires", "transitive",
                 "--module", "moduleT");
+        setAutomaticCheckLinks(true); // @ignore JDK-8202628
         checkExit(Exit.OK);
         checkAggregatorModuleSummary();
     }

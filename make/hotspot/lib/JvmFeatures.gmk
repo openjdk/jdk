@@ -154,6 +154,12 @@ ifneq ($(call check-jvm-feature, serialgc), true)
   # If serial is disabled, we cannot use serial as OldGC in parallel
   JVM_EXCLUDE_FILES += psMarkSweep.cpp psMarkSweepDecorator.cpp
 endif
+
+ifneq ($(call check-jvm-feature, jfr), true)
+  JVM_CFLAGS_FEATURES += -DINCLUDE_JFR=0
+  JVM_EXCLUDE_PATTERNS += jfr
+endif
+
 ################################################################################
 
 ifeq ($(call check-jvm-feature, link-time-opt), true)

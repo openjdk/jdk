@@ -2891,7 +2891,6 @@
               <in>stringUtils.hpp</in>
               <in>ticks.cpp</in>
               <in>ticks.hpp</in>
-              <in>ticks.inline.hpp</in>
               <in>utf8.cpp</in>
               <in>utf8.hpp</in>
               <in>vmError.cpp</in>
@@ -6887,7 +6886,7 @@
             <pElem>../../hotspot/src/share/vm/ci</pElem>
             <pElem>../../hotspot/src/share/vm/oops</pElem>
             <pElem>../../hotspot/src/share/vm/trace</pElem>
-            <pElem>../../build/macosx-x86_64-normal-server-release/hotspot/variant-server/gensrc/tracefiles</pElem>
+            <pElem>../../build/macosx-x86_64-normal-server-release/hotspot/variant-server/gensrc/jfrfiles</pElem>
             <pElem>../../hotspot/src/share/vm/gc/parallel</pElem>
             <pElem>../../hotspot/src/share/vm/gc/shared</pElem>
             <pElem>../../hotspot/src/share/vm/classfile</pElem>
@@ -15404,11 +15403,6 @@
             flavor2="0">
       </item>
       <item path="../../src/hotspot/share/utilities/ticks.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../src/hotspot/share/utilities/ticks.inline.hpp"
             ex="false"
             tool="3"
             flavor2="0">
@@ -29186,11 +29180,6 @@
             flavor2="0">
       </item>
       <item path="../../src/hotspot/share/utilities/ticks.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../src/hotspot/share/utilities/ticks.inline.hpp"
             ex="false"
             tool="3"
             flavor2="0">

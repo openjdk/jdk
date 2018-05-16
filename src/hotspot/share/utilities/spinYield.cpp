@@ -26,7 +26,6 @@
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/spinYield.hpp"
-#include "utilities/ticks.inline.hpp"
 
 SpinYield::SpinYield(uint spin_limit, uint yield_limit) :
   _sleep_time(),
@@ -43,8 +42,7 @@ void SpinYield::yield_or_sleep() {
   } else {
     Ticks sleep_start = Ticks::now();
     os::naked_short_sleep(1);
-    Ticks sleep_end = Ticks::now();
-    _sleep_time += (sleep_end - sleep_start);
+    _sleep_time += Ticks::now() - sleep_start;
   }
 }
 
@@ -66,8 +64,8 @@ void SpinYield::report(outputStream* s) const {
   }
   if (_sleep_time.value() != 0) { // Report sleep duration, if slept.
     separator = print_separator(s, separator);
-    s->print("sleep = " JLONG_FORMAT " usecs",
-             TicksToTimeHelper::milliseconds(_sleep_time));
+    s->print("sleep = " UINT64_FORMAT " usecs",
+             _sleep_time.milliseconds());
   }
   if (separator == initial_separator) {
     s->print("no waiting");

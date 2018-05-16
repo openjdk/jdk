@@ -36,7 +36,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
-#include "utilities/ticks.inline.hpp"
+#include "utilities/ticks.hpp"
 
 bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion* hr) {
   if (hr->is_humongous()) {

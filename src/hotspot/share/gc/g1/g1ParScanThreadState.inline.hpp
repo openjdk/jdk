@@ -29,7 +29,6 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "utilities/ticks.inline.hpp"
 
 template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
   // Reference should not be NULL here as such are never pushed to the task queue.

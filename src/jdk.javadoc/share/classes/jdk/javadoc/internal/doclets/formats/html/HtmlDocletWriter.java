@@ -1472,7 +1472,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitLiteral(LiteralTree node, Content c) {
-                    String s = node.getBody().toString();
+                    String s = node.getBody().getBody();
                     Content content = new StringContent(utils.normalizeNewlines(s));
                     if (node.getKind() == CODE)
                         content = HtmlTree.CODE(content);

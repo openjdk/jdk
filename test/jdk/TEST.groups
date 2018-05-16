@@ -288,6 +288,9 @@ jdk_tools = \
     :core_tools \
     :svc_tools
 
+jdk_jfr = \
+    jdk/jfr
+
 #
 # Catch-all for other areas with a small number of tests
 #
@@ -337,6 +340,7 @@ jdk_svc = \
     :jdk_instrument \
     :jdk_jmx \
     :jdk_jdi \
+    :jdk_jfr \
     :svc_tools
 
 #############################
@@ -414,6 +418,7 @@ jdk_svc_sanity = \
     :jdk_instrument_sanity \
     :jdk_jmx_sanity \
     :jdk_jdi_sanity \
+    :jdk_jfr_sanity \
     :svc_tools_sanity
 
 jdk_management_sanity =
@@ -456,6 +461,20 @@ jdk_jdi_sanity = \
     com/sun/jdi/sde/MangleTest.java \
     com/sun/jdi/sde/TemperatureTableTest.java
 
+jdk_jfr_sanity = \
+    jdk/jfr/api/recording/event/TestLoadEventAfterStart.java \
+    jdk/jfr/api/recording/state/TestState.java \
+    jdk/jfr/event/os/TestCPULoad.java \
+    jdk/jfr/event/compiler/TestAllocInNewTLAB.java \
+    jdk/jfr/jcmd/TestJcmdStartStopDefault.java \
+    jdk/jfr/event/io/TestFileStreamEvents.java \
+    jdk/jfr/event/compiler/TestCompilerCompile.java \
+    jdk/jfr/event/gc/collection/TestGCGarbageCollectionEvent.java \
+    jdk/jfr/event/runtime/TestClassLoadEvent.java \
+    jdk/jfr/event/runtime/TestJavaBlockedEvent.java \
+    jdk/jfr/event/gc/collection/TestGCWithFasttime.java \
+    jdk/jfr/event/gc/configuration/TestGCConfigurationEvent.java
+
 svc_tools_sanity =
 
 #############################
@@ -474,3 +493,18 @@ jdk_stable = \
     com/sun/java/swing \
     com/sun/awt
 
+needs_g1gc = \
+  jdk/jfr/event/gc/refstat/TestRefStatEventWithG1ConcurrentMark.java \
+  jdk/jfr/event/gc/refstat/TestRefStatEventWithG1FullCollection.java \
+  jdk/jfr/event/gc/refstat/TestRefStatEventWithG1New.java \
+  jdk/jfr/event/gc/detailed/TestEvacuationFailedEvent.java \
+  jdk/jfr/event/gc/detailed/TestEvacuationInfoEvent.java \
+  jdk/jfr/event/gc/detailed/TestG1ConcurrentModeFailureEvent.java \
+  jdk/jfr/event/gc/collection/TestGCCauseWithG1ConcurrentMark.java \
+  jdk/jfr/event/gc/collection/TestGCCauseWithG1FullCollection.java \
+  jdk/jfr/event/gc/collection/TestYoungGarbageCollectionEventWithG1New.java \
+  jdk/jfr/event/gc/collection/TestGCEventMixedWithG1FullCollection.java \
+  jdk/jfr/event/gc/collection/TestGCEventMixedWithG1ConcurrentMark.java \
+  jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1FullCollection.java \
+  jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1ConcurrentMark.java \
+  jdk/jfr/event/gc/heapsummary/TestHeapSummaryEventG1.java

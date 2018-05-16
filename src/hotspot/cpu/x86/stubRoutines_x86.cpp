@@ -27,13 +27,8 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "crc32c.h"
-
-#ifdef _MSC_VER
-#define ALIGNED_(x) __declspec(align(x))
-#else
-#define ALIGNED_(x) __attribute__ ((aligned(x)))
-#endif
 
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
@@ -275,7 +270,7 @@ void StubRoutines::x86::generate_CRC32C_table(bool is_pclmulqdq_table_supported)
   }
 }
 
-ALIGNED_(64) juint StubRoutines::x86::_k256[] =
+ATTRIBUTE_ALIGNED(64) juint StubRoutines::x86::_k256[] =
 {
     0x428a2f98UL, 0x71374491UL, 0xb5c0fbcfUL, 0xe9b5dba5UL,
     0x3956c25bUL, 0x59f111f1UL, 0x923f82a4UL, 0xab1c5ed5UL,
@@ -298,10 +293,10 @@ ALIGNED_(64) juint StubRoutines::x86::_k256[] =
 #ifdef _LP64
 // used in MacroAssembler::sha256_AVX2
 // dynamically built from _k256
-ALIGNED_(64) juint StubRoutines::x86::_k256_W[2*sizeof(StubRoutines::x86::_k256)];
+ATTRIBUTE_ALIGNED(64) juint StubRoutines::x86::_k256_W[2*sizeof(StubRoutines::x86::_k256)];
 
 // used in MacroAssembler::sha512_AVX2
-ALIGNED_(64) julong StubRoutines::x86::_k512_W[] =
+ATTRIBUTE_ALIGNED(64) julong StubRoutines::x86::_k512_W[] =
 {
     0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL,
     0xb5c0fbcfec4d3b2fULL, 0xe9b5dba58189dbbcULL,

@@ -59,7 +59,9 @@ BOOT_MODULES += \
     java.security.sasl \
     java.xml \
     jdk.internal.vm.ci \
+    jdk.jfr \
     jdk.management \
+    jdk.management.jfr \
     jdk.management.agent \
     jdk.net \
     jdk.sctp \
@@ -152,6 +154,7 @@ DOCS_MODULES += \
     jdk.jdeps \
     jdk.jdi \
     jdk.jdwp.agent \
+    jdk.jfr \
     jdk.jlink \
     jdk.jsobject \
     jdk.jshell \
@@ -159,6 +162,7 @@ DOCS_MODULES += \
     jdk.localedata \
     jdk.management \
     jdk.management.agent \
+    jdk.management.jfr \
     jdk.naming.dns \
     jdk.naming.rmi \
     jdk.net \

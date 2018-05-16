@@ -488,7 +488,7 @@ G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, 
 
 G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
   if (_phase_times != NULL) {
-    _phase_times->record_time_secs(_phase, _worker_id, TicksToTimeHelper::seconds(Ticks::now() - _start_time));
+    _phase_times->record_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
   }
 }
 
@@ -506,7 +506,7 @@ G1EvacPhaseTimesTracker::~G1EvacPhaseTimesTracker() {
   if (_phase_times != NULL) {
     // Exclude trim time by increasing the start time.
     _start_time += _trim_time;
-    _phase_times->record_or_add_objcopy_time_secs(_worker_id, TicksToTimeHelper::seconds(_trim_time));
+    _phase_times->record_or_add_objcopy_time_secs(_worker_id, _trim_time.seconds());
   }
 }
 

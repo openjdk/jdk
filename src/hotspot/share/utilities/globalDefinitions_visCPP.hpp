@@ -169,4 +169,7 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #define NOINLINE     __declspec(noinline)
 #define ALWAYSINLINE __forceinline
 
+// Alignment
+#define ATTRIBUTE_ALIGNED(x) __declspec(align(x))
+
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_VISCPP_HPP
