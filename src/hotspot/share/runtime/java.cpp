@@ -32,6 +32,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
