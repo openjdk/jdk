@@ -28,12 +28,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "macroAssembler_x86.hpp"
-
-#ifdef _MSC_VER
-#define ALIGNED_(x) __declspec(align(x))
-#else
-#define ALIGNED_(x) __attribute__ ((aligned(x)))
-#endif
+#include "utilities/globalDefinitions.hpp"
 
 /******************************************************************************/
 //                     ALGORITHM DESCRIPTION - LOG()
@@ -62,7 +57,7 @@
 
 #ifdef _LP64
 // The 64 bit code is at most SSE2 compliant
-ALIGNED_(16) juint _L_tbl[] =
+ATTRIBUTE_ALIGNED(16) juint _L_tbl[] =
 {
     0xfefa3800UL, 0x3fe62e42UL, 0x93c76730UL, 0x3d2ef357UL, 0xaa241800UL,
     0x3fe5ee82UL, 0x0cda46beUL, 0x3d220238UL, 0x5c364800UL, 0x3fe5af40UL,
@@ -170,12 +165,12 @@ ALIGNED_(16) juint _L_tbl[] =
     0x80000000UL
 };
 
-ALIGNED_(16) juint _log2[] =
+ATTRIBUTE_ALIGNED(16) juint _log2[] =
 {
     0xfefa3800UL, 0x3fa62e42UL, 0x93c76730UL, 0x3ceef357UL
 };
 
-ALIGNED_(16) juint _coeff[] =
+ATTRIBUTE_ALIGNED(16) juint _coeff[] =
 {
     0x92492492UL, 0x3fc24924UL, 0x00000000UL, 0xbfd00000UL, 0x3d6fb175UL,
     0xbfc5555eUL, 0x55555555UL, 0x3fd55555UL, 0x9999999aUL, 0x3fc99999UL,
@@ -367,7 +362,7 @@ void MacroAssembler::fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 }
 #else
 // The 32 bit code is at most SSE2 compliant
-ALIGNED_(16) juint _static_const_table_log[] =
+ATTRIBUTE_ALIGNED(16) juint _static_const_table_log[] =
 {
     0xfefa3800UL, 0x3fe62e42UL, 0x93c76730UL, 0x3d2ef357UL, 0xaa241800UL,
     0x3fe5ee82UL, 0x0cda46beUL, 0x3d220238UL, 0x5c364800UL, 0x3fe5af40UL,

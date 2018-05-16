@@ -27,14 +27,9 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
-
-#ifdef _MSC_VER
-#define ALIGNED_(x) __declspec(align(x))
-#else
-#define ALIGNED_(x) __attribute__ ((aligned(x)))
-#endif
+#include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 /******************************************************************************/
 //                     ALGORITHM DESCRIPTION - TAN()
@@ -107,42 +102,42 @@
 
 #ifdef _LP64
 // The 64 bit code is at most SSE2 compliant
-ALIGNED_(16) juint _ONEHALF_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _ONEHALF_tan[] =
 {
     0x00000000UL, 0x3fe00000UL, 0x00000000UL, 0x3fe00000UL
 };
 
-ALIGNED_(16) juint _MUL16[] =
+ATTRIBUTE_ALIGNED(16) juint _MUL16[] =
 {
     0x00000000UL, 0x40300000UL, 0x00000000UL, 0x3ff00000UL
 };
 
-ALIGNED_(16) juint _sign_mask_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _sign_mask_tan[] =
 {
     0x00000000UL, 0x80000000UL, 0x00000000UL, 0x80000000UL
 };
 
-ALIGNED_(16) juint _PI32INV_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _PI32INV_tan[] =
 {
     0x6dc9c883UL, 0x3fe45f30UL, 0x6dc9c883UL, 0x40245f30UL
 };
 
-ALIGNED_(16) juint _P_1_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _P_1_tan[] =
 {
     0x54444000UL, 0x3fb921fbUL, 0x54440000UL, 0x3fb921fbUL
 };
 
-ALIGNED_(16) juint _P_2_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _P_2_tan[] =
 {
     0x67674000UL, 0xbd32e7b9UL, 0x4c4c0000UL, 0x3d468c23UL
 };
 
-ALIGNED_(16) juint _P_3_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _P_3_tan[] =
 {
     0x3707344aUL, 0x3aa8a2e0UL, 0x03707345UL, 0x3ae98a2eUL
 };
 
-ALIGNED_(16) juint _Ctable_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _Ctable_tan[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x882c10faUL,
     0x3f9664f4UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
@@ -428,37 +423,37 @@ ALIGNED_(16) juint _Ctable_tan[] =
     0x00000000UL, 0x00000000UL, 0x00000000UL
 };
 
-ALIGNED_(16) juint _MASK_35_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _MASK_35_tan[] =
 {
     0xfffc0000UL, 0xffffffffUL, 0x00000000UL, 0x00000000UL
 };
 
-ALIGNED_(16) juint _Q_11_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _Q_11_tan[] =
 {
     0xb8fe4d77UL, 0x3f82609aUL
 };
 
-ALIGNED_(16) juint _Q_9_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _Q_9_tan[] =
 {
     0xbf847a43UL, 0x3f9664a0UL
 };
 
-ALIGNED_(16) juint _Q_7_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _Q_7_tan[] =
 {
     0x52c4c8abUL, 0x3faba1baUL
 };
 
-ALIGNED_(16) juint _Q_5_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _Q_5_tan[] =
 {
     0x11092746UL, 0x3fc11111UL
 };
 
-ALIGNED_(16) juint _Q_3_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _Q_3_tan[] =
 {
     0x55555612UL, 0x3fd55555UL
 };
 
-ALIGNED_(16) juint _PI_INV_TABLE_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _PI_INV_TABLE_tan[] =
 {
     0x00000000UL, 0x00000000UL, 0xa2f9836eUL, 0x4e441529UL, 0xfc2757d1UL,
     0xf534ddc0UL, 0xdb629599UL, 0x3c439041UL, 0xfe5163abUL, 0xdebbc561UL,
@@ -471,32 +466,32 @@ ALIGNED_(16) juint _PI_INV_TABLE_tan[] =
     0xf0cfbc21UL
 };
 
-ALIGNED_(8) juint _PI_4_tan[] =
+ATTRIBUTE_ALIGNED(8) juint _PI_4_tan[] =
 {
     0x00000000UL, 0x3fe921fbUL, 0x4611a626UL, 0x3e85110bUL
 };
 
-ALIGNED_(8) juint _QQ_2_tan[] =
+ATTRIBUTE_ALIGNED(8) juint _QQ_2_tan[] =
 {
     0x676733afUL, 0x3d32e7b9UL
 };
 
-ALIGNED_(8) juint _ONE_tan[] =
+ATTRIBUTE_ALIGNED(8) juint _ONE_tan[] =
 {
     0x00000000UL, 0x3ff00000UL
 };
 
-ALIGNED_(8) juint _TWO_POW_55_tan[] =
+ATTRIBUTE_ALIGNED(8) juint _TWO_POW_55_tan[] =
 {
     0x00000000UL, 0x43600000UL
 };
 
-ALIGNED_(4) juint _TWO_POW_M55_tan[] =
+ATTRIBUTE_ALIGNED(4) juint _TWO_POW_M55_tan[] =
 {
     0x00000000UL, 0x3c800000UL
 };
 
-ALIGNED_(4) juint _NEG_ZERO_tan[] =
+ATTRIBUTE_ALIGNED(4) juint _NEG_ZERO_tan[] =
 {
     0x00000000UL, 0x80000000UL
 };
@@ -1064,21 +1059,21 @@ void MacroAssembler::fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 }
 #else
 // The 32 bit code is at most SSE2 compliant
-ALIGNED_(16) jushort _TP[] =
+ATTRIBUTE_ALIGNED(16) jushort _TP[] =
 {
     0x4cd6, 0xaf6c, 0xc710, 0xc662, 0xbffd, 0x0000, 0x4b06, 0xb0ac, 0xd3b2, 0xcc2c,
     0x3ff9, 0x0000, 0x00e3, 0xc850, 0xaa28, 0x9533, 0xbff3, 0x0000, 0x2ff0, 0x466d,
     0x1a3b, 0xb266, 0x3fe5, 0x0000
 };
 
-ALIGNED_(16) jushort _TQ[] =
+ATTRIBUTE_ALIGNED(16) jushort _TQ[] =
 {
     0x399c, 0x8391, 0x154c, 0x94ca, 0xbfff, 0x0000, 0xb6a3, 0xc36a, 0x44e2, 0x8a2c,
     0x3ffe, 0x0000, 0xb70f, 0xd068, 0xa6ce, 0xe9dd, 0xbff9, 0x0000, 0x820f, 0x51ce,
     0x7d76, 0x9bff, 0x3ff3, 0x0000
 };
 
-ALIGNED_(16) jushort _GP[] =
+ATTRIBUTE_ALIGNED(16) jushort _GP[] =
 {
     0xaaab, 0xaaaa, 0xaaaa, 0xaaaa, 0xbffd, 0x0000, 0xb62f, 0x0b60, 0x60b6, 0xb60b,
     0xbff9, 0x0000, 0xdfa7, 0x08aa, 0x55e0, 0x8ab3, 0xbff6, 0x0000, 0x85a0, 0xa819,
@@ -1670,7 +1665,7 @@ void MacroAssembler::libm_tancot_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   jmp(B1_15);
 }
 
-ALIGNED_(16) juint _static_const_table_tan[] =
+ATTRIBUTE_ALIGNED(16) juint _static_const_table_tan[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x882c10faUL,
     0x3f9664f4UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,

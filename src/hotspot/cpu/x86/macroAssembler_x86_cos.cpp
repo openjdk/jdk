@@ -27,14 +27,9 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
-
-#ifdef _MSC_VER
-#define ALIGNED_(x) __declspec(align(x))
-#else
-#define ALIGNED_(x) __attribute__ ((aligned(x)))
-#endif
+#include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 /******************************************************************************/
 //                     ALGORITHM DESCRIPTION - COS()
@@ -181,7 +176,7 @@
 
 #ifdef _LP64
 // The 64 bit code is at most SSE2 compliant
-ALIGNED_(8) juint _ONE[] =
+ATTRIBUTE_ALIGNED(8) juint _ONE[] =
 {
     0x00000000UL, 0x3ff00000UL
 };
@@ -636,7 +631,7 @@ void MacroAssembler::fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
 #else
 // The 32 bit code is at most SSE2 compliant
 
-ALIGNED_(16) juint _static_const_table_cos[] =
+ATTRIBUTE_ALIGNED(16) juint _static_const_table_cos[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
     0x00000000UL, 0x00000000UL, 0x3ff00000UL, 0x176d6d31UL, 0xbf73b92eUL,
