@@ -45,7 +45,7 @@ public:
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register base, RegisterOrConstant ind_or_offs, Register dst,
-                       Register tmp1, Register tmp2, bool needs_frame, Label *is_null = NULL);
+                       Register tmp1, Register tmp2, bool needs_frame, Label *L_handle_null = NULL);
 
   virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2, bool needs_frame);
 

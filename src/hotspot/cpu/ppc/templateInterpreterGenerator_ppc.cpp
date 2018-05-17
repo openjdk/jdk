@@ -524,11 +524,8 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ cmpdi(CCR0, R3_RET, 0);
   __ beq(CCR0, slow_path);
 
-  // Load the value of the referent field.
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT,
-                    R3_RET, referent_offset, R3_RET,
-                    /* non-volatile temp */ R31, R11_scratch1, true);
+  __ load_heap_oop(R3_RET, referent_offset, R3_RET,
+                   /* non-volatile temp */ R31, R11_scratch1, true, ON_WEAK_OOP_REF);
 
   // Generate the G1 pre-barrier code to log the value of
   // the referent field in an SATB buffer. Note with

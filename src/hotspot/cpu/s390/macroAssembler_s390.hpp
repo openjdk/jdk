@@ -27,6 +27,7 @@
 #define CPU_S390_VM_MACROASSEMBLER_S390_HPP
 
 #include "asm/assembler.hpp"
+#include "oops/accessDecorators.hpp"
 
 #define MODERN_IFUN(name)  ((void (MacroAssembler::*)(Register, int64_t, Register, Register))&MacroAssembler::name)
 #define CLASSIC_IFUN(name) ((void (MacroAssembler::*)(Register, int64_t, Register, Register))&MacroAssembler::name)
@@ -804,12 +805,25 @@ class MacroAssembler: public Assembler {
   int  get_oop_base_complement(Register Rbase, uint64_t oop_base);
   void compare_heap_oop(Register Rop1, Address mem, bool maybeNULL);
   void compare_klass_ptr(Register Rop1, int64_t disp, Register Rbase, bool maybeNULL);
-  void load_heap_oop(Register dest, const Address &a);
-  void load_heap_oop(Register d, int64_t si16, Register s1);
-  void load_heap_oop_not_null(Register d, int64_t si16, Register s1);
-  void store_heap_oop(Register Roop, RegisterOrConstant offset, Register base);
-  void store_heap_oop_not_null(Register Roop, RegisterOrConstant offset, Register base);
-  void store_heap_oop_null(Register zero, RegisterOrConstant offset, Register base);
+
+  // Access heap oop, handle encoding and GC barriers.
+ private:
+  void access_store_at(BasicType type, DecoratorSet decorators,
+                       const Address& addr, Register val,
+                       Register tmp1, Register tmp2, Register tmp3);
+  void access_load_at(BasicType type, DecoratorSet decorators,
+                      const Address& addr, Register dst,
+                      Register tmp1, Register tmp2, Label *is_null = NULL);
+
+ public:
+  // tmp1 and tmp2 are used with decorators ON_PHANTOM_OOP_REF or ON_WEAK_OOP_REF.
+  void load_heap_oop(Register dest, const Address &a,
+                     Register tmp1, Register tmp2,
+                     DecoratorSet decorators = 0, Label *is_null = NULL);
+  void store_heap_oop(Register Roop, const Address &a,
+                      Register tmp1, Register tmp2, Register tmp3,
+                      DecoratorSet decorators = 0);
+
   void oop_encoder(Register Rdst, Register Rsrc, bool maybeNULL,
                    Register Rbase = Z_R1, int pow2_offset = -1, bool only32bitValid = false);
   void oop_decoder(Register Rdst, Register Rsrc, bool maybeNULL,
