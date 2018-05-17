@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
-#include "os_linux.inline.hpp"
+#include "os_aix.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 
@@ -924,15 +924,8 @@ SystemProcessInterface::SystemProcesses::ProcessIterator::ProcessIterator() {
 }
 
 bool SystemProcessInterface::SystemProcesses::ProcessIterator::initialize() {
-  _dir = opendir("/proc");
-  _entry = (struct dirent*)NEW_C_HEAP_ARRAY(char, sizeof(struct dirent) + NAME_MAX + 1, mtInternal);
-  if (NULL == _entry) {
-    return false;
-  }
-  _valid = true;
-  next_process();
-
-  return true;
+  // Not yet implemented.
+  return false;
 }
 
 SystemProcessInterface::SystemProcesses::ProcessIterator::~ProcessIterator() {
