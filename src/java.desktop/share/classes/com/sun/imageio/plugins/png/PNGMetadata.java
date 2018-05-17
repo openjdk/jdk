@@ -1882,6 +1882,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                             bKGD_colorType = PNGImageReader.PNG_COLOR_GRAY;
                             bKGD_gray = red;
                         } else {
+                            bKGD_colorType = PNGImageReader.PNG_COLOR_RGB;
                             bKGD_red = red;
                             bKGD_green = green;
                             bKGD_blue = blue;
