@@ -146,6 +146,11 @@ public class HtmlDoclet extends AbstractDoclet {
             } else {
                 SingleIndexWriter.generate(configuration, indexbuilder);
             }
+            AllClassesIndexWriter.generate(configuration,
+                    new IndexBuilder(configuration, nodeprecated, true));
+            if (!configuration.packages.isEmpty()) {
+                AllPackagesIndexWriter.generate(configuration);
+            }
         }
 
         if (!(configuration.nodeprecatedlist || nodeprecated)) {

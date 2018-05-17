@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
- *      8181622 8182263 8074407 8187521 8198522 8182765 8199278
+ *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -50,13 +50,13 @@ public class TestSearch extends JavadocTester {
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkFiles(false,
-                "package-search-index.zip",
                 "tag-search-index.zip",
-                "package-search-index.js",
                 "tag-search-index.js");
         checkFiles(true,
+                "package-search-index.zip",
                 "member-search-index.zip",
                 "type-search-index.zip",
+                "package-search-index.js",
                 "member-search-index.js",
                 "type-search-index.js");
     }
@@ -75,6 +75,7 @@ public class TestSearch extends JavadocTester {
         checkSingleIndexSearchTagDuplication();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
+        checkAllPkgsAllClasses();
         checkFiles(true,
                 "member-search-index.zip",
                 "package-search-index.zip",
@@ -154,7 +155,9 @@ public class TestSearch extends JavadocTester {
                 "package-search-index.js",
                 "tag-search-index.js",
                 "type-search-index.js",
-                "index-all.html");
+                "index-all.html",
+                "allpackages-index.html",
+                "allclasses-index.html");
     }
 
     @Test
@@ -471,7 +474,9 @@ public class TestSearch extends JavadocTester {
                 "<dt><span class=\"searchTagLink\"><a href=\"../pkg2/TestError.html#SearchTagDeprecatedMethod\">"
                 + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError</dt>",
                 "<dt><span class=\"searchTagLink\"><a href=\"../pkg/package-summary.html#SingleWord\">"
-                + "SingleWord</a></span> - Search tag in pkg</dt>");
+                + "SingleWord</a></span> - Search tag in pkg</dt>",
+                "<br><a href=\"../allclasses-index.html\">All&nbsp;Classes</a>&nbsp;"
+                + "<a href=\"../allpackages-index.html\">All&nbsp;Packages</a>");
         checkOutput("index-files/index-10.html", true,
                 "<dt><span class=\"searchTagLink\"><a href=\"../pkg/package-summary.html#phrasewithspaces\">"
                 + "phrase with spaces</a></span> - Search tag in pkg</dt>",
@@ -628,14 +633,16 @@ public class TestSearch extends JavadocTester {
                 + "        var slash = \"/\";\n"
                 + "        if (ui.item.category === catModules) {\n"
                 + "            return ui.item.l + slash;\n"
-                + "        } else if (ui.item.category === catPackages) {\n"
+                + "        } else if (ui.item.category === catPackages && ui.item.m) {\n"
                 + "            return ui.item.m + slash;\n"
-                + "        } else if (ui.item.category === catTypes || ui.item.category === catMembers) {\n"
+                + "        } else if ((ui.item.category === catTypes && ui.item.p) || ui.item.category === catMembers) {\n"
                 + "            $.each(packageSearchIndex, function(index, item) {\n"
                 + "                if (ui.item.p == item.l) {\n"
                 + "                    urlPrefix = item.m + slash;\n"
                 + "                }\n"
                 + "            });\n"
+                + "            return urlPrefix;\n"
+                + "        } else {\n"
                 + "            return urlPrefix;\n"
                 + "        }\n"
                 + "    }\n"
@@ -673,4 +680,41 @@ public class TestSearch extends JavadocTester {
                 + "SearchTagDeprecatedMethod</a></span> - Search tag in pkg2.TestError</dt>\n"
                 + "<dd>with description</dd>");
     }
+
+    void checkAllPkgsAllClasses() {
+        checkOutput("allclasses-index.html", true,
+                "<table class=\"typeSummary\">\n"
+                + "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Classes</span>"
+                + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t1\" class=\"tableTab\">"
+                + "<span><a href=\"javascript:show(1);\">Interface Summary</a></span><span class=\"tabEnd\">"
+                + "&nbsp;</span></span><span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"
+                + "Class Summary</a></span><span class=\"tabEnd\">&nbsp;</span></span><span id=\"t3\" class=\"tableTab\">"
+                + "<span><a href=\"javascript:show(4);\">Enum Summary</a></span><span class=\"tabEnd\">&nbsp;"
+                + "</span></span><span id=\"t4\" class=\"tableTab\"><span><a href=\"javascript:show(8);\">"
+                + "Exception Summary</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t5\" class=\"tableTab\"><span><a href=\"javascript:show(16);\">"
+                + "Error Summary</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
+                + "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">Annotation Types Summary"
+                + "</a></span><span class=\"tabEnd\">&nbsp;</span></span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>",
+                "var data = {\"i0\":32,\"i1\":2,\"i2\":4,\"i3\":2,\"i4\":2,\"i5\":1,\"i6\":2,\"i7\":32,"
+                + "\"i8\":2,\"i9\":4,\"i10\":16,\"i11\":16,\"i12\":8,\"i13\":8,\"i14\":1,\"i15\":2};");
+        checkOutput("allpackages-index.html", true,
+                "<table class=\"packagesSummary\">\n"
+                + "<caption><span>Package Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>\n");
+        checkOutput("type-search-index.js", true,
+                "{\"l\":\"All Classes\",\"url\":\"allclasses-index.html\"}");
+        checkOutput("package-search-index.js", true,
+                "{\"l\":\"All Packages\",\"url\":\"allpackages-index.html\"}");
+        checkOutput("index-all.html", true,
+                "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>&nbsp;"
+                + "<a href=\"allpackages-index.html\">All&nbsp;Packages</a>");
+}
 }

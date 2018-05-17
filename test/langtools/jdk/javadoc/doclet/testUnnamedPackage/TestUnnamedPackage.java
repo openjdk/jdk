@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4904075 4774450 5015144 8043698
+ * @bug      4904075 4774450 5015144 8043698 8196201
  * @summary  Reference unnamed package as "Unnamed", not empty string.
  *           Generate a package summary for the unnamed package.
  * @author   jamieh
@@ -63,6 +63,48 @@ public class TestUnnamedPackage extends JavadocTester {
 
         checkOutput("C.html", true,
                 "<a href=\"package-summary.html\">");
+
+        checkOutput("allclasses-index.html", true,
+                "<table class=\"typeSummary\">\n"
+                + "<caption><span>Class Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>\n"
+                + "<tr id=\"i0\" class=\"altColor\">\n"
+                + "<td class=\"colFirst\"><a href=\"C.html\" title=\"class in &lt;Unnamed&gt;\">C</a></td>\n"
+                + "<th class=\"colLast\" scope=\"row\">\n"
+                + "<div class=\"block\">This is a class in the unnamed package.</div>\n"
+                + "</th>\n"
+                + "</tr>\n"
+                + "</table>");
+
+        checkOutput("allpackages-index.html", true,
+                "<table class=\"packagesSummary\">\n"
+                + "<caption><span>Package Summary</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
+                + "<tr>\n"
+                + "<th class=\"colFirst\" scope=\"col\">Package</th>\n"
+                + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
+                + "</tr>\n"
+                + "<tbody>\n"
+                + "<tr class=\"altColor\">\n"
+                + "<th class=\"colFirst\" scope=\"row\"><a href=\"package-summary.html\">&lt;Unnamed&gt;</a></th>\n"
+                + "<td class=\"colLast\">\n"
+                + "<div class=\"block\">This is a package comment for the unnamed package.</div>\n"
+                + "</td>\n"
+                + "</tr>\n"
+                + "</tbody>\n"
+                + "</table>");
+
+        checkOutput("type-search-index.js", true,
+                "{\"l\":\"All Classes\",\"url\":\"allclasses-index.html\"}");
+
+        checkOutput("package-search-index.js", true,
+                "{\"l\":\"All Packages\",\"url\":\"allpackages-index.html\"}");
+
+        checkOutput("index-all.html", true,
+                "<br><a href=\"allclasses-index.html\">All&nbsp;Classes</a>&nbsp;"
+                + "<a href=\"allpackages-index.html\">All&nbsp;Packages</a>");
 
         checkOutput(Output.OUT, false,
                 "BadSource");

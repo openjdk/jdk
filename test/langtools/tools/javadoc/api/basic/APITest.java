@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,9 @@ class APITest {
      */
     protected static Set<String> standardExpectFiles = new HashSet<>(Arrays.asList(
             "allclasses-frame.html",
+            "allclasses-index.html",
             "allclasses-noframe.html",
+            "allpackages-index.html",
             "constant-values.html",
             "deprecated-list.html",
             "help-doc.html",
@@ -245,7 +247,8 @@ class APITest {
 
     protected static Set<String> noIndexFiles = standardExpectFiles.stream()
             .filter(s -> !s.startsWith("jquery") && !s.startsWith("resources") && !s.endsWith("zip")
-                    && !s.equals("index-all.html") && !s.equals("search.js") && !s.endsWith("-search-index.js"))
+            && !s.equals("index-all.html") && !s.equals("search.js") && !s.endsWith("-search-index.js")
+            && !s.equals("allclasses-index.html") && !s.equals("allpackages-index.html"))
             .collect(Collectors.toSet());
 }
 
