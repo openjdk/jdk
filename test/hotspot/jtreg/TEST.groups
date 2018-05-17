@@ -1157,6 +1157,9 @@ vmTestbase_nsk_jdi_quick = \
   vmTestbase/nsk/jdi/StackFrame/getArgumentValues/getArgumentValues002/getArgumentValues002.java \
   vmTestbase/nsk/jdi/StackFrame/getArgumentValues/getArgumentValues003/getArgumentValues003.java
 
+vmTestbase_nsk_stress = \
+  vmTestbase/nsk/stress
+
 vmTestbase_vm_g1classunloading = \
   vmTestbase/gc/g1/unloading/tests
 
@@ -1264,4 +1267,3 @@ vmTestbase_vm_heapdump_quick = \
   vmTestbase/heapdump/OnOOMToPath/TestDescription.java \
   vmTestbase/heapdump/JMapHeapCore/TestDescription.java \
   vmTestbase/heapdump/JMapMetaspace/TestDescription.java
-
