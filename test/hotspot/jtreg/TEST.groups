@@ -1157,6 +1157,9 @@ vmTestbase_nsk_jdi_quick = \
   vmTestbase/nsk/jdi/StackFrame/getArgumentValues/getArgumentValues002/getArgumentValues002.java \
   vmTestbase/nsk/jdi/StackFrame/getArgumentValues/getArgumentValues003/getArgumentValues003.java
 
+# JSR292 tests (invokedynamic AKA Multi-Language VM AKA Da Vinci Machine)
+vmTestbase_vm_mlvm = \
+  vmTestbase/vm/mlvm
 # Heap dump tests
 vmTestbase_vm_heapdump = \
   vmTestbase/heapdump/
