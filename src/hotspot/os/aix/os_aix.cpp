@@ -1377,6 +1377,21 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   snprintf(buf, buflen, "%s %s", name.release, name.version);
 }
 
+int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
+  // Not yet implemented.
+  return 0;
+}
+
+void os::print_os_info_brief(outputStream* st) {
+  uint32_t ver = os::Aix::os_version();
+  st->print_cr("AIX kernel version %u.%u.%u.%u",
+               (ver >> 24) & 0xFF, (ver >> 16) & 0xFF, (ver >> 8) & 0xFF, ver & 0xFF);
+
+  os::Posix::print_uname_info(st);
+
+  // Linux uses print_libversion_info(st); here.
+}
+
 void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
