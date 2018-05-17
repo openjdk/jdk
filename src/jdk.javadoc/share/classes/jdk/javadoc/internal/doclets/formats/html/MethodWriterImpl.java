@@ -266,7 +266,6 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 .addTab(resources.getText("doclet.Default_Methods"), utils::isDefault)
                 .addTab(resources.getText("doclet.Deprecated_Methods"),
                         e -> utils.isDeprecated(e) || utils.isDeprecated(typeElement))
-                .setTabScriptVariable("methods")
                 .setTabScript(i -> "show(" + i + ");")
                 .setUseTBody(false)
                 .setPutIdFirst(true);

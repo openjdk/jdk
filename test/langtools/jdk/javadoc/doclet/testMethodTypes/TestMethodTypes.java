@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8002304 8024096 8193671
+ * @bug      8002304 8024096 8193671 8196201
  * @summary  Test for various method type tabs in the method summary table
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -47,7 +47,7 @@ public class TestMethodTypes extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/A.html", true,
-                "var methods = {",
+                "var data = {",
                 "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
                 + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
                 + "<span id=\"t1\" class=\"tableTab\"><span><a href=\"javascript:show(1);\">"
@@ -62,7 +62,7 @@ public class TestMethodTypes extends JavadocTester {
                 "<tr id=\"i0\" class=\"altColor\">");
 
         checkOutput("pkg1/B.html", true,
-                "var methods = {\"i0\":6,\"i1\":18,\"i2\":18,\"i3\":1,\"i4\":1,"
+                "var data = {\"i0\":6,\"i1\":18,\"i2\":18,\"i3\":1,\"i4\":1,"
                 + "\"i5\":6,\"i6\":6,\"i7\":6,\"i8\":6};\n",
                 "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All Methods</span>"
                 + "<span class=\"tabEnd\">&nbsp;</span></span><span id=\"t1\" class=\"tableTab\">"
@@ -76,7 +76,7 @@ public class TestMethodTypes extends JavadocTester {
                 + "<span class=\"tabEnd\">&nbsp;</span></span></caption>\n");
 
         checkOutput("pkg1/D.html", true,
-                "var methods = {",
+                "var data = {",
                 "<caption><span id=\"t0\" class=\"activeTableTab\"><span>All "
                 + "Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
                 + "<span id=\"t2\" class=\"tableTab\"><span><a href=\"javascript:show(2);\">"

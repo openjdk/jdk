@@ -47,14 +47,16 @@ function getURLPrefix(ui) {
         var slash = "/";
         if (ui.item.category === catModules) {
             return ui.item.l + slash;
-        } else if (ui.item.category === catPackages) {
+        } else if (ui.item.category === catPackages && ui.item.m) {
             return ui.item.m + slash;
-        } else if (ui.item.category === catTypes || ui.item.category === catMembers) {
+        } else if ((ui.item.category === catTypes && ui.item.p) || ui.item.category === catMembers) {
             $.each(packageSearchIndex, function(index, item) {
                 if (ui.item.p == item.l) {
                     urlPrefix = item.m + slash;
                 }
             });
+            return urlPrefix;
+        } else {
             return urlPrefix;
         }
     }
@@ -116,7 +118,9 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
                     ? getHighlightedText(item.m + "/" + item.l)
                     : getHighlightedText(item.l);
         } else if (item.category === catTypes) {
-            label = getHighlightedText(item.p + "." + item.l);
+            label = (item.p)
+                    ? getHighlightedText(item.p + "." + item.l)
+                    : getHighlightedText(item.l);
         } else if (item.category === catMembers) {
             label = getHighlightedText(item.p + "." + (item.c + "." + item.l));
         } else if (item.category === catSearchTags) {
@@ -306,9 +310,15 @@ $(function() {
                         url = ui.item.l + "-summary.html";
                     }
                 } else if (ui.item.category === catPackages) {
+                    if (ui.item.url) {
+                        url = ui.item.url;
+                    } else {
                     url += ui.item.l.replace(/\./g, '/') + "/package-summary.html";
+                    }
                 } else if (ui.item.category === catTypes) {
-                    if (ui.item.p === "<Unnamed>") {
+                    if (ui.item.url) {
+                        url = ui.item.url;
+                    } else if (ui.item.p === "<Unnamed>") {
                         url += ui.item.l + ".html";
                     } else {
                         url += ui.item.p.replace(/\./g, '/') + "/" + ui.item.l + ".html";

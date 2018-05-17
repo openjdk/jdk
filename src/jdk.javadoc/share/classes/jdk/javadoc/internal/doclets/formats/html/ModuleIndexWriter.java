@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,8 +131,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
                     .setHeader(header)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setDefaultTab(resources.getText("doclet.All_Modules"))
-                    .setTabScriptVariable("groups")
-                    .setTabScript(i -> "showGroups(" + i + ");")
+                    .setTabScript(i -> "show(" + i + ");")
                     .setTabId(i -> (i == 0) ? "t0" : ("t" + (1 << (i - 1))));
 
             // add the tabs in command-line order
