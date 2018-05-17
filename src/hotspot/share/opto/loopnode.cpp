@@ -2641,9 +2641,6 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
 
-  // Reset major-progress flag for the driver's heuristics
-  C->clear_major_progress();
-
 #ifndef PRODUCT
   // Capture for later assert
   uint unique = C->unique();
@@ -2714,11 +2711,16 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
   if( !_verify_me && !_verify_only && _ltree_root->_child ) {
     C->print_method(PHASE_BEFORE_BEAUTIFY_LOOPS, 3);
     if( _ltree_root->_child->beautify_loops( this ) ) {
+      // IdealLoopTree::split_outer_loop may produce phi-nodes with a single in edge.
+      // Transform them away.
+      _igvn.optimize();
+
       // Re-build loop tree!
       _ltree_root->_child = NULL;
       _nodes.clear();
       reallocate_preorders();
       build_loop_tree();
+
       // Check for bailout, and return
       if (C->failing()) {
         return;
@@ -2729,6 +2731,9 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
       C->print_method(PHASE_AFTER_BEAUTIFY_LOOPS, 3);
     }
   }
+
+  // Reset major-progress flag for the driver's heuristics
+  C->clear_major_progress();
 
   // Build Dominators for elision of NULL checks & loop finding.
   // Since nodes do not have a slot for immediate dominator, make
