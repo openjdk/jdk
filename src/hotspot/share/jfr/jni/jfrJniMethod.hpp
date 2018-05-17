@@ -117,7 +117,7 @@ void JNICALL jfr_abort(JNIEnv* env, jobject jvm, jstring errorMsg);
 
 jlong JNICALL jfr_get_epoch_address(JNIEnv* env, jobject jvm);
 
-jlong JNICALL jfr_add_string_constant(JNIEnv* env, jclass jvm, jlong gen, jlong id, jstring string);
+jboolean JNICALL jfr_add_string_constant(JNIEnv* env, jclass jvm, jboolean epoch, jlong id, jstring string);
 
 void JNICALL jfr_uncaught_exception(JNIEnv* env, jobject jvm, jobject thread, jthrowable throwable);
 
