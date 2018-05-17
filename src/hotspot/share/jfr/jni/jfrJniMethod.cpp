@@ -298,11 +298,11 @@ JVM_ENTRY_NO_ENV(jlong, jfr_type_id(JNIEnv* env, jobject jvm, jclass jc))
 JVM_END
 
 JVM_ENTRY_NO_ENV(jboolean, jfr_add_string_constant(JNIEnv* env, jclass jvm, jboolean epoch, jlong id, jstring string))
-  return JfrStringPool::add(epoch == JNI_TRUE, id, string, thread);
+  return JfrStringPool::add(epoch == JNI_TRUE, id, string, thread) ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_set_force_instrumentation(JNIEnv* env, jobject jvm, jboolean force_instrumentation))
-  JfrEventClassTransformer::set_force_instrumentation(force_instrumentation == JNI_TRUE ? true : false);
+  JfrEventClassTransformer::set_force_instrumentation(force_instrumentation == JNI_TRUE);
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_emit_old_object_samples(JNIEnv* env, jobject jvm, jlong cutoff_ticks, jboolean emit_all))
