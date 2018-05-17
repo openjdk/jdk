@@ -65,9 +65,10 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register base, RegisterOrConstant ind_or_offs, Register dst,
-                                  Register tmp1, Register tmp2, bool needs_frame, Label *is_null) {
-  bool on_heap = (decorators & IN_HEAP) != 0;
-  bool on_root = (decorators & IN_ROOT) != 0;
+                                  Register tmp1, Register tmp2, bool needs_frame, Label *L_handle_null) {
+  bool on_heap  = (decorators & IN_HEAP) != 0;
+  bool on_root  = (decorators & IN_ROOT) != 0;
+  bool not_null = (decorators & OOP_NOT_NULL) != 0;
   assert(on_heap || on_root, "where?");
   assert_different_registers(ind_or_offs.register_or_noreg(), dst, R0);
 
@@ -75,19 +76,24 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
   case T_ARRAY:
   case T_OBJECT: {
     if (UseCompressedOops && on_heap) {
-      __ lwz(dst, ind_or_offs, base);
-      if (is_null) {
+      if (L_handle_null != NULL) { // Label provided.
+        __ lwz(dst, ind_or_offs, base);
         __ cmpwi(CCR0, dst, 0);
-        __ beq(CCR0, *is_null);
+        __ beq(CCR0, *L_handle_null);
         __ decode_heap_oop_not_null(dst);
-      } else {
+      } else if (not_null) { // Guaranteed to be not null.
+        Register narrowOop = (tmp1 != noreg && Universe::narrow_oop_base_disjoint()) ? tmp1 : dst;
+        __ lwz(narrowOop, ind_or_offs, base);
+        __ decode_heap_oop_not_null(dst, narrowOop);
+      } else { // Any oop.
+        __ lwz(dst, ind_or_offs, base);
         __ decode_heap_oop(dst);
       }
     } else {
       __ ld(dst, ind_or_offs, base);
-      if (is_null) {
+      if (L_handle_null != NULL) {
         __ cmpdi(CCR0, dst, 0);
-        __ beq(CCR0, *is_null);
+        __ beq(CCR0, *L_handle_null);
       }
     }
     break;

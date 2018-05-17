@@ -40,7 +40,7 @@ public:
                                   Register dst, Register count, bool do_return = false);
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                       const Address& addr, Register dst, Register tmp1, Register tmp2, Label *is_null = NULL);
+                       const Address& addr, Register dst, Register tmp1, Register tmp2, Label *L_handle_null = NULL);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3);
 

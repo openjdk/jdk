@@ -512,9 +512,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ z_bre(slow_path);
 
   //  Load the value of the referent field.
- BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
- bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT,
-                   Address(pre_val, referent_offset), pre_val, scratch1, scratch2);
+  __ load_heap_oop(pre_val, Address(pre_val, referent_offset), scratch1, scratch2, ON_WEAK_OOP_REF);
 
   // Restore caller sp for c2i case.
   __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.

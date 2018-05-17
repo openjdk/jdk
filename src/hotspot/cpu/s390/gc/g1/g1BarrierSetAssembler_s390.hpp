@@ -65,7 +65,7 @@ class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
 #endif
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                       const Address& src, Register dst, Register tmp1, Register tmp2, Label *is_null = NULL);
+                       const Address& src, Register dst, Register tmp1, Register tmp2, Label *L_handle_null = NULL);
 
   virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
 };

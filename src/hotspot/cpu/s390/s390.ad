@@ -2239,8 +2239,8 @@ encode %{
       // Go through the vtable. Get receiver klass. Receiver already
       // checked for non-null. If we'll go thru a C2I adapter, the
       // interpreter expects method in Z_method.
-      // Use Z_method to temporarily hold the klass oop. Z_R1_scratch is destroyed
-      // by load_heap_oop_not_null.
+      // Use Z_method to temporarily hold the klass oop.
+      // Z_R1_scratch is destroyed.
       __ load_klass(Z_method, Z_R2);
 
       int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();

@@ -2198,7 +2198,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // ======== loop entry is here ========
     __ bind(load_element);
-    __ load_heap_oop(R10_oop, R8_offset, R3_from, &store_null);  // Load the oop.
+    __ load_heap_oop(R10_oop, R8_offset, R3_from, R12_tmp, noreg, false, AS_RAW, &store_null);
 
     __ load_klass(R11_klass, R10_oop); // Query the object klass.
 

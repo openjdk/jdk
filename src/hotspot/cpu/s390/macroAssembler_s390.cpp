@@ -4047,68 +4047,52 @@ void MacroAssembler::compare_heap_oop(Register Rop1, Address mem, bool maybeNULL
   BLOCK_COMMENT("} compare heap oop");
 }
 
-// Load heap oop and decompress, if necessary.
-void  MacroAssembler::load_heap_oop(Register dest, const Address &a) {
-  if (UseCompressedOops) {
-    z_llgf(dest, a.disp(), a.indexOrR0(), a.baseOrR0());
-    oop_decoder(dest, dest, true);
+void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
+                                     const Address& addr, Register val,
+                                     Register tmp1, Register tmp2, Register tmp3) {
+  assert((decorators & ~(AS_RAW | IN_HEAP | IN_HEAP_ARRAY | IN_ROOT | OOP_NOT_NULL |
+                         ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bool as_raw = (decorators & AS_RAW) != 0;
+  if (as_raw) {
+    bs->BarrierSetAssembler::store_at(this, decorators, type,
+                                      addr, val,
+                                      tmp1, tmp2, tmp3);
   } else {
-    z_lg(dest, a.disp(), a.indexOrR0(), a.baseOrR0());
+    bs->store_at(this, decorators, type,
+                 addr, val,
+                 tmp1, tmp2, tmp3);
   }
 }
 
-// Load heap oop and decompress, if necessary.
-void MacroAssembler::load_heap_oop(Register dest, int64_t disp, Register base) {
-  if (UseCompressedOops) {
-    z_llgf(dest, disp, base);
-    oop_decoder(dest, dest, true);
+void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
+                                    const Address& addr, Register dst,
+                                    Register tmp1, Register tmp2, Label *is_null) {
+  assert((decorators & ~(AS_RAW | IN_HEAP | IN_HEAP_ARRAY | IN_ROOT | OOP_NOT_NULL |
+                         ON_PHANTOM_OOP_REF | ON_WEAK_OOP_REF)) == 0, "unsupported decorator");
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bool as_raw = (decorators & AS_RAW) != 0;
+  if (as_raw) {
+    bs->BarrierSetAssembler::load_at(this, decorators, type,
+                                     addr, dst,
+                                     tmp1, tmp2, is_null);
   } else {
-    z_lg(dest, disp, base);
+    bs->load_at(this, decorators, type,
+                addr, dst,
+                tmp1, tmp2, is_null);
   }
 }
 
-// Load heap oop and decompress, if necessary.
-void MacroAssembler::load_heap_oop_not_null(Register dest, int64_t disp, Register base) {
-  if (UseCompressedOops) {
-    z_llgf(dest, disp, base);
-    oop_decoder(dest, dest, false);
-  } else {
-    z_lg(dest, disp, base);
-  }
+void MacroAssembler::load_heap_oop(Register dest, const Address &a,
+                                   Register tmp1, Register tmp2,
+                                   DecoratorSet decorators, Label *is_null) {
+  access_load_at(T_OBJECT, IN_HEAP | decorators, a, dest, tmp1, tmp2, is_null);
 }
 
-// Compress, if necessary, and store oop to heap.
-void MacroAssembler::store_heap_oop(Register Roop, RegisterOrConstant offset, Register base) {
-  Register Ridx = offset.is_register() ? offset.register_or_noreg() : Z_R0;
-  if (UseCompressedOops) {
-    assert_different_registers(Roop, offset.register_or_noreg(), base);
-    encode_heap_oop(Roop);
-    z_st(Roop, offset.constant_or_zero(), Ridx, base);
-  } else {
-    z_stg(Roop, offset.constant_or_zero(), Ridx, base);
-  }
-}
-
-// Compress, if necessary, and store oop to heap. Oop is guaranteed to be not NULL.
-void MacroAssembler::store_heap_oop_not_null(Register Roop, RegisterOrConstant offset, Register base) {
-  Register Ridx = offset.is_register() ? offset.register_or_noreg() : Z_R0;
-  if (UseCompressedOops) {
-    assert_different_registers(Roop, offset.register_or_noreg(), base);
-    encode_heap_oop_not_null(Roop);
-    z_st(Roop, offset.constant_or_zero(), Ridx, base);
-  } else {
-    z_stg(Roop, offset.constant_or_zero(), Ridx, base);
-  }
-}
-
-// Store NULL oop to heap.
-void MacroAssembler::store_heap_oop_null(Register zero, RegisterOrConstant offset, Register base) {
-  Register Ridx = offset.is_register() ? offset.register_or_noreg() : Z_R0;
-  if (UseCompressedOops) {
-    z_st(zero, offset.constant_or_zero(), Ridx, base);
-  } else {
-    z_stg(zero, offset.constant_or_zero(), Ridx, base);
-  }
+void MacroAssembler::store_heap_oop(Register Roop, const Address &a,
+                                    Register tmp1, Register tmp2, Register tmp3,
+                                    DecoratorSet decorators) {
+  access_store_at(T_OBJECT, IN_HEAP | decorators, a, Roop, tmp1, tmp2, tmp3);
 }
 
 //-------------------------------------------------
