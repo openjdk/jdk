@@ -216,6 +216,7 @@ java/awt/Window/ShapedAndTranslucentWindows/ShapedTranslucentWindowClick.java 80
 java/awt/Window/ShapedAndTranslucentWindows/StaticallyShaped.java 8165218 macosx-all
 java/awt/Window/AlwaysOnTop/AutoTestOnTop.java 6847593 macosx-all
 java/awt/Window/GrabSequence/GrabSequence.java 6848409 macosx-all,linux-all
+java/awt/Window/LocationAtScreenCorner/LocationAtScreenCorner.java 8203371 linux-all,solaris-all
 java/awt/font/TextLayout/CombiningPerf.java 8192931 generic-all
 java/awt/font/TextLayout/TextLayoutBounds.java 8169188 generic-all
 java/awt/font/StyledMetrics/BoldSpace.java 8198422 linux-all
@@ -482,7 +483,7 @@ java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
 java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8030121 macosx-all
 java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.html 7124275 macosx-all
-java/awt/Focus/TranserFocusToWindow/TranserFocusToWindow.java 6848810 macosx-all 
+java/awt/Focus/TranserFocusToWindow/TranserFocusToWindow.java 6848810 macosx-all
 java/awt/Component/NativeInLightShow/NativeInLightShow.java 8202932 linux-all
 java/awt/grab/GrabOnUnfocusableToplevel/GrabOnUnfocusableToplevel.java 8202933 linux-all
 java/awt/grab/MenuDragEvents/MenuDragEvents.html 8202934 linux-all
@@ -491,7 +492,7 @@ java/awt/image/VolatileImage/BitmaskVolatileImage.java 8133102 linux-all
 java/awt/SplashScreen/MultiResolutionSplash/unix/UnixMultiResolutionSplashTest.java 8203004 linux-all
 java/awt/Robot/AcceptExtraMouseButtons/AcceptExtraMouseButtons.java 7107528 linux-all,macosx-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java 8080676 linux-all
-java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersInKeyEvent.java 
+java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersInKeyEvent.java
 java/awt/Mouse/TitleBarDoubleClick/TitleBarDoubleClick.html 8148041 linux-all
 java/awt/Toolkit/DesktopProperties/rfe4758438.java 8193547 linux-all
 java/awt/Toolkit/ToolkitPropertyTest/ToolkitPropertyTest_Enable.java 6847163

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,56 @@
 
 package sun.lwawt;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.peer.*;
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.MenuBar;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.SystemColor;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.WindowEvent;
+import java.awt.peer.ComponentPeer;
+import java.awt.peer.DialogPeer;
+import java.awt.peer.FramePeer;
+import java.awt.peer.KeyboardFocusManagerPeer;
+import java.awt.peer.WindowPeer;
 import java.util.List;
 
-import javax.swing.*;
+import javax.swing.JComponent;
 
-import sun.awt.*;
+import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.ComponentAccessor;
-import sun.java2d.*;
+import sun.awt.AppContext;
+import sun.awt.CGraphicsDevice;
+import sun.awt.DisplayChangedListener;
+import sun.awt.ExtendedKeyCodes;
+import sun.awt.FullScreenCapable;
+import sun.awt.SunToolkit;
+import sun.awt.TimedWindowEvent;
+import sun.awt.UngrabEvent;
+import sun.java2d.NullSurfaceData;
+import sun.java2d.SunGraphics2D;
+import sun.java2d.SunGraphicsEnvironment;
+import sun.java2d.SurfaceData;
 import sun.java2d.loops.Blit;
 import sun.java2d.loops.CompositeType;
 import sun.java2d.pipe.Region;
@@ -661,16 +701,25 @@ public class LWWindowPeer
      * user or window insets are changed. There's no notifyReshape() in
      * LWComponentPeer as the only components which could be resized by user are
      * top-level windows.
+     * <p>
+     * We need to update the target and post the events, if the peer was moved
+     * or resized, or if the target is out of sync with this peer.
      */
     @Override
     public void notifyReshape(int x, int y, int w, int h) {
-        Rectangle oldBounds = getBounds();
+        final Rectangle pBounds = getBounds();
         final boolean invalid = updateInsets(platformWindow.getInsets());
-        final boolean moved = (x != oldBounds.x) || (y != oldBounds.y);
-        final boolean resized = (w != oldBounds.width) || (h != oldBounds.height);
+        final boolean pMoved = (x != pBounds.x) || (y != pBounds.y);
+        final boolean pResized = (w != pBounds.width) || (h != pBounds.height);
+
+        final ComponentAccessor accessor = AWTAccessor.getComponentAccessor();
+        final Rectangle tBounds = accessor.getBounds(getTarget());
+        final boolean tMoved = (x != tBounds.x) || (y != tBounds.y);
+        final boolean tResized = (w != tBounds.width) || (h != tBounds.height);
 
         // Check if anything changed
-        if (!moved && !resized && !invalid) {
+        if (!tMoved && !tResized && !pMoved && !pResized && !invalid) {
+            // Native window(NSWindow)/LWWindowPeer/Target are in sync
             return;
         }
         // First, update peer's bounds
@@ -682,16 +731,16 @@ public class LWWindowPeer
             setPlatformMaximizedBounds(getDefaultMaximizedBounds());
         }
 
-        if (resized || isNewDevice) {
+        if (pResized || isNewDevice) {
             replaceSurfaceData();
             updateMinimumSize();
         }
 
         // Third, COMPONENT_MOVED/COMPONENT_RESIZED/PAINT events
-        if (moved || invalid) {
+        if (tMoved || pMoved || invalid) {
             handleMove(x, y, true);
         }
-        if (resized || invalid || isNewDevice) {
+        if (tResized || pResized || invalid || isNewDevice) {
             handleResize(w, h, true);
             repaintPeer();
         }
