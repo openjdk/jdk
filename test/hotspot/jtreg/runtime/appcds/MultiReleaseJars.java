@@ -41,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class MultiReleaseJars {
 
-    static final int MAJOR_VERSION = 10; // Runtime.version().major();
+    static final int MAJOR_VERSION = Runtime.version().major();
     static final String MAJOR_VERSION_STRING = String.valueOf(MAJOR_VERSION);
 
     static String[] getMain() {
