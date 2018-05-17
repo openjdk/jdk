@@ -6276,6 +6276,8 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
 
 // ((OopHandle)result).resolve();
 void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
+  assert_different_registers(result, tmp);
+
   // Only 64 bit platforms support GCs that require a tmp register
   // Only IN_HEAP loads require a thread_tmp register
   // OopHandle::resolve is an indirection like jobject.
