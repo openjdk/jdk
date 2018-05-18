@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,13 +62,29 @@ public class KeyTabInputStream extends KrbDataInputStream implements KeyTabConst
     }
 
 
-    KeyTabEntry readEntry(int entryLen, int ktVersion) throws IOException, RealmException {
+    KeyTabEntry readEntry(int entryLen, int ktVersion)
+            throws IOException, RealmException {
+
         index = entryLen;
-        if (index == 0) {    //in native implementation, when the last entry is deleted, a byte 0 is left.
+        // in native implementation, when the last entry is deleted,
+        // an entry length of 0 is left.
+        if (index == 0) {
             return null;
         }
-        if (index < 0) {    //in native implementation, when one of the entries is deleted, the entry length turns to be negative, and
-            skip(Math.abs(index));                //the fields are left with 0 bytes
+        // in native implementation, when one of the entries is deleted,
+        // the entry length is changed to be negative, and the content
+        // is zeroed out to be a "hole".
+        if (index < 0) {
+            // Skip the zeroed content.
+            long n = -index;
+            while (n > 0) {
+                long n2 = skip(n);
+                if (n2 == 0) {
+                    throw new IOException("Premature end of stream reached");
+                } else {
+                    n -= n2;
+                }
+            }
             return null;
         }
         int principalNum = read(2);     //the number of service names.
