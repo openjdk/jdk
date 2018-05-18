@@ -684,10 +684,12 @@ class PhaseIdealLoop : public PhaseTransform {
   // Mark as post visited
   void set_postvisited( Node *n ) { assert( !is_postvisited( n ), "" ); _preorders[n->_idx] |= 1; }
 
+public:
   // Set/get control node out.  Set lower bit to distinguish from IdealLoopTree
   // Returns true if "n" is a data node, false if it's a control node.
   bool has_ctrl( Node *n ) const { return ((intptr_t)_nodes[n->_idx]) & 1; }
 
+private:
   // clear out dead code after build_loop_late
   Node_List _deadlist;
 
@@ -735,6 +737,8 @@ class PhaseIdealLoop : public PhaseTransform {
                             uint dd_main_head);
 
 public:
+
+  PhaseIterGVN &igvn() const { return _igvn; }
 
   static bool is_canonical_loop_entry(CountedLoopNode* cl);
 
@@ -789,7 +793,6 @@ public:
     }
   }
 
-private:
   Node *get_ctrl_no_update_helper(Node *i) const {
     assert(has_ctrl(i), "should be control, not loop");
     return (Node*)(((intptr_t)_nodes[i->_idx]) & ~1);
@@ -822,7 +825,6 @@ private:
   // the 'old_node' with 'new_node'.  Kill old-node.  Add a reference
   // from old_node to new_node to support the lazy update.  Reference
   // replaces loop reference, since that is not needed for dead node.
-public:
   void lazy_update(Node *old_node, Node *new_node) {
     assert(old_node != new_node, "no cycles please");
     // Re-use the side array slot for this node to provide the
@@ -856,6 +858,7 @@ private:
   uint *_dom_depth;              // Used for fast LCA test
   GrowableArray<uint>* _dom_stk; // For recomputation of dom depth
 
+public:
   Node* idom_no_update(Node* d) const {
     return idom_no_update(d->_idx);
   }
@@ -911,7 +914,6 @@ private:
   // build the loop tree and perform any requested optimizations
   void build_and_optimize(bool do_split_if, bool skip_loop_opts);
 
-public:
   // Dominators for the sea of nodes
   void Dominators();
   Node *dom_lca( Node *n1, Node *n2 ) const {
@@ -967,6 +969,8 @@ public:
     assert(!has_ctrl(n), "");
     return (IdealLoopTree*)_nodes[n->_idx];
   }
+
+  IdealLoopTree *ltree_root() const { return _ltree_root; }
 
   // Is 'n' a (nested) member of 'loop'?
   int is_member( const IdealLoopTree *loop, Node *n ) const {

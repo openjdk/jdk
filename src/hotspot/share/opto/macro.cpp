@@ -227,108 +227,9 @@ void PhaseMacroExpand::extract_call_projections(CallNode *call) {
 
 }
 
-// Eliminate a card mark sequence.  p2x is a ConvP2XNode
-void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
-  assert(p2x->Opcode() == Op_CastP2X, "ConvP2XNode required");
-  if (!UseG1GC) {
-    // vanilla/CMS post barrier
-    Node *shift = p2x->unique_out();
-    Node *addp = shift->unique_out();
-    for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
-      Node *mem = addp->last_out(j);
-      if (UseCondCardMark && mem->is_Load()) {
-        assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
-        // The load is checking if the card has been written so
-        // replace it with zero to fold the test.
-        _igvn.replace_node(mem, intcon(0));
-        continue;
-      }
-      assert(mem->is_Store(), "store required");
-      _igvn.replace_node(mem, mem->in(MemNode::Memory));
-    }
-  }
-#if INCLUDE_G1GC
-  else {
-    // G1 pre/post barriers
-    assert(p2x->outcnt() <= 2, "expects 1 or 2 users: Xor and URShift nodes");
-    // It could be only one user, URShift node, in Object.clone() intrinsic
-    // but the new allocation is passed to arraycopy stub and it could not
-    // be scalar replaced. So we don't check the case.
-
-    // An other case of only one user (Xor) is when the value check for NULL
-    // in G1 post barrier is folded after CCP so the code which used URShift
-    // is removed.
-
-    // Take Region node before eliminating post barrier since it also
-    // eliminates CastP2X node when it has only one user.
-    Node* this_region = p2x->in(0);
-    assert(this_region != NULL, "");
-
-    // Remove G1 post barrier.
-
-    // Search for CastP2X->Xor->URShift->Cmp path which
-    // checks if the store done to a different from the value's region.
-    // And replace Cmp with #0 (false) to collapse G1 post barrier.
-    Node* xorx = p2x->find_out_with(Op_XorX);
-    if (xorx != NULL) {
-      Node* shift = xorx->unique_out();
-      Node* cmpx = shift->unique_out();
-      assert(cmpx->is_Cmp() && cmpx->unique_out()->is_Bool() &&
-      cmpx->unique_out()->as_Bool()->_test._test == BoolTest::ne,
-      "missing region check in G1 post barrier");
-      _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
-
-      // Remove G1 pre barrier.
-
-      // Search "if (marking != 0)" check and set it to "false".
-      // There is no G1 pre barrier if previous stored value is NULL
-      // (for example, after initialization).
-      if (this_region->is_Region() && this_region->req() == 3) {
-        int ind = 1;
-        if (!this_region->in(ind)->is_IfFalse()) {
-          ind = 2;
-        }
-        if (this_region->in(ind)->is_IfFalse() &&
-            this_region->in(ind)->in(0)->Opcode() == Op_If) {
-          Node* bol = this_region->in(ind)->in(0)->in(1);
-          assert(bol->is_Bool(), "");
-          cmpx = bol->in(1);
-          if (bol->as_Bool()->_test._test == BoolTest::ne &&
-              cmpx->is_Cmp() && cmpx->in(2) == intcon(0) &&
-              cmpx->in(1)->is_Load()) {
-            Node* adr = cmpx->in(1)->as_Load()->in(MemNode::Address);
-            const int marking_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
-            if (adr->is_AddP() && adr->in(AddPNode::Base) == top() &&
-                adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
-                adr->in(AddPNode::Offset) == MakeConX(marking_offset)) {
-              _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
-            }
-          }
-        }
-      }
-    } else {
-      assert(!GraphKit::use_ReduceInitialCardMarks(), "can only happen with card marking");
-      // This is a G1 post barrier emitted by the Object.clone() intrinsic.
-      // Search for the CastP2X->URShiftX->AddP->LoadB->Cmp path which checks if the card
-      // is marked as young_gen and replace the Cmp with 0 (false) to collapse the barrier.
-      Node* shift = p2x->find_out_with(Op_URShiftX);
-      assert(shift != NULL, "missing G1 post barrier");
-      Node* addp = shift->unique_out();
-      Node* load = addp->find_out_with(Op_LoadB);
-      assert(load != NULL, "missing G1 post barrier");
-      Node* cmpx = load->unique_out();
-      assert(cmpx->is_Cmp() && cmpx->unique_out()->is_Bool() &&
-             cmpx->unique_out()->as_Bool()->_test._test == BoolTest::ne,
-             "missing card value check in G1 post barrier");
-      _igvn.replace_node(cmpx, makecon(TypeInt::CC_EQ));
-      // There is no G1 pre barrier in this case
-    }
-    // Now CastP2X can be removed since it is used only on dead path
-    // which currently still alive until igvn optimize it.
-    assert(p2x->outcnt() == 0 || p2x->unique_out()->Opcode() == Op_URShiftX, "");
-    _igvn.replace_node(p2x, top());
-  }
-#endif // INCLUDE_G1GC
+void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
+  BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->eliminate_gc_barrier(this, p2x);
 }
 
 // Search for a memory operation for the specified memory slice.
@@ -1029,7 +930,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
               disconnect_projections(membar_after->as_MemBar(), _igvn);
             }
           } else {
-            eliminate_card_mark(n);
+            eliminate_gc_barrier(n);
           }
           k -= (oc2 - use->outcnt());
         }
@@ -1062,7 +963,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc) {
 
         _igvn._worklist.push(ac);
       } else {
-        eliminate_card_mark(use);
+        eliminate_gc_barrier(use);
       }
       j -= (oc1 - res->outcnt());
     }
@@ -2801,5 +2702,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   _igvn.set_delay_transform(false);
   _igvn.optimize();
   if (C->failing())  return true;
-  return false;
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  return bs->expand_macro_nodes(this);
 }
