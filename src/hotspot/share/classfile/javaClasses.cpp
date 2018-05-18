@@ -4134,9 +4134,9 @@ const char* java_lang_ClassLoader::describe_external(const oop loader) {
       oop parentNameOop = java_lang_ClassLoader::name(pl);
       if (parentNameOop != NULL) {
         parentName = java_lang_String::as_utf8_string(parentNameOop);
-        if (parentName == NULL) {
-          parentName = "<unnamed>";
-        }
+      }
+      if (parentName == NULL) {
+        parentName = "<unnamed>";
       }
       ss.print(", child of \"%s\" %s", parentName, pl->klass()->external_name());
     } else {
