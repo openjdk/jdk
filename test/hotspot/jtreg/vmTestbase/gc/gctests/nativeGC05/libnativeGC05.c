@@ -27,7 +27,7 @@ JNIEXPORT void JNICALL
 Java_gc_gctests_nativeGC05_nativeGC05_kickOffRefillers
 (JNIEnv *env, jobject obj, jobject matrix, jobject stack) {
         jclass matrixClass, stackClass, pairClass = 0;
-        jmethodID stack_pop_mid, stack_empty_mid, matrix_repopulate_mid, pair_geti_mid, pair_getj_mid;
+        jmethodID stack_pop_mid, stack_empty_mid, matrix_repopulate_mid, pair_geti_mid = 0, pair_getj_mid = 0;
         jobject pair;
         jint i, j;
         jboolean b;
