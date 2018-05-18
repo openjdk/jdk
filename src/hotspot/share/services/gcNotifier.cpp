@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,32 +133,20 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
   // The type is 'I'
   objArrayOop extra_args_array = oopFactory::new_objArray(SystemDictionary::Integer_klass(), 1, CHECK_NH);
   objArrayHandle extra_array (THREAD, extra_args_array);
-  InstanceKlass* intK = SystemDictionary::Integer_klass();
 
-  instanceHandle extra_arg_val = intK->allocate_instance_handle(CHECK_NH);
-
-  {
-    JavaValue res(T_VOID);
-    JavaCallArguments argsInt;
-    argsInt.push_oop(extra_arg_val);
-    argsInt.push_int(gcManager->num_gc_threads());
-
-    JavaCalls::call_special(&res,
-                            intK,
-                            vmSymbols::object_initializer_name(),
+  JavaCallArguments argsInt;
+  argsInt.push_int(gcManager->num_gc_threads());
+  Handle extra_arg_val = JavaCalls::construct_new_instance(
+                            SystemDictionary::Integer_klass(),
                             vmSymbols::int_void_signature(),
                             &argsInt,
                             CHECK_NH);
-  }
+
   extra_array->obj_at_put(0,extra_arg_val());
 
   InstanceKlass* gcInfoklass = Management::com_sun_management_GcInfo_klass(CHECK_NH);
 
-  Handle gcInfo_instance = gcInfoklass->allocate_instance_handle(CHECK_NH);
-
-  JavaValue constructor_result(T_VOID);
   JavaCallArguments constructor_args(16);
-  constructor_args.push_oop(gcInfo_instance);
   constructor_args.push_oop(getGcInfoBuilder(gcManager,THREAD));
   constructor_args.push_long(gcStatInfo->gc_index());
   constructor_args.push_long(Management::ticks_to_ms(gcStatInfo->start_time()));
@@ -167,14 +155,11 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
   constructor_args.push_oop(usage_after_gc_ah);
   constructor_args.push_oop(extra_array);
 
-  JavaCalls::call_special(&constructor_result,
+  return JavaCalls::construct_new_instance(
                           gcInfoklass,
-                          vmSymbols::object_initializer_name(),
                           vmSymbols::com_sun_management_GcInfo_constructor_signature(),
                           &constructor_args,
                           CHECK_NH);
-
-  return Handle(THREAD, gcInfo_instance());
 }
 
 void GCNotifier::sendNotification(TRAPS) {

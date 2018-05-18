@@ -217,23 +217,17 @@ bool MemoryService::set_verbose(bool verbose) {
 Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
   InstanceKlass* ik = Management::java_lang_management_MemoryUsage_klass(CHECK_NH);
 
-  instanceHandle obj = ik->allocate_instance_handle(CHECK_NH);
-
-  JavaValue result(T_VOID);
   JavaCallArguments args(10);
-  args.push_oop(obj);                         // receiver
-  args.push_long(usage.init_size_as_jlong()); // Argument 1
-  args.push_long(usage.used_as_jlong());      // Argument 2
-  args.push_long(usage.committed_as_jlong()); // Argument 3
-  args.push_long(usage.max_size_as_jlong());  // Argument 4
+  args.push_long(usage.init_size_as_jlong());
+  args.push_long(usage.used_as_jlong());
+  args.push_long(usage.committed_as_jlong());
+  args.push_long(usage.max_size_as_jlong());
 
-  JavaCalls::call_special(&result,
+  return JavaCalls::construct_new_instance(
                           ik,
-                          vmSymbols::object_initializer_name(),
                           vmSymbols::long_long_long_long_void_signature(),
                           &args,
                           CHECK_NH);
-  return obj;
 }
 
 TraceMemoryManagerStats::TraceMemoryManagerStats(GCMemoryManager* gc_memory_manager,
