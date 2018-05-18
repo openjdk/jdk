@@ -233,6 +233,10 @@ class os: AllStatic {
   static bool has_allocatable_memory_limit(julong* limit);
   static bool is_server_class_machine();
 
+  // Returns the id of the processor on which the calling thread is currently executing.
+  // The returned value is guaranteed to be between 0 and (os::processor_count() - 1).
+  static uint processor_id();
+
   // number of CPUs
   static int processor_count() {
     return _processor_count;
