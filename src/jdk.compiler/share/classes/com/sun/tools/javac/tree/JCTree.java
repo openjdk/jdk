@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -729,10 +729,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
 
         /** list of target types inferred for this functional expression. */
-        public List<Type> targets;
+        public Type target;
 
         public Type getDescriptorType(Types types) {
-            return targets.nonEmpty() ? types.findDescriptorType(targets.head) : types.createErrorType(null);
+            return target != null ? types.findDescriptorType(target) : types.createErrorType(null);
         }
     }
 

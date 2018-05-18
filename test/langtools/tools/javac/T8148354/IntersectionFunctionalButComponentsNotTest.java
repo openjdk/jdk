@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,29 @@
  * questions.
  */
 
-// key: compiler.misc.not.a.functional.intf.1
-// key: compiler.err.prob.found.req
-// key: compiler.misc.incompatible.abstracts
+/*
+ * @test
+ * bug 8148354
+ * @summary Errors targeting functional interface intersection types
+ * @compile IntersectionFunctionalButComponentsNotTest.java
+ */
+class IntersectionFunctionalButComponentsNotTest {
+    // nor A or B are functional interfaces but the intersection is
+    <T extends Object & A & B> void consume(T arg) { }
 
-class NotAnInterfaceComponent {
-    Object o = (String & Runnable) ()-> { };
+    void foo() {
+        consume(System::gc);
+    }
+
+    interface C {
+        void c();
+    }
+
+    interface A extends C {
+        void a();
+    }
+
+    interface B extends C {
+        default void c() { }
+    }
 }
