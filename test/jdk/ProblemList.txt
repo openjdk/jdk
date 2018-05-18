@@ -774,7 +774,7 @@ tools/jimage/JImageListTest.java                                8198405 windows-
 
 com/sun/jdi/RedefineImplementor.sh                              8004127 generic-all
 
-com/sun/jdi/JdbExprTest.sh                                      8185803 generic-all
+com/sun/jdi/JdbExprTest.sh                                      8203393 solaris-all
 
 com/sun/jdi/JdbMethodExitTest.sh                                8171483 generic-all
 
