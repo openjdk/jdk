@@ -784,8 +784,7 @@ class os: AllStatic {
   static struct hostent* get_host_by_name(char* name);
 
   // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)
-  static void  signal_init(TRAPS);
-  static void  signal_init_pd();
+  static void  initialize_jdk_signal_support(TRAPS);
   static void  signal_notify(int signal_number);
   static void* signal(int signal_number, void* handler);
   static void  signal_raise(int signal_number);

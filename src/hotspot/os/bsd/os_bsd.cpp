@@ -1818,7 +1818,7 @@ int os::sigexitnum_pd() {
 static volatile jint pending_signals[NSIG+1] = { 0 };
 static Semaphore* sig_sem = NULL;
 
-void os::signal_init_pd() {
+static void jdk_misc_signal_init() {
   // Initialize signal structures
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -1831,7 +1831,7 @@ void os::signal_notify(int sig) {
     Atomic::inc(&pending_signals[sig]);
     sig_sem->signal();
   } else {
-    // Signal thread is not created with ReduceSignalUsage and signal_init_pd
+    // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
     // initialization isn't called.
     assert(ReduceSignalUsage, "signal semaphore should be created");
   }
@@ -2761,7 +2761,7 @@ extern "C" JNIEXPORT int JVM_handle_bsd_signal(int signo, siginfo_t* siginfo,
                                                void* ucontext,
                                                int abort_if_unrecognized);
 
-void signalHandler(int sig, siginfo_t* info, void* uc) {
+static void signalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
   int orig_errno = errno;  // Preserve errno value over signal handler.
   JVM_handle_bsd_signal(sig, info, uc, true);
@@ -3289,6 +3289,10 @@ jint os::init_2(void) {
 
   Bsd::signal_sets_init();
   Bsd::install_signal_handlers();
+  // Initialize data for jdk.internal.misc.Signal
+  if (!ReduceSignalUsage) {
+    jdk_misc_signal_init();
+  }
 
   // Check and sets minimum stack sizes against command line options
   if (Posix::set_minimum_stack_sizes() == JNI_ERR) {

@@ -1798,7 +1798,7 @@ static void local_sem_wait() {
   }
 }
 
-void os::signal_init_pd() {
+static void jdk_misc_signal_init() {
   // Initialize signal structures
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -3023,7 +3023,7 @@ bool unblock_program_error_signals() {
 }
 
 // Renamed from 'signalHandler' to avoid collision with other shared libs.
-void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
+static void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
 
   // Never leave program error signals blocked;
@@ -3582,6 +3582,10 @@ jint os::init_2(void) {
 
   Aix::signal_sets_init();
   Aix::install_signal_handlers();
+  // Initialize data for jdk.internal.misc.Signal
+  if (!ReduceSignalUsage) {
+    jdk_misc_signal_init();
+  }
 
   // Check and sets minimum stack sizes against command line options
   if (Posix::set_minimum_stack_sizes() == JNI_ERR) {

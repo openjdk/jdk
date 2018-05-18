@@ -1993,7 +1993,7 @@ int os::sigexitnum_pd() {
 static volatile jint pending_signals[NSIG+1] = { 0 };
 static Semaphore* sig_sem = NULL;
 
-void os::signal_init_pd() {
+static void jdk_misc_signal_init() {
   // Initialize signal structures
   memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -2014,10 +2014,8 @@ void os::signal_init_pd() {
   // the CTRL-BREAK thread dump mechanism is also disabled in this
   // case.  See bugs 4323062, 4345157, and related bugs.
 
-  if (!ReduceSignalUsage) {
-    // Add a CTRL-C handler
-    SetConsoleCtrlHandler(consoleHandler, TRUE);
-  }
+  // Add a CTRL-C handler
+  SetConsoleCtrlHandler(consoleHandler, TRUE);
 }
 
 void os::signal_notify(int sig) {
@@ -2025,7 +2023,7 @@ void os::signal_notify(int sig) {
     Atomic::inc(&pending_signals[sig]);
     sig_sem->signal();
   } else {
-    // Signal thread is not created with ReduceSignalUsage and signal_init_pd
+    // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
     // initialization isn't called.
     assert(ReduceSignalUsage, "signal semaphore should be created");
   }
@@ -4131,6 +4129,11 @@ jint os::init_2(void) {
   }
 
   SymbolEngine::recalc_search_path();
+
+  // Initialize data for jdk.internal.misc.Signal
+  if (!ReduceSignalUsage) {
+    jdk_misc_signal_init();
+  }
 
   return JNI_OK;
 }
