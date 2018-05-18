@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include <signal.h>
 
 
-// sun.misc.Signal ///////////////////////////////////////////////////////////
+// jdk.internal.misc.Signal ///////////////////////////////////////////////////////////
 // Signal code is mostly copied from classic vm, signals_md.c   1.4 98/08/23
 /*
  * This function is included primarily as a debugging aid. If Java is
@@ -50,6 +50,12 @@ JVM_ENTRY_NO_ENV(void*, JVM_RegisterSignal(jint sig, void* handler))
     case SIGFPE:
     case SIGILL:
     case SIGSEGV:
+
+#if defined(__APPLE__)
+    /* On Darwin, memory access errors commonly results in SIGBUS instead
+     * of SIGSEGV. */
+    case SIGBUS:
+#endif
 
     /* The following signal is used by the VM to dump thread stacks unless
        ReduceSignalUsage is set, in which case the user is allowed to set
@@ -72,7 +78,7 @@ JVM_ENTRY_NO_ENV(void*, JVM_RegisterSignal(jint sig, void* handler))
     case SHUTDOWN2_SIGNAL:
     case SHUTDOWN3_SIGNAL:
       if (ReduceSignalUsage) return (void*)-1;
-      if (os::Linux::is_sig_ignored(sig)) return (void*)1;
+      if (os::Posix::is_sig_ignored(sig)) return (void*)1;
   }
 
   void* oldHandler = os::signal(sig, newHandler);
@@ -96,7 +102,7 @@ JVM_ENTRY_NO_ENV(jboolean, JVM_RaiseSignal(jint sig))
     }
   }
   else if ((sig == SHUTDOWN1_SIGNAL || sig == SHUTDOWN2_SIGNAL ||
-            sig == SHUTDOWN3_SIGNAL) && os::Linux::is_sig_ignored(sig)) {
+            sig == SHUTDOWN3_SIGNAL) && os::Posix::is_sig_ignored(sig)) {
     // do not allow SHUTDOWN1_SIGNAL to be raised when SHUTDOWN1_SIGNAL
     // is ignored, since no handler for them is actually registered in JVM
     // or via JVM_RegisterSignal.
