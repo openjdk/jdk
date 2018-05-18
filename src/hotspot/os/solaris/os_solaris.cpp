@@ -291,6 +291,12 @@ void os::Solaris::initialize_system_info() {
                                      (julong)sysconf(_SC_PAGESIZE);
 }
 
+uint os::processor_id() {
+  const processorid_t id = ::getcpuid();
+  assert(id >= 0 && id < _processor_count, "Invalid processor id");
+  return (uint)id;
+}
+
 int os::active_processor_count() {
   // User has overridden the number of active processors
   if (ActiveProcessorCount > 0) {
