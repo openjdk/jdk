@@ -309,9 +309,11 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     AC_MSG_ERROR([Specified JVM feature 'cmsgc' requires feature 'serialgc'])
   fi
 
-  # Enable JFR by default, except on linux-sparcv9 and on minimal.
-  if test "x$OPENJDK_TARGET_OS" != xlinux || test "x$OPENJDK_TARGET_CPU" != xsparcv9; then
-    NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jfr"
+  # Enable JFR by default, except for Zero, linux-sparcv9 and on minimal.
+  if ! HOTSPOT_CHECK_JVM_VARIANT(zero); then
+    if test "x$OPENJDK_TARGET_OS" != xlinux || test "x$OPENJDK_TARGET_CPU" != xsparcv9; then
+      NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jfr"
+    fi
   fi
 
   # Turn on additional features based on other parts of configure
