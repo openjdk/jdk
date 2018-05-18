@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #  @test
 #  @bug 4660158
 #  @author Staffan Larsen
-#  @requires os.family != "windows"
 #  @key intermittent
 #  @run shell JdbExprTest.sh
 
@@ -47,6 +46,7 @@ import java.net.URL;
 
 class $classname {
 
+    static Long lMax = new Long(java.lang.Long.MAX_VALUE); // force initialization of Long class
     static long aLong;
     static int anInt;
     static boolean aBoolean;
