@@ -49,7 +49,7 @@ public class ReleaseOptionCurrent {
         try (StandardJavaFileManager fm = compiler.getStandardFileManager(null, null, null)) {
             Iterable<? extends JavaFileObject> input =
                     fm.getJavaFileObjects(System.getProperty("test.src") + "/ReleaseOption.java");
-            List<String> options = Arrays.asList("--release", Source.DEFAULT.name);
+            List<String> options = Arrays.asList("-d", ".", "--release", Source.DEFAULT.name);
 
             boolean result = compiler.getTask(null, fm, null, options, null, input).call();
             if (!result) {
