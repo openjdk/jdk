@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type.IntersectionClassType;
+import com.sun.tools.javac.code.Types.FunctionDescriptorLookupError;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -593,7 +595,11 @@ public class TransTypes extends TreeTranslator {
             currentMethod = null;
             tree.params = translate(tree.params);
             tree.body = translate(tree.body, tree.body.type==null? null : erasure(tree.body.type));
-            tree.type = erasure(tree.type);
+            if (!tree.type.isIntersection()) {
+                tree.type = erasure(tree.type);
+            } else {
+                tree.type = types.erasure(types.findDescriptorSymbol(tree.type.tsym).owner.type);
+            }
             result = tree;
         }
         finally {
@@ -876,8 +882,11 @@ public class TransTypes extends TreeTranslator {
         } else {
             tree.expr = translate(tree.expr, receiverTarget);
         }
-
-        tree.type = erasure(tree.type);
+        if (!tree.type.isIntersection()) {
+            tree.type = erasure(tree.type);
+        } else {
+            tree.type = types.erasure(types.findDescriptorSymbol(tree.type.tsym).owner.type);
+        }
         if (tree.varargsElement != null)
             tree.varargsElement = erasure(tree.varargsElement);
         result = tree;

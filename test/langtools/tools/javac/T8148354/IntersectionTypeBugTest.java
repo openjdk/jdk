@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,33 @@
  * questions.
  */
 
-// key: compiler.misc.not.a.functional.intf.1
-// key: compiler.err.prob.found.req
-// key: compiler.misc.incompatible.abstracts
+/*
+ * @test
+ * bug 8148354
+ * @summary Errors targeting functional interface intersection types
+ * @compile IntersectionTypeBugTest.java
+ */
 
-class NotAnInterfaceComponent {
-    Object o = (String & Runnable) ()-> { };
+import java.io.Serializable;
+import java.util.function.Consumer;
+
+class IntersectionTypeBugTest {
+    <T extends Object & Serializable & Consumer<String>> void consume(final T cons, final String s) {}
+
+    void process(final String s) {}
+
+    public void foo() {
+        consume(this::process, "Hello World");
+    }
+
+    // another case
+    static class AnotherTest<T> {
+        void foo() {
+            Object r = (Object & Serializable & R<T>) () -> {};
+        }
+
+        interface R<I> {
+            void foo();
+        }
+    }
 }
