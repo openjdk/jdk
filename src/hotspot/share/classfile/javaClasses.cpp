@@ -3249,17 +3249,9 @@ int java_lang_Module::_module_entry_offset = -1;
 
 Handle java_lang_Module::create(Handle loader, Handle module_name, TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
-
-  Symbol* name = vmSymbols::java_lang_Module();
-  Klass* k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  Handle jlmh = ik->allocate_instance_handle(CHECK_NH);
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, jlmh, ik,
-                          vmSymbols::object_initializer_name(),
+  return JavaCalls::construct_new_instance(SystemDictionary::Module_klass(),
                           vmSymbols::java_lang_module_init_signature(),
                           loader, module_name, CHECK_NH);
-  return jlmh;
 }
 
 #define MODULE_FIELDS_DO(macro) \
