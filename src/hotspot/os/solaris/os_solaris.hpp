@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,6 @@ class Solaris {
   static void install_signal_handlers();
   static void set_signal_handler(int sig, bool set_installed, bool oktochain);
   static void init_signal_mem();
-  static bool is_sig_ignored(int sig);
   static void set_our_sigflags(int, int);
   static int get_our_sigflags(int);
 

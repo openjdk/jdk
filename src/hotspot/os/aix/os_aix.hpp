@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -121,7 +121,6 @@ class Aix {
   static void signal_sets_init();
   static void install_signal_handlers();
   static void set_signal_handler(int, bool);
-  static bool is_sig_ignored(int sig);
 
   static sigset_t* unblocked_signals();
   static sigset_t* vm_signals();
