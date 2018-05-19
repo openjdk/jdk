@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,7 +37,7 @@ import java.util.Vector;
  * This class represents a node in parse tree.
  *
  * @xerces.internal
- *
+ * @LastModified: May 2018
  */
 class Token implements java.io.Serializable {
 
@@ -592,8 +592,9 @@ class Token implements java.io.Serializable {
     }
 
     // ------------------------------------------------------
-    private final static Map<String, Token> categories = new HashMap<>();
-    private final static Map<String, Token> categories2 = new HashMap<>();
+    private static volatile Map<String, Token> categories = null;
+    private static volatile Map<String, Token> categories2 = null;
+    private static final Object lock = new Object();
     private static final String[] categoryNames = {
         "Cn", "Lu", "Ll", "Lt", "Lm", "Lo", "Mn", "Me", "Mc", "Nd",
         "Nl", "No", "Zs", "Zl", "Zp", "Cc", "Cf", null, "Co", "Cs",
@@ -742,237 +743,245 @@ class Token implements java.io.Serializable {
     private static final int NONBMP_BLOCK_START = 84;
 
     static protected RangeToken getRange(String name, boolean positive) {
-        if (Token.categories.size() == 0) {
-            synchronized (Token.categories) {
-                Token[] ranges = new Token[Token.categoryNames.length];
-                for (int i = 0;  i < ranges.length;  i ++) {
-                    ranges[i] = Token.createRange();
-                }
-                int type;
-                for (int i = 0;  i < 0x10000;  i ++) {
-                    type = Character.getType((char)i);
-                    if (type == Character.START_PUNCTUATION ||
-                        type == Character.END_PUNCTUATION) {
-                        //build table of Pi values
-                        if (i == 0x00AB || i == 0x2018 || i == 0x201B || i == 0x201C ||
-                            i == 0x201F || i == 0x2039) {
-                            type = CHAR_INIT_QUOTE;
+        // use local variable for better performance
+        Map<String, Token> localCat = Token.categories;
+        if (localCat == null) {
+            synchronized (lock) {
+                localCat = Token.categories;
+                if (localCat == null) {
+                    Map<String, Token> tmpCat = new HashMap<>();
+                    Map<String, Token> tmpCat2 = new HashMap<>();
+
+                    Token[] ranges = new Token[Token.categoryNames.length];
+                    for (int i = 0;  i < ranges.length;  i ++) {
+                        ranges[i] = Token.createRange();
+                    }
+                    int type;
+                    for (int i = 0;  i < 0x10000;  i ++) {
+                        type = Character.getType((char)i);
+                        if (type == Character.START_PUNCTUATION ||
+                            type == Character.END_PUNCTUATION) {
+                            //build table of Pi values
+                            if (i == 0x00AB || i == 0x2018 || i == 0x201B || i == 0x201C ||
+                                i == 0x201F || i == 0x2039) {
+                                type = CHAR_INIT_QUOTE;
+                            }
+                            //build table of Pf values
+                            if (i == 0x00BB || i == 0x2019 || i == 0x201D || i == 0x203A ) {
+                                type = CHAR_FINAL_QUOTE;
+                            }
                         }
-                        //build table of Pf values
-                        if (i == 0x00BB || i == 0x2019 || i == 0x201D || i == 0x203A ) {
-                            type = CHAR_FINAL_QUOTE;
+                        ranges[type].addRange(i, i);
+                        switch (type) {
+                          case Character.UPPERCASE_LETTER:
+                          case Character.LOWERCASE_LETTER:
+                          case Character.TITLECASE_LETTER:
+                          case Character.MODIFIER_LETTER:
+                          case Character.OTHER_LETTER:
+                            type = CHAR_LETTER;
+                            break;
+                          case Character.NON_SPACING_MARK:
+                          case Character.COMBINING_SPACING_MARK:
+                          case Character.ENCLOSING_MARK:
+                            type = CHAR_MARK;
+                            break;
+                          case Character.DECIMAL_DIGIT_NUMBER:
+                          case Character.LETTER_NUMBER:
+                          case Character.OTHER_NUMBER:
+                            type = CHAR_NUMBER;
+                            break;
+                          case Character.SPACE_SEPARATOR:
+                          case Character.LINE_SEPARATOR:
+                          case Character.PARAGRAPH_SEPARATOR:
+                            type = CHAR_SEPARATOR;
+                            break;
+                          case Character.CONTROL:
+                          case Character.FORMAT:
+                          case Character.SURROGATE:
+                          case Character.PRIVATE_USE:
+                          case Character.UNASSIGNED:
+                            type = CHAR_OTHER;
+                            break;
+                          case Character.CONNECTOR_PUNCTUATION:
+                          case Character.DASH_PUNCTUATION:
+                          case Character.START_PUNCTUATION:
+                          case Character.END_PUNCTUATION:
+                          case CHAR_INIT_QUOTE:
+                          case CHAR_FINAL_QUOTE:
+                          case Character.OTHER_PUNCTUATION:
+                            type = CHAR_PUNCTUATION;
+                            break;
+                          case Character.MATH_SYMBOL:
+                          case Character.CURRENCY_SYMBOL:
+                          case Character.MODIFIER_SYMBOL:
+                          case Character.OTHER_SYMBOL:
+                            type = CHAR_SYMBOL;
+                            break;
+                          default:
+                            throw new RuntimeException("org.apache.xerces.utils.regex.Token#getRange(): Unknown Unicode category: "+type);
+                        }
+                        ranges[type].addRange(i, i);
+                    } // for all characters
+                    ranges[Character.UNASSIGNED].addRange(0x10000, Token.UTF16_MAX);
+
+                    for (int i = 0;  i < ranges.length;  i ++) {
+                        if (Token.categoryNames[i] != null) {
+                            if (i == Character.UNASSIGNED) { // Unassigned
+                                ranges[i].addRange(0x10000, Token.UTF16_MAX);
+                            }
+                            tmpCat.put(Token.categoryNames[i], ranges[i]);
+                            tmpCat2.put(Token.categoryNames[i],
+                                                  Token.complementRanges(ranges[i]));
                         }
                     }
-                    ranges[type].addRange(i, i);
-                    switch (type) {
-                      case Character.UPPERCASE_LETTER:
-                      case Character.LOWERCASE_LETTER:
-                      case Character.TITLECASE_LETTER:
-                      case Character.MODIFIER_LETTER:
-                      case Character.OTHER_LETTER:
-                        type = CHAR_LETTER;
-                        break;
-                      case Character.NON_SPACING_MARK:
-                      case Character.COMBINING_SPACING_MARK:
-                      case Character.ENCLOSING_MARK:
-                        type = CHAR_MARK;
-                        break;
-                      case Character.DECIMAL_DIGIT_NUMBER:
-                      case Character.LETTER_NUMBER:
-                      case Character.OTHER_NUMBER:
-                        type = CHAR_NUMBER;
-                        break;
-                      case Character.SPACE_SEPARATOR:
-                      case Character.LINE_SEPARATOR:
-                      case Character.PARAGRAPH_SEPARATOR:
-                        type = CHAR_SEPARATOR;
-                        break;
-                      case Character.CONTROL:
-                      case Character.FORMAT:
-                      case Character.SURROGATE:
-                      case Character.PRIVATE_USE:
-                      case Character.UNASSIGNED:
-                        type = CHAR_OTHER;
-                        break;
-                      case Character.CONNECTOR_PUNCTUATION:
-                      case Character.DASH_PUNCTUATION:
-                      case Character.START_PUNCTUATION:
-                      case Character.END_PUNCTUATION:
-                      case CHAR_INIT_QUOTE:
-                      case CHAR_FINAL_QUOTE:
-                      case Character.OTHER_PUNCTUATION:
-                        type = CHAR_PUNCTUATION;
-                        break;
-                      case Character.MATH_SYMBOL:
-                      case Character.CURRENCY_SYMBOL:
-                      case Character.MODIFIER_SYMBOL:
-                      case Character.OTHER_SYMBOL:
-                        type = CHAR_SYMBOL;
-                        break;
-                      default:
-                        throw new RuntimeException("org.apache.xerces.utils.regex.Token#getRange(): Unknown Unicode category: "+type);
-                    }
-                    ranges[type].addRange(i, i);
-                } // for all characters
-                ranges[Character.UNASSIGNED].addRange(0x10000, Token.UTF16_MAX);
-
-                for (int i = 0;  i < ranges.length;  i ++) {
-                    if (Token.categoryNames[i] != null) {
-                        if (i == Character.UNASSIGNED) { // Unassigned
-                            ranges[i].addRange(0x10000, Token.UTF16_MAX);
+                    //REVISIT: do we really need to support block names as in Unicode 3.1
+                    //         or we can just create all the names in IsBLOCKNAME format (XML Schema REC)?
+                    //
+                    StringBuilder buffer = new StringBuilder(50);
+                    for (int i = 0;  i < Token.blockNames.length;  i ++) {
+                        Token r1 = Token.createRange();
+                        int location;
+                        if (i < NONBMP_BLOCK_START) {
+                            location = i*2;
+                            int rstart = Token.blockRanges.charAt(location);
+                            int rend = Token.blockRanges.charAt(location+1);
+                            //DEBUGING
+                            //System.out.println(n+" " +Integer.toHexString(rstart)
+                            //                     +"-"+ Integer.toHexString(rend));
+                            r1.addRange(rstart, rend);
+                        } else {
+                            location = (i - NONBMP_BLOCK_START) * 2;
+                            r1.addRange(Token.nonBMPBlockRanges[location],
+                                        Token.nonBMPBlockRanges[location + 1]);
                         }
-                        Token.categories.put(Token.categoryNames[i], ranges[i]);
-                        Token.categories2.put(Token.categoryNames[i],
-                                              Token.complementRanges(ranges[i]));
+                        String n = Token.blockNames[i];
+                        if (n.equals("Specials"))
+                            r1.addRange(0xfff0, 0xfffd);
+                        if (n.equals("Private Use")) {
+                            r1.addRange(0xF0000,0xFFFFD);
+                            r1.addRange(0x100000,0x10FFFD);
+                        }
+                        tmpCat.put(n, r1);
+                        tmpCat2.put(n, Token.complementRanges(r1));
+                        buffer.setLength(0);
+                        buffer.append("Is");
+                        if (n.indexOf(' ') >= 0) {
+                            for (int ci = 0;  ci < n.length();  ci ++)
+                                if (n.charAt(ci) != ' ')  buffer.append(n.charAt(ci));
+                        }
+                        else {
+                            buffer.append(n);
+                        }
+                        Token.setAlias(tmpCat, tmpCat2, buffer.toString(), n, true);
                     }
-                }
-                //REVISIT: do we really need to support block names as in Unicode 3.1
-                //         or we can just create all the names in IsBLOCKNAME format (XML Schema REC)?
-                //
-                StringBuilder buffer = new StringBuilder(50);
-                for (int i = 0;  i < Token.blockNames.length;  i ++) {
-                    Token r1 = Token.createRange();
-                    int location;
-                    if (i < NONBMP_BLOCK_START) {
-                        location = i*2;
-                        int rstart = Token.blockRanges.charAt(location);
-                        int rend = Token.blockRanges.charAt(location+1);
-                        //DEBUGING
-                        //System.out.println(n+" " +Integer.toHexString(rstart)
-                        //                     +"-"+ Integer.toHexString(rend));
-                        r1.addRange(rstart, rend);
-                    } else {
-                        location = (i - NONBMP_BLOCK_START) * 2;
-                        r1.addRange(Token.nonBMPBlockRanges[location],
-                                    Token.nonBMPBlockRanges[location + 1]);
-                    }
-                    String n = Token.blockNames[i];
-                    if (n.equals("Specials"))
-                        r1.addRange(0xfff0, 0xfffd);
-                    if (n.equals("Private Use")) {
-                        r1.addRange(0xF0000,0xFFFFD);
-                        r1.addRange(0x100000,0x10FFFD);
-                    }
-                    Token.categories.put(n, r1);
-                    Token.categories2.put(n, Token.complementRanges(r1));
-                    buffer.setLength(0);
-                    buffer.append("Is");
-                    if (n.indexOf(' ') >= 0) {
-                        for (int ci = 0;  ci < n.length();  ci ++)
-                            if (n.charAt(ci) != ' ')  buffer.append(n.charAt(ci));
-                    }
-                    else {
-                        buffer.append(n);
-                    }
-                    Token.setAlias(buffer.toString(), n, true);
-                }
 
-                // TR#18 1.2
-                Token.setAlias("ASSIGNED", "Cn", false);
-                Token.setAlias("UNASSIGNED", "Cn", true);
-                Token all = Token.createRange();
-                all.addRange(0, Token.UTF16_MAX);
-                Token.categories.put("ALL", all);
-                Token.categories2.put("ALL", Token.complementRanges(all));
-                Token.registerNonXS("ASSIGNED");
-                Token.registerNonXS("UNASSIGNED");
-                Token.registerNonXS("ALL");
+                    // TR#18 1.2
+                    Token.setAlias(tmpCat, tmpCat2, "ASSIGNED", "Cn", false);
+                    Token.setAlias(tmpCat, tmpCat2, "UNASSIGNED", "Cn", true);
+                    Token all = Token.createRange();
+                    all.addRange(0, Token.UTF16_MAX);
+                    tmpCat.put("ALL", all);
+                    tmpCat2.put("ALL", Token.complementRanges(all));
+                    Token.registerNonXS("ASSIGNED");
+                    Token.registerNonXS("UNASSIGNED");
+                    Token.registerNonXS("ALL");
 
-                Token isalpha = Token.createRange();
-                isalpha.mergeRanges(ranges[Character.UPPERCASE_LETTER]); // Lu
-                isalpha.mergeRanges(ranges[Character.LOWERCASE_LETTER]); // Ll
-                isalpha.mergeRanges(ranges[Character.OTHER_LETTER]); // Lo
-                Token.categories.put("IsAlpha", isalpha);
-                Token.categories2.put("IsAlpha", Token.complementRanges(isalpha));
-                Token.registerNonXS("IsAlpha");
+                    Token isalpha = Token.createRange();
+                    isalpha.mergeRanges(ranges[Character.UPPERCASE_LETTER]); // Lu
+                    isalpha.mergeRanges(ranges[Character.LOWERCASE_LETTER]); // Ll
+                    isalpha.mergeRanges(ranges[Character.OTHER_LETTER]); // Lo
+                    tmpCat.put("IsAlpha", isalpha);
+                    tmpCat2.put("IsAlpha", Token.complementRanges(isalpha));
+                    Token.registerNonXS("IsAlpha");
 
-                Token isalnum = Token.createRange();
-                isalnum.mergeRanges(isalpha);   // Lu Ll Lo
-                isalnum.mergeRanges(ranges[Character.DECIMAL_DIGIT_NUMBER]); // Nd
-                Token.categories.put("IsAlnum", isalnum);
-                Token.categories2.put("IsAlnum", Token.complementRanges(isalnum));
-                Token.registerNonXS("IsAlnum");
+                    Token isalnum = Token.createRange();
+                    isalnum.mergeRanges(isalpha);   // Lu Ll Lo
+                    isalnum.mergeRanges(ranges[Character.DECIMAL_DIGIT_NUMBER]); // Nd
+                    tmpCat.put("IsAlnum", isalnum);
+                    tmpCat2.put("IsAlnum", Token.complementRanges(isalnum));
+                    Token.registerNonXS("IsAlnum");
 
-                Token isspace = Token.createRange();
-                isspace.mergeRanges(Token.token_spaces);
-                isspace.mergeRanges(ranges[CHAR_SEPARATOR]); // Z
-                Token.categories.put("IsSpace", isspace);
-                Token.categories2.put("IsSpace", Token.complementRanges(isspace));
-                Token.registerNonXS("IsSpace");
+                    Token isspace = Token.createRange();
+                    isspace.mergeRanges(Token.token_spaces);
+                    isspace.mergeRanges(ranges[CHAR_SEPARATOR]); // Z
+                    tmpCat.put("IsSpace", isspace);
+                    tmpCat2.put("IsSpace", Token.complementRanges(isspace));
+                    Token.registerNonXS("IsSpace");
 
-                Token isword = Token.createRange();
-                isword.mergeRanges(isalnum);     // Lu Ll Lo Nd
-                isword.addRange('_', '_');
-                Token.categories.put("IsWord", isword);
-                Token.categories2.put("IsWord", Token.complementRanges(isword));
-                Token.registerNonXS("IsWord");
+                    Token isword = Token.createRange();
+                    isword.mergeRanges(isalnum);     // Lu Ll Lo Nd
+                    isword.addRange('_', '_');
+                    tmpCat.put("IsWord", isword);
+                    tmpCat2.put("IsWord", Token.complementRanges(isword));
+                    Token.registerNonXS("IsWord");
 
-                Token isascii = Token.createRange();
-                isascii.addRange(0, 127);
-                Token.categories.put("IsASCII", isascii);
-                Token.categories2.put("IsASCII", Token.complementRanges(isascii));
-                Token.registerNonXS("IsASCII");
+                    Token isascii = Token.createRange();
+                    isascii.addRange(0, 127);
+                    tmpCat.put("IsASCII", isascii);
+                    tmpCat2.put("IsASCII", Token.complementRanges(isascii));
+                    Token.registerNonXS("IsASCII");
 
-                Token isnotgraph = Token.createRange();
-                isnotgraph.mergeRanges(ranges[CHAR_OTHER]);
-                isnotgraph.addRange(' ', ' ');
-                Token.categories.put("IsGraph", Token.complementRanges(isnotgraph));
-                Token.categories2.put("IsGraph", isnotgraph);
-                Token.registerNonXS("IsGraph");
+                    Token isnotgraph = Token.createRange();
+                    isnotgraph.mergeRanges(ranges[CHAR_OTHER]);
+                    isnotgraph.addRange(' ', ' ');
+                    tmpCat.put("IsGraph", Token.complementRanges(isnotgraph));
+                    tmpCat2.put("IsGraph", isnotgraph);
+                    Token.registerNonXS("IsGraph");
 
-                Token isxdigit = Token.createRange();
-                isxdigit.addRange('0', '9');
-                isxdigit.addRange('A', 'F');
-                isxdigit.addRange('a', 'f');
-                Token.categories.put("IsXDigit", Token.complementRanges(isxdigit));
-                Token.categories2.put("IsXDigit", isxdigit);
-                Token.registerNonXS("IsXDigit");
+                    Token isxdigit = Token.createRange();
+                    isxdigit.addRange('0', '9');
+                    isxdigit.addRange('A', 'F');
+                    isxdigit.addRange('a', 'f');
+                    tmpCat.put("IsXDigit", Token.complementRanges(isxdigit));
+                    tmpCat2.put("IsXDigit", isxdigit);
+                    Token.registerNonXS("IsXDigit");
 
-                Token.setAlias("IsDigit", "Nd", true);
-                Token.setAlias("IsUpper", "Lu", true);
-                Token.setAlias("IsLower", "Ll", true);
-                Token.setAlias("IsCntrl", "C", true);
-                Token.setAlias("IsPrint", "C", false);
-                Token.setAlias("IsPunct", "P", true);
-                Token.registerNonXS("IsDigit");
-                Token.registerNonXS("IsUpper");
-                Token.registerNonXS("IsLower");
-                Token.registerNonXS("IsCntrl");
-                Token.registerNonXS("IsPrint");
-                Token.registerNonXS("IsPunct");
+                    Token.setAlias(tmpCat, tmpCat2, "IsDigit", "Nd", true);
+                    Token.setAlias(tmpCat, tmpCat2, "IsUpper", "Lu", true);
+                    Token.setAlias(tmpCat, tmpCat2, "IsLower", "Ll", true);
+                    Token.setAlias(tmpCat, tmpCat2, "IsCntrl", "C", true);
+                    Token.setAlias(tmpCat, tmpCat2, "IsPrint", "C", false);
+                    Token.setAlias(tmpCat, tmpCat2, "IsPunct", "P", true);
+                    Token.registerNonXS("IsDigit");
+                    Token.registerNonXS("IsUpper");
+                    Token.registerNonXS("IsLower");
+                    Token.registerNonXS("IsCntrl");
+                    Token.registerNonXS("IsPrint");
+                    Token.registerNonXS("IsPunct");
 
-                Token.setAlias("alpha", "IsAlpha", true);
-                Token.setAlias("alnum", "IsAlnum", true);
-                Token.setAlias("ascii", "IsASCII", true);
-                Token.setAlias("cntrl", "IsCntrl", true);
-                Token.setAlias("digit", "IsDigit", true);
-                Token.setAlias("graph", "IsGraph", true);
-                Token.setAlias("lower", "IsLower", true);
-                Token.setAlias("print", "IsPrint", true);
-                Token.setAlias("punct", "IsPunct", true);
-                Token.setAlias("space", "IsSpace", true);
-                Token.setAlias("upper", "IsUpper", true);
-                Token.setAlias("word", "IsWord", true); // Perl extension
-                Token.setAlias("xdigit", "IsXDigit", true);
-                Token.registerNonXS("alpha");
-                Token.registerNonXS("alnum");
-                Token.registerNonXS("ascii");
-                Token.registerNonXS("cntrl");
-                Token.registerNonXS("digit");
-                Token.registerNonXS("graph");
-                Token.registerNonXS("lower");
-                Token.registerNonXS("print");
-                Token.registerNonXS("punct");
-                Token.registerNonXS("space");
-                Token.registerNonXS("upper");
-                Token.registerNonXS("word");
-                Token.registerNonXS("xdigit");
+                    Token.setAlias(tmpCat, tmpCat2, "alpha", "IsAlpha", true);
+                    Token.setAlias(tmpCat, tmpCat2, "alnum", "IsAlnum", true);
+                    Token.setAlias(tmpCat, tmpCat2, "ascii", "IsASCII", true);
+                    Token.setAlias(tmpCat, tmpCat2, "cntrl", "IsCntrl", true);
+                    Token.setAlias(tmpCat, tmpCat2, "digit", "IsDigit", true);
+                    Token.setAlias(tmpCat, tmpCat2, "graph", "IsGraph", true);
+                    Token.setAlias(tmpCat, tmpCat2, "lower", "IsLower", true);
+                    Token.setAlias(tmpCat, tmpCat2, "print", "IsPrint", true);
+                    Token.setAlias(tmpCat, tmpCat2, "punct", "IsPunct", true);
+                    Token.setAlias(tmpCat, tmpCat2, "space", "IsSpace", true);
+                    Token.setAlias(tmpCat, tmpCat2, "upper", "IsUpper", true);
+                    Token.setAlias(tmpCat, tmpCat2, "word", "IsWord", true); // Perl extension
+                    Token.setAlias(tmpCat, tmpCat2, "xdigit", "IsXDigit", true);
+                    Token.registerNonXS("alpha");
+                    Token.registerNonXS("alnum");
+                    Token.registerNonXS("ascii");
+                    Token.registerNonXS("cntrl");
+                    Token.registerNonXS("digit");
+                    Token.registerNonXS("graph");
+                    Token.registerNonXS("lower");
+                    Token.registerNonXS("print");
+                    Token.registerNonXS("punct");
+                    Token.registerNonXS("space");
+                    Token.registerNonXS("upper");
+                    Token.registerNonXS("word");
+                    Token.registerNonXS("xdigit");
+                    Token.categories = localCat = Collections.unmodifiableMap(tmpCat);
+                    Token.categories2 = Collections.unmodifiableMap(tmpCat2);
+                } // localCat == null
             } // synchronized
         } // if null
-        RangeToken tok = positive ? (RangeToken)Token.categories.get(name)
+        return positive ? (RangeToken)localCat.get(name)
             : (RangeToken)Token.categories2.get(name);
-        //if (tok == null) System.out.println(name);
-        return tok;
     }
     static protected RangeToken getRange(String name, boolean positive, boolean xs) {
         RangeToken range = Token.getRange(name, positive);
@@ -994,15 +1003,16 @@ class Token implements java.io.Serializable {
         return Token.nonxs.contains(name);
     }
 
-    private static void setAlias(String newName, String name, boolean positive) {
-        Token t1 = Token.categories.get(name);
-        Token t2 = Token.categories2.get(name);
+    private static void setAlias(Map<String, Token> tmpCat, Map<String, Token> tmpCat2,
+            String newName, String name, boolean positive) {
+        Token t1 = tmpCat.get(name);
+        Token t2 = tmpCat2.get(name);
         if (positive) {
-            Token.categories.put(newName, t1);
-            Token.categories2.put(newName, t2);
+            tmpCat.put(newName, t1);
+            tmpCat2.put(newName, t2);
         } else {
-            Token.categories2.put(newName, t1);
-            Token.categories.put(newName, t2);
+            tmpCat2.put(newName, t1);
+            tmpCat.put(newName, t2);
         }
     }
 
