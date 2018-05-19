@@ -41,7 +41,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 else
   JVM_EXCLUDES += opto libadt
   JVM_EXCLUDE_FILES += bcEscapeAnalyzer.cpp ciTypeFlow.cpp
-  JVM_EXCLUDE_PATTERNS += c2_ runtime_
+  JVM_EXCLUDE_PATTERNS += c2_ runtime_ /c2/
 endif
 
 ifeq ($(call check-jvm-feature, zero), true)
