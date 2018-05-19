@@ -97,7 +97,7 @@ public class BasicKrb5Test {
         String etype = null;
         for (String arg: args) {
             if (arg.equals("-s")) Context.usingStream = true;
-            else if(arg.equals("-C")) conf = false;
+            else if (arg.equals("-C")) conf = false;
             else etype = arg;
         }
 
