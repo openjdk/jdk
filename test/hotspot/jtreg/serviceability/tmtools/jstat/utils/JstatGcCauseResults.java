@@ -66,9 +66,6 @@ public class JstatGcCauseResults extends JstatResults {
         int YGC = getIntValue("YGC");
         float YGCT = getFloatValue("YGCT");
         assertThat(YGCT >= 0, "Incorrect time value for YGCT");
-        if (YGC > 0) {
-            assertThat(YGCT > 0, "Number of young generation GC Events is " + YGC + ", but YGCT is 0");
-        }
 
         float GCT = getFloatValue("GCT");
         assertThat(GCT >= 0, "Incorrect time value for GCT");
@@ -86,15 +83,11 @@ public class JstatGcCauseResults extends JstatResults {
         if (CGC > 0) {
             CGCT = getFloatValue("CGCT");
             assertThat(CGCT >= 0, "Incorrect time value for CGCT");
-            assertThat(CGCT > 0, "Number of concurrent GC events is " + CGC + ", but CGCT is 0");
         }
 
         int FGC = getIntValue("FGC");
         float FGCT = getFloatValue("FGCT");
         assertThat(FGCT >= 0, "Incorrect time value for FGCT");
-        if (FGC > 0) {
-            assertThat(FGCT > 0, "Number of full GC events is " + FGC + ", but FGCT is 0");
-        }
 
         assertThat(GCT >= FGCT, "GCT < YGCT (total garbage collection time < full generation garbage collection time)");
 
