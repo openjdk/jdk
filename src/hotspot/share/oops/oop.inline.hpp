@@ -266,6 +266,9 @@ void*    oopDesc::field_addr(int offset)         const { return Access<>::resolv
 template <class T>
 T*       oopDesc::obj_field_addr_raw(int offset) const { return (T*) field_addr_raw(offset); }
 
+template <typename T>
+size_t   oopDesc::field_offset(T* p) const { return pointer_delta((void*)p, (void*)this, 1); }
+
 template <DecoratorSet decorators>
 inline oop  oopDesc::obj_field_access(int offset) const             { return HeapAccess<decorators>::oop_load_at(as_oop(), offset); }
 inline oop  oopDesc::obj_field(int offset) const                    { return HeapAccess<>::oop_load_at(as_oop(), offset);  }
