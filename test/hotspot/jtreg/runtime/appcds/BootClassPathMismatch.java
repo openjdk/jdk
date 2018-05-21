@@ -34,6 +34,8 @@
  * @run main BootClassPathMismatch
  */
 
+import jdk.test.lib.cds.CDSOptions;
+import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
 import java.nio.file.Files;
@@ -51,40 +53,60 @@ public class BootClassPathMismatch {
 
         BootClassPathMismatch test = new BootClassPathMismatch();
         test.testBootClassPathMismatch();
-        test.testBootClassPathMismatch2();
+        test.testBootClassPathMismatchWithAppClass();
+        test.testBootClassPathMismatchWithBadPath();
+        test.testBootClassPathMatchWithAppend();
         test.testBootClassPathMatch();
     }
 
-    /* Error should be detected if:
+    /* Archive contains boot classes only, with Hello class on -Xbootclasspath/a path.
+     *
+     * Error should be detected if:
      * dump time: -Xbootclasspath/a:${testdir}/hello.jar
      * run-time : -Xbootclasspath/a:${testdir}/newdir/hello.jar
+     *
+     * or
+     * dump time: -Xbootclasspath/a:${testdir}/newdir/hello.jar
+     * run-time : -Xbootclasspath/a:${testdir}/hello.jar
      */
     public void testBootClassPathMismatch() throws Exception {
         String appJar = JarBuilder.getOrCreateHelloJar();
         String appClasses[] = {"Hello"};
-        TestCommon.dump(
-            appJar, appClasses, "-Xbootclasspath/a:" + appJar);
         String testDir = TestCommon.getTestDir("newdir");
         String otherJar = testDir + File.separator + "hello.jar";
+
+        TestCommon.dump(appJar, appClasses, "-Xbootclasspath/a:" + appJar);
         TestCommon.run(
-                "-cp", appJar, "-verbose:class", "-Xbootclasspath/a:" + otherJar, "Hello")
+                "-cp", appJar, "-Xbootclasspath/a:" + otherJar, "Hello")
+            .assertAbnormalExit(mismatchMessage);
+
+        TestCommon.dump(appJar, appClasses, "-Xbootclasspath/a:" + otherJar);
+        TestCommon.run(
+                "-cp", appJar, "-Xbootclasspath/a:" + appJar, "Hello")
             .assertAbnormalExit(mismatchMessage);
     }
 
-    /* Error should be detected if:
-     * dump time: <no bootclasspath specified>
-     * run-time : -Xbootclasspath/a:${testdir}/hello.jar
+    /* Archive contains boot classes only.
+     *
+     * Error should be detected if:
+     * dump time: -Xbootclasspath/a:${testdir}/newdir/hello.jar
+     * run-time : -Xbootclasspath/a:${testdir}/newdir/hello.jar1
      */
-    public void testBootClassPathMismatch2() throws Exception {
-        String appJar = JarBuilder.getOrCreateHelloJar();
+    public void testBootClassPathMismatchWithBadPath() throws Exception {
         String appClasses[] = {"Hello"};
-        TestCommon.dump(appJar, appClasses);
+        String testDir = TestCommon.getTestDir("newdir");
+        String appJar = testDir + File.separator + "hello.jar";
+        String otherJar = testDir + File.separator + "hello.jar1";
+
+        TestCommon.dump(appJar, appClasses, "-Xbootclasspath/a:" + appJar);
         TestCommon.run(
-                "-cp", appJar, "-verbose:class", "-Xbootclasspath/a:" + appJar, "Hello")
+                "-cp", appJar, "-Xbootclasspath/a:" + otherJar, "Hello")
             .assertAbnormalExit(mismatchMessage);
     }
 
-    /* No error if:
+    /* Archive contains boot classes only, with Hello loaded from -Xbootclasspath/a at dump time.
+     *
+     * No error if:
      * dump time: -Xbootclasspath/a:${testdir}/hello.jar
      * run-time : -Xbootclasspath/a:${testdir}/hello.jar
      */
@@ -99,6 +121,37 @@ public class BootClassPathMismatch {
             .assertNormalExit("[class,load] Hello source: shared objects file");
     }
 
+    /* Archive contains boot classes only, runtime add -Xbootclasspath/a path.
+     *
+     * No error:
+     * dump time: No -Xbootclasspath/a
+     * run-time : -Xbootclasspath/a:${testdir}/hello.jar
+     */
+    public void testBootClassPathMatchWithAppend() throws Exception {
+      CDSOptions opts = new CDSOptions().setUseVersion(false);
+      OutputAnalyzer out = CDSTestUtils.createArchive(opts);
+      CDSTestUtils.checkDump(out);
+
+      String appJar = JarBuilder.getOrCreateHelloJar();
+      opts.addPrefix("-Xbootclasspath/a:" + appJar, "-showversion").addSuffix("Hello");
+      CDSTestUtils.runWithArchiveAndCheck(opts);
+    }
+
+    /* Archive contains app classes, with Hello on -cp path at dump time.
+     *
+     * Error should be detected if:
+     * dump time: <no bootclasspath specified>
+     * run-time : -Xbootclasspath/a:${testdir}/hello.jar
+     */
+    public void testBootClassPathMismatchWithAppClass() throws Exception {
+        String appJar = JarBuilder.getOrCreateHelloJar();
+        String appClasses[] = {"Hello"};
+        TestCommon.dump(appJar, appClasses);
+        TestCommon.run(
+                "-cp", appJar, "-Xbootclasspath/a:" + appJar, "Hello")
+            .assertAbnormalExit(mismatchMessage);
+    }
+
     private static void copyHelloToNewDir() throws Exception {
         String classDir = System.getProperty("test.classes");
         String dstDir = classDir + File.separator + "newdir";
@@ -106,8 +159,14 @@ public class BootClassPathMismatch {
             Files.createDirectory(Paths.get(dstDir));
         } catch (FileAlreadyExistsException e) { }
 
+        // copy as hello.jar
         Files.copy(Paths.get(classDir, "hello.jar"),
             Paths.get(dstDir, "hello.jar"),
+            StandardCopyOption.REPLACE_EXISTING);
+
+        // copy as hello.jar1
+        Files.copy(Paths.get(classDir, "hello.jar"),
+            Paths.get(dstDir, "hello.jar1"),
             StandardCopyOption.REPLACE_EXISTING);
     }
 }
