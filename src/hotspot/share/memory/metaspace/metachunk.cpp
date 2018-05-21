@@ -24,12 +24,14 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
-#include "memory/metachunk.hpp"
+#include "memory/metaspace/metachunk.hpp"
+#include "memory/metaspace/occupancyMap.hpp"
+#include "memory/metaspace/virtualSpaceNode.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 
-class VirtualSpaceNode;
+namespace metaspace {
 
 size_t Metachunk::object_alignment() {
   // Must align pointers and sizes to 8,
@@ -147,3 +149,24 @@ const char* chunk_size_name(ChunkIndex index) {
       return "Invalid index";
   }
 }
+
+#ifdef ASSERT
+void do_verify_chunk(Metachunk* chunk) {
+  guarantee(chunk != NULL, "Sanity");
+  // Verify chunk itself; then verify that it is consistent with the
+  // occupany map of its containing node.
+  chunk->verify();
+  VirtualSpaceNode* const vsn = chunk->container();
+  OccupancyMap* const ocmap = vsn->occupancy_map();
+  ocmap->verify_for_chunk(chunk);
+}
+#endif
+
+void do_update_in_use_info_for_chunk(Metachunk* chunk, bool inuse) {
+  chunk->set_is_tagged_free(!inuse);
+  OccupancyMap* const ocmap = chunk->container()->occupancy_map();
+  ocmap->set_region_in_use((MetaWord*)chunk, chunk->word_size(), inuse);
+}
+
+} // namespace metaspace
+

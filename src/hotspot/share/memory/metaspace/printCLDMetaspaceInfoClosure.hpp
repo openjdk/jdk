@@ -22,43 +22,39 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACE_METASPACEDCMD_HPP
-#define SHARE_MEMORY_METASPACE_METASPACEDCMD_HPP
+#ifndef SHARE_MEMORY_METASPACE_PRINTCLDMETASPACEINFOCLOSURE_HPP
+#define SHARE_MEMORY_METASPACE_PRINTCLDMETASPACEINFOCLOSURE_HPP
 
-#include "services/diagnosticCommand.hpp"
+#include "memory/iterator.hpp"
+#include "memory/metaspace.hpp"
+#include "memory/metaspace/metaspaceStatistics.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class outputStream;
 
 namespace metaspace {
 
-class MetaspaceDCmd : public DCmdWithParser {
-  DCmdArgument<bool> _basic;
-  DCmdArgument<bool> _show_loaders;
-  DCmdArgument<bool> _by_spacetype;
-  DCmdArgument<bool> _by_chunktype;
-  DCmdArgument<bool> _show_vslist;
-  DCmdArgument<bool> _show_vsmap;
-  DCmdArgument<char*> _scale;
+class PrintCLDMetaspaceInfoClosure : public CLDClosure {
+private:
+  outputStream* const _out;
+  const size_t        _scale;
+  const bool          _do_print;
+  const bool          _break_down_by_chunktype;
+
 public:
-  MetaspaceDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "VM.metaspace";
-  }
-  static const char* description() {
-    return "Prints the statistics for the metaspace";
-  }
-  static const char* impact() {
-      return "Medium: Depends on number of classes loaded.";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
-    return p;
-  }
-  static int num_arguments();
-  virtual void execute(DCmdSource source, TRAPS);
+
+  uintx                           _num_loaders;
+  ClassLoaderMetaspaceStatistics  _stats_total;
+
+  uintx                           _num_loaders_by_spacetype [Metaspace::MetaspaceTypeCount];
+  ClassLoaderMetaspaceStatistics  _stats_by_spacetype [Metaspace::MetaspaceTypeCount];
+
+  PrintCLDMetaspaceInfoClosure(outputStream* out, size_t scale, bool do_print, bool break_down_by_chunktype);
+  void do_cld(ClassLoaderData* cld);
+
 };
 
 } // namespace metaspace
 
-#endif /* SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP */
+#endif /* SHARE_MEMORY_METASPACE_PRINTCLDMETASPACEINFOCLOSURE_HPP */
+
