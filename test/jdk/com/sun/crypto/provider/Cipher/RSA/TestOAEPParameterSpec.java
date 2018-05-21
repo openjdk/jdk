@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4923484
+ * @bug 4923484 8146293
  * @summary test ASN.1 encoding generation/parsing for the OAEPParameters
  * implementation in SunJCE provider.
  * @author Valerie Peng
@@ -125,6 +125,8 @@ public class TestOAEPParameterSpec {
         status &= runTest("SHA-256", MGF1ParameterSpec.SHA256, p);
         status &= runTest("SHA-384", MGF1ParameterSpec.SHA384, p);
         status &= runTest("SHA-512", MGF1ParameterSpec.SHA512, p);
+        status &= runTest("SHA-512/224", MGF1ParameterSpec.SHA512_224, p);
+        status &= runTest("SHA-512/256", MGF1ParameterSpec.SHA512_256, p);
         status &= runTest("SHA", MGF1ParameterSpec.SHA1, new byte[0]);
         status &= runTest("SHA-1", MGF1ParameterSpec.SHA1, new byte[0]);
         status &= runTest("SHA1", MGF1ParameterSpec.SHA1, new byte[0]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,9 @@ public final class SunJCE extends Provider {
                             + "|OAEPWITHSHA-224ANDMGF1PADDING"
                             + "|OAEPWITHSHA-256ANDMGF1PADDING"
                             + "|OAEPWITHSHA-384ANDMGF1PADDING"
-                            + "|OAEPWITHSHA-512ANDMGF1PADDING");
+                            + "|OAEPWITHSHA-512ANDMGF1PADDING"
+                            + "|OAEPWITHSHA-512/224ANDMGF1PADDING"
+                            + "|OAEPWITHSHA-512/256ANDMGF1PADDING");
                     put("Cipher.RSA SupportedKeyClasses",
                             "java.security.interfaces.RSAPublicKey" +
                             "|java.security.interfaces.RSAPrivateKey");

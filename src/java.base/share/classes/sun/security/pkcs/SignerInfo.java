@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,12 @@ package sun.security.pkcs;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.CryptoPrimitive;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.Timestamp;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertPath;
 import java.security.cert.X509Certificate;
+import java.security.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,6 +54,7 @@ import sun.security.util.ObjectIdentifier;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
 import sun.security.x509.KeyUsageExtension;
+import sun.security.util.SignatureUtil;
 
 /**
  * A SignerInfo, as defined in PKCS#7's signedData type.
@@ -453,29 +446,37 @@ public class SignerInfo implements DerEncoder {
             }
 
             Signature sig = Signature.getInstance(algname);
+
             sig.initVerify(key);
+
+            // set parameters after Signature.initSign/initVerify call,
+            // so the deferred provider selections occur when key is set
+            AlgorithmParameters ap =
+                digestEncryptionAlgorithmId.getParameters();
+            try {
+                SignatureUtil.specialSetParameter(sig, ap);
+            } catch (ProviderException | InvalidAlgorithmParameterException e) {
+                throw new SignatureException(e.getMessage(), e);
+            }
+
             sig.update(dataSigned);
             if (sig.verify(encryptedDigest)) {
                 return this;
             }
-
         } catch (IOException e) {
             throw new SignatureException("IO error verifying signature:\n" +
                                          e.getMessage());
-
         } catch (InvalidKeyException e) {
             throw new SignatureException("InvalidKey: " + e.getMessage());
-
         }
         return null;
     }
 
     /* Verify the content of the pkcs7 block. */
     SignerInfo verify(PKCS7 block)
-    throws NoSuchAlgorithmException, SignatureException {
+        throws NoSuchAlgorithmException, SignatureException {
         return verify(block, null);
     }
-
 
     public BigInteger getVersion() {
             return version;

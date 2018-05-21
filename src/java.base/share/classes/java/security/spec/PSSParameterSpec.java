@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,37 +25,43 @@
 
 package java.security.spec;
 
-import java.math.BigInteger;
+import java.util.Objects;
 import java.security.spec.MGF1ParameterSpec;
 
 /**
- * This class specifies a parameter spec for RSA-PSS signature scheme,
+ * This class specifies a parameter spec for RSASSA-PSS signature scheme,
  * as defined in the
- * <a href="http://www.ietf.org/rfc/rfc3447.txt">PKCS#1 v2.1</a>
- * standard.
+ * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard.
  *
  * <p>Its ASN.1 definition in PKCS#1 standard is described below:
  * <pre>
  * RSASSA-PSS-params ::= SEQUENCE {
- *   hashAlgorithm      [0] OAEP-PSSDigestAlgorithms  DEFAULT sha1,
- *   maskGenAlgorithm   [1] PKCS1MGFAlgorithms  DEFAULT mgf1SHA1,
- *   saltLength         [2] INTEGER  DEFAULT 20,
- *   trailerField       [3] INTEGER  DEFAULT 1
+ *   hashAlgorithm      [0] HashAlgorithm      DEFAULT sha1,
+ *   maskGenAlgorithm   [1] MaskGenAlgorithm   DEFAULT mgf1SHA1,
+ *   saltLength         [2] INTEGER            DEFAULT 20,
+ *   trailerField       [3] TrailerField       DEFAULT trailerFieldBC(1)
  * }
  * </pre>
  * where
  * <pre>
+ * HashAlgorithm ::= AlgorithmIdentifier {
+ *   {OAEP-PSSDigestAlgorithms}
+ * }
+ * MaskGenAlgorithm ::= AlgorithmIdentifier { {PKCS1MGFAlgorithms} }
+ * TrailerField ::= INTEGER { trailerFieldBC(1) }
+ *
  * OAEP-PSSDigestAlgorithms    ALGORITHM-IDENTIFIER ::= {
- *   { OID id-sha1 PARAMETERS NULL   }|
- *   { OID id-sha224 PARAMETERS NULL   }|
- *   { OID id-sha256 PARAMETERS NULL }|
- *   { OID id-sha384 PARAMETERS NULL }|
- *   { OID id-sha512 PARAMETERS NULL },
+ *   { OID id-sha1       PARAMETERS NULL }|
+ *   { OID id-sha224     PARAMETERS NULL }|
+ *   { OID id-sha256     PARAMETERS NULL }|
+ *   { OID id-sha384     PARAMETERS NULL }|
+ *   { OID id-sha512     PARAMETERS NULL }|
+ *   { OID id-sha512-224 PARAMETERS NULL }|
+ *   { OID id-sha512-256 PARAMETERS NULL },
  *   ...  -- Allows for future expansion --
  * }
- *
  * PKCS1MGFAlgorithms    ALGORITHM-IDENTIFIER ::= {
- *   { OID id-mgf1 PARAMETERS OAEP-PSSDigestAlgorithms },
+ *   { OID id-mgf1 PARAMETERS HashAlgorithm },
  *   ...  -- Allows for future expansion --
  * }
  * </pre>
@@ -78,24 +84,37 @@ import java.security.spec.MGF1ParameterSpec;
 
 public class PSSParameterSpec implements AlgorithmParameterSpec {
 
-    private String mdName = "SHA-1";
-    private String mgfName = "MGF1";
-    private AlgorithmParameterSpec mgfSpec = MGF1ParameterSpec.SHA1;
-    private int saltLen = 20;
-    private int trailerField = 1;
+    private final String mdName;
+
+    private final String mgfName;
+
+    private final AlgorithmParameterSpec mgfSpec;
+
+    private final int saltLen;
+
+    private final int trailerField;
 
     /**
-     * The PSS parameter set with all default values.
+     * The {@code TrailerFieldBC} constant as defined in PKCS#1
+     *
+     * @since 11
+     */
+    public static final int TRAILER_FIELD_BC = 1;
+
+    /**
+     * The PSS parameter set with all default values
+     *
      * @since 1.5
      */
-    public static final PSSParameterSpec DEFAULT = new PSSParameterSpec();
+    public static final PSSParameterSpec DEFAULT = new PSSParameterSpec
+        ("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, 20, TRAILER_FIELD_BC);
 
-    /**
-     * Constructs a new {@code PSSParameterSpec} as defined in
-     * the PKCS #1 standard using the default values.
-     */
+
+    // disallowed
     private PSSParameterSpec() {
+        throw new RuntimeException("default constructor not allowed");
     }
+
 
     /**
      * Creates a new {@code PSSParameterSpec} as defined in
@@ -103,30 +122,24 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      * mask generation function, parameters for mask generation
      * function, salt length, and trailer field values.
      *
-     * @param mdName the algorithm name of the hash function.
-     * @param mgfName the algorithm name of the mask generation
-     * function.
-     * @param mgfSpec the parameters for the mask generation
-     * function. If null is specified, null will be returned by
-     * getMGFParameters().
-     * @param saltLen the length of salt.
-     * @param trailerField the value of the trailer field.
-     * @exception NullPointerException if {@code mdName},
-     * or {@code mgfName} is null.
-     * @exception IllegalArgumentException if {@code saltLen}
-     * or {@code trailerField} is less than 0.
+     * @param mdName       the algorithm name of the hash function
+     * @param mgfName      the algorithm name of the mask generation function
+     * @param mgfSpec      the parameters for the mask generation function.
+     *         If null is specified, null will be returned by
+     *         getMGFParameters().
+     * @param saltLen      the length of salt
+     * @param trailerField the value of the trailer field
+     * @exception NullPointerException if {@code mdName}, or {@code mgfName}
+     *         is null
+     * @exception IllegalArgumentException if {@code saltLen} or
+     *         {@code trailerField} is less than 0
      * @since 1.5
      */
     public PSSParameterSpec(String mdName, String mgfName,
-                            AlgorithmParameterSpec mgfSpec,
-                            int saltLen, int trailerField) {
-        if (mdName == null) {
-            throw new NullPointerException("digest algorithm is null");
-        }
-        if (mgfName == null) {
-            throw new NullPointerException("mask generation function " +
-                                           "algorithm is null");
-        }
+            AlgorithmParameterSpec mgfSpec, int saltLen, int trailerField) {
+        Objects.requireNonNull(mdName, "digest algorithm is null");
+        Objects.requireNonNull(mgfName,
+            "mask generation function algorithm is null");
         if (saltLen < 0) {
             throw new IllegalArgumentException("negative saltLen value: " +
                                                saltLen);
@@ -147,23 +160,19 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      * using the specified salt length and other default values as
      * defined in PKCS#1.
      *
-     * @param saltLen the length of salt in bits to be used in PKCS#1
-     * PSS encoding.
+     * @param saltLen the length of salt in bytes to be used in PKCS#1
+     *         PSS encoding
      * @exception IllegalArgumentException if {@code saltLen} is
-     * less than 0.
+     *         less than 0
      */
     public PSSParameterSpec(int saltLen) {
-        if (saltLen < 0) {
-            throw new IllegalArgumentException("negative saltLen value: " +
-                                               saltLen);
-        }
-        this.saltLen = saltLen;
+        this("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, saltLen, TRAILER_FIELD_BC);
     }
 
     /**
      * Returns the message digest algorithm name.
      *
-     * @return the message digest algorithm name.
+     * @return the message digest algorithm name
      * @since 1.5
      */
     public String getDigestAlgorithm() {
@@ -173,7 +182,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
     /**
      * Returns the mask generation function algorithm name.
      *
-     * @return the mask generation function algorithm name.
+     * @return the mask generation function algorithm name
      *
      * @since 1.5
      */
@@ -184,7 +193,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
     /**
      * Returns the parameters for the mask generation function.
      *
-     * @return the parameters for the mask generation function.
+     * @return the parameters for the mask generation function
      * @since 1.5
      */
     public AlgorithmParameterSpec getMGFParameters() {
@@ -192,18 +201,18 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
     }
 
     /**
-     * Returns the salt length in bits.
+     * Returns the salt length in bytes.
      *
-     * @return the salt length.
+     * @return the salt length
      */
     public int getSaltLength() {
         return saltLen;
     }
 
     /**
-     * Returns the value for the trailer field, i.e. bc in PKCS#1 v2.1.
+     * Returns the value for the trailer field.
      *
-     * @return the value for the trailer field, i.e. bc in PKCS#1 v2.1.
+     * @return the value for the trailer field
      * @since 1.5
      */
     public int getTrailerField() {

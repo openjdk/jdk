@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,16 +39,13 @@ import sun.security.jca.JCAUtil;
 /**
  * RSA padding and unpadding.
  *
- * The various PKCS#1 versions can be found in the EMC/RSA Labs
- * web site, which is currently:
+ * The various PKCS#1 versions can be found in the IETF RFCs
+ * tracking the corresponding PKCS#1 standards.
  *
- *     http://www.emc.com/emc-plus/rsa-labs/index.htm
- *
- * or in the IETF RFCs derived from the above PKCS#1 standards.
- *
- *     RFC 2313: v1.5
- *     RFC 2437: v2.0
- *     RFC 3447: v2.1
+ *     RFC 2313: PKCS#1 v1.5
+ *     RFC 2437: PKCS#1 v2.0
+ *     RFC 3447: PKCS#1 v2.1
+ *     RFC 8017: PKCS#1 v2.2
  *
  * The format of PKCS#1 v1.5 padding is:
  *
@@ -105,11 +102,11 @@ public final class RSAPadding {
     // maximum size of the data
     private final int maxDataSize;
 
-    // OAEP: main messagedigest
+    // OAEP: main message digest
     private MessageDigest md;
 
-    // OAEP: message digest for MGF1
-    private MessageDigest mgfMd;
+    // OAEP: MGF1
+    private MGF1 mgf;
 
     // OAEP: value of digest of data (user-supplied or zero-length) using md
     private byte[] lHash;
@@ -164,7 +161,7 @@ public final class RSAPadding {
             break;
         case PAD_OAEP_MGF1:
             String mdName = "SHA-1";
-            String mgfMdName = "SHA-1";
+            String mgfMdName = mdName;
             byte[] digestInput = null;
             try {
                 if (spec != null) {
@@ -185,10 +182,9 @@ public final class RSAPadding {
                     digestInput = ((PSource.PSpecified) pSrc).getValue();
                 }
                 md = MessageDigest.getInstance(mdName);
-                mgfMd = MessageDigest.getInstance(mgfMdName);
+                mgf = new MGF1(mgfMdName);
             } catch (NoSuchAlgorithmException e) {
-                throw new InvalidKeyException
-                        ("Digest " + mdName + " not available", e);
+                throw new InvalidKeyException("Digest not available", e);
             }
             lHash = getInitialHash(md, digestInput);
             int digestLen = lHash.length;
@@ -196,7 +192,7 @@ public final class RSAPadding {
             if (maxDataSize <= 0) {
                 throw new InvalidKeyException
                         ("Key is too short for encryption using OAEPPadding" +
-                         " with " + mdName + " and MGF1" + mgfMdName);
+                         " with " + mdName + " and " + mgf.getName());
             }
             break;
         default:
@@ -431,10 +427,10 @@ public final class RSAPadding {
         System.arraycopy(M, 0, EM, mStart, M.length);
 
         // produce maskedDB
-        mgf1(EM, seedStart, seedLen, EM, dbStart, dbLen);
+        mgf.generateAndXor(EM, seedStart, seedLen, dbLen, EM, dbStart);
 
         // produce maskSeed
-        mgf1(EM, dbStart, dbLen, EM, seedStart, seedLen);
+        mgf.generateAndXor(EM, dbStart, dbLen, seedLen, EM, seedStart);
 
         return EM;
     }
@@ -457,8 +453,8 @@ public final class RSAPadding {
         int dbStart = hLen + 1;
         int dbLen = EM.length - dbStart;
 
-        mgf1(EM, dbStart, dbLen, EM, seedStart, seedLen);
-        mgf1(EM, seedStart, seedLen, EM, dbStart, dbLen);
+        mgf.generateAndXor(EM, dbStart, dbLen, seedLen, EM, seedStart);
+        mgf.generateAndXor(EM, seedStart, seedLen, dbLen, EM, dbStart);
 
         // verify lHash == lHash'
         for (int i = 0; i < hLen; i++) {
@@ -504,39 +500,6 @@ public final class RSAPadding {
             throw bpe;
         } else {
             return m;
-        }
-    }
-
-    /**
-     * Compute MGF1 using mgfMD as the message digest.
-     * Note that we combine MGF1 with the XOR operation to reduce data
-     * copying.
-     *
-     * We generate maskLen bytes of MGF1 from the seed and XOR it into
-     * out[] starting at outOfs;
-     */
-    private void mgf1(byte[] seed, int seedOfs, int seedLen,
-            byte[] out, int outOfs, int maskLen)  throws BadPaddingException {
-        byte[] C = new byte[4]; // 32 bit counter
-        byte[] digest = new byte[mgfMd.getDigestLength()];
-        while (maskLen > 0) {
-            mgfMd.update(seed, seedOfs, seedLen);
-            mgfMd.update(C);
-            try {
-                mgfMd.digest(digest, 0, digest.length);
-            } catch (DigestException e) {
-                // should never happen
-                throw new BadPaddingException(e.toString());
-            }
-            for (int i = 0; (i < digest.length) && (maskLen > 0); maskLen--) {
-                out[outOfs++] ^= digest[i++];
-            }
-            if (maskLen > 0) {
-                // increment counter
-                for (int i = C.length - 1; (++C[i] == 0) && (i > 0); i--) {
-                    // empty
-                }
-            }
         }
     }
 }

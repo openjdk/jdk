@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,17 +29,22 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import java.security.*;
+import java.security.spec.*;
 import java.security.interfaces.*;
 
 import sun.security.util.*;
 import sun.security.x509.X509Key;
+import sun.security.x509.AlgorithmId;
+
+import static sun.security.rsa.RSAUtil.KeyType;
 
 /**
- * Key implementation for RSA public keys.
+ * RSA public key implementation for "RSA", "RSASSA-PSS" algorithms.
  *
  * Note: RSA keys must be at least 512 bits long
  *
  * @see RSAPrivateCrtKeyImpl
+ * @see RSAPrivateKeyImpl
  * @see RSAKeyFactory
  *
  * @since   1.5
@@ -53,18 +58,46 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     private BigInteger n;       // modulus
     private BigInteger e;       // public exponent
 
+    // optional parameters associated with this RSA key
+    // specified in the encoding of its AlgorithmId
+    // must be null for "RSA" keys.
+    private AlgorithmParameterSpec keyParams;
+
     /**
-     * Construct a key from its components. Used by the
-     * RSAKeyFactory and the RSAKeyPairGenerator.
+     * Generate a new RSAPublicKey from the specified encoding.
+     * Used by SunPKCS11 provider.
      */
-    public RSAPublicKeyImpl(BigInteger n, BigInteger e)
+    public static RSAPublicKey newKey(byte[] encoded)
             throws InvalidKeyException {
+        return new RSAPublicKeyImpl(encoded);
+    }
+
+    /**
+     * Generate a new RSAPublicKey from the specified type and components.
+     * Used by SunPKCS11 provider.
+     */
+    public static RSAPublicKey newKey(KeyType type,
+            AlgorithmParameterSpec params, BigInteger n, BigInteger e)
+            throws InvalidKeyException {
+        AlgorithmId rsaId = RSAUtil.createAlgorithmId(type, params);
+        return new RSAPublicKeyImpl(rsaId, n, e);
+    }
+
+    /**
+     * Construct a RSA key from AlgorithmId and its components. Used by
+     * RSAKeyFactory and RSAKeyPairGenerator.
+     */
+    RSAPublicKeyImpl(AlgorithmId rsaId, BigInteger n, BigInteger e)
+            throws InvalidKeyException {
+        RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
+        checkExponentRange(n, e);
+
         this.n = n;
         this.e = e;
-        RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
-        checkExponentRange();
+        this.keyParams = RSAUtil.getParamSpec(rsaId);
+
         // generate the encoding
-        algid = RSAPrivateCrtKeyImpl.rsaId;
+        algid = rsaId;
         try {
             DerOutputStream out = new DerOutputStream();
             out.putInteger(n);
@@ -82,37 +115,55 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     /**
      * Construct a key from its encoding. Used by RSAKeyFactory.
      */
-    public RSAPublicKeyImpl(byte[] encoded) throws InvalidKeyException {
-        decode(encoded);
+    RSAPublicKeyImpl(byte[] encoded) throws InvalidKeyException {
+        decode(encoded); // this sets n and e value
         RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
-        checkExponentRange();
+        checkExponentRange(n, e);
+
+        try {
+            // this will check the validity of params
+            this.keyParams = RSAUtil.getParamSpec(algid);
+        } catch (ProviderException e) {
+            throw new InvalidKeyException(e);
+        }
     }
 
-    private void checkExponentRange() throws InvalidKeyException {
+    // pkg private utility method for checking RSA modulus and public exponent
+    static void checkExponentRange(BigInteger mod, BigInteger exp)
+            throws InvalidKeyException {
         // the exponent should be smaller than the modulus
-        if (e.compareTo(n) >= 0) {
+        if (exp.compareTo(mod) >= 0) {
             throw new InvalidKeyException("exponent is larger than modulus");
         }
 
         // the exponent should be at least 3
-        if (e.compareTo(THREE) < 0) {
+        if (exp.compareTo(THREE) < 0) {
             throw new InvalidKeyException("exponent is smaller than 3");
         }
     }
 
     // see JCA doc
+    @Override
     public String getAlgorithm() {
-        return "RSA";
+        return algid.getName();
     }
 
     // see JCA doc
+    @Override
     public BigInteger getModulus() {
         return n;
     }
 
     // see JCA doc
+    @Override
     public BigInteger getPublicExponent() {
         return e;
+    }
+
+    // see JCA doc
+    @Override
+    public AlgorithmParameterSpec getParams() {
+        return keyParams;
     }
 
     /**
@@ -137,9 +188,11 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     }
 
     // return a string representation of this key for debugging
+    @Override
     public String toString() {
-        return "Sun RSA public key, " + n.bitLength() + " bits\n  modulus: "
-                + n + "\n  public exponent: " + e;
+        return "Sun " + getAlgorithm() + " public key, " + n.bitLength()
+               + " bits" + "\n  params: " + keyParams + "\n  modulus: " + n
+               + "\n  public exponent: " + e;
     }
 
     protected Object writeReplace() throws java.io.ObjectStreamException {

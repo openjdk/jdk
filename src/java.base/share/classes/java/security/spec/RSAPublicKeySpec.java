@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,9 @@ import java.math.BigInteger;
 
 public class RSAPublicKeySpec implements KeySpec {
 
-    private BigInteger modulus;
-    private BigInteger publicExponent;
+    private final BigInteger modulus;
+    private final BigInteger publicExponent;
+    private final AlgorithmParameterSpec params;
 
     /**
      * Creates a new RSAPublicKeySpec.
@@ -54,9 +55,24 @@ public class RSAPublicKeySpec implements KeySpec {
      * @param publicExponent the public exponent
      */
     public RSAPublicKeySpec(BigInteger modulus, BigInteger publicExponent) {
+        this(modulus, publicExponent, null);
+    }
+
+    /**
+     * Creates a new RSAPublicKeySpec with additional key parameters.
+     *
+     * @param modulus the modulus
+     * @param publicExponent the public exponent
+     * @param params the parameters associated with this key, may be null
+     * @since 11
+     */
+    public RSAPublicKeySpec(BigInteger modulus, BigInteger publicExponent,
+            AlgorithmParameterSpec params) {
         this.modulus = modulus;
         this.publicExponent = publicExponent;
+        this.params = params;
     }
+
 
     /**
      * Returns the modulus.
@@ -75,4 +91,16 @@ public class RSAPublicKeySpec implements KeySpec {
     public BigInteger getPublicExponent() {
         return this.publicExponent;
     }
+
+    /**
+     * Returns the parameters associated with this key, may be null if not
+     * present.
+     *
+     * @return the parameters associated with this key
+     * @since 11
+     */
+    public AlgorithmParameterSpec getParams() {
+        return this.params;
+    }
+
 }

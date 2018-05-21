@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.SecureRandom;
 import java.security.interfaces.*;
+import java.security.spec.*;
 
 import sun.security.util.Debug;
 import sun.security.util.DerValue;
@@ -370,8 +371,21 @@ abstract class DSA extends SignatureSpi {
         throw new InvalidParameterException("No parameter accepted");
     }
 
+    @Override
+    protected void engineSetParameter(AlgorithmParameterSpec params)
+            throws InvalidAlgorithmParameterException {
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException("No parameter accepted");
+        }
+    }
+
     @Deprecated
     protected Object engineGetParameter(String key) {
+        return null;
+    }
+
+    @Override
+    protected AlgorithmParameters engineGetParameters() {
         return null;
     }
 

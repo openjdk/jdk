@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,12 +161,12 @@ public abstract class SunJSSE extends java.security.Provider {
     private void doRegister(boolean isfips) {
         if (isfips == false) {
             put("KeyFactory.RSA",
-                "sun.security.rsa.RSAKeyFactory");
+                "sun.security.rsa.RSAKeyFactory$Legacy");
             put("Alg.Alias.KeyFactory.1.2.840.113549.1.1", "RSA");
             put("Alg.Alias.KeyFactory.OID.1.2.840.113549.1.1", "RSA");
 
             put("KeyPairGenerator.RSA",
-                "sun.security.rsa.RSAKeyPairGenerator");
+                "sun.security.rsa.RSAKeyPairGenerator$Legacy");
             put("Alg.Alias.KeyPairGenerator.1.2.840.113549.1.1", "RSA");
             put("Alg.Alias.KeyPairGenerator.OID.1.2.840.113549.1.1", "RSA");
 

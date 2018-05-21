@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 
 /**
  * @test
- * @bug 4853305 4865198 4888410 4963723
+ * @bug 4853305 4865198 4888410 4963723 8146293
  * @summary Verify that the RSA KeyPairGenerator works
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @run main TestKeyPairGenerator
  * @author Andreas Sterbenz
  * @key randomness
  */
@@ -37,15 +40,21 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
+import jdk.test.lib.SigTestUtil;
+import static jdk.test.lib.SigTestUtil.SignatureType;
+
 public class TestKeyPairGenerator {
 
     private static Provider provider;
 
     private static byte[] data;
 
-    private static void testSignature(String algorithm, PrivateKey privateKey, PublicKey publicKey) throws Exception {
-        System.out.println("Testing " + algorithm + "...");
-        Signature s = Signature.getInstance(algorithm, provider);
+    private static void testSignature(SignatureType type, String mdAlg,
+            PrivateKey privateKey, PublicKey publicKey) throws
+            NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        System.out.println("Testing against " + mdAlg + "...");
+        String sigAlg = SigTestUtil.generateSigAlg(type, mdAlg);
+        Signature s = Signature.getInstance(sigAlg, provider);
         s.initSign(privateKey);
         s.update(data);
         byte[] sig = s.sign();
@@ -53,22 +62,26 @@ public class TestKeyPairGenerator {
         s.update(data);
         boolean result = s.verify(sig);
         if (result == false) {
-            throw new Exception("Verification failed");
+            throw new RuntimeException("Verification failed");
         }
     }
 
     private static void test(PrivateKey privateKey, PublicKey publicKey) throws Exception {
-        testSignature("MD2withRSA", privateKey, publicKey);
-        testSignature("MD5withRSA", privateKey, publicKey);
-        testSignature("SHA1withRSA", privateKey, publicKey);
-        testSignature("SHA224withRSA", privateKey, publicKey);
-        testSignature("SHA256withRSA", privateKey, publicKey);
-        RSAPublicKey rsaKey = (RSAPublicKey)publicKey;
-        if (rsaKey.getModulus().bitLength() > 512) {
-            // for SHA384 and SHA512 the data is too long for 512 bit keys
-            testSignature("SHA384withRSA", privateKey, publicKey);
-            testSignature("SHA512withRSA", privateKey, publicKey);
+
+        int testSize = ((RSAPublicKey)publicKey).getModulus().bitLength();
+        System.out.println("modulus size = " + testSize);
+
+        Iterable<String> md_alg_pkcs15 =
+            SigTestUtil.getDigestAlgorithms(SignatureType.RSA, testSize);
+        md_alg_pkcs15.forEach(mdAlg -> {
+            try {
+                testSignature(SignatureType.RSA, mdAlg, privateKey, publicKey);
+            } catch (NoSuchAlgorithmException | InvalidKeyException |
+                     SignatureException ex) {
+                throw new RuntimeException(ex);
+            }
         }
+        );
     }
 
     // regression test for 4865198

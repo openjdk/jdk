@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,20 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import java.security.*;
+import java.security.spec.*;
 import java.security.interfaces.*;
 
 import sun.security.util.*;
+
 import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.PKCS8Key;
 
+import static sun.security.rsa.RSAUtil.KeyType;
+
 /**
- * Key implementation for RSA private keys, CRT form. For non-CRT private
- * keys, see RSAPrivateKeyImpl. We need separate classes to ensure
- * correct behavior in instanceof checks, etc.
+ * RSA private key implementation for "RSA", "RSASSA-PSS" algorithms in CRT form.
+ * For non-CRT private keys, see RSAPrivateKeyImpl. We need separate classes
+ * to ensure correct behavior in instanceof checks, etc.
  *
  * Note: RSA keys must be at least 512 bits long
  *
@@ -62,9 +66,10 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger qe;      // prime exponent q
     private BigInteger coeff;   // CRT coeffcient
 
-    // algorithmId used to identify RSA keys
-    static final AlgorithmId rsaId =
-        new AlgorithmId(AlgorithmId.RSAEncryption_oid);
+    // Optional parameters associated with this RSA key
+    // specified in the encoding of its AlgorithmId.
+    // Must be null for "RSA" keys.
+    private AlgorithmParameterSpec keyParams;
 
     /**
      * Generate a new key from its encoding. Returns a CRT key if possible
@@ -73,9 +78,16 @@ public final class RSAPrivateCrtKeyImpl
     public static RSAPrivateKey newKey(byte[] encoded)
             throws InvalidKeyException {
         RSAPrivateCrtKeyImpl key = new RSAPrivateCrtKeyImpl(encoded);
-        if (key.getPublicExponent().signum() == 0) {
-            // public exponent is missing, return a non-CRT key
+        // check all CRT-specific components are available, if any one
+        // missing, return a non-CRT key instead
+        if ((key.getPublicExponent().signum() == 0) ||
+            (key.getPrimeExponentP().signum() == 0) ||
+            (key.getPrimeExponentQ().signum() == 0) ||
+            (key.getPrimeP().signum() == 0) ||
+            (key.getPrimeQ().signum() == 0) ||
+            (key.getCrtCoefficient().signum() == 0)) {
             return new RSAPrivateKeyImpl(
+                key.algid,
                 key.getModulus(),
                 key.getPrivateExponent()
             );
@@ -85,20 +97,52 @@ public final class RSAPrivateCrtKeyImpl
     }
 
     /**
+     * Generate a new key from the specified type and components.
+     * Returns a CRT key if possible and a non-CRT key otherwise.
+     * Used by SunPKCS11 provider.
+     */
+    public static RSAPrivateKey newKey(KeyType type,
+            AlgorithmParameterSpec params,
+            BigInteger n, BigInteger e, BigInteger d,
+            BigInteger p, BigInteger q, BigInteger pe, BigInteger qe,
+            BigInteger coeff) throws InvalidKeyException {
+        RSAPrivateKey key;
+        AlgorithmId rsaId = RSAUtil.createAlgorithmId(type, params);
+        if ((e.signum() == 0) || (p.signum() == 0) ||
+            (q.signum() == 0) || (pe.signum() == 0) ||
+            (qe.signum() == 0) || (coeff.signum() == 0)) {
+            // if any component is missing, return a non-CRT key
+            return new RSAPrivateKeyImpl(rsaId, n, d);
+        } else {
+            return new RSAPrivateCrtKeyImpl(rsaId, n, e, d,
+                p, q, pe, qe, coeff);
+        }
+    }
+
+    /**
      * Construct a key from its encoding. Called from newKey above.
      */
     RSAPrivateCrtKeyImpl(byte[] encoded) throws InvalidKeyException {
         decode(encoded);
         RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
+        try {
+            // this will check the validity of params
+            this.keyParams = RSAUtil.getParamSpec(algid);
+        } catch (ProviderException e) {
+            throw new InvalidKeyException(e);
+        }
     }
 
     /**
-     * Construct a key from its components. Used by the
+     * Construct a RSA key from its components. Used by the
      * RSAKeyFactory and the RSAKeyPairGenerator.
      */
-    RSAPrivateCrtKeyImpl(BigInteger n, BigInteger e, BigInteger d,
+    RSAPrivateCrtKeyImpl(AlgorithmId rsaId,
+            BigInteger n, BigInteger e, BigInteger d,
             BigInteger p, BigInteger q, BigInteger pe, BigInteger qe,
             BigInteger coeff) throws InvalidKeyException {
+        RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
+
         this.n = n;
         this.e = e;
         this.d = d;
@@ -107,7 +151,7 @@ public final class RSAPrivateCrtKeyImpl
         this.pe = pe;
         this.qe = qe;
         this.coeff = coeff;
-        RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
+        this.keyParams = RSAUtil.getParamSpec(rsaId);
 
         // generate the encoding
         algid = rsaId;
@@ -132,48 +176,71 @@ public final class RSAPrivateCrtKeyImpl
     }
 
     // see JCA doc
+    @Override
     public String getAlgorithm() {
-        return "RSA";
+        return algid.getName();
     }
 
     // see JCA doc
+    @Override
     public BigInteger getModulus() {
         return n;
     }
 
     // see JCA doc
+    @Override
     public BigInteger getPublicExponent() {
         return e;
     }
 
     // see JCA doc
+    @Override
     public BigInteger getPrivateExponent() {
         return d;
     }
 
     // see JCA doc
+    @Override
     public BigInteger getPrimeP() {
         return p;
     }
 
     // see JCA doc
+    @Override
     public BigInteger getPrimeQ() {
         return q;
     }
 
     // see JCA doc
+    @Override
     public BigInteger getPrimeExponentP() {
         return pe;
     }
 
     // see JCA doc
+    @Override
     public BigInteger getPrimeExponentQ() {
         return qe;
     }
 
     // see JCA doc
+    @Override
     public BigInteger getCrtCoefficient() {
         return coeff;
+    }
+
+    // see JCA doc
+    @Override
+    public AlgorithmParameterSpec getParams() {
+        return keyParams;
+    }
+
+    // return a string representation of this key for debugging
+    @Override
+    public String toString() {
+        return "SunRsaSign " + getAlgorithm() + " private CRT key, " + n.bitLength()
+               + " bits" + "\n  params: " + keyParams + "\n  modulus: " + n
+               + "\n  private exponent: " + d;
     }
 
     /**

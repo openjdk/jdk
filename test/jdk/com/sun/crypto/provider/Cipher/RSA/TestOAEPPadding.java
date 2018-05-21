@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,16 @@ public class TestOAEPPadding {
                 MGF1ParameterSpec.SHA384, PSource.PSpecified.DEFAULT));
         test(new OAEPParameterSpec("SHA-512", "MGF1",
                 MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
+        // SHA-512/224 and SHA-512/256
+        test(new OAEPParameterSpec("SHA-512/224", "MGF1",
+                MGF1ParameterSpec.SHA224, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-512/224", "MGF1",
+                MGF1ParameterSpec.SHA512_224, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-512/256", "MGF1",
+                MGF1ParameterSpec.SHA384, PSource.PSpecified.DEFAULT));
+        test(new OAEPParameterSpec("SHA-512/256", "MGF1",
+                MGF1ParameterSpec.SHA512, PSource.PSpecified.DEFAULT));
+
         if (failed) {
             throw new Exception("Test failed");
         }
@@ -154,9 +164,9 @@ public class TestOAEPPadding {
                 dlen = 16;
             } else if (algo.equals("SHA1")) {
                 dlen = 20;
-            } else if (algo.equals("SHA-224")) {
+            } else if (algo.equals("SHA-224") || algo.equals("SHA-512/224")) {
                 dlen = 28;
-            } else if (algo.equals("SHA-256")) {
+            } else if (algo.equals("SHA-256") || algo.equals("SHA-512/256")) {
                 dlen = 32;
             } else if (algo.equals("SHA-384")) {
                 dlen = 48;
