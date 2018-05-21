@@ -443,7 +443,7 @@ void JfrStartFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
 
 JfrStopFlightRecordingDCmd::JfrStopFlightRecordingDCmd(outputStream* output,
                                                        bool heap) : DCmdWithParser(output, heap),
-  _name("name", "Recording text,.e.g \\\"My Recording\\\"", "STRING", false, NULL),
+  _name("name", "Recording text,.e.g \\\"My Recording\\\"", "STRING", true, NULL),
   _filename("filename", "Copy recording data to file, e.g. \\\"" JFR_FILENAME_EXAMPLE "\\\"", "STRING", false, NULL) {
   _dcmdparser.add_dcmd_option(&_name);
   _dcmdparser.add_dcmd_option(&_filename);
