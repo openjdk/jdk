@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -681,7 +681,6 @@ bool Monitor::notify() {
   assert(_owner == Thread::current(), "invariant");
   assert(ILocked(), "invariant");
   if (_WaitSet == NULL) return true;
-  NotifyCount++;
 
   // Transfer one thread from the WaitSet to the EntryList or cxq.
   // Currently we just unlink the head of the WaitSet and prepend to the cxq.
