@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@
  * <h2>Package Specification</h2>
  *
  * <ul>
- *   <li>PKCS #1: RSA Encryption Standard, Version 1.5, November 1993</li>
+ *   <li>PKCS #1: RSA Cryptography Specifications, Version 2.2 (RFC 8017)</li>
  *   <li>PKCS #8: Private-Key Information Syntax Standard,
  *     Version 1.2, November 1993</li>
  *   <li>Federal Information Processing Standards Publication (FIPS PUB) 186:

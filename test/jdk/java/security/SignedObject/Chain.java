@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+/**
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,18 @@ import java.security.KeyPair;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Arrays;
+import java.security.spec.*;
+import java.util.*;
+import jdk.test.lib.SigTestUtil;
+import static jdk.test.lib.SigTestUtil.SignatureType;
 
 /*
  * @test
- * @bug 8050374 8181048
+ * @bug 8050374 8181048 8146293
  * @summary Verify a chain of signed objects
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @run main Chain
  */
 public class Chain {
 
@@ -77,6 +83,8 @@ public class Chain {
         SHA256withRSA("SHA256withRSA"),
         SHA384withRSA("SHA384withRSA"),
         SHA512withRSA("SHA512withRSA"),
+        SHA512_224withRSA("SHA512/224withRSA"),
+        SHA512_256withRSA("SHA512/256withRSA"),
 
         SHA1withECDSA("SHA1withECDSA"),
         SHA256withECDSA("SHA256withECDSA"),
@@ -84,7 +92,9 @@ public class Chain {
         SHA384withECDSA("SHA384withECDSA"),
         SHA512withECDSA("SHA512withECDSA"),
 
-        MD5andSHA1withRSA("MD5andSHA1withRSA");
+        MD5andSHA1withRSA("MD5andSHA1withRSA"),
+
+        RSASSA_PSS("RSASSA-PSS");
 
         final String name;
 
@@ -98,16 +108,44 @@ public class Chain {
         final KeyAlg keyAlg;
         final SigAlg sigAlg;
         final int keySize;
+        final AlgorithmParameterSpec sigParams;
 
         Test(SigAlg sigAlg, KeyAlg keyAlg, Provider provider) {
-            this(sigAlg, keyAlg, provider, -1);
+            this(sigAlg, keyAlg, provider, -1, null);
         }
 
         Test(SigAlg sigAlg, KeyAlg keyAlg, Provider provider, int keySize) {
+            this(sigAlg, keyAlg, provider, keySize, null);
+        }
+
+        Test(SigAlg sigAlg, KeyAlg keyAlg, Provider provider, int keySize,
+                AlgorithmParameterSpec sigParams) {
             this.provider = provider;
             this.keyAlg = keyAlg;
             this.sigAlg = sigAlg;
             this.keySize = keySize;
+            this.sigParams = sigParams;
+        }
+
+        private static String formatParams(AlgorithmParameterSpec aps) {
+            if (aps == null) return "null";
+            if (aps instanceof PSSParameterSpec) {
+                PSSParameterSpec p = (PSSParameterSpec) aps;
+                return String.format("PSSParameterSpec (%s, %s, %s, %s)",
+                    p.getDigestAlgorithm(), formatParams(p.getMGFParameters()),
+                    p.getSaltLength(), p.getTrailerField());
+            } else if (aps instanceof MGF1ParameterSpec) {
+                return "MGF1" +
+                    ((MGF1ParameterSpec)aps).getDigestAlgorithm();
+            } else {
+                return aps.toString();
+            }
+        }
+
+        public String toString() {
+            return String.format("Test: provider = %s, signature alg = %s, "
+                + " w/ %s, key alg = %s", provider, sigAlg,
+                formatParams(sigParams), keyAlg);
         }
     }
 
@@ -126,17 +164,29 @@ public class Chain {
 
     public static void main(String argv[]) {
         boolean result = Arrays.stream(tests).allMatch((test) -> runTest(test));
-        if(result) {
+        result &= runTestPSS(2048);
+        if (result) {
             System.out.println("All tests passed");
         } else {
             throw new RuntimeException("Some tests failed");
         }
     }
 
+    private static boolean runTestPSS(int keysize) {
+        boolean result = true;
+        SigAlg pss = SigAlg.RSASSA_PSS;
+        Iterator<String> mdAlgs = SigTestUtil.getDigestAlgorithms
+            (SignatureType.RSASSA_PSS, keysize).iterator();
+        while (mdAlgs.hasNext()) {
+            result &= runTest(new Test(pss, KeyAlg.RSA, Provider.SunRsaSign,
+                keysize, SigTestUtil.generateDefaultParameter
+                    (SignatureType.RSASSA_PSS, mdAlgs.next())));
+        }
+        return result;
+    }
+
     static boolean runTest(Test test) {
-        System.out.format("Test: provider = %s, signature algorithm = %s, "
-                + "key algorithm = %s\n",
-                test.provider, test.sigAlg, test.keyAlg);
+        System.out.println(test);
         try {
             // Generate all private/public key pairs
             PrivateKey[] privKeys = new PrivateKey[N];
@@ -153,6 +203,10 @@ public class Chain {
                 signature = Signature.getInstance(test.sigAlg.name);
                 kpg = KeyPairGenerator.getInstance(test.keyAlg.name);
             }
+            if (test.sigParams != null) {
+                signature.setParameter(test.sigParams);
+            }
+
             for (int j=0; j < N; j++) {
                 if (test.keySize != -1) {
                     kpg.initialize(test.keySize);
@@ -187,7 +241,6 @@ public class Chain {
                     System.out.println("Failed: verification failed, n = " + n);
                     return false;
                 }
-
                 if (object.verify(anotherPubKeys[n], signature)) {
                     System.out.println("Failed: verification should not "
                             + "succeed with wrong public key, n = " + n);

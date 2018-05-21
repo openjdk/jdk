@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,12 @@
 
 /*
  * @test
- * @bug 8050374
- * @summary Verify a chain of signed objects
+ * @bug 8050374 8146293
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
  * @compile ../../../java/security/SignedObject/Chain.java
  * @run main SignedObjectChain
+ * @summary Verify a chain of signed objects
  */
 public class SignedObjectChain {
 
@@ -45,6 +47,8 @@ public class SignedObjectChain {
         new Test(Chain.SigAlg.SHA256withRSA),
         new Test(Chain.SigAlg.SHA384withRSA),
         new Test(Chain.SigAlg.SHA512withRSA),
+        new Test(Chain.SigAlg.SHA512_224withRSA),
+        new Test(Chain.SigAlg.SHA512_256withRSA),
     };
 
     public static void main(String argv[]) {

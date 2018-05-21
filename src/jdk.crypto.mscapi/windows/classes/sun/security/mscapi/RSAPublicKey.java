@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.KeyException;
 import java.security.KeyRep;
 import java.security.ProviderException;
 
+import sun.security.rsa.RSAUtil.KeyType;
 import sun.security.rsa.RSAPublicKeyImpl;
 
 /**
@@ -165,8 +166,8 @@ class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
         if (encoding == null) {
 
             try {
-                encoding = new RSAPublicKeyImpl(getModulus(),
-                    getPublicExponent()).getEncoded();
+                encoding = RSAPublicKeyImpl.newKey(KeyType.RSA, null,
+                    getModulus(), getPublicExponent()).getEncoded();
 
             } catch (KeyException e) {
                 // ignore

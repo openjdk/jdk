@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,15 @@ import sun.security.util.KeyUtil;
 
 /**
  * RSA cipher implementation. Supports RSA en/decryption and signing/verifying
- * using PKCS#1 v1.5 padding and without padding (raw RSA). Note that raw RSA
- * is supported mostly for completeness and should only be used in rare cases.
+ * using both PKCS#1 v1.5 and OAEP (v2.2) paddings and without padding (raw RSA).
+ * Note that raw RSA is supported mostly for completeness and should only be
+ * used in rare cases.
  *
  * Objects should be instantiated by calling Cipher.getInstance() using the
  * following algorithm names:
- *  . "RSA/ECB/PKCS1Padding" (or "RSA") for PKCS#1 padding. The mode (blocktype)
- *    is selected based on the en/decryption mode and public/private key used
+ *  . "RSA/ECB/PKCS1Padding" (or "RSA") for PKCS#1 v1.5 padding.
+ *  . "RSA/ECB/OAEPwith<hash>andMGF1Padding" (or "RSA/ECB/OAEPPadding") for
+ *    PKCS#1 v2.2 padding.
  *  . "RSA/ECB/NoPadding" for rsa RSA.
  *
  * We only do one RSA operation per doFinal() call. If the application passes
@@ -81,7 +83,7 @@ public final class RSACipher extends CipherSpi {
     private static final String PAD_NONE  = "NoPadding";
     // constant for PKCS#1 v1.5 RSA
     private static final String PAD_PKCS1 = "PKCS1Padding";
-    // constant for PKCS#2 v2.0 OAEP with MGF1
+    // constant for PKCS#2 v2.2 OAEP with MGF1
     private static final String PAD_OAEP_MGF1  = "OAEP";
 
     // current mode, one of MODE_* above. Set when init() is called

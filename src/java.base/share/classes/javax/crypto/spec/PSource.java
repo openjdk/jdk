@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,19 @@ package javax.crypto.spec;
 /**
  * This class specifies the source for encoding input P in OAEP Padding,
  * as defined in the
- * <a href="http://www.ietf.org/rfc/rfc3447.txt">PKCS #1</a>
- * standard.
+ * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard.
+ * <pre>
+ * PSourceAlgorithm ::= AlgorithmIdentifier {
+ *   {PKCS1PSourceAlgorithms}
+ * }
+ * </pre>
+ * where
  * <pre>
  * PKCS1PSourceAlgorithms    ALGORITHM-IDENTIFIER ::= {
- *   { OID id-pSpecified PARAMETERS OCTET STRING },
+ *   { OID id-pSpecified PARAMETERS EncodingParameters },
  *   ...  -- Allows for future expansion --
  * }
+ * EncodingParameters ::= OCTET STRING(SIZE(0..MAX))
  * </pre>
  * @author Valerie Peng
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@ package java.security.cert;
 
 import java.math.BigInteger;
 import java.security.*;
+import java.security.spec.*;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.x509.X509CertImpl;
+import sun.security.util.SignatureUtil;
 
 /**
  * <p>
@@ -677,7 +679,18 @@ implements X509Extension {
         Signature sig = (sigProvider == null)
             ? Signature.getInstance(getSigAlgName())
             : Signature.getInstance(getSigAlgName(), sigProvider);
+
         sig.initVerify(key);
+
+        // set parameters after Signature.initSign/initVerify call,
+        // so the deferred provider selections occur when key is set
+        try {
+            SignatureUtil.specialSetParameter(sig, getSigAlgParams());
+        } catch (ProviderException e) {
+            throw new CertificateException(e.getMessage(), e.getCause());
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new CertificateException(e);
+        }
 
         byte[] tbsCert = getTBSCertificate();
         sig.update(tbsCert, 0, tbsCert.length);

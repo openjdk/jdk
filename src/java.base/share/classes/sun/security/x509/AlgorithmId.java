@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,6 +182,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 algid.equals((Object)SHA256_oid) ||
                 algid.equals((Object)SHA384_oid) ||
                 algid.equals((Object)SHA512_oid) ||
+                algid.equals((Object)SHA512_224_oid) ||
+                algid.equals((Object)SHA512_256_oid) ||
                 algid.equals((Object)DSA_oid) ||
                 algid.equals((Object)sha1WithDSA_oid)) {
                 ; // no parameter part encoded
@@ -483,10 +485,23 @@ public class AlgorithmId implements Serializable, DerEncoder {
             name.equalsIgnoreCase("SHA224")) {
             return AlgorithmId.SHA224_oid;
         }
-
+        if (name.equalsIgnoreCase("SHA-512/224") ||
+            name.equalsIgnoreCase("SHA512/224")) {
+            return AlgorithmId.SHA512_224_oid;
+        }
+        if (name.equalsIgnoreCase("SHA-512/256") ||
+            name.equalsIgnoreCase("SHA512/256")) {
+            return AlgorithmId.SHA512_256_oid;
+        }
         // Various public key algorithms
         if (name.equalsIgnoreCase("RSA")) {
             return AlgorithmId.RSAEncryption_oid;
+        }
+        if (name.equalsIgnoreCase("RSASSA-PSS")) {
+            return AlgorithmId.RSASSA_PSS_oid;
+        }
+        if (name.equalsIgnoreCase("RSAES-OAEP")) {
+            return AlgorithmId.RSAES_OAEP_oid;
         }
         if (name.equalsIgnoreCase("Diffie-Hellman")
             || name.equalsIgnoreCase("DH")) {
@@ -648,6 +663,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier SHA512_oid =
     ObjectIdentifier.newInternal(new int[] {2, 16, 840, 1, 101, 3, 4, 2, 3});
 
+    public static final ObjectIdentifier SHA512_224_oid =
+    ObjectIdentifier.newInternal(new int[] {2, 16, 840, 1, 101, 3, 4, 2, 5});
+
+    public static final ObjectIdentifier SHA512_256_oid =
+    ObjectIdentifier.newInternal(new int[] {2, 16, 840, 1, 101, 3, 4, 2, 6});
+
     /*
      * COMMON PUBLIC KEY TYPES
      */
@@ -656,8 +677,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
     private static final int[] DSA_OIW_data = { 1, 3, 14, 3, 2, 12 };
     private static final int[] DSA_PKIX_data = { 1, 2, 840, 10040, 4, 1 };
     private static final int[] RSA_data = { 2, 5, 8, 1, 1 };
-    private static final int[] RSAEncryption_data =
-                                 { 1, 2, 840, 113549, 1, 1, 1 };
 
     public static final ObjectIdentifier DH_oid;
     public static final ObjectIdentifier DH_PKIX_oid;
@@ -666,7 +685,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier EC_oid = oid(1, 2, 840, 10045, 2, 1);
     public static final ObjectIdentifier ECDH_oid = oid(1, 3, 132, 1, 12);
     public static final ObjectIdentifier RSA_oid;
-    public static final ObjectIdentifier RSAEncryption_oid;
+    public static final ObjectIdentifier RSAEncryption_oid =
+                                            oid(1, 2, 840, 113549, 1, 1, 1);
+    public static final ObjectIdentifier RSAES_OAEP_oid =
+                                            oid(1, 2, 840, 113549, 1, 1, 7);
+    public static final ObjectIdentifier RSASSA_PSS_oid =
+                                            oid(1, 2, 840, 113549, 1, 1, 10);
 
     /*
      * COMMON SECRET KEY TYPES
@@ -693,6 +717,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
                                        { 1, 2, 840, 113549, 1, 1, 12 };
     private static final int[] sha512WithRSAEncryption_data =
                                        { 1, 2, 840, 113549, 1, 1, 13 };
+
     private static final int[] shaWithDSA_OIW_data =
                                        { 1, 3, 14, 3, 2, 13 };
     private static final int[] sha1WithDSA_OIW_data =
@@ -708,6 +733,11 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier sha256WithRSAEncryption_oid;
     public static final ObjectIdentifier sha384WithRSAEncryption_oid;
     public static final ObjectIdentifier sha512WithRSAEncryption_oid;
+    public static final ObjectIdentifier sha512_224WithRSAEncryption_oid =
+                                            oid(1, 2, 840, 113549, 1, 1, 15);
+    public static final ObjectIdentifier sha512_256WithRSAEncryption_oid =
+                                            oid(1, 2, 840, 113549, 1, 1, 16);;
+
     public static final ObjectIdentifier shaWithDSA_OIW_oid;
     public static final ObjectIdentifier sha1WithDSA_OIW_oid;
     public static final ObjectIdentifier sha1WithDSA_oid;
@@ -795,13 +825,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * OID = 2.5.8.1.1
      */
         RSA_oid = ObjectIdentifier.newInternal(RSA_data);
-
-    /**
-     * Algorithm ID for RSA keys used with RSA encryption, as defined
-     * in PKCS #1.  There are no parameters associated with this algorithm.
-     * OID = 1.2.840.113549.1.1.1
-     */
-        RSAEncryption_oid = ObjectIdentifier.newInternal(RSAEncryption_data);
 
     /**
      * Identifies a signing algorithm where an MD2 digest is encrypted
@@ -898,6 +921,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable.put(SHA256_oid, "SHA-256");
         nameTable.put(SHA384_oid, "SHA-384");
         nameTable.put(SHA512_oid, "SHA-512");
+        nameTable.put(SHA512_224_oid, "SHA-512/224");
+        nameTable.put(SHA512_256_oid, "SHA-512/256");
         nameTable.put(RSAEncryption_oid, "RSA");
         nameTable.put(RSA_oid, "RSA");
         nameTable.put(DH_oid, "Diffie-Hellman");
@@ -927,6 +952,11 @@ public class AlgorithmId implements Serializable, DerEncoder {
         nameTable.put(sha256WithRSAEncryption_oid, "SHA256withRSA");
         nameTable.put(sha384WithRSAEncryption_oid, "SHA384withRSA");
         nameTable.put(sha512WithRSAEncryption_oid, "SHA512withRSA");
+        nameTable.put(sha512_224WithRSAEncryption_oid, "SHA512/224withRSA");
+        nameTable.put(sha512_256WithRSAEncryption_oid, "SHA512/256withRSA");
+        nameTable.put(RSASSA_PSS_oid, "RSASSA-PSS");
+        nameTable.put(RSAES_OAEP_oid, "RSAES-OAEP");
+
         nameTable.put(pbeWithMD5AndDES_oid, "PBEWithMD5AndDES");
         nameTable.put(pbeWithMD5AndRC2_oid, "PBEWithMD5AndRC2");
         nameTable.put(pbeWithSHA1AndDES_oid, "PBEWithSHA1AndDES");

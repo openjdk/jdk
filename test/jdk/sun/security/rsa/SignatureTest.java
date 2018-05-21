@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,42 +20,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
+import java.security.spec.*;
+import java.util.*;
 import java.util.stream.IntStream;
 import static javax.crypto.Cipher.PRIVATE_KEY;
 import static javax.crypto.Cipher.PUBLIC_KEY;
 
+import jdk.test.lib.SigTestUtil;
+import static jdk.test.lib.SigTestUtil.SignatureType;
+
 /**
  * @test
- * @bug 8044199
+ * @bug 8044199 8146293
  * @summary Create a signature for RSA and get its signed data. re-initiate
  *          the signature with the public key. The signature can be verified
  *          by acquired signed data.
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
  * @run main SignatureTest 512
  * @run main SignatureTest 768
  * @run main SignatureTest 1024
  * @run main SignatureTest 2048
  * @run main/timeout=240 SignatureTest 4096
  * @run main/timeout=240 SignatureTest 5120
- * @run main/timeout=240 SignatureTest 6144
+ * @run main/timeout=480 SignatureTest 6144
  */
 public class SignatureTest {
     /**
@@ -78,14 +69,13 @@ public class SignatureTest {
      */
     private static final int UPDATE_TIMES_HUNDRED = 100;
 
-    /**
-     * Signature algorithms to test
-     */
-    private static final String[] SIGN_ALG = {"MD2withRSA", "MD5withRSA",
-        "SHA1withRSA", "SHA256withRSA"};
-
     public static void main(String[] args) throws Exception {
-        int testSize = Integer.parseInt(args[0]);
+        int keySize = Integer.parseInt(args[0]);
+        Iterable<String> md_alg_pkcs15 =
+            SigTestUtil.getDigestAlgorithms(SignatureType.RSA, keySize);
+
+        Iterable<String> md_alg_pss =
+            SigTestUtil.getDigestAlgorithms(SignatureType.RSASSA_PSS, keySize);
 
         byte[] data = new byte[100];
         IntStream.range(0, data.length).forEach(j -> {
@@ -93,24 +83,34 @@ public class SignatureTest {
         });
 
         // create a key pair
-        KeyPair kpair = generateKeys(KEYALG, testSize);
+        KeyPair kpair = generateKeys(KEYALG, keySize);
         Key[] privs = manipulateKey(PRIVATE_KEY, kpair.getPrivate());
         Key[] pubs = manipulateKey(PUBLIC_KEY, kpair.getPublic());
-        // For signature algorithm, create and verify a signature
 
+        test(SignatureType.RSA, md_alg_pkcs15, privs, pubs, data);
+        test(SignatureType.RSASSA_PSS, md_alg_pss, privs, pubs, data);
+    }
+
+    private static void test(SignatureType type, Iterable<String> digestAlgs,
+            Key[] privs, Key[] pubs, byte[] data) throws RuntimeException {
+
+        // For signature algorithm, create and verify a signature
         Arrays.stream(privs).forEach(priv
                 -> Arrays.stream(pubs).forEach(pub
-                -> Arrays.stream(SIGN_ALG).forEach(testAlg -> {
+                -> digestAlgs.forEach(digestAlg -> {
             try {
+                AlgorithmParameterSpec sigParams =
+                    SigTestUtil.generateDefaultParameter(type, digestAlg);
+                String sigAlg = SigTestUtil.generateSigAlg(type, digestAlg);
                 checkSignature(data, (PublicKey) pub, (PrivateKey) priv,
-                        testAlg);
+                        sigAlg, sigParams);
             } catch (NoSuchAlgorithmException | InvalidKeyException |
-                    SignatureException | NoSuchProviderException ex) {
+                    SignatureException | NoSuchProviderException |
+                    InvalidAlgorithmParameterException ex) {
                 throw new RuntimeException(ex);
             }
         }
         )));
-
     }
 
     private static KeyPair generateKeys(String keyalg, int size)
@@ -160,9 +160,14 @@ public class SignatureTest {
     }
 
     private static void checkSignature(byte[] data, PublicKey pub,
-            PrivateKey priv, String sigalg) throws NoSuchAlgorithmException,
-            InvalidKeyException, SignatureException, NoSuchProviderException {
-        Signature sig = Signature.getInstance(sigalg, PROVIDER);
+            PrivateKey priv, String sigAlg, AlgorithmParameterSpec sigParams)
+            throws NoSuchAlgorithmException, InvalidKeyException,
+            SignatureException, NoSuchProviderException,
+            InvalidAlgorithmParameterException {
+        System.out.println("Testing " + sigAlg);
+        Signature sig = Signature.getInstance(sigAlg, PROVIDER);
+        sig.setParameter(sigParams);
+
         sig.initSign(priv);
         for (int i = 0; i < UPDATE_TIMES_HUNDRED; i++) {
             sig.update(data);
@@ -170,12 +175,13 @@ public class SignatureTest {
         byte[] signedData = sig.sign();
 
         // Make sure signature verifies with original data
+        sig.setParameter(sigParams);
         sig.initVerify(pub);
         for (int i = 0; i < UPDATE_TIMES_HUNDRED; i++) {
             sig.update(data);
         }
         if (!sig.verify(signedData)) {
-            throw new RuntimeException("Failed to verify " + sigalg
+            throw new RuntimeException("Failed to verify " + sigAlg
                     + " signature");
         }
 
@@ -187,7 +193,7 @@ public class SignatureTest {
         }
 
         if (sig.verify(signedData)) {
-            throw new RuntimeException("Failed to detect bad " + sigalg
+            throw new RuntimeException("Failed to detect bad " + sigAlg
                     + " signature");
         }
     }
