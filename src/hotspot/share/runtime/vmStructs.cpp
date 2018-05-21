@@ -51,7 +51,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heap.hpp"
-#include "memory/metachunk.hpp"
+#include "memory/metaspace/metablock.hpp"
 #include "memory/padded.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/universe.hpp"

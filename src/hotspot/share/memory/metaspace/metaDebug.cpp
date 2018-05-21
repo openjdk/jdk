@@ -22,43 +22,42 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACE_METASPACEDCMD_HPP
-#define SHARE_MEMORY_METASPACE_METASPACEDCMD_HPP
-
-#include "services/diagnosticCommand.hpp"
-
-class outputStream;
+#include "precompiled.hpp"
+#include "logging/log.hpp"
+#include "memory/metaspace/metaDebug.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 namespace metaspace {
 
-class MetaspaceDCmd : public DCmdWithParser {
-  DCmdArgument<bool> _basic;
-  DCmdArgument<bool> _show_loaders;
-  DCmdArgument<bool> _by_spacetype;
-  DCmdArgument<bool> _by_chunktype;
-  DCmdArgument<bool> _show_vslist;
-  DCmdArgument<bool> _show_vsmap;
-  DCmdArgument<char*> _scale;
-public:
-  MetaspaceDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "VM.metaspace";
+int Metadebug::_allocation_fail_alot_count = 0;
+
+void Metadebug::init_allocation_fail_alot_count() {
+  if (MetadataAllocationFailALot) {
+    _allocation_fail_alot_count =
+      1+(long)((double)MetadataAllocationFailALotInterval*os::random()/(max_jint+1.0));
   }
-  static const char* description() {
-    return "Prints the statistics for the metaspace";
+}
+
+#ifdef ASSERT
+bool Metadebug::test_metadata_failure() {
+  if (MetadataAllocationFailALot &&
+      Threads::is_vm_complete()) {
+    if (_allocation_fail_alot_count > 0) {
+      _allocation_fail_alot_count--;
+    } else {
+      log_trace(gc, metaspace, freelist)("Metadata allocation failing for MetadataAllocationFailALot");
+      init_allocation_fail_alot_count();
+      return true;
+    }
   }
-  static const char* impact() {
-      return "Medium: Depends on number of classes loaded.";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
-    return p;
-  }
-  static int num_arguments();
-  virtual void execute(DCmdSource source, TRAPS);
-};
+  return false;
+}
+#endif
+
 
 } // namespace metaspace
 
-#endif /* SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP */
+

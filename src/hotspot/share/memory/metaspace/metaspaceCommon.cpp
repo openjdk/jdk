@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, SAP and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +25,14 @@
 #include "precompiled.hpp"
 
 #include "memory/metaspace/metaspaceCommon.hpp"
+#include "memory/metaspace/virtualSpaceNode.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 namespace metaspace {
-namespace internals {
+
+DEBUG_ONLY(internal_statistics_t g_internal_statistics;)
 
 // Print a size, in words, scaled.
 void print_scaled_words(outputStream* st, size_t word_size, size_t scale, int width) {
@@ -128,5 +130,70 @@ void print_percentage(outputStream* st, size_t total, size_t part) {
   }
 }
 
-} // namespace internals
+// Returns size of this chunk type.
+size_t get_size_for_nonhumongous_chunktype(ChunkIndex chunktype, bool is_class) {
+  assert(is_valid_nonhumongous_chunktype(chunktype), "invalid chunk type.");
+  size_t size = 0;
+  if (is_class) {
+    switch(chunktype) {
+      case SpecializedIndex: size = ClassSpecializedChunk; break;
+      case SmallIndex: size = ClassSmallChunk; break;
+      case MediumIndex: size = ClassMediumChunk; break;
+      default:
+        ShouldNotReachHere();
+    }
+  } else {
+    switch(chunktype) {
+      case SpecializedIndex: size = SpecializedChunk; break;
+      case SmallIndex: size = SmallChunk; break;
+      case MediumIndex: size = MediumChunk; break;
+      default:
+        ShouldNotReachHere();
+    }
+  }
+  return size;
+}
+
+ChunkIndex get_chunk_type_by_size(size_t size, bool is_class) {
+  if (is_class) {
+    if (size == ClassSpecializedChunk) {
+      return SpecializedIndex;
+    } else if (size == ClassSmallChunk) {
+      return SmallIndex;
+    } else if (size == ClassMediumChunk) {
+      return MediumIndex;
+    } else if (size > ClassMediumChunk) {
+      // A valid humongous chunk size is a multiple of the smallest chunk size.
+      assert(is_aligned(size, ClassSpecializedChunk), "Invalid chunk size");
+      return HumongousIndex;
+    }
+  } else {
+    if (size == SpecializedChunk) {
+      return SpecializedIndex;
+    } else if (size == SmallChunk) {
+      return SmallIndex;
+    } else if (size == MediumChunk) {
+      return MediumIndex;
+    } else if (size > MediumChunk) {
+      // A valid humongous chunk size is a multiple of the smallest chunk size.
+      assert(is_aligned(size, SpecializedChunk), "Invalid chunk size");
+      return HumongousIndex;
+    }
+  }
+  ShouldNotReachHere();
+  return (ChunkIndex)-1;
+}
+
+ChunkIndex next_chunk_index(ChunkIndex i) {
+  assert(i < NumberOfInUseLists, "Out of bound");
+  return (ChunkIndex) (i+1);
+}
+
+ChunkIndex prev_chunk_index(ChunkIndex i) {
+  assert(i > ZeroIndex, "Out of bound");
+  return (ChunkIndex) (i-1);
+}
+
+
 } // namespace metaspace
+

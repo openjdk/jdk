@@ -22,18 +22,47 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace/chunkManager.hpp"
+#include "memory/metaspace/metaspaceCommon.hpp"
 
 // The test function is only available in debug builds
 #ifdef ASSERT
 
 #include "unittest.hpp"
 
-void ChunkManager_test_list_index();
+using namespace metaspace;
 
 TEST(ChunkManager, list_index) {
-  // The ChunkManager is only available in metaspace.cpp,
-  // so the test code is located in that file.
-  ChunkManager_test_list_index();
+
+  // Test previous bug where a query for a humongous class metachunk,
+  // incorrectly matched the non-class medium metachunk size.
+  {
+    ChunkManager manager(true);
+
+    ASSERT_TRUE(MediumChunk > ClassMediumChunk) << "Precondition for test";
+
+    ChunkIndex index = manager.list_index(MediumChunk);
+
+    ASSERT_TRUE(index == HumongousIndex) <<
+        "Requested size is larger than ClassMediumChunk,"
+        " so should return HumongousIndex. Got index: " << index;
+  }
+
+  // Check the specified sizes as well.
+  {
+    ChunkManager manager(true);
+    ASSERT_TRUE(manager.list_index(ClassSpecializedChunk) == SpecializedIndex);
+    ASSERT_TRUE(manager.list_index(ClassSmallChunk) == SmallIndex);
+    ASSERT_TRUE(manager.list_index(ClassMediumChunk) == MediumIndex);
+    ASSERT_TRUE(manager.list_index(ClassMediumChunk + ClassSpecializedChunk) == HumongousIndex);
+  }
+  {
+    ChunkManager manager(false);
+    ASSERT_TRUE(manager.list_index(SpecializedChunk) == SpecializedIndex);
+    ASSERT_TRUE(manager.list_index(SmallChunk) == SmallIndex);
+    ASSERT_TRUE(manager.list_index(MediumChunk) == MediumIndex);
+    ASSERT_TRUE(manager.list_index(MediumChunk + SpecializedChunk) == HumongousIndex);
+  }
 
 }
 

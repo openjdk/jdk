@@ -26,6 +26,9 @@
 #define SHARE_VM_MEMORY_BINARYTREEDICTIONARY_HPP
 
 #include "memory/freeList.hpp"
+#include "memory/memRegion.hpp"
+
+class Mutex;
 
 /*
  * A binary tree based search structure for free blocks.
@@ -276,15 +279,7 @@ class BinaryTreeDictionary: public CHeapObj<mtGC> {
   }
 
   size_t     max_chunk_size() const;
-  size_t     total_chunk_size(debug_only(const Mutex* lock)) const {
-    debug_only(
-      if (lock != NULL && lock->owned_by_self()) {
-        assert(total_size_in_tree(root()) == total_size(),
-               "_total_size inconsistency");
-      }
-    )
-    return total_size();
-  }
+  inline size_t total_chunk_size(debug_only(const Mutex* lock)) const;
 
   size_t     min_size() const {
     return TreeChunk<Chunk_t, FreeList_t>::min_size();

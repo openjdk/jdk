@@ -22,43 +22,26 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACE_METASPACEDCMD_HPP
-#define SHARE_MEMORY_METASPACE_METASPACEDCMD_HPP
+#ifndef SHARE_MEMORY_METASPACE_METADEBUG_HPP
+#define SHARE_MEMORY_METASPACE_METADEBUG_HPP
 
-#include "services/diagnosticCommand.hpp"
-
-class outputStream;
+#include "memory/allocation.hpp"
 
 namespace metaspace {
 
-class MetaspaceDCmd : public DCmdWithParser {
-  DCmdArgument<bool> _basic;
-  DCmdArgument<bool> _show_loaders;
-  DCmdArgument<bool> _by_spacetype;
-  DCmdArgument<bool> _by_chunktype;
-  DCmdArgument<bool> _show_vslist;
-  DCmdArgument<bool> _show_vsmap;
-  DCmdArgument<char*> _scale;
-public:
-  MetaspaceDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "VM.metaspace";
-  }
-  static const char* description() {
-    return "Prints the statistics for the metaspace";
-  }
-  static const char* impact() {
-      return "Medium: Depends on number of classes loaded.";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
-    return p;
-  }
-  static int num_arguments();
-  virtual void execute(DCmdSource source, TRAPS);
+class Metadebug : AllStatic {
+  // Debugging support for Metaspaces
+  static int _allocation_fail_alot_count;
+
+ public:
+
+  static void init_allocation_fail_alot_count();
+#ifdef ASSERT
+  static bool test_metadata_failure();
+#endif
 };
 
 } // namespace metaspace
 
-#endif /* SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP */
+#endif /* SHARE_MEMORY_METASPACE_METADEBUG_HPP */
+
