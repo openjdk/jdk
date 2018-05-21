@@ -130,7 +130,6 @@ class Monitor : public CHeapObj<mtInternal> {
   volatile intptr_t _WaitLock [1] ;      // Protects _WaitSet
   ParkEvent * volatile  _WaitSet ;       // LL of ParkEvents
   volatile bool     _snuck;              // Used for sneaky locking (evil).
-  int NotifyCount ;                      // diagnostic assist
   char _name[MONITOR_NAME_LEN];          // Name of mutex
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
