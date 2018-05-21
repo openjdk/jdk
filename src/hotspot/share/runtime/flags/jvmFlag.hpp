@@ -275,7 +275,7 @@ public:
   static void printSetFlags(outputStream* out);
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
-  static void printFlags(outputStream* out, bool withComments, bool printRanges = false);
+  static void printFlags(outputStream* out, bool withComments, bool printRanges = false, bool skipDefaults = false);
 
   static void verify() PRODUCT_RETURN;
 };

@@ -42,6 +42,7 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/flags/jvmFlag.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -910,6 +911,17 @@ void VMError::report(outputStream* st, bool _verbose) {
        Arguments::print_on(st);
        st->cr();
      }
+
+  STEP("printing flags")
+
+    if (_verbose) {
+      JVMFlag::printFlags(
+        st,
+        true, // with comments
+        false, // no ranges
+        true); // skip defaults
+      st->cr();
+    }
 
   STEP("printing warning if internal testing API used")
 
