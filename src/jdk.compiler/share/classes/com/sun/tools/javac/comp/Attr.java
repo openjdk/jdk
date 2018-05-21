@@ -2668,8 +2668,12 @@ public class Attr extends JCTree.Visitor {
                     ListBuffer<Type> components = new ListBuffer<>();
                     for (Type bound : ict.getExplicitComponents()) {
                         if (explicitParamTypes != null) {
-                            bound = infer.instantiateFunctionalInterface(that,
-                                    bound, explicitParamTypes, resultInfo.checkContext);
+                            try {
+                                bound = infer.instantiateFunctionalInterface(that,
+                                        bound, explicitParamTypes, resultInfo.checkContext);
+                            } catch (FunctionDescriptorLookupError t) {
+                                // do nothing
+                            }
                         }
                         bound = types.removeWildcards(bound);
                         components.add(bound);
