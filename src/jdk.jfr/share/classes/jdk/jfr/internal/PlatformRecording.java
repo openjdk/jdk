@@ -161,7 +161,7 @@ public final class PlatformRecording implements AutoCloseable {
                 stopTask.cancel();
                 stopTask = null;
             }
-            recorder.stop(this);
+            recorder.stop(this, alternativePath);
             String endTExt = reason == null ? "" : ". Reason \"" + reason + "\".";
             Logger.log(LogTag.JFR, LogLevel.INFO, "Stopped recording \"" + recording.getName() + "\" (" + recording.getId()+ ")" + endTExt);
             this.stopTime = Instant.now();

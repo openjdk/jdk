@@ -245,7 +245,7 @@ public final class PlatformRecorder {
         RequestEngine.doChunkBegin();
     }
 
-    synchronized void stop(PlatformRecording recording) {
+    synchronized void stop(PlatformRecording recording, WriteableUserPath alternativePath) {
         RecordingState state = recording.getState();
 
         if (Utils.isAfter(state, RecordingState.RUNNING)) {
@@ -278,7 +278,7 @@ public final class PlatformRecorder {
                 }
             } else {
                 // last memory
-                dumpMemoryToDestination(recording);
+                dumpMemoryToDestination(recording, alternativePath);
             }
             jvm.endRecording_();
             disableEvents();
@@ -314,8 +314,8 @@ public final class PlatformRecorder {
         }
     }
 
-    private void dumpMemoryToDestination(PlatformRecording recording) {
-        WriteableUserPath dest = recording.getDestination();
+    private void dumpMemoryToDestination(PlatformRecording recording, WriteableUserPath alternativePath) {
+        WriteableUserPath dest = alternativePath != null ? alternativePath : recording.getDestination();
         if (dest != null) {
             MetadataRepository.getInstance().setOutput(dest.getText());
             recording.clearDestination();
