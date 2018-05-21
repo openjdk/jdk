@@ -115,10 +115,10 @@
 		</xsd:simpleContent>
 	</xsd:complexType>
 
-	<!--Condition represents an input that depends on other inputs. The child elements defines a 
-	boolean expression with test as leaf nodes. If the expression evaluates to true the input returns 
-	"true" and if it's false "false". It's possible to override this behavior by setting the attributes 
-	true and false to the values that should be returned. -->
+    <!--Condition represents an input that depends on other inputs. The child elements defines a 
+    boolean expression with test as leaf nodes. If the expression evaluates to true, the value 
+    in the true attribute is used. If it evaluates to false, the value in the false attribute is used.
+    If true or false is omitted, the evaluation of the expression will be ignored. -->
 	<xsd:complexType name="conditionType">
 		<xsd:choice>
 			<xsd:element name="test" type="testType" />
@@ -127,8 +127,8 @@
 			<xsd:element name="or" type="orType" />
 		</xsd:choice>
 		<xsd:attribute use="required" name="name" type="xsd:string" />
-		<xsd:attribute default="true" name="true" type="xsd:string" />
-		<xsd:attribute default="false" name="false" type="xsd:string" />
+		<xsd:attribute name="true" type="xsd:string" />
+		<xsd:attribute name="false" type="xsd:string" />
 	</xsd:complexType>
 
 	<xsd:complexType name="orType">
