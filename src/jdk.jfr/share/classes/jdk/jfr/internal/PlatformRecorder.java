@@ -108,7 +108,11 @@ public final class PlatformRecorder {
     }
 
     public synchronized PlatformRecording newRecording(Map<String, String> settings) {
-        PlatformRecording recording = new PlatformRecording(this, ++recordingCounter);
+        return newRecording(settings, ++recordingCounter);
+    }
+
+    public synchronized PlatformRecording newRecording(Map<String, String> settings, long id) {
+        PlatformRecording recording = new PlatformRecording(this, id);
         if (!settings.isEmpty()) {
             recording.setSettings(settings);
         }
