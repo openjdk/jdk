@@ -43,25 +43,36 @@
 static const int JVM_IDENT_MAX = 256;
 
 class SharedClassPathEntry {
+  enum {
+    modules_image_entry,
+    jar_entry,
+    signed_jar_entry,
+    dir_entry,
+    unknown_entry
+  };
 protected:
-  bool   _is_dir;
-  time_t _timestamp;          // jar/jimage timestamp,  0 if is directory or other
+  u1     _type;
+  time_t _timestamp;          // jar timestamp,  0 if is directory, modules image or other
   long   _filesize;           // jar/jimage file size, -1 if is directory, -2 if other
   Array<char>* _name;
   Array<u1>*   _manifest;
-  bool _is_signed;
 
 public:
-  void init(const char* name, TRAPS);
+  void init(const char* name, bool is_modules_image, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
   bool validate(bool is_class_path = true);
 
-  // The _timestamp only gets set for jar files and "modules" jimage.
-  bool is_jar_or_bootimage() {
+  // The _timestamp only gets set for jar files.
+  bool has_timestamp() {
     return _timestamp != 0;
   }
-  bool is_dir() { return _is_dir; }
-  bool is_modules_image() { return ClassLoader::is_modules_image(name()); }
+  bool is_dir()            { return _type == dir_entry; }
+  bool is_modules_image()  { return _type == modules_image_entry; }
+  bool is_jar()            { return _type == jar_entry; }
+  bool is_signed()         { return _type == signed_jar_entry; }
+  void set_is_signed()     {
+    _type = signed_jar_entry;
+  }
   time_t timestamp() const { return _timestamp; }
   long   filesize()  const { return _filesize; }
   const char* name() const { return _name->data(); }
@@ -73,12 +84,6 @@ public:
   }
   void set_manifest(Array<u1>* manifest) {
     _manifest = manifest;
-  }
-  void set_is_signed(bool s) {
-    _is_signed = s;
-  }
-  bool is_signed() {
-    return _is_signed;
   }
 };
 

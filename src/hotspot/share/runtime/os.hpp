@@ -167,7 +167,7 @@ class os: AllStatic {
 
   // File names are case-insensitive on windows only
   // Override me as needed
-  static int    file_name_strcmp(const char* s1, const char* s2);
+  static int    file_name_strncmp(const char* s1, const char* s2, size_t num);
 
   // unset environment variable
   static bool unsetenv(const char* name);

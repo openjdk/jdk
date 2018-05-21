@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ inline const char* os::dll_file_extension()            { return ".dll"; }
 inline const int os::default_file_open_flags() { return O_BINARY | O_NOINHERIT;}
 
 // File names are case-insensitive on windows only
-inline int os::file_name_strcmp(const char* s, const char* t) {
-  return _stricmp(s, t);
+inline int os::file_name_strncmp(const char* s, const char* t, size_t num) {
+  return _strnicmp(s, t, num);
 }
 
 inline void  os::dll_unload(void *lib) {

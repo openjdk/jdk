@@ -172,7 +172,7 @@ public class MainModuleOnly {
                        "--module-path", moduleDir.toString(),
                        "-m", TEST_MODULE1)
             .assertAbnormalExit(
-                "A jar/jimage file is not the one used while building the shared archive file:");
+                "A jar file is not the one used while building the shared archive file:");
         // create an archive with a non-empty directory in the --module-path.
         // The dumping process will exit with an error due to non-empty directory
         // in the --module-path.
