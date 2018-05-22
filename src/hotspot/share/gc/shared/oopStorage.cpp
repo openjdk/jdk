@@ -45,24 +45,24 @@
 #include "utilities/ostream.hpp"
 #include "utilities/spinYield.hpp"
 
-OopStorage::BlockEntry::BlockEntry() : _prev(NULL), _next(NULL) {}
+OopStorage::AllocateEntry::AllocateEntry() : _prev(NULL), _next(NULL) {}
 
-OopStorage::BlockEntry::~BlockEntry() {
+OopStorage::AllocateEntry::~AllocateEntry() {
   assert(_prev == NULL, "deleting attached block");
   assert(_next == NULL, "deleting attached block");
 }
 
-OopStorage::BlockList::BlockList(const BlockEntry& (*get_entry)(const Block& block)) :
+OopStorage::AllocateList::AllocateList(const AllocateEntry& (*get_entry)(const Block& block)) :
   _head(NULL), _tail(NULL), _get_entry(get_entry)
 {}
 
-OopStorage::BlockList::~BlockList() {
+OopStorage::AllocateList::~AllocateList() {
   // ~OopStorage() empties its lists before destroying them.
   assert(_head == NULL, "deleting non-empty block list");
   assert(_tail == NULL, "deleting non-empty block list");
 }
 
-void OopStorage::BlockList::push_front(const Block& block) {
+void OopStorage::AllocateList::push_front(const Block& block) {
   const Block* old = _head;
   if (old == NULL) {
     assert(_tail == NULL, "invariant");
@@ -74,7 +74,7 @@ void OopStorage::BlockList::push_front(const Block& block) {
   }
 }
 
-void OopStorage::BlockList::push_back(const Block& block) {
+void OopStorage::AllocateList::push_back(const Block& block) {
   const Block* old = _tail;
   if (old == NULL) {
     assert(_head == NULL, "invariant");
@@ -86,8 +86,8 @@ void OopStorage::BlockList::push_back(const Block& block) {
   }
 }
 
-void OopStorage::BlockList::unlink(const Block& block) {
-  const BlockEntry& block_entry = _get_entry(block);
+void OopStorage::AllocateList::unlink(const Block& block) {
+  const AllocateEntry& block_entry = _get_entry(block);
   const Block* prev_blk = block_entry._prev;
   const Block* next_blk = block_entry._next;
   block_entry._prev = NULL;
@@ -110,52 +110,52 @@ void OopStorage::BlockList::unlink(const Block& block) {
   }
 }
 
-OopStorage::BlockArray::BlockArray(size_t size) :
+OopStorage::ActiveArray::ActiveArray(size_t size) :
   _size(size),
   _block_count(0),
   _refcount(0)
 {}
 
-OopStorage::BlockArray::~BlockArray() {
+OopStorage::ActiveArray::~ActiveArray() {
   assert(_refcount == 0, "precondition");
 }
 
-OopStorage::BlockArray* OopStorage::BlockArray::create(size_t size, AllocFailType alloc_fail) {
+OopStorage::ActiveArray* OopStorage::ActiveArray::create(size_t size, AllocFailType alloc_fail) {
   size_t size_in_bytes = blocks_offset() + sizeof(Block*) * size;
   void* mem = NEW_C_HEAP_ARRAY3(char, size_in_bytes, mtGC, CURRENT_PC, alloc_fail);
   if (mem == NULL) return NULL;
-  return new (mem) BlockArray(size);
+  return new (mem) ActiveArray(size);
 }
 
-void OopStorage::BlockArray::destroy(BlockArray* ba) {
-  ba->~BlockArray();
+void OopStorage::ActiveArray::destroy(ActiveArray* ba) {
+  ba->~ActiveArray();
   FREE_C_HEAP_ARRAY(char, ba);
 }
 
-size_t OopStorage::BlockArray::size() const {
+size_t OopStorage::ActiveArray::size() const {
   return _size;
 }
 
-size_t OopStorage::BlockArray::block_count() const {
+size_t OopStorage::ActiveArray::block_count() const {
   return _block_count;
 }
 
-size_t OopStorage::BlockArray::block_count_acquire() const {
+size_t OopStorage::ActiveArray::block_count_acquire() const {
   return OrderAccess::load_acquire(&_block_count);
 }
 
-void OopStorage::BlockArray::increment_refcount() const {
+void OopStorage::ActiveArray::increment_refcount() const {
   int new_value = Atomic::add(1, &_refcount);
   assert(new_value >= 1, "negative refcount %d", new_value - 1);
 }
 
-bool OopStorage::BlockArray::decrement_refcount() const {
+bool OopStorage::ActiveArray::decrement_refcount() const {
   int new_value = Atomic::sub(1, &_refcount);
   assert(new_value >= 0, "negative refcount %d", new_value);
   return new_value == 0;
 }
 
-bool OopStorage::BlockArray::push(Block* block) {
+bool OopStorage::ActiveArray::push(Block* block) {
   size_t index = _block_count;
   if (index < _size) {
     block->set_active_index(index);
@@ -169,7 +169,7 @@ bool OopStorage::BlockArray::push(Block* block) {
   }
 }
 
-void OopStorage::BlockArray::remove(Block* block) {
+void OopStorage::ActiveArray::remove(Block* block) {
   assert(_block_count > 0, "array is empty");
   size_t index = block->active_index();
   assert(*block_ptr(index) == block, "block not present");
@@ -180,7 +180,7 @@ void OopStorage::BlockArray::remove(Block* block) {
   _block_count = last_index;
 }
 
-void OopStorage::BlockArray::copy_from(const BlockArray* from) {
+void OopStorage::ActiveArray::copy_from(const ActiveArray* from) {
   assert(_block_count == 0, "array must be empty");
   size_t count = from->_block_count;
   assert(count <= _size, "precondition");
@@ -232,7 +232,7 @@ OopStorage::Block::~Block() {
   const_cast<OopStorage* volatile&>(_owner) = NULL;
 }
 
-const OopStorage::BlockEntry& OopStorage::Block::get_allocate_entry(const Block& block) {
+const OopStorage::AllocateEntry& OopStorage::Block::get_allocate_entry(const Block& block) {
   return block._allocate_entry;
 }
 
@@ -489,11 +489,11 @@ oop* OopStorage::allocate() {
 // indicate allocation failure.
 bool OopStorage::expand_active_array() {
   assert_lock_strong(_allocate_mutex);
-  BlockArray* old_array = _active_array;
+  ActiveArray* old_array = _active_array;
   size_t new_size = 2 * old_array->size();
   log_info(oopstorage, blocks)("%s: expand active array " SIZE_FORMAT,
                                name(), new_size);
-  BlockArray* new_array = BlockArray::create(new_size, AllocFailStrategy::RETURN_NULL);
+  ActiveArray* new_array = ActiveArray::create(new_size, AllocFailStrategy::RETURN_NULL);
   if (new_array == NULL) return false;
   new_array->copy_from(old_array);
   replace_active_array(new_array);
@@ -547,7 +547,7 @@ void OopStorage::ProtectActive::write_synchronize() {
 // to account for the new reference.  The assignment is atomic wrto
 // obtain_active_array; once this function returns, it is safe for the
 // caller to relinquish the old array.
-void OopStorage::replace_active_array(BlockArray* new_array) {
+void OopStorage::replace_active_array(ActiveArray* new_array) {
   // Caller has the old array that is the current value of _active_array.
   // Update new_array refcount to account for the new reference.
   new_array->increment_refcount();
@@ -565,25 +565,25 @@ void OopStorage::replace_active_array(BlockArray* new_array) {
 // even if an allocate operation expands and replaces the value of
 // _active_array.  The caller must relinquish the array when done
 // using it.
-OopStorage::BlockArray* OopStorage::obtain_active_array() const {
+OopStorage::ActiveArray* OopStorage::obtain_active_array() const {
   uint enter_value = _protect_active.read_enter();
-  BlockArray* result = OrderAccess::load_acquire(&_active_array);
+  ActiveArray* result = OrderAccess::load_acquire(&_active_array);
   result->increment_refcount();
   _protect_active.read_exit(enter_value);
   return result;
 }
 
 // Decrement refcount of array and destroy if refcount is zero.
-void OopStorage::relinquish_block_array(BlockArray* array) const {
+void OopStorage::relinquish_block_array(ActiveArray* array) const {
   if (array->decrement_refcount()) {
     assert(array != _active_array, "invariant");
-    BlockArray::destroy(array);
+    ActiveArray::destroy(array);
   }
 }
 
 class OopStorage::WithActiveArray : public StackObj {
   const OopStorage* _storage;
-  BlockArray* _active_array;
+  ActiveArray* _active_array;
 
 public:
   WithActiveArray(const OopStorage* storage) :
@@ -595,7 +595,7 @@ public:
     _storage->relinquish_block_array(_active_array);
   }
 
-  BlockArray& active_array() const {
+  ActiveArray& active_array() const {
     return *_active_array;
   }
 };
@@ -768,7 +768,7 @@ OopStorage::OopStorage(const char* name,
                        Mutex* allocate_mutex,
                        Mutex* active_mutex) :
   _name(dup_name(name)),
-  _active_array(BlockArray::create(initial_active_array_size)),
+  _active_array(ActiveArray::create(initial_active_array_size)),
   _allocate_list(&Block::get_allocate_entry),
   _deferred_updates(NULL),
   _allocate_mutex(allocate_mutex),
@@ -806,7 +806,7 @@ OopStorage::~OopStorage() {
     block = _active_array->at(--i);
     Block::delete_block(*block);
   }
-  BlockArray::destroy(_active_array);
+  ActiveArray::destroy(_active_array);
   FREE_C_HEAP_ARRAY(char, _name);
 }
 
@@ -895,9 +895,9 @@ size_t OopStorage::block_count() const {
 size_t OopStorage::total_memory_usage() const {
   size_t total_size = sizeof(OopStorage);
   total_size += strlen(name()) + 1;
-  total_size += sizeof(BlockArray);
+  total_size += sizeof(ActiveArray);
   WithActiveArray wab(this);
-  const BlockArray& blocks = wab.active_array();
+  const ActiveArray& blocks = wab.active_array();
   // Count access is racy, but don't care.
   total_size += blocks.block_count() * Block::allocation_size();
   total_size += blocks.size() * sizeof(Block*);
@@ -925,7 +925,7 @@ OopStorage::BasicParState::BasicParState(const OopStorage* storage,
   // Get the block count *after* iteration state updated, so concurrent
   // empty block deletion is suppressed and can't reduce the count.  But
   // ensure the count we use was written after the block with that count
-  // was fully initialized; see BlockArray::push.
+  // was fully initialized; see ActiveArray::push.
   _block_count = _active_array->block_count_acquire();
 }
 
