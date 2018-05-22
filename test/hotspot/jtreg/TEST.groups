@@ -1257,9 +1257,10 @@ vmTestbase_largepages = \
 # JSR292 tests (invokedynamic AKA Multi-Language VM AKA Da Vinci Machine)
 vmTestbase_vm_mlvm = \
   vmTestbase/vm/mlvm
+
 # Heap dump tests
 vmTestbase_vm_heapdump = \
-  vmTestbase/heapdump/
+  vmTestbase/heapdump
 
 vmTestbase_vm_heapdump_quick = \
   vmTestbase/heapdump/OnOOMToFile/TestDescription.java \
@@ -1267,3 +1268,8 @@ vmTestbase_vm_heapdump_quick = \
   vmTestbase/heapdump/OnOOMToPath/TestDescription.java \
   vmTestbase/heapdump/JMapHeapCore/TestDescription.java \
   vmTestbase/heapdump/JMapMetaspace/TestDescription.java
+
+# JDB tests
+vmTestbase_nsk_jdb = \
+  vmTestbase/nsk/jdb
+
