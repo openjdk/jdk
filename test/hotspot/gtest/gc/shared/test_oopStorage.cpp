@@ -52,18 +52,18 @@
 class OopStorage::TestAccess : public AllStatic {
 public:
   typedef OopStorage::Block Block;
-  typedef OopStorage::BlockList BlockList;
-  typedef OopStorage::BlockArray BlockArray;
+  typedef OopStorage::AllocateList AllocateList;
+  typedef OopStorage::ActiveArray ActiveArray;
 
-  static BlockArray& active_array(const OopStorage& storage) {
+  static ActiveArray& active_array(const OopStorage& storage) {
     return *storage._active_array;
   }
 
-  static BlockList& allocate_list(OopStorage& storage) {
+  static AllocateList& allocate_list(OopStorage& storage) {
     return storage._allocate_list;
   }
 
-  static const BlockList& allocate_list(const OopStorage& storage) {
+  static const AllocateList& allocate_list(const OopStorage& storage) {
     return storage._allocate_list;
   }
 
@@ -98,7 +98,7 @@ public:
     return Block::allocation_size();
   }
 
-  static void block_array_set_block_count(BlockArray* blocks, size_t count) {
+  static void block_array_set_block_count(ActiveArray* blocks, size_t count) {
     blocks->_block_count = count;
   }
 };
@@ -109,13 +109,13 @@ typedef OopStorage::TestAccess TestAccess;
 // building with precompiled headers, or for consistency with that
 // workaround.  There really should be an opto namespace.
 typedef TestAccess::Block OopBlock;
-typedef TestAccess::BlockList OopBlockList;
-typedef TestAccess::BlockArray OopBlockArray;
+typedef TestAccess::AllocateList AllocateList;
+typedef TestAccess::ActiveArray ActiveArray;
 
 // Using EXPECT_EQ can't use NULL directly. Otherwise AIX build breaks.
 const OopBlock* const NULL_BLOCK = NULL;
 
-static size_t list_length(const OopBlockList& list) {
+static size_t list_length(const AllocateList& list) {
   size_t result = 0;
   for (const OopBlock* block = list.chead();
        block != NULL;
@@ -125,7 +125,7 @@ static size_t list_length(const OopBlockList& list) {
   return result;
 }
 
-static void clear_list(OopBlockList& list) {
+static void clear_list(AllocateList& list) {
   OopBlock* next;
   for (OopBlock* block = list.head(); block != NULL; block = next) {
     next = list.next(*block);
@@ -133,7 +133,7 @@ static void clear_list(OopBlockList& list) {
   }
 }
 
-static bool is_list_empty(const OopBlockList& list) {
+static bool is_list_empty(const AllocateList& list) {
   return list.chead() == NULL;
 }
 
@@ -155,7 +155,7 @@ static void release_entry(OopStorage& storage, oop* entry, bool process_deferred
 }
 
 static size_t empty_block_count(const OopStorage& storage) {
-  const OopBlockList& list = TestAccess::allocate_list(storage);
+  const AllocateList& list = TestAccess::allocate_list(storage);
   size_t count = 0;
   for (const OopBlock* block = list.ctail();
        (block != NULL) && block->is_empty();
@@ -169,7 +169,7 @@ static size_t active_count(const OopStorage& storage) {
 }
 
 static OopBlock* active_head(const OopStorage& storage) {
-  OopBlockArray& ba = TestAccess::active_array(storage);
+  ActiveArray& ba = TestAccess::active_array(storage);
   size_t count = ba.block_count();
   if (count == 0) {
     return NULL;
@@ -246,7 +246,7 @@ private:
 static bool is_allocate_list_sorted(const OopStorage& storage) {
   // The allocate_list isn't strictly sorted.  Rather, all empty
   // blocks are segregated to the end of the list.
-  const OopBlockList& list = TestAccess::allocate_list(storage);
+  const AllocateList& list = TestAccess::allocate_list(storage);
   const OopBlock* block = list.ctail();
   for ( ; (block != NULL) && block->is_empty(); block = list.prev(*block)) {}
   for ( ; block != NULL; block = list.prev(*block)) {
@@ -259,7 +259,7 @@ static bool is_allocate_list_sorted(const OopStorage& storage) {
 
 static size_t total_allocation_count(const OopStorage& storage) {
   size_t total_count = 0;
-  const OopBlockArray& ba = TestAccess::active_array(storage);
+  const ActiveArray& ba = TestAccess::active_array(storage);
   size_t limit = active_count(storage);
   for (size_t i = 0; i < limit; ++i) {
     total_count += TestAccess::block_allocation_count(*ba.at(i));
@@ -309,7 +309,7 @@ TEST_VM_F(OopStorageTest, allocation_count) {
   static const size_t max_entries = 1000;
   oop* entries[max_entries];
 
-  OopBlockList& allocate_list = TestAccess::allocate_list(_storage);
+  AllocateList& allocate_list = TestAccess::allocate_list(_storage);
 
   EXPECT_EQ(0u, active_count(_storage));
   EXPECT_EQ(0u, _storage.block_count());
@@ -354,7 +354,7 @@ TEST_VM_F(OopStorageTest, allocate_many) {
   static const size_t max_entries = 1000;
   oop* entries[max_entries];
 
-  OopBlockList& allocate_list = TestAccess::allocate_list(_storage);
+  AllocateList& allocate_list = TestAccess::allocate_list(_storage);
 
   EXPECT_EQ(0u, empty_block_count(_storage));
 
@@ -420,7 +420,7 @@ TEST_VM_F(OopStorageTestWithAllocation, random_release) {
 
   EXPECT_EQ(0u, empty_block_count(_storage));
 
-  OopBlockList& allocate_list = TestAccess::allocate_list(_storage);
+  AllocateList& allocate_list = TestAccess::allocate_list(_storage);
 
   EXPECT_EQ(_max_entries, total_allocation_count(_storage));
   EXPECT_GE(1u, list_length(allocate_list));
@@ -450,7 +450,7 @@ TEST_VM_F(OopStorageTestWithAllocation, random_allocate_release) {
 
   EXPECT_EQ(0u, empty_block_count(_storage));
 
-  OopBlockList& allocate_list = TestAccess::allocate_list(_storage);
+  AllocateList& allocate_list = TestAccess::allocate_list(_storage);
 
   EXPECT_EQ(_max_entries, total_allocation_count(_storage));
   EXPECT_GE(1u, list_length(allocate_list));
@@ -1200,10 +1200,10 @@ private:
 const size_t OopStorageBlockCollectionTest::nvalues;
 const void* const OopStorageBlockCollectionTest::_pseudo_owner[] = {};
 
-class OopStorageBlockListTest : public OopStorageBlockCollectionTest {};
+class OopStorageAllocateListTest : public OopStorageBlockCollectionTest {};
 
-TEST_F(OopStorageBlockListTest, empty_list) {
-  OopBlockList list(&OopBlock::get_allocate_entry);
+TEST_F(OopStorageAllocateListTest, empty_list) {
+  AllocateList list(&OopBlock::get_allocate_entry);
 
   EXPECT_TRUE(is_list_empty(list));
   EXPECT_EQ(NULL_BLOCK, list.head());
@@ -1211,8 +1211,8 @@ TEST_F(OopStorageBlockListTest, empty_list) {
   EXPECT_EQ(NULL_BLOCK, list.ctail());
 }
 
-TEST_F(OopStorageBlockListTest, push_back) {
-  OopBlockList list(&OopBlock::get_allocate_entry);
+TEST_F(OopStorageAllocateListTest, push_back) {
+  AllocateList list(&OopBlock::get_allocate_entry);
 
   for (size_t i = 0; i < nvalues; ++i) {
     list.push_back(*values[i]);
@@ -1241,8 +1241,8 @@ TEST_F(OopStorageBlockListTest, push_back) {
   clear_list(list);
 }
 
-TEST_F(OopStorageBlockListTest, push_front) {
-  OopBlockList list(&OopBlock::get_allocate_entry);
+TEST_F(OopStorageAllocateListTest, push_front) {
+  AllocateList list(&OopBlock::get_allocate_entry);
 
   for (size_t i = 0; i < nvalues; ++i) {
     list.push_front(*values[i]);
@@ -1271,22 +1271,22 @@ TEST_F(OopStorageBlockListTest, push_front) {
   clear_list(list);
 }
 
-class OopStorageBlockListTestWithList : public OopStorageBlockListTest {
+class OopStorageAllocateListTestWithList : public OopStorageAllocateListTest {
 public:
-  OopStorageBlockListTestWithList() : list(&OopBlock::get_allocate_entry) {
+  OopStorageAllocateListTestWithList() : list(&OopBlock::get_allocate_entry) {
     for (size_t i = 0; i < nvalues; ++i) {
       list.push_back(*values[i]);
     }
   }
 
-  ~OopStorageBlockListTestWithList() {
+  ~OopStorageAllocateListTestWithList() {
     clear_list(list);
   }
 
-  OopBlockList list;
+  AllocateList list;
 };
 
-TEST_F(OopStorageBlockListTestWithList, unlink_front) {
+TEST_F(OopStorageAllocateListTestWithList, unlink_front) {
   EXPECT_EQ(list.chead(), values[0]);
   EXPECT_EQ(list.ctail(), values[nvalues - 1]);
 
@@ -1304,7 +1304,7 @@ TEST_F(OopStorageBlockListTestWithList, unlink_front) {
   EXPECT_EQ(NULL_BLOCK, block);
 }
 
-TEST_F(OopStorageBlockListTestWithList, unlink_back) {
+TEST_F(OopStorageAllocateListTestWithList, unlink_back) {
   EXPECT_EQ(list.chead(), values[0]);
 
   list.unlink(*values[nvalues - 1]);
@@ -1321,7 +1321,7 @@ TEST_F(OopStorageBlockListTestWithList, unlink_back) {
   EXPECT_EQ(NULL_BLOCK, block);
 }
 
-TEST_F(OopStorageBlockListTestWithList, unlink_middle) {
+TEST_F(OopStorageAllocateListTestWithList, unlink_middle) {
   EXPECT_EQ(list.chead(), values[0]);
 
   size_t index = nvalues / 2;
@@ -1344,8 +1344,8 @@ TEST_F(OopStorageBlockListTestWithList, unlink_middle) {
   EXPECT_EQ(NULL_BLOCK, block);
 }
 
-TEST_F(OopStorageBlockListTest, single) {
-  OopBlockList list(&OopBlock::get_allocate_entry);
+TEST_F(OopStorageAllocateListTest, single) {
+  AllocateList list(&OopBlock::get_allocate_entry);
 
   list.push_back(*values[0]);
   EXPECT_EQ(NULL_BLOCK, list.next(*values[0]));
@@ -1360,10 +1360,10 @@ TEST_F(OopStorageBlockListTest, single) {
   EXPECT_EQ(NULL_BLOCK, list.ctail());
 }
 
-class OopStorageBlockArrayTest : public OopStorageBlockCollectionTest {};
+class OopStorageActiveArrayTest : public OopStorageBlockCollectionTest {};
 
-TEST_F(OopStorageBlockArrayTest, empty_array) {
-  OopBlockArray* a = OopBlockArray::create(nvalues);
+TEST_F(OopStorageActiveArrayTest, empty_array) {
+  ActiveArray* a = ActiveArray::create(nvalues);
 
   EXPECT_EQ(nvalues, a->size());
   EXPECT_EQ(0u, a->block_count_acquire());
@@ -1375,11 +1375,11 @@ TEST_F(OopStorageBlockArrayTest, empty_array) {
   EXPECT_FALSE(a->decrement_refcount());
   EXPECT_TRUE(a->decrement_refcount());
 
-  OopBlockArray::destroy(a);
+  ActiveArray::destroy(a);
 }
 
-TEST_F(OopStorageBlockArrayTest, push) {
-  OopBlockArray* a = OopBlockArray::create(nvalues - 1);
+TEST_F(OopStorageActiveArrayTest, push) {
+  ActiveArray* a = ActiveArray::create(nvalues - 1);
 
   for (size_t i = 0; i < nvalues - 1; ++i) {
     EXPECT_TRUE(a->push(values[i]));
@@ -1389,26 +1389,26 @@ TEST_F(OopStorageBlockArrayTest, push) {
   EXPECT_FALSE(a->push(values[nvalues - 1]));
 
   TestAccess::block_array_set_block_count(a, 0);
-  OopBlockArray::destroy(a);
+  ActiveArray::destroy(a);
 }
 
-class OopStorageBlockArrayTestWithArray : public OopStorageBlockArrayTest {
+class OopStorageActiveArrayTestWithArray : public OopStorageActiveArrayTest {
 public:
-  OopStorageBlockArrayTestWithArray() : a(OopBlockArray::create(nvalues)) {
+  OopStorageActiveArrayTestWithArray() : a(ActiveArray::create(nvalues)) {
     for (size_t i = 0; i < nvalues; ++i) {
       a->push(values[i]);
     }
   }
 
-  ~OopStorageBlockArrayTestWithArray() {
+  ~OopStorageActiveArrayTestWithArray() {
     TestAccess::block_array_set_block_count(a, 0);
-    OopBlockArray::destroy(a);
+    ActiveArray::destroy(a);
   }
 
-  OopBlockArray* a;
+  ActiveArray* a;
 };
 
-TEST_F(OopStorageBlockArrayTestWithArray, remove0) {
+TEST_F(OopStorageActiveArrayTestWithArray, remove0) {
   a->remove(values[0]);
   EXPECT_EQ(nvalues - 1, a->block_count_acquire());
   EXPECT_EQ(values[nvalues - 1], a->at(0));
@@ -1417,7 +1417,7 @@ TEST_F(OopStorageBlockArrayTestWithArray, remove0) {
   }
 }
 
-TEST_F(OopStorageBlockArrayTestWithArray, remove3) {
+TEST_F(OopStorageActiveArrayTestWithArray, remove3) {
   a->remove(values[3]);
   EXPECT_EQ(nvalues - 1, a->block_count_acquire());
   for (size_t i = 0; i < 3; ++i) {
@@ -1429,7 +1429,7 @@ TEST_F(OopStorageBlockArrayTestWithArray, remove3) {
   }
 }
 
-TEST_F(OopStorageBlockArrayTestWithArray, remove_last) {
+TEST_F(OopStorageActiveArrayTestWithArray, remove_last) {
   a->remove(values[nvalues - 1]);
   EXPECT_EQ(nvalues - 1, a->block_count_acquire());
   for (size_t i = 0; i < nvalues - 1; ++i) {

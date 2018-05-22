@@ -36,8 +36,8 @@
 //
 // Concurrent Iteration
 //
-// Iteration involves the _active_array (a BlockArray), which contains all of
-// the blocks owned by a storage object.
+// Iteration involves the _active_array (an ActiveArray), which contains all
+// of the blocks owned by a storage object.
 //
 // At most one concurrent ParState can exist at a time for a given storage
 // object.
@@ -140,7 +140,7 @@
 
 class OopStorage::BasicParState {
   const OopStorage* _storage;
-  BlockArray* _active_array;
+  ActiveArray* _active_array;
   size_t _block_count;
   volatile size_t _next_block;
   uint _estimated_thread_count;
