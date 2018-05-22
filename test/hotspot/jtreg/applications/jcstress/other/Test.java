@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9186 +26,9186 @@
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.arrays.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.fields.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.acqrel.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.opaque.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.arrays.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.big.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteArray.little.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.big.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.direct.little.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.big.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.byteBuffer.heap.little.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.acqrel.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.opaque.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.accessAtomic.varHandles.fields.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanInitialValueTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanInitialValueTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanInitialValueTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.CAS_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.CAS_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.CAS_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.CAS_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.CAS_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.CAS_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.CAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.CAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.CAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.GetAndSet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.GetAndSet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.GetAndSet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.GetAndSet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.GetAndSet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.GetAndSet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.WCAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.WCAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.booleans.AtomicBooleanPairwiseTests.WCAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayInitialValueTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayInitialValueTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayInitialValueTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_AddAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_AddAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_AddAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.AddAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.CAS_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.CAS_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.CAS_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.CAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.CAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.CAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.CAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.CAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.CAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.DecAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndAdd_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndDec_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndInc_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.GetAndSet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.IncAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.Set_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.Set_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.Set_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.WCAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.WCAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.WCAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.WCAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.WCAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerArrayPairwiseTests.WCAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_AddAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_AddAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_AddAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.AddAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.CAS_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.CAS_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.CAS_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.CAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.CAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.CAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.CAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.CAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.CAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.DecAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndAdd_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndDec_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndInc_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.GetAndSet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.IncAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.Set_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.Set_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.Set_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.WCAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.WCAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.WCAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.WCAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.WCAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerFieldUpdaterPairwiseTests.WCAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerInitialValueTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerInitialValueTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerInitialValueTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_AddAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_AddAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_AddAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.AddAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.CAS_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.CAS_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.CAS_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.CAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.CAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.CAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.CAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.CAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.CAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.DecAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndAdd_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndDec_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndInc_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.GetAndSet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.IncAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.Set_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.Set_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.Set_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.WCAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.WCAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.WCAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.WCAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.WCAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.integer.AtomicIntegerPairwiseTests.WCAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayInitialValueTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayInitialValueTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayInitialValueTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_AddAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_AddAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_AddAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.AddAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.CAS_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.CAS_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.CAS_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.CAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.CAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.CAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.CAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.CAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.CAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.DecAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndAdd_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndDec_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndInc_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.GetAndSet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.IncAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.Set_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.Set_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.Set_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.WCAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.WCAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.WCAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.WCAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.WCAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongArrayPairwiseTests.WCAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_AddAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_AddAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_AddAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.AddAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.CAS_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.CAS_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.CAS_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.CAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.CAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.CAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.CAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.CAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.CAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.DecAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndAdd_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndDec_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndInc_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.GetAndSet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.IncAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.Set_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.Set_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.Set_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.WCAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.WCAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.WCAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.WCAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.WCAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongFieldUpdaterPairwiseTests.WCAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongInitialValueTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongInitialValueTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongInitialValueTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_AddAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_AddAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_AddAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.AddAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.CAS_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.CAS_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.CAS_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.CAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.CAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.CAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.CAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.CAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.CAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_DecAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_DecAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_DecAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.DecAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndAdd
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndAdd
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndAdd
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndAdd_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_GetAndDec
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_GetAndDec
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_GetAndDec
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndDec_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_GetAndInc
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_GetAndInc
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_GetAndInc
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndInc_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_GetAndSet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_GetAndSet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_GetAndSet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.GetAndSet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_CAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_CAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_CAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_IncAndGet
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_IncAndGet
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_IncAndGet
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.IncAndGet_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.Set_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.Set_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.Set_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.WCAS_Set
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.WCAS_Set
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.WCAS_Set
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.WCAS_WCAS
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.WCAS_WCAS
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomics.longs.AtomicLongPairwiseTests.WCAS_WCAS
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test1
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test1
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test1
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test10
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test10
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test10
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test11
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test11
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test11
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test12
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test12
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test12
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test13
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test13
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test13
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test14
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test14
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test14
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test15
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test15
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test15
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test16
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test16
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test16
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test17
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test17
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test17
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test18
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test18
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test18
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test2
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test2
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test2
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test3
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test3
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test3
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test4
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test4
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test4
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test5
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test5
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test5
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test6
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test6
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test6
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test7
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test7
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test7
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test8
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test8
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test8
  */
 
 /**
  * @test org.openjdk.jcstress.tests.causality.Test9
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test9
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.causality.Test9
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.arrays.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.arrays.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.fields.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.fields.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.acqrel.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.opaque.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.arrays.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.big.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteArray.little.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.big.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.direct.little.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.big.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.byteBuffer.heap.little.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.acqrel.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.opaque.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.coherence.varHandles.fields.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.effects.IntBoundedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.effects.IntBoundedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.effects.IntBoundedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.effects.IntUnboundedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.effects.IntUnboundedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.effects.IntUnboundedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.effects.StringBoundedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.effects.StringBoundedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.effects.StringBoundedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.effects.StringUnboundedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.effects.StringUnboundedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.effects.StringUnboundedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.racy.BoundedSingleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.racy.BoundedSingleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.racy.BoundedSingleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.racy.UnboundedSingleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.racy.UnboundedSingleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.racy.UnboundedSingleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.waits.BoundedDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.waits.BoundedDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.waits.BoundedDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.waits.BoundedSingleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.waits.BoundedSingleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.waits.BoundedSingleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.waits.UnboundedDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.waits.UnboundedDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.waits.UnboundedDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.countdownlatch.waits.UnboundedSingleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.waits.UnboundedSingleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.countdownlatch.waits.UnboundedSingleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.large.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.arrays.small.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.defaultValues.fields.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.defaultValues.fields.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.executors.ThreadPoolExecutorKeepAliveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.executors.ThreadPoolExecutorKeepAliveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.executors.ThreadPoolExecutorKeepAliveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.executors.ThreadPoolExecutorSizesTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.executors.ThreadPoolExecutorSizesTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.executors.ThreadPoolExecutorSizesTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.future.FutureTaskSetTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.future.FutureTaskSetTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.future.FutureTaskSetTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.large.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.large.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.arrays.small.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.arrays.small.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.finals.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.finals.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.finals.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.finals.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.finals.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.finals.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.finals.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.finals.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.finals.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.finals.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.fields.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.fields.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.primitives.fenced.BooleanFencedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.BooleanFencedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.BooleanFencedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.primitives.fenced.ByteFencedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.ByteFencedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.ByteFencedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.primitives.fenced.CharFencedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.CharFencedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.CharFencedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.primitives.fenced.DoubleFencedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.DoubleFencedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.DoubleFencedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.primitives.fenced.FloatFencedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.FloatFencedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.FloatFencedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.primitives.fenced.IntFencedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.IntFencedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.IntFencedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.primitives.fenced.LongFencedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.LongFencedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.LongFencedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.init.primitives.fenced.ShortFencedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.ShortFencedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.init.primitives.fenced.ShortFencedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.large.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.arrays.small.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initClass.fields.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initClass.fields.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.large.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.initLen.arrays.small.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.CurrentThreadIsInterruptedBreakTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.CurrentThreadIsInterruptedBreakTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.CurrentThreadIsInterruptedBreakTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.CurrentThreadIsInterruptedMethodTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.CurrentThreadIsInterruptedMethodTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.CurrentThreadIsInterruptedMethodTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.CurrentThreadIsInterruptedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.CurrentThreadIsInterruptedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.CurrentThreadIsInterruptedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.ObjectWaitInfiniteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ObjectWaitInfiniteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ObjectWaitInfiniteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.ObjectWaitTimedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ObjectWaitTimedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ObjectWaitTimedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.PlainBusyLoopTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.PlainBusyLoopTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.PlainBusyLoopTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.ReentrantLockInterruptiblyTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ReentrantLockInterruptiblyTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ReentrantLockInterruptiblyTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.ReentrantLockNonInterruptiblyTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ReentrantLockNonInterruptiblyTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ReentrantLockNonInterruptiblyTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.ThreadInterruptedBreakTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ThreadInterruptedBreakTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ThreadInterruptedBreakTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.ThreadInterruptedMethodTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ThreadInterruptedMethodTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ThreadInterruptedMethodTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.ThreadInterruptedTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ThreadInterruptedTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ThreadInterruptedTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.ThreadSleepTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ThreadSleepTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.ThreadSleepTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.TimeUnitSleepTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.TimeUnitSleepTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.TimeUnitSleepTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.UnsafeBusyLoopTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.UnsafeBusyLoopTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.UnsafeBusyLoopTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.VolatileBusyLoopTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.VolatileBusyLoopTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.VolatileBusyLoopTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.interrupt.WeakReferenceTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.WeakReferenceTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.interrupt.WeakReferenceTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.barriers.SyncBarrier0Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.barriers.SyncBarrier0Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.barriers.SyncBarrier0Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.barriers.SyncBarrier1Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.barriers.SyncBarrier1Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.barriers.SyncBarrier1Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.barriers.SyncBarrier2Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.barriers.SyncBarrier2Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.barriers.SyncBarrier2Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.barriers.SyncBarrier3Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.barriers.SyncBarrier3Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.barriers.SyncBarrier3Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_LI
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_LI
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_LI
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.LI_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.L_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.L_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.L_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.L_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.L_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.L_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.L_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.L_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.L_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.TL_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.TL_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.TL_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.TL_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.TL_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.TL_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.TLt_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.TLt_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_F.TLt_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_LI
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_LI
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_LI
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.LI_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.L_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.L_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.L_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.L_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.L_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.L_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.L_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.L_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.L_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.TL_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.TL_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.TL_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.TL_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.TL_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.TL_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.TLt_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.TLt_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.I_N.TLt_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_LI
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_LI
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_LI
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.LI_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.L_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.L_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.L_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.L_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.L_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.L_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.L_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.L_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.L_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.TL_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.TL_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.TL_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.TL_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.TL_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.TL_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.TLt_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.TLt_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_F.TLt_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_LI
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_LI
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_LI
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.LI_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.L_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.L_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.L_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.L_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.L_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.L_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.L_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.L_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.L_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.TL_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.TL_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.TL_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.TL_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.TL_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.TL_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.TLt_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.TLt_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantLockMutexTests.S_N.TLt_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_LI
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_LI
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_LI
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.LI_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.L_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.L_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.L_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.L_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.L_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.L_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.L_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.L_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.L_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.TL_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.TL_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.TL_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.TL_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.TL_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.TL_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.TLt_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.TLt_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_F.TLt_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_LI
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_LI
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_LI
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.LI_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.L_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.L_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.L_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.L_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.L_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.L_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.L_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.L_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.L_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.TL_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.TL_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.TL_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.TL_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.TL_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.TL_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.TLt_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.TLt_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.I_N.TLt_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_LI
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_LI
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_LI
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.LI_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.L_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.L_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.L_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.L_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.L_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.L_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.L_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.L_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.L_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.TL_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.TL_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.TL_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.TL_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.TL_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.TL_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.TLt_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.TLt_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_F.TLt_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_LI
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_LI
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_LI
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.LI_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.L_L
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.L_L
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.L_L
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.L_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.L_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.L_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.L_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.L_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.L_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.TL_TL
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.TL_TL
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.TL_TL
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.TL_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.TL_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.TL_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.TLt_TLt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.TLt_TLt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.ReentrantRWLockMutexTests.S_N.TLt_TLt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.mutex.SynchronizedMutexTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.SynchronizedMutexTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.mutex.SynchronizedMutexTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_URs.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_Us.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RLI_tUR.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_URs.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_Us.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.RL_tUR.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRL_U.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.aRWLr_U.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tOR_V.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_URs.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_Us.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRL_tUR.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_URs.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_Us.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WLI_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WLI_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WLI_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WLI_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WLI_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WLI_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WLI_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WLI_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WLI_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.WL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.aRWLw_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.aRWLw_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.aRWLw_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.aWL_U
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.aWL_U
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.aWL_U
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.orWL_V
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.orWL_V
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.orWL_V
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWL_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWL_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWL_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWL_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWL_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWL_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWL_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWL_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWL_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWLt_UWs
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWLt_UWs
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWLt_UWs
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWLt_Us
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWLt_Us
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWLt_Us
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWLt_tUW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWLt_tUW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockPairwiseTests.tRLt_tUR.tWLt_tUW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OO_OO
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OO_OO
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OO_OO
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OO_OR
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OO_OR
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OO_OR
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OO_OW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OO_OW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OO_OW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OR_OW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OR_OW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.OR_OW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RO_RO
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RO_RO
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RO_RO
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RO_RR
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RO_RR
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RO_RR
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RO_RW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RO_RW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RO_RW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RR_RW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RR_RW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.RR_RW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WO_WO
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WO_WO
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WO_WO
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WO_WR
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WO_WR
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WO_WR
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WO_WW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WO_WW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WO_WW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WR_WW
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WR_WW
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.locks.stamped.StampedLockTransitionTests.WR_WW
  */
 
 /**
  * @test org.openjdk.jcstress.tests.sample.SampleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.sample.SampleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.sample.SampleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.FinalWrapper.Safe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.FinalWrapper.Safe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.FinalWrapper.Safe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.FinalWrapper.Unsafe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.FinalWrapper.Unsafe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.FinalWrapper.Unsafe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.Holder.Safe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.Holder.Safe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.Holder.Safe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.Holder.Unsafe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.Holder.Unsafe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.Holder.Unsafe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.SafeDCL.Safe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SafeDCL.Safe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SafeDCL.Safe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.SafeDCL.Unsafe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SafeDCL.Unsafe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SafeDCL.Unsafe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.SafeLocalDCL.Safe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SafeLocalDCL.Safe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SafeLocalDCL.Safe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.SafeLocalDCL.Unsafe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SafeLocalDCL.Unsafe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SafeLocalDCL.Unsafe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.SynchronizedCL.Safe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SynchronizedCL.Safe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SynchronizedCL.Safe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.SynchronizedCL.Unsafe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SynchronizedCL.Unsafe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.SynchronizedCL.Unsafe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.UnsafeDCL.Safe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.UnsafeDCL.Safe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.UnsafeDCL.Safe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.UnsafeDCL.Unsafe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.UnsafeDCL.Unsafe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.UnsafeDCL.Unsafe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.UnsafeLocalDCL.Safe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.UnsafeLocalDCL.Safe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.UnsafeLocalDCL.Safe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.singletons.UnsafeLocalDCL.Unsafe
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.UnsafeLocalDCL.Unsafe
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.singletons.UnsafeLocalDCL.Unsafe
  */
 
 /**
  * @test org.openjdk.jcstress.tests.strings.StringBufferTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.strings.StringBufferTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.strings.StringBufferTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.strings.StringBuilderTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.strings.StringBuilderTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.strings.StringBuilderTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.ArrayInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.ArrayInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.ArrayInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.UnsafeArrayInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.UnsafeArrayInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.UnsafeArrayInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.UnsafeIntTearingTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.UnsafeIntTearingTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.UnsafeIntTearingTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.large.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.arrays.small.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.buffers.ByteBufferInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.ByteBufferInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.ByteBufferInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.buffers.CharBufferInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.CharBufferInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.CharBufferInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.buffers.DirectByteBufferInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.DirectByteBufferInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.DirectByteBufferInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.buffers.DoubleBufferInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.DoubleBufferInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.DoubleBufferInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.buffers.FloatBufferInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.FloatBufferInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.FloatBufferInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.buffers.IntBufferInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.IntBufferInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.IntBufferInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.buffers.LongBufferInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.LongBufferInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.LongBufferInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.buffers.ShortBufferInterleaveTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.ShortBufferInterleaveTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.buffers.ShortBufferInterleaveTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.tearing.fields.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.tearing.fields.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.unsafe.UnsafeAddLong1
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafeAddLong1
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafeAddLong1
  */
 
 /**
  * @test org.openjdk.jcstress.tests.unsafe.UnsafeAddLong42
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafeAddLong42
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafeAddLong42
  */
 
 /**
  * @test org.openjdk.jcstress.tests.unsafe.UnsafePublication
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafePublication
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafePublication
  */
 
 /**
  * @test org.openjdk.jcstress.tests.unsafe.UnsafePutOrderedTwice
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafePutOrderedTwice
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafePutOrderedTwice
  */
 
 /**
  * @test org.openjdk.jcstress.tests.unsafe.UnsafeReadTwiceOverVolatileReadTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafeReadTwiceOverVolatileReadTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.unsafe.UnsafeReadTwiceOverVolatileReadTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.varhandles.DekkerRelaxation1Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.varhandles.DekkerRelaxation1Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.varhandles.DekkerRelaxation1Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.varhandles.DekkerRelaxation2Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.varhandles.DekkerRelaxation2Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.varhandles.DekkerRelaxation2Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.varhandles.DekkerTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.varhandles.DekkerTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.varhandles.DekkerTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.DekkerTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.DekkerTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.DekkerTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.DoubleVolatileTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.DoubleVolatileTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.DoubleVolatileTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.IRIWTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.IRIWTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.IRIWTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.LazySetTransitivityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.LazySetTransitivityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.LazySetTransitivityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.ReadAfterReadTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.ReadAfterReadTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.ReadAfterReadTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.ReadAfterVolatileReadTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.ReadAfterVolatileReadTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.ReadAfterVolatileReadTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.ReadTwiceOverVolatileReadTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.ReadTwiceOverVolatileReadTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.ReadTwiceOverVolatileReadTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.VolatileAcquireReleaseTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.VolatileAcquireReleaseTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.VolatileAcquireReleaseTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.VolatileIRIWTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.VolatileIRIWTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.VolatileIRIWTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.volatiles.VolatileIncrementAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.VolatileIncrementAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.volatiles.VolatileIncrementAtomicityTest
  */
 

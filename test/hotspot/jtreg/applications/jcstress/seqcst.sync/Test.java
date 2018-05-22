@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12360 +26,12360 @@
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__L1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__L1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__L1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_L2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1_S2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_L2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_L2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_L2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_L1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_L1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_L1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_L2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_L2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_L2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__L2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L1__S2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S2__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S2__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S2__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S3__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S3__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S1__S3__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S3__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S3__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S2__S3__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_L3__S3__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__L3_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__L3_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__L3_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__L3_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__L3_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__L3_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S2__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S2__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S2__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S3__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S3__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S1__S3__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S3__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S3__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S2__S3__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2_S3__S3__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_L1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_L1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_L1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_L2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_L2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_L2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_L2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_L2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_L2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_L1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_L1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_L1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_L2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_L2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_L2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_L2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_L2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_L2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1_S2__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1_S2__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1_S2__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S2__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S2__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S2__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S3__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S3__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S1__S3__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2_S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2_S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2_S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S3__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S3__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__L3_S2__S3__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_L3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1_S3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S3__S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S3__S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S3__S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S1__S3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_L3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2_S3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S3__S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S3__S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S3__S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S2__S3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3_S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_L3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_L3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_L3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1_S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1__S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1__S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1__S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_L3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_L3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_L3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2_S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2__S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2__S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2__S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_L2__S3__S3__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_L2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1_S2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_L2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_L2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_L2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_L1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_L1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_L1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_L2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_L2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_L2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L1_S2__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_L1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_L1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_L1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_L2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_L2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_L2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2_L1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2_L1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2_L1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__L2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S1__S2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S2__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S2__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S2__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S3__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S3__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S1__S3__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S3__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S3__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S2__S3__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_L3__S3__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S1__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_L2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S2__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S2__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S2__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S3__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S3__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S1__S3__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S3__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S3__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S2__S3__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2_S3__S3__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_L2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_L2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_L2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_L2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L3__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L3__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_L3__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S3__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S3__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_S3__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S3__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S3__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S1__S3__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_L1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_L1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_L1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_L2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_L2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_L2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3_S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3_S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3_S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__L3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__L3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__L3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S3__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S3__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L2_S3__S3__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1_L2__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1_L2__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1_L2__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1_S2__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1_S2__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1_S2__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__L2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__L2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__L2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S2__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S2__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S2__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S3__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S3__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S1__S3__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2_S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2_S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2_S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2__S1__S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2__S1__S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2__S1__S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__L3_S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L3__S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L3__S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L3__S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_L3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1_S3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S2__S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S1__S3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_L3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2_S3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S3__S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S3__S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S3__S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S2__S3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_L2__S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_L2__S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_L2__S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_L2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_L2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_L2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_L2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_L2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_L2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3_S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_L3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1_S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_L3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_L3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_L3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2_S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2__S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2__S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2__S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.L1_S2__S3__S3__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L1__S2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_L3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S1_S3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L3__S3_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L3__S3_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L3__S3_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_L3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S2_S3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_L1__S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_L1__S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_L1__S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_L1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_L1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_L1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_L1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_L1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_L1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_L2__S3_S2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S1__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S2_S3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S3_S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S3_S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1_S2__S3_S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_L3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2_S3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L3__S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L3__S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L3__S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_L3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2_S3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S1__S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_L3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1_S3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_L1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_L1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_L1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_L1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_L1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_L1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_S1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_S1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_S1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_S1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_S1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3_S1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_L2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_L2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_L2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S1_S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_L1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_L1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_L1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_S3_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_S3_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_S3_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S2_S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_L3__S3_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S1_S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S1_S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S1_S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S1_S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S1_S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S1_S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S1_S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S1_S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S1_S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S2_S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S2_S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S2_S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S2_S3_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S2_S3_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S2_S3_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2_S3__S3_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L3__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L3__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L3__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L3__S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L3__S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L3__S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L3__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L3__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_L3__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S1_S2__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2__S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2__S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2__S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2__S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2__S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L2__S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L3__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L3__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L3__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L3__S3_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L3__S3_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L3__S3_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L3__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L3__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_L3__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1__S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1__S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S1__S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2_S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S1_S2_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S2__S2_S2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L1__S3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L2__S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L2__S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L2__S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L2__S1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L2__S1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L2__S1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L2__S3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L2__S3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3_L2__S3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L2_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L2_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L2_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L3_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L3_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_L3_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_S2_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_S2_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_S2_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_S3_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_S3_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S1_S3_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L1_S3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L1_S3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L1_S3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L3_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L3_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L3_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L3_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L3_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_L3_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_S1_L3_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_S1_L3_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_S1_L3_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_S3_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_S3_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S2_S3_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L1_S2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L1_S2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L1_S2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L2_L1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L2_S1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L2_S1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_L2_S1_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_S1_L2_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_S1_L2_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_S1_L2_Test
  */
 
 /**
  * @test org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_S2_L1_Test
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_S2_L1_Test
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.seqcst.sync.S1__S2__S3__S3_S2_L1_Test
  */
 
