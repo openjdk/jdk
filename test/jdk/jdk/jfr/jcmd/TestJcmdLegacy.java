@@ -27,12 +27,12 @@ package jdk.jfr.jcmd;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.test.lib.Utils;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.FileHelper;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -68,7 +68,7 @@ public class TestJcmdLegacy {
     }
 
     private static void testAPI() throws IOException, Exception {
-        Path p = Files.createTempFile("recording", ".jfr");
+        Path p = Utils.createTempFile("enable-legacy-event", ".jfr");
 
         try (Recording r = new Recording()) {
             r.enable(LEGACY_EVENT);

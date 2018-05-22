@@ -28,7 +28,6 @@ package jdk.jfr.api.metadata.eventtype;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import jdk.jfr.Event;
@@ -37,6 +36,7 @@ import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.JVM;
+import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -164,7 +164,7 @@ public class TestUnloadingEventClass {
     }
 
     private static Object getEventType(Recording r, long id, String eventName) throws IOException {
-        Path p = Files.createTempFile("recording-" + id + "_", ".jfr");
+        Path p = Utils.createTempFile("unloading-event-class-recording-" + id + "_", ".jfr");
         r.dump(p);
         try (RecordingFile rf = new RecordingFile(p)) {
             for (EventType et : rf.readEventTypes()) {

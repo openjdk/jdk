@@ -35,6 +35,7 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileAttribute;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -770,5 +771,26 @@ public final class Utils {
         return result;
     }
 
+    /**
+     * Creates an empty file in "user.dir" if the property set.
+     * <p>
+     * This method is meant as a replacement for {@code Files#createTempFile(String, String, FileAttribute...)}
+     * that doesn't leave files behind in /tmp directory of the test machine
+     * <p>
+     * If the property "user.dir" is not set, "." will be used.
+     *
+     * @param prefix
+     * @param suffix
+     * @param attrs
+     * @return the path to the newly created file that did not exist before this
+     *         method was invoked
+     * @throws IOException
+     *
+     * @see {@link Files#createTempFile(String, String, FileAttribute...)}
+     */
+    public static Path createTempFile(String prefix, String suffix, FileAttribute<?>... attrs) throws IOException {
+        Path dir = Paths.get(System.getProperty("user.dir", "."));
+        return Files.createTempFile(dir, prefix, suffix);
+    }
 }
 
