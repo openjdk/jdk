@@ -1411,6 +1411,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   // Move classes from platform/system dictionaries into the boot dictionary
   SystemDictionary::combine_shared_dictionaries();
 
+  // Make sure all classes have a correct loader type.
+  ClassLoaderData::the_null_class_loader_data()->dictionary()->classes_do(MetaspaceShared::check_shared_class_loader_type);
+
   // Remove all references outside the metadata
   tty->print("Removing unshareable information ... ");
   remove_unshareable_in_classes();
@@ -1610,13 +1613,14 @@ class CheckSharedClassesClosure : public KlassClosure {
   }
 };
 
-void MetaspaceShared::check_shared_class_loader_type(Klass* k) {
-  if (k->is_instance_klass()) {
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    u2 loader_type = ik->loader_type();
-    ResourceMark rm;
-    guarantee(loader_type != 0,
-              "Class loader type is not set for this class %s", ik->name()->as_C_string());
+void MetaspaceShared::check_shared_class_loader_type(InstanceKlass* ik) {
+  ResourceMark rm;
+  if (ik->shared_classpath_index() == UNREGISTERED_INDEX) {
+    guarantee(ik->loader_type() == 0,
+            "Class loader type must not be set for this class %s", ik->name()->as_C_string());
+  } else {
+    guarantee(ik->loader_type() != 0,
+            "Class loader type must be set for this class %s", ik->name()->as_C_string());
   }
 }
 

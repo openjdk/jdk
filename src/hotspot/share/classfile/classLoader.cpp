@@ -1410,16 +1410,12 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
   s2 classpath_index = 0;
   ClassPathEntry* e = NULL;
 
-  // If DumpSharedSpaces is true boot loader visibility boundaries are set to:
-  //   - [jimage] + [_first_append_entry to _last_append_entry] (all path entries).
-  //
   // If search_append_only is true, boot loader visibility boundaries are
   // set to be _first_append_entry to the end. This includes:
   //   [-Xbootclasspath/a]; [jvmti appended entries]
   //
-  // If both DumpSharedSpaces and search_append_only are false, boot loader
-  // visibility boundaries are set to be the --patch-module entries plus the base piece.
-  // This would include:
+  // If search_append_only is false, boot loader visibility boundaries are
+  // set to be the --patch-module entries plus the base piece. This includes:
   //   [--patch-module=<module>=<file>(<pathsep><file>)*]; [jimage | exploded module build]
   //
 
@@ -1455,7 +1451,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
   }
 
   // Load Attempt #3: [-Xbootclasspath/a]; [jvmti appended entries]
-  if ((search_append_only || DumpSharedSpaces) && (NULL == stream)) {
+  if (search_append_only && (NULL == stream)) {
     // For the boot loader append path search, the starting classpath_index
     // for the appended piece is always 1 to account for either the
     // _jrt_entry or the _exploded_entries.
