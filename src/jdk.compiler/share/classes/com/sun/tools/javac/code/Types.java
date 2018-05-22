@@ -4989,6 +4989,20 @@ public class Types {
 
     public static abstract class SignatureGenerator {
 
+        public static class InvalidSignatureException extends RuntimeException {
+            private static final long serialVersionUID = 0;
+
+            private final Type type;
+
+            InvalidSignatureException(Type type) {
+                this.type = type;
+            }
+
+            public Type type() {
+                return type;
+            }
+        }
+
         private final Types types;
 
         protected abstract void append(char ch);
@@ -5033,6 +5047,9 @@ public class Types {
                     append('V');
                     break;
                 case CLASS:
+                    if (type.isCompound()) {
+                        throw new InvalidSignatureException(type);
+                    }
                     append('L');
                     assembleClassSig(type);
                     append(';');
@@ -5075,6 +5092,9 @@ public class Types {
                     break;
                 }
                 case TYPEVAR:
+                    if (((TypeVar)type).isCaptured()) {
+                        throw new InvalidSignatureException(type);
+                    }
                     append('T');
                     append(type.tsym.name);
                     append(';');

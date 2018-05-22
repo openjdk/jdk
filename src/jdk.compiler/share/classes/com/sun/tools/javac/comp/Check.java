@@ -2408,22 +2408,6 @@ public class Check {
         checkCompatibleConcretes(pos, c);
     }
 
-    void checkConflicts(DiagnosticPosition pos, Symbol sym, TypeSymbol c) {
-        for (Type ct = c.type; ct != Type.noType ; ct = types.supertype(ct)) {
-            for (Symbol sym2 : ct.tsym.members().getSymbolsByName(sym.name, NON_RECURSIVE)) {
-                // VM allows methods and variables with differing types
-                if (sym.kind == sym2.kind &&
-                    types.isSameType(types.erasure(sym.type), types.erasure(sym2.type)) &&
-                    sym != sym2 &&
-                    (sym.flags() & Flags.SYNTHETIC) != (sym2.flags() & Flags.SYNTHETIC) &&
-                    (sym.flags() & BRIDGE) == 0 && (sym2.flags() & BRIDGE) == 0) {
-                    syntheticError(pos, (sym2.flags() & SYNTHETIC) == 0 ? sym2 : sym);
-                    return;
-                }
-            }
-        }
-    }
-
     /** Check that all non-override equivalent methods accessible from 'site'
      *  are mutually compatible (JLS 8.4.8/9.4.1).
      *
@@ -2708,14 +2692,6 @@ public class Check {
                 fullName.startsWith("javax.") ||
                 fullName.startsWith("sun.") ||
                 fullName.contains(".internal.");
-    }
-
-    /** Report a conflict between a user symbol and a synthetic symbol.
-     */
-    private void syntheticError(DiagnosticPosition pos, Symbol sym) {
-        if (!sym.type.isErroneous()) {
-            log.error(pos, Errors.SyntheticNameConflict(sym, sym.location()));
-        }
     }
 
     /** Check that class c does not implement directly or indirectly
