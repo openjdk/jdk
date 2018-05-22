@@ -62,6 +62,7 @@ import jdk.management.jfr.EventTypeInfo;
 import jdk.management.jfr.FlightRecorderMXBean;
 import jdk.management.jfr.RecordingInfo;
 import jdk.management.jfr.SettingDescriptorInfo;
+import jdk.test.lib.Utils;
 
 /*
  * @test TestUnsupportedVM
@@ -144,7 +145,7 @@ public class TestUnsupportedVM {
         if (!Configuration.getConfigurations().isEmpty()) {
             throw new AssertionError("Configuration files should not exist on an unsupported VM");
         }
-        Path jfcFile = Files.createTempFile("my", ".jfr");
+        Path jfcFile = Utils.createTempFile("empty", ".jfr");
         assertIOException(() -> Configuration.getConfiguration("default"));
         assertIOException(() -> Configuration.create(jfcFile));
         assertIOException(() -> Configuration.create(new FileReader(jfcFile.toFile())));

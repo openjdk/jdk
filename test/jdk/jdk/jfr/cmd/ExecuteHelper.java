@@ -25,7 +25,6 @@
 
 package jdk.jfr.cmd;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -34,6 +33,7 @@ import java.util.regex.Pattern;
 import jdk.jfr.Configuration;
 import jdk.jfr.Event;
 import jdk.jfr.Recording;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;;
 
@@ -99,7 +99,7 @@ final class ExecuteHelper {
     }
 
     public static Path createProfilingRecording() throws Exception {
-        Path file = Files.createTempFile("recording", ".jfr");
+        Path file = Utils.createTempFile("profiling-recording", ".jfr");
         // Create a recording with some data
         try (Recording r = new Recording(Configuration.getConfiguration("profile"))) {
             r.start();

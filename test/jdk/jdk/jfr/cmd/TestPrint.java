@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /*
@@ -51,7 +52,7 @@ public class TestPrint {
         output = ExecuteHelper.run("print", "missing.jfr", "option1", "option2");
         output.shouldContain("Too many arguments");
 
-        Path file = Files.createTempFile("faked-print-file",  ".jfr");
+        Path file = Utils.createTempFile("faked-print-file",  ".jfr");
         FileWriter fw = new FileWriter(file.toFile());
         fw.write('d');
         fw.close();
