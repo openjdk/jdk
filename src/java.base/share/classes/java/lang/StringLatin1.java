@@ -29,8 +29,11 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import jdk.internal.HotSpotIntrinsicCandidate;
 
 import static java.lang.String.LATIN1;
@@ -587,6 +590,100 @@ final class StringLatin1 {
             return "";
         }
         return (right != value.length) ? newString(value, 0, right) : null;
+    }
+
+    private final static class LinesSpliterator implements Spliterator<String> {
+        private byte[] value;
+        private int index;        // current index, modified on advance/split
+        private final int fence;  // one past last index
+
+        LinesSpliterator(byte[] value) {
+            this(value, 0, value.length);
+        }
+
+        LinesSpliterator(byte[] value, int start, int length) {
+            this.value = value;
+            this.index = start;
+            this.fence = start + length;
+        }
+
+        private int indexOfLineSeparator(int start) {
+            for (int current = start; current < fence; current++) {
+                byte ch = value[current];
+                if (ch == '\n' || ch == '\r') {
+                    return current;
+                }
+            }
+            return fence;
+        }
+
+        private int skipLineSeparator(int start) {
+            if (start < fence) {
+                if (value[start] == '\r') {
+                    int next = start + 1;
+                    if (next < fence && value[next] == '\n') {
+                        return next + 1;
+                    }
+                }
+                return start + 1;
+            }
+            return fence;
+        }
+
+        private String next() {
+            int start = index;
+            int end = indexOfLineSeparator(start);
+            index = skipLineSeparator(end);
+            return newString(value, start, end - start);
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super String> action) {
+            if (action == null) {
+                throw new NullPointerException("tryAdvance action missing");
+            }
+            if (index != fence) {
+                action.accept(next());
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super String> action) {
+            if (action == null) {
+                throw new NullPointerException("forEachRemaining action missing");
+            }
+            while (index != fence) {
+                action.accept(next());
+            }
+        }
+
+        @Override
+        public Spliterator<String> trySplit() {
+            int half = (fence + index) >>> 1;
+            int mid = skipLineSeparator(indexOfLineSeparator(half));
+            if (mid < fence) {
+                int start = index;
+                index = mid;
+                return new LinesSpliterator(value, start, mid - start);
+            }
+            return null;
+        }
+
+        @Override
+        public long estimateSize() {
+            return fence - index + 1;
+        }
+
+        @Override
+        public int characteristics() {
+            return Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL;
+        }
+    }
+
+    static Stream<String> lines(byte[] value) {
+        return StreamSupport.stream(new LinesSpliterator(value), false);
     }
 
     public static void putChar(byte[] val, int index, int c) {
