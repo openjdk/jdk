@@ -39,6 +39,7 @@ public class TestFloatsOnStackDeopt {
     private static final int ITERS2 = 40000;
     private static final float VALUE = 15.f;
     public static String dummyString = "long long string";
+    static volatile boolean pleaseStop = false;
 
     static void run_loop_with_safepoint(float[] a0, float b) {
         // Non-counted loop with safepoint.
@@ -54,9 +55,9 @@ public class TestFloatsOnStackDeopt {
         // thread provokes frequent GC - together with +DeoptimizeALot and safepoint it forces executed function deoptimization
         Thread th = new Thread() {
             public void run() {
-                while(true) {
+                while (!pleaseStop) {
                     synchronized(this) { try { wait(1); } catch (Exception ex) {} }
-                    dummyString += dummyString;
+                    dummyString = new StringBuilder(dummyString).append(dummyString).toString();
                     if (dummyString.length() > 1024*1024) { dummyString = "long long string"; }
                 }
             }
@@ -77,7 +78,12 @@ public class TestFloatsOnStackDeopt {
             if (errn > 0) break;
         }
 
-        th.stop();
+        pleaseStop = true;
+        try {
+            th.join();
+        } catch (InterruptedException e) {
+            throw new Error("InterruptedException in main thread ", e);
+        }
         return errn;
     }
 
