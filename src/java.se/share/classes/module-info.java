@@ -30,9 +30,9 @@
  * <dl>
  * <dt class="simpleTagLabel" style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">Optional for the Java SE Platform:</dt>
  * <dd>
- *   <a href="../specs/jni/index.html">Java Native Interface (JNI)</a><br>
- *   <a href="../specs/jvmti.html">Java Virtual Machine Tool Interface (JVM TI)</a><br>
- *   <a href="../specs/jdwp/jdwp-spec.html">Java Debug Wire Protocol (JDWP)</a><br>
+ *   <a href="{@docRoot}/../specs/jni/index.html">Java Native Interface (JNI)</a><br>
+ *   <a href="{@docRoot}/../specs/jvmti.html">Java Virtual Machine Tool Interface (JVM TI)</a><br>
+ *   <a href="{@docRoot}/../specs/jdwp/jdwp-spec.html">Java Debug Wire Protocol (JDWP)</a><br>
  * </dd>
  * </dl>
  *
