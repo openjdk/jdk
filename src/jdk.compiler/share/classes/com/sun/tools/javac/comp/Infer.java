@@ -260,16 +260,21 @@ public class Infer {
         }
 
         private List<Type> roots(MethodType mt, DeferredAttrContext deferredAttrContext) {
-            ListBuffer<Type> roots = new ListBuffer<>();
-            roots.add(mt.getReturnType());
             if (deferredAttrContext != null && deferredAttrContext.mode == AttrMode.CHECK) {
-                roots.addAll(mt.getThrownTypes());
+                ListBuffer<Type> roots = new ListBuffer<>();
+                roots.add(mt.getReturnType());
                 for (DeferredAttr.DeferredAttrNode n : deferredAttrContext.deferredAttrNodes) {
                     roots.addAll(n.deferredStuckPolicy.stuckVars());
                     roots.addAll(n.deferredStuckPolicy.depVars());
                 }
+                List<Type> thrownVars = deferredAttrContext.inferenceContext.inferencevars.stream()
+                                .filter(tv -> (tv.tsym.flags() & Flags.THROWS) != 0).collect(List.collector());
+                List<Type> result = roots.toList();
+                result = result.appendList(thrownVars.diff(result));
+                return result;
+            } else {
+                return List.of(mt.getReturnType());
             }
-            return roots.toList();
         }
 
     /**
