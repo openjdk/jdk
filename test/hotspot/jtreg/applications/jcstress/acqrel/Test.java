@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13608 +26,13608 @@
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.plain.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.plain.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.arrays.volatiles.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.plain.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.plain.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.fields.volatiles.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.acqrel.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.opaque.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.plain.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.arrays.volatiles.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.acqrel.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.opaque.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.big.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.acqrel.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.opaque.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteArray.little.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.acqrel.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.opaque.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.big.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.acqrel.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.opaque.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.direct.little.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.acqrel.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.opaque.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.big.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.acqrel.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.opaque.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.byteBuffer.heap.little.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.acqrel.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.opaque.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.plain.StringStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.BooleanStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ByteStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.CharStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.DoubleStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.FloatStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.IntStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.LongStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.ShortStringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringBooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringBooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringBooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringCharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringCharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringCharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringDoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringDoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringDoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringFloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringFloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringFloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringIntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringIntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringIntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringLongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringLongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringLongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringStringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringStringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.acqrel.varHandles.fields.volatiles.StringStringTest
  */
 

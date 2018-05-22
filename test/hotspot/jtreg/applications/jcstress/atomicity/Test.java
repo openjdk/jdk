@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,3750 +26,3750 @@
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferAtomicityTests.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.CharViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.CharViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.CharViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.DoubleViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.DoubleViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.DoubleViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.FloatViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.FloatViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.FloatViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.IntViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.IntViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.IntViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.LongViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.LongViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.LongViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.ShortViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.ShortViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ByteBufferViewsAtomicityTests.ShortViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.CharBufferAtomicityTests.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.CharBufferAtomicityTests.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.CharBufferAtomicityTests.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferAtomicityTests.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.CharViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.CharViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.CharViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.DoubleViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.DoubleViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.DoubleViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.FloatViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.FloatViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.FloatViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.IntViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.IntViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.IntViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.LongViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.LongViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.LongViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.ShortViewTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.ShortViewTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DirectByteBufferViewsAtomicityTests.ShortViewTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.DoubleBufferAtomicityTests.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DoubleBufferAtomicityTests.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.DoubleBufferAtomicityTests.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.FloatBufferAtomicityTests.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.FloatBufferAtomicityTests.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.FloatBufferAtomicityTests.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.IntBufferAtomicityTests.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.IntBufferAtomicityTests.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.IntBufferAtomicityTests.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.LongBufferAtomicityTests.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.LongBufferAtomicityTests.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.LongBufferAtomicityTests.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.buffers.ShortBufferAtomicityTests.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ShortBufferAtomicityTests.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.buffers.ShortBufferAtomicityTests.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.crosscache.ByteBufferIntAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.crosscache.ByteBufferIntAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.crosscache.ByteBufferIntAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.crosscache.DirectByteBufferIntAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.crosscache.DirectByteBufferIntAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.crosscache.DirectByteBufferIntAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.crosscache.UnsafeIntAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.crosscache.UnsafeIntAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.crosscache.UnsafeIntAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.ByteAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.ByteAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.ByteAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.CharAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.CharAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.CharAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.DoubleAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.DoubleAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.DoubleAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.FloatAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.FloatAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.FloatAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.IntAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.IntAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.IntAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.LongAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.LongAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.LongAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.ShortAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.ShortAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.ShortAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileByteAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileByteAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileByteAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileCharAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileCharAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileCharAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileDoubleAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileDoubleAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileDoubleAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileFloatAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileFloatAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileFloatAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileIntAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileIntAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileIntAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileLongAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileLongAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileLongAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileShortAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileShortAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.perbyte.VolatileShortAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.ByteAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.ByteAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.ByteAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.CharAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.CharAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.CharAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.DoubleAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.DoubleAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.DoubleAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.FloatAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.FloatAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.FloatAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.IntAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.IntAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.IntAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.LongAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.LongAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.LongAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.ShortAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.ShortAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.ShortAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileByteAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileByteAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileByteAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileCharAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileCharAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileCharAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileDoubleAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileDoubleAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileDoubleAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileFloatAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileFloatAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileFloatAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileIntAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileIntAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileIntAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileLongAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileLongAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileLongAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileShortAtomicityTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileShortAtomicityTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.primitives.reflect.VolatileShortAtomicityTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeAcquireString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeReleaseString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CAETest.CompareAndExchangeString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.CASTest.CompareAndSetString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndAddTest.GetAndAddInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndAddTest.GetAndAddInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndAddTest.GetAndAddInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndAddTest.GetAndAddLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndAddTest.GetAndAddLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndAddTest.GetAndAddLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.GetAndSetTest.GetAndSetString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetAcquireString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetPlainString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetReleaseString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASContendStrongTest.WeakCompareAndSetString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetAcquireString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetPlainString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetReleaseString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.arrays.WeakCASTest.WeakCompareAndSetString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CAETest.CompareAndExchangeReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.CASTest.CompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndAddTest.GetAndAddInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndAddTest.GetAndAddInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndAddTest.GetAndAddInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndAddTest.GetAndAddLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndAddTest.GetAndAddLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndAddTest.GetAndAddLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.GetAndSetTest.GetAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.big.WeakCASTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CAETest.CompareAndExchangeReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.CASTest.CompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndAddTest.GetAndAddInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndAddTest.GetAndAddInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndAddTest.GetAndAddInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndAddTest.GetAndAddLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndAddTest.GetAndAddLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndAddTest.GetAndAddLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.GetAndSetTest.GetAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteArray.little.WeakCASTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CAETest.CompareAndExchangeReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.CASTest.CompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndAddTest.GetAndAddInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndAddTest.GetAndAddInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndAddTest.GetAndAddInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndAddTest.GetAndAddLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndAddTest.GetAndAddLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndAddTest.GetAndAddLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.GetAndSetTest.GetAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.big.WeakCASTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CAETest.CompareAndExchangeReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.CASTest.CompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndAddTest.GetAndAddInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndAddTest.GetAndAddInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndAddTest.GetAndAddInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndAddTest.GetAndAddLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndAddTest.GetAndAddLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndAddTest.GetAndAddLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.GetAndSetTest.GetAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.direct.little.WeakCASTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CAETest.CompareAndExchangeReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.CASTest.CompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndAddTest.GetAndAddInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndAddTest.GetAndAddInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndAddTest.GetAndAddInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndAddTest.GetAndAddLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndAddTest.GetAndAddLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndAddTest.GetAndAddLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.GetAndSetTest.GetAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.big.WeakCASTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CAETest.CompareAndExchangeReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.CASTest.CompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndAddTest.GetAndAddInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndAddTest.GetAndAddInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndAddTest.GetAndAddInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndAddTest.GetAndAddLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndAddTest.GetAndAddLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndAddTest.GetAndAddLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.GetAndSetTest.GetAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.byteBuffer.heap.little.WeakCASTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeAcquireString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeReleaseString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CAETest.CompareAndExchangeString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.CASTest.CompareAndSetString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndAddTest.GetAndAddInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndAddTest.GetAndAddInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndAddTest.GetAndAddInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndAddTest.GetAndAddLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndAddTest.GetAndAddLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndAddTest.GetAndAddLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.GetAndSetTest.GetAndSetString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetAcquireString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetPlainString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetReleaseString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASContendStrongTest.WeakCompareAndSetString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetAcquireString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetPlainString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseBoolean
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseBoolean
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseBoolean
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseByte
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseByte
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseByte
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseChar
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseChar
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseChar
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseDouble
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseDouble
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseDouble
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseFloat
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseFloat
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseFloat
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseInt
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseInt
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseInt
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseLong
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseLong
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseLong
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetReleaseString
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetShort
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetShort
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetShort
  */
 
 /**
  * @test org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetString
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetString
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.atomicity.varHandles.fields.WeakCASTest.WeakCompareAndSetString
  */
 
