@@ -2304,8 +2304,8 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   move_to_phi(x->state());
 
   int lo_key = x->lo_key();
-  int hi_key = x->hi_key();
   int len = x->length();
+  assert(lo_key <= (lo_key + (len - 1)), "integer overflow");
   LIR_Opr value = tag.result();
 
   if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
