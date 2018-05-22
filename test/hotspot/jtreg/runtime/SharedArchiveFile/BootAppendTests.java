@@ -115,7 +115,15 @@ public class BootAppendTests {
                                  "-XX:SharedClassListFile=" + classlist.getPath());
         // Make sure all the classes were successfully archived.
         for (String archiveClass : ARCHIVE_CLASSES) {
-            out.shouldNotContain("Preload Warning: Cannot find " + archiveClass);
+            String msg = "Preload Warning: Cannot find " + archiveClass;
+            if (archiveClass.equals(BOOT_APPEND_MODULE_CLASS)) {
+                // We shouldn't archive a class in the appended boot class path that
+                // are the java.desktop module. Such a class cannot be loaded
+                // at runtime anyway.
+                out.shouldContain(msg);
+            } else {
+                out.shouldNotContain(msg);
+            }
         }
     }
 
