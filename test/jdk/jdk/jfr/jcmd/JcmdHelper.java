@@ -43,27 +43,14 @@ public class JcmdHelper {
             OutputAnalyzer output = jcmdCheck(name, false);
             try {
                 // The expected output can look like this:
-                // Recording: recording=1 name="Recording 1" (running)
-                output.shouldMatch("^Recording: recording=\\d+\\s+name=\"" + name
-                        + "\".*\\W{1}running\\W{1}");
+                // Recording 1: name=1 (running)
+                output.shouldMatch("^Recording \\d+: name=" + name
+                        + " .*\\W{1}running\\W{1}");
                 return;
             } catch (RuntimeException e) {
                 if (System.currentTimeMillis() > timeoutAt) {
                     Asserts.fail("Recording not started: " + name);
                 }
-                Thread.sleep(100);
-            }
-        }
-    }
-
-    // Wait until default recording's state became running
-    public static void waitUntilDefaultRecordingRunning() throws Exception {
-        while (true) {
-            OutputAnalyzer output = jcmd("JFR.check", "recording=0");
-            try {
-                output.shouldContain("Recording: recording=0 name=\"HotSpot default\" (running)");
-                return;
-            } catch (RuntimeException e) {
                 Thread.sleep(100);
             }
         }

@@ -102,18 +102,18 @@ public class JcmdAsserts {
 
     public static void assertRecordingIsUnstarted(OutputAnalyzer output,
             String name, String duration) {
-        output.stdoutShouldMatch("^\\s*Recording: recording=\\d+\\s+name=\"" + name
-                + "\"\\s+duration=" + duration + "\\s+.*\\W{1}unstarted\\W{1}");
+        output.stdoutShouldMatch("^Recording \\d+: name=" + name
+                + " duration=" + duration + " .*\\W{1}unstarted\\W{1}");
     }
 
     public static void assertRecordingIsStopped(OutputAnalyzer output, String name) {
-        output.stdoutShouldMatch("^\\s*Recording: recording=\\d+\\s+name=\"" + name
-                + "\"\\s+.*\\W{1}stopped\\W{1}");
+        output.stdoutShouldMatch("^Recording \\d+: name=" + name
+                + " .*\\W{1}stopped\\W{1}");
     }
 
     public static void assertRecordingIsStopped(OutputAnalyzer output, String name, String duration) {
-        output.stdoutShouldMatch("^\\s*Recording: recording=\\d+\\s+name=\"" + name
-                + "\"\\s+duration=" + duration + "\\s+.*\\W{1}stopped\\W{1}");
+        output.stdoutShouldMatch("^Recording \\d+: name=" + name
+                + " duration=" + duration + " .*\\W{1}stopped\\W{1}");
     }
 
     public static void assertStartTimeGreaterOrEqualThanMBeanValue(String name,
