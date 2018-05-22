@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 6192331 6348207
+   @bug 6192331 6348207 8202076
    @summary Check if File.exists()/length() works correctly on Windows
             special files hiberfil.sys and pagefile.sys
  */
@@ -45,9 +45,9 @@ public class WinSpecialFiles {
             if (name.indexOf("pagefile.sys") != -1 ||
                 name.indexOf("hiberfil.sys") != -1) {
                 if (dir[i].length() == 0) {
-                    throw new Exception("Size of existing <"
+                    throw new Exception("Size of existing file \""
                                         + dir[i].getPath()
-                                        + " is ZERO");
+                                        + "\" is ZERO");
                 }
             }
         }
