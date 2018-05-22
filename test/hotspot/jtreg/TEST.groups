@@ -1157,6 +1157,9 @@ vmTestbase_nsk_jdi_quick = \
   vmTestbase/nsk/jdi/StackFrame/getArgumentValues/getArgumentValues002/getArgumentValues002.java \
   vmTestbase/nsk/jdi/StackFrame/getArgumentValues/getArgumentValues003/getArgumentValues003.java
 
+vmTestbase_vm_metaspace = \
+  vmTestbase/metaspace
+
 vmTestbase_nsk_stress = \
   vmTestbase/nsk/stress
 
@@ -1252,7 +1255,15 @@ vmTestbase_largepages = \
   vmTestbase/gc/gctests/LoadUnloadGC \
   vmTestbase/gc/gctests/LoadUnloadGC2 \
   vmTestbase/gc/memory/LargePagesTest \
-  vmTestbase/gc/memory/Nio
+  vmTestbase/gc/memory/Nio \
+  vmTestbase/metaspace/staticReferences/StaticReferences.java \
+  vmTestbase/metaspace/stressDictionary/StressDictionary.java \
+  vmTestbase/metaspace/stressHierarchy/stressHierarchy001/TestDescription.java \
+  vmTestbase/metaspace/stressHierarchy/stressHierarchy011/TestDescription.java \
+  vmTestbase/metaspace/flags/maxMetaspaceSize/TestDescription.java \
+  vmTestbase/metaspace/shrink_grow/ShrinkGrowTest/ShrinkGrowTest.java \
+  vmTestbase/metaspace/shrink_grow/ShrinkGrowMultiJVM/ShrinkGrowMultiJVM.java \
+  vmTestbase/metaspace/shrink_grow/CompressedClassSpaceSize/TestDescription.java
 
 # JSR292 tests (invokedynamic AKA Multi-Language VM AKA Da Vinci Machine)
 vmTestbase_vm_mlvm = \
