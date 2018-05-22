@@ -172,7 +172,9 @@ size_t ClassLoadingService::compute_class_size(InstanceKlass* k) {
     // FIXME: Need to count the contents of methods
     class_size += k->constants()->size();
     class_size += k->local_interfaces()->size();
-    class_size += k->transitive_interfaces()->size();
+    if (k->transitive_interfaces() != NULL) {
+      class_size += k->transitive_interfaces()->size();
+    }
     // We do not have to count implementors, since we only store one!
     // FIXME: How should these be accounted for, now when they have moved.
     //class_size += k->fields()->size();
