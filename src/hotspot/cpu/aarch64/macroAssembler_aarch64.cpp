@@ -1224,7 +1224,6 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   assert(sub_klass != r0, "killed reg"); // killed by mov(r0, super)
   assert(sub_klass != r2, "killed reg"); // killed by lea(r2, &pst_counter)
 
-  // Get super_klass value into r0 (even if it was in r5 or r2).
   RegSet pushed_registers;
   if (!IS_A_TEMP(r2))    pushed_registers += r2;
   if (!IS_A_TEMP(r5))    pushed_registers += r5;
@@ -1234,6 +1233,11 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   }
 
   push(pushed_registers, sp);
+
+  // Get super_klass value into r0 (even if it was in r5 or r2).
+  if (super_klass != r0) {
+    mov(r0, super_klass);
+  }
 
 #ifndef PRODUCT
   mov(rscratch2, (address)&SharedRuntime::_partial_subtype_ctr);
