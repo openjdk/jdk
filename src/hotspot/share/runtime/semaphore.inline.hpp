@@ -38,14 +38,4 @@ inline void Semaphore::wait_with_safepoint_check(JavaThread* thread) {
   _impl.wait();
 }
 
-inline void Semaphore::wait_with_safepoint_check() {
-  Thread* thread = Thread::current();
-  if (thread->is_Java_thread()) {
-    wait_with_safepoint_check(static_cast<JavaThread*>(thread));
-  } else {
-    // Wait for value
-    _impl.wait();
-  }
-}
-
 #endif // SHARE_VM_RUNTIME_SEMAPHORE_INLINE_HPP

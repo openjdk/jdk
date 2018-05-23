@@ -57,7 +57,6 @@ class Semaphore : public CHeapObj<mtInternal> {
 
   bool trywait()              { return _impl.trywait(); }
 
-  void wait_with_safepoint_check();
   void wait_with_safepoint_check(JavaThread* thread);
 };
 
