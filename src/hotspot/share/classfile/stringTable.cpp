@@ -434,7 +434,7 @@ void StringTable::verify() {
 
 void StringTable::dump(outputStream* st, bool verbose) {
   if (!verbose) {
-    the_table()->print_table_statistics(st, "StringTable");
+    the_table()->print_table_statistics(st, "StringTable", string_object_no_keepalive);
   } else {
     Thread* THREAD = Thread::current();
     st->print_cr("VERSION: 1.1");
