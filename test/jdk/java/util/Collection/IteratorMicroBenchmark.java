@@ -27,11 +27,14 @@
  * @run main IteratorMicroBenchmark iterations=1 size=8 warmup=0
  */
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toCollection;
 
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,7 +57,6 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
@@ -109,17 +111,22 @@ public class IteratorMicroBenchmark {
 
     /** No guarantees, but effective in practice. */
     static void forceFullGc() {
-        CountDownLatch finalizeDone = new CountDownLatch(1);
-        WeakReference<?> ref = new WeakReference<Object>(new Object() {
-            @SuppressWarnings("deprecation")
-            protected void finalize() { finalizeDone.countDown(); }});
+        long timeoutMillis = 1000L;
+        CountDownLatch finalized = new CountDownLatch(1);
+        ReferenceQueue<Object> queue = new ReferenceQueue<>();
+        WeakReference<Object> ref = new WeakReference<>(
+            new Object() { protected void finalize() { finalized.countDown(); }},
+            queue);
         try {
-            for (int i = 0; i < 10; i++) {
+            for (int tries = 3; tries--> 0; ) {
                 System.gc();
-                if (finalizeDone.await(1L, TimeUnit.SECONDS) && ref.get() == null) {
+                if (finalized.await(timeoutMillis, MILLISECONDS)
+                    && queue.remove(timeoutMillis) != null
+                    && ref.get() == null) {
                     System.runFinalization(); // try to pick up stragglers
                     return;
                 }
+                timeoutMillis *= 4;
             }
         } catch (InterruptedException unexpected) {
             throw new AssertionError("unexpected InterruptedException");
@@ -556,6 +563,18 @@ public class IteratorMicroBenchmark {
                     for (int i = 0; i < iterations; i++) {
                         sum[0] = 0;
                         x.replaceAll(sneakyAdder);
-                        check.sum(sum[0]);}}});
+                        check.sum(sum[0]);}}},
+            new Job(klazz + " equals") {
+                public void work() throws Throwable {
+                    ArrayList<Integer> copy = new ArrayList<>(x);
+                    for (int i = 0; i < iterations; i++) {
+                        if (!x.equals(copy))
+                            throw new AssertionError();}}},
+            new Job(klazz + " hashCode") {
+                public void work() throws Throwable {
+                    int hashCode = Arrays.hashCode(x.toArray());
+                    for (int i = 0; i < iterations; i++) {
+                        if (x.hashCode() != hashCode)
+                            throw new AssertionError();}}});
     }
 }
