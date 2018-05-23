@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.Set;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An abstract class for that implements the {@link Taglet} interface.
+ * A base class that implements the {@link Taglet} interface.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -40,100 +41,98 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  *
  * @author Jamie Ho
  */
-public abstract class BaseTaglet implements Taglet {
+public class BaseTaglet implements Taglet {
+    /**
+     * The different kinds of place where any given tag may be used.
+     */
+    enum Site {
+        OVERVIEW, MODULE, PACKAGE, TYPE, CONSTRUCTOR, METHOD, FIELD
+    }
 
-    protected String name = "Default";
+    protected final String name;
+    private final boolean inline;
+    private final Set<Site> sites;
+
+    BaseTaglet(String name, boolean inline, Set<Site> sites) {
+        this.name = name;
+        this.inline = inline;
+        this.sites = sites;
+    }
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in constructor documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in constructor documentation and false
+     * Returns true if this {@code Taglet} can be used in constructor documentation.
+     * @return true if this {@code Taglet} can be used in constructor documentation and false
      * otherwise.
      */
-    public boolean inConstructor() {
-        return true;
+    public final boolean inConstructor() {
+        return sites.contains(Site.CONSTRUCTOR);
     }
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in field documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in field documentation and false
+     * Returns true if this {@code Taglet} can be used in field documentation.
+     * @return true if this {@code Taglet} can be used in field documentation and false
      * otherwise.
      */
-    public boolean inField() {
-        return true;
+    public final boolean inField() {
+        return  sites.contains(Site.FIELD);
     }
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in method documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in method documentation and false
+     * Returns true if this {@code Taglet} can be used in method documentation.
+     * @return true if this {@code Taglet} can be used in method documentation and false
      * otherwise.
      */
-    public boolean inMethod() {
-        return true;
+    public final boolean inMethod() {
+        return  sites.contains(Site.METHOD);
     }
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in overview documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in method documentation and false
+     * Returns true if this {@code Taglet} can be used in overview documentation.
+     * @return true if this {@code Taglet} can be used in method documentation and false
      * otherwise.
      */
-    public boolean inOverview() {
-        return true;
+    public final boolean inOverview() {
+        return  sites.contains(Site.OVERVIEW);
     }
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in module documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in module documentation and false
+     * Returns true if this {@code Taglet} can be used in module documentation.
+     * @return true if this {@code Taglet} can be used in module documentation and false
      * otherwise.
      */
-    public boolean inModule() {
-        return true;
+    public final boolean inModule() {
+        return  sites.contains(Site.MODULE);
     }
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in package documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in package documentation and false
+     * Returns true if this {@code Taglet} can be used in package documentation.
+     * @return true if this {@code Taglet} can be used in package documentation and false
      * otherwise.
      */
-    public boolean inPackage() {
-        return true;
+    public final boolean inPackage() {
+        return  sites.contains(Site.PACKAGE);
     }
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is used in type documentation (classes or interfaces).
-     * @return true if this <code>Taglet</code>
-     * is used in type documentation and false
+     * Returns true if this {@code Taglet} can be used in type documentation (classes or interfaces).
+     * @return true if this {@code Taglet} can be used in type documentation and false
      * otherwise.
      */
-    public boolean inType() {
-        return true;
+    public final boolean inType() {
+        return  sites.contains(Site.TYPE);
     }
 
     /**
-     * Return true if this <code>Taglet</code>
-     * is an inline tag.
-     * @return true if this <code>Taglet</code>
-     * is an inline tag and false otherwise.
+     * Returns true if this {@code Taglet} is an inline tag.
+     * @return true if this {@code Taglet} represents an inline tag and false otherwise.
      */
-    public boolean isInlineTag() {
-        return false;
+    public final boolean isInlineTag() {
+        return inline;
     }
 
     /**
-     * Return the name of this custom tag.
-     * @return the name of this custom tag.
+     * Returns the name of this tag.
+     * @return the name of this tag.
      */
     public String getName() {
         return name;

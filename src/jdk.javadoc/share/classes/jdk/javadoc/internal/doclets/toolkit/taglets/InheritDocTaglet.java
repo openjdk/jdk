@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.EnumSet;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 
@@ -37,10 +38,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.INHERIT_DOC;
 
 /**
- * An inline Taglet representing the <b>inheritDoc</b> tag. This tag should only
+ * An inline Taglet representing the {@code inheritDoc} tag. This tag should only
  * be used with a method.  It is used to inherit documentation from overriden
  * and implemented methods.
  *
@@ -52,79 +53,19 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * @author Jamie Ho
  */
 
-public class InheritDocTaglet extends BaseInlineTaglet {
-
-    /**
-     * The inline tag that would appear in the documentation if
-     * the writer wanted documentation to be inherited.
-     */
-    public static final String INHERIT_DOC_INLINE_TAG = "{@inheritDoc}";
+public class InheritDocTaglet extends BaseTaglet {
 
     /**
      * Construct a new InheritDocTaglet.
      */
     public InheritDocTaglet () {
-        name = INHERIT_DOC.tagName;
+        super(INHERIT_DOC.tagName, true, EnumSet.of(Site.TYPE, Site.METHOD));
     }
 
     /**
-     * Will return false because this inline tag may
-     * not appear in Fields.
-     * @return false
-     */
-    public boolean inField() {
-        return false;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * not appear in Constructors.
-     * @return false
-     */
-    public boolean inConstructor() {
-        return false;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * not appear in Overview.
-     * @return false
-     */
-    public boolean inOverview() {
-        return false;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * not appear in Modules.
-     * @return false
-     */
-    public boolean inModule() {
-        return false;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * not appear in Packages.
-     * @return false
-     */
-    public boolean inPackage() {
-        return false;
-    }
-
-    /**
-     * Will return true because this inline tag may
-     * appear in Type (Class).
-     * @return true
-     */
-    public boolean inType() {
-        return true;
-    }
-
-    /**
-     * Given a <code>MethodDoc</code> item, a <code>Tag</code> in the
-     * <code>MethodDoc</code> item and a String, replace all occurrences
-     * of @inheritDoc with documentation from it's superclass or superinterface.
+     * Given an element, a {@code DocTree} in the element's doc comment
+     * replace all occurrences of @inheritDoc with documentation from its
+     * superclass or superinterface.
      *
      * @param writer the writer that is writing the output.
      * @param e the {@link Element} that we are documenting.
@@ -148,7 +89,7 @@ public class InheritDocTaglet extends BaseInlineTaglet {
                     ((utils.isExecutableElement(e))
                         ? utils.flatSignature((ExecutableElement)e)
                         : "");
-                //This tag does not support inheritence.
+                //This tag does not support inheritance.
                 messages.warning(e, "doclet.noInheritedDoc", message);
         }
         Input input = new DocFinder.Input(utils, e,
@@ -172,18 +113,9 @@ public class InheritDocTaglet extends BaseInlineTaglet {
         return replacement;
     }
 
-    /**
-     * Given the <code>Tag</code> representation of this custom
-     * tag, return its string representation, which is output
-     * to the generated page.
-     *
-     * @param e the element holding the tag
-     * @param tag the <code>Tag</code> representation of this custom tag.
-     * @param tagletWriter the taglet writer for output.
-     * @return the Content representation of this <code>Tag</code>.
-     */
+    @Override
     public Content getTagletOutput(Element e, DocTree tag, TagletWriter tagletWriter) {
-        DocTree  inheritTag = tag.getKind() == INHERIT_DOC ? null : tag;
+        DocTree inheritTag = (tag.getKind() == INHERIT_DOC) ? null : tag;
         return retrieveInheritedDocumentation(tagletWriter, e,
                 inheritTag, tagletWriter.isFirstSentence);
     }

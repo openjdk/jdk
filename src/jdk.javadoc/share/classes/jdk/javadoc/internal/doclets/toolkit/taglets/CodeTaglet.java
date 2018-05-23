@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
-import java.util.Map;
+import java.util.EnumSet;
 
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.CODE;
 
 /**
  * An inline Taglet used to denote literal code fragments.
@@ -54,17 +54,13 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * @author Scott Seligman
  */
 
-public class CodeTaglet extends BaseInlineTaglet {
+public class CodeTaglet extends BaseTaglet {
 
-    private static final String NAME = CODE.tagName;
-
-    public String getName() {
-        return NAME;
+    CodeTaglet() {
+        super(CODE.tagName, true, EnumSet.allOf(Site.class));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
         return writer.codeTagOutput(element, tag);
     }

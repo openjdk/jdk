@@ -332,7 +332,7 @@ public class HtmlDocletWriter {
         }
         Content output = new ContentBuilder();
         TagletWriter.genTagOutput(configuration.tagletManager, e,
-            configuration.tagletManager.getCustomTaglets(e),
+            configuration.tagletManager.getBlockTaglets(e),
                 getTagletWriterInstance(false), output);
         dl.addContent(output);
         htmltree.addContent(dl);
@@ -348,7 +348,7 @@ public class HtmlDocletWriter {
     protected boolean hasSerializationOverviewTags(VariableElement field) {
         Content output = new ContentBuilder();
         TagletWriter.genTagOutput(configuration.tagletManager, field,
-                configuration.tagletManager.getCustomTaglets(field),
+                configuration.tagletManager.getBlockTaglets(field),
                 getTagletWriterInstance(false), output);
         return !output.isEmpty();
     }
@@ -1301,7 +1301,7 @@ public class HtmlDocletWriter {
         };
         CommentHelper ch = utils.getCommentHelper(element);
         // Array of all possible inline tags for this javadoc run
-        configuration.tagletManager.checkTags(utils, element, tags, true);
+        configuration.tagletManager.checkTags(element, tags, true);
         commentRemoved = false;
 
         for (ListIterator<? extends DocTree> iterator = tags.listIterator(); iterator.hasNext();) {

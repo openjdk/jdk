@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 public interface InheritableTaglet extends Taglet {
 
     /**
-     * Given an {@link com.sun.tools.doclets.internal.toolkit.util.DocFinder.Output}
+     * Given an {@link jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Output}
      * object, set its values with the appropriate information to inherit
      * documentation.
      *
