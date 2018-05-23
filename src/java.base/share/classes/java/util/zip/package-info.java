@@ -46,7 +46,7 @@
  *     <li><a id="lang_encoding">APPENDIX D of</a>
  *         <a href="http://www.pkware.com/documents/casestudies/APPNOTE.TXT">
  *         PKWARE ZIP File Format Specification</a> - Language Encoding Flag
- *         (EFS) to encode ZIP entry filename and comment fields using UTF-8.
+ *         to encode ZIP entry filename and comment fields using UTF-8.
  *     <li><a href="http://www.ietf.org/rfc/rfc1950.txt">
  *         ZLIB Compressed Data Format Specification version 3.3</a>
  *         &nbsp;

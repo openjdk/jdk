@@ -114,7 +114,7 @@ public class ZipCoding {
         testZipInputStream(bis, cs, name, comment, bb);
 
         if ("utf-8".equals(csn)) {
-            // EFS should be set
+            // USE_UTF8 should be set
             bis.reset();
             testZipInputStream(bis, Charset.forName("MS932"), name, comment, bb);
         }
