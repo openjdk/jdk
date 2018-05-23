@@ -1221,6 +1221,10 @@ public class ArrayList<E> extends AbstractList<E>
             return true;
         }
 
+        public void replaceAll(UnaryOperator<E> operator) {
+            root.replaceAllRange(operator, offset, offset + size);
+        }
+
         public boolean removeAll(Collection<?> c) {
             return batchRemove(c, false);
         }
@@ -1724,15 +1728,18 @@ public class ArrayList<E> extends AbstractList<E>
 
     @Override
     public void replaceAll(UnaryOperator<E> operator) {
+        replaceAllRange(operator, 0, size);
+        modCount++;
+    }
+
+    private void replaceAllRange(UnaryOperator<E> operator, int i, int end) {
         Objects.requireNonNull(operator);
         final int expectedModCount = modCount;
         final Object[] es = elementData;
-        final int size = this.size;
-        for (int i = 0; modCount == expectedModCount && i < size; i++)
+        for (; modCount == expectedModCount && i < end; i++)
             es[i] = operator.apply(elementAt(es, i));
         if (modCount != expectedModCount)
             throw new ConcurrentModificationException();
-        modCount++;
     }
 
     @Override
