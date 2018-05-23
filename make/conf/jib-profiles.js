@@ -184,7 +184,8 @@ var getJibProfiles = function (input) {
 
     // Identifies the version of this format to the tool reading it.
     // 1.1 signifies that the publish, publish-src and get-src features are usable.
-    data.format_version = "1.1";
+    // 1.2 signifies that artifact uploads should fail on missing artifacts by default.
+    data.format_version = "1.2";
 
     // Organization, product and version are used when uploading/publishing build results
     data.organization = "";
