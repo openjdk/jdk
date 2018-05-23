@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Locale;
+import java.util.Set;
 
 import javax.lang.model.element.Element;
 
@@ -51,65 +52,17 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**
-     * The marker in the location string for excluded tags.
-     */
-    public static final String EXCLUDED = "x";
-
-    /**
-     * The marker in the location string for modules.
-     */
-    public static final String MODULE = "s";
-
-    /**
-     * The marker in the location string for packages.
-     */
-    public static final String PACKAGE = "p";
-
-    /**
-     * The marker in the location string for types.
-     */
-    public static final String TYPE = "t";
-
-    /**
-     * The marker in the location string for constructors.
-     */
-    public static final String CONSTRUCTOR = "c";
-
-    /**
-     * The marker in the location string for fields.
-     */
-    public static final String FIELD = "f";
-
-    /**
-     * The marker in the location string for methods.
-     */
-    public static final String METHOD = "m";
-
-    /**
-     * The marker in the location string for overview.
-     */
-    public static final String OVERVIEW = "o";
-
-    /**
-     * Use in location string when the tag is to
-     * appear in all locations.
-     */
-    public static final String ALL = "a";
-
-    /**
-     * The name of this tag.
-     */
-    protected String tagName;
-
-    /**
      * The header to output.
      */
     protected String header;
 
     /**
-     * The possible locations that this tag can appear in.
+     * Whether or not the taglet should generate output.
+     * Standard tags like at-author, at-since, at-version can be disabled
+     * by command-line options; custom tags created with -tag can be
+     * disabled with an X in the defining string.
      */
-    protected String locations;
+    protected final boolean enabled;
 
     /**
      * Construct a <code>SimpleTaglet</code>.
@@ -121,113 +74,78 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * and 'f' for field.
      */
     public SimpleTaglet(String tagName, String header, String locations) {
-        this.tagName = tagName;
+        this(tagName, header, getSites(locations), isEnabled(locations));
+    }
+
+    /**
+     * Construct a <code>SimpleTaglet</code>.
+     * @param tagName the name of this tag
+     * @param header the header to output.
+     * @param sites the possible sites (locations) that this tag
+     * can appear in.  The <code>String</code> can contain 'p'
+     * for package, 't' for type, 'm' for method, 'c' for constructor
+     * and 'f' for field.
+     */
+    public SimpleTaglet(String tagName, String header, Set<Site> sites) {
+        this(tagName, header, sites, true);
+    }
+
+    /**
+     * Construct a <code>SimpleTaglet</code>.
+     * @param tagName the name of this tag
+     * @param header the header to output.
+     * @param sites the possible sites (locations) that this tag
+     * can appear in.  The <code>String</code> can contain 'p'
+     * for package, 't' for type, 'm' for method, 'c' for constructor
+     * and 'f' for field.
+     */
+    public SimpleTaglet(String tagName, String header, Set<Site> sites, boolean enabled) {
+        super(tagName, false, sites);
         this.header = header;
-        locations = Utils.toLowerCase(locations);
-        if (locations.contains(ALL) && !locations.contains(EXCLUDED)) {
-            this.locations = MODULE + PACKAGE + TYPE + FIELD + METHOD + CONSTRUCTOR + OVERVIEW;
-        } else {
-            this.locations = locations;
+        this.enabled = enabled;
+    }
+
+    private static Set<Site> getSites(String locations) {
+        Set<Site> set = EnumSet.noneOf(Site.class);
+        for (int i = 0; i < locations.length(); i++) {
+            switch (locations.charAt(i)) {
+                case 'a':  case 'A':
+                    return EnumSet.allOf(Site.class);
+                case 'c':  case 'C':
+                    set.add(Site.CONSTRUCTOR);
+                    break;
+                case 'f':  case 'F':
+                    set.add(Site.FIELD);
+                    break;
+                case 'm':  case 'M':
+                    set.add(Site.METHOD);
+                    break;
+                case 'o':  case 'O':
+                    set.add(Site.OVERVIEW);
+                    break;
+                case 'p':  case 'P':
+                    set.add(Site.PACKAGE);
+                    break;
+                case 's':  case 'S':        // super-packages, anyone?
+                    set.add(Site.MODULE);
+                    break;
+                case 't':  case 'T':
+                    set.add(Site.TYPE);
+                    break;
+                case 'x':  case 'X':
+                    break;
+            }
         }
+        return set;
     }
 
-    /**
-     * Return the name of this <code>Taglet</code>.
-     */
-    public String getName() {
-        return tagName;
-    }
-
-    /**
-     * Return true if this <code>SimpleTaglet</code>
-     * is used in constructor documentation.
-     * @return true if this <code>SimpleTaglet</code>
-     * is used in constructor documentation and false
-     * otherwise.
-     */
-    public boolean inConstructor() {
-        return locations.contains(CONSTRUCTOR) && !locations.contains(EXCLUDED);
-    }
-
-    /**
-     * Return true if this <code>SimpleTaglet</code>
-     * is used in field documentation.
-     * @return true if this <code>SimpleTaglet</code>
-     * is used in field documentation and false
-     * otherwise.
-     */
-    public boolean inField() {
-        return locations.contains(FIELD) && !locations.contains(EXCLUDED);
-    }
-
-    /**
-     * Return true if this <code>SimpleTaglet</code>
-     * is used in method documentation.
-     * @return true if this <code>SimpleTaglet</code>
-     * is used in method documentation and false
-     * otherwise.
-     */
-    public boolean inMethod() {
-        return locations.contains(METHOD) && !locations.contains(EXCLUDED);
-    }
-
-    /**
-     * Return true if this <code>SimpleTaglet</code>
-     * is used in overview documentation.
-     * @return true if this <code>SimpleTaglet</code>
-     * is used in overview documentation and false
-     * otherwise.
-     */
-    public boolean inOverview() {
-        return locations.contains(OVERVIEW) && !locations.contains(EXCLUDED);
-    }
-
-    /**
-     * Return true if this <code>SimpleTaglet</code>
-     * is used in module documentation.
-     * @return true if this <code>SimpleTaglet</code>
-     * is used in module documentation and false
-     * otherwise.
-     */
-    public boolean inModule() {
-        return locations.contains(MODULE) && !locations.contains(EXCLUDED);
-    }
-
-    /**
-     * Return true if this <code>SimpleTaglet</code>
-     * is used in package documentation.
-     * @return true if this <code>SimpleTaglet</code>
-     * is used in package documentation and false
-     * otherwise.
-     */
-    public boolean inPackage() {
-        return locations.contains(PACKAGE) && !locations.contains(EXCLUDED);
-    }
-
-    /**
-     * Return true if this <code>SimpleTaglet</code>
-     * is used in type documentation (classes or interfaces).
-     * @return true if this <code>SimpleTaglet</code>
-     * is used in type documentation and false
-     * otherwise.
-     */
-    public boolean inType() {
-        return locations.contains(TYPE) && !locations.contains(EXCLUDED);
-    }
-
-    /**
-     * Return true if this <code>Taglet</code>
-     * is an inline tag.
-     * @return true if this <code>Taglet</code>
-     * is an inline tag and false otherwise.
-     */
-    public boolean isInlineTag() {
-        return false;
+    private static boolean isEnabled(String locations) {
+        return locations.matches("[^Xx]*");
     }
 
     @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        List<? extends DocTree> tags = input.utils.getBlockTags(input.element, tagName);
+        List<? extends DocTree> tags = input.utils.getBlockTags(input.element, name);
         if (!tags.isEmpty()) {
             output.holder = input.element;
             output.holderTag = tags.get(0);
@@ -238,16 +156,12 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
         return header == null || tag == null ? null : writer.simpleTagOutput(element, tag, header);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         List<? extends DocTree> tags = utils.getBlockTags(holder, getName());

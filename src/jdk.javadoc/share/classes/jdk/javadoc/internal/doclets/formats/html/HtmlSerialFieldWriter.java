@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     public void addMemberTags(VariableElement field, Content contentTree) {
         Content tagContent = new ContentBuilder();
         TagletWriter.genTagOutput(configuration.tagletManager, field,
-                configuration.tagletManager.getCustomTaglets(field),
+                configuration.tagletManager.getBlockTaglets(field),
                 writer.getTagletWriterInstance(false), tagContent);
         Content dlTags = new HtmlTree(HtmlTag.DL);
         dlTags.addContent(tagContent);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SummaryTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.SUMMARY;
 
 /**
  * A taglet that represents the @summary tag.
@@ -42,15 +43,13 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  *  deletion without notice.</b>
  */
 
-public class SummaryTaglet extends BaseInlineTaglet {
+public class SummaryTaglet extends BaseTaglet {
 
     public SummaryTaglet() {
-        name = SUMMARY.tagName;
+        super(SUMMARY.tagName, true, EnumSet.allOf(Site.class));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element holder, DocTree tag, TagletWriter writer) {
         return writer.commentTagsToOutput(holder, ((SummaryTree)tag).getSummary());
     }

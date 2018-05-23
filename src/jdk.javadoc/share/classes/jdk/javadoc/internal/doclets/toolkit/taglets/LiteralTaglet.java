@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.LITERAL;
 /**
  * An inline Taglet used to denote literal text.
  * For example, the text:
@@ -46,17 +47,13 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * @author Scott Seligman
  */
 
-public class LiteralTaglet extends BaseInlineTaglet {
+public class LiteralTaglet extends BaseTaglet {
 
-    private static final String NAME = LITERAL.tagName;
-
-    public String getName() {
-        return NAME;
+    LiteralTaglet() {
+        super(LITERAL.tagName, true, EnumSet.allOf(Site.class));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element e, DocTree tag, TagletWriter writer) {
         return writer.literalTagOutput(e, tag);
     }
