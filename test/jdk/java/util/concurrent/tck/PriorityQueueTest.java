@@ -55,11 +55,22 @@ public class PriorityQueueTest extends JSR166TestCase {
             public boolean isConcurrent() { return false; }
             public boolean permitsNulls() { return false; }
         }
-        return newTestSuite(PriorityQueueTest.class,
-                            CollectionTest.testSuite(new Implementation()));
+        class ComparatorImplementation implements CollectionImplementation {
+            public Class<?> klazz() { return PriorityQueue.class; }
+            public Collection emptyCollection() {
+                return new PriorityQueue(new MyReverseComparator());
+            }
+            public Object makeElement(int i) { return i; }
+            public boolean isConcurrent() { return false; }
+            public boolean permitsNulls() { return false; }
+        }
+        return newTestSuite(
+            PriorityQueueTest.class,
+            CollectionTest.testSuite(new Implementation()),
+            CollectionTest.testSuite(new ComparatorImplementation()));
     }
 
-    static class MyReverseComparator implements Comparator {
+    static class MyReverseComparator implements Comparator, java.io.Serializable {
         public int compare(Object x, Object y) {
             return ((Comparable)y).compareTo(x);
         }

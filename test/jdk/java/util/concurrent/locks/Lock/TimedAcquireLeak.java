@@ -31,7 +31,6 @@
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -41,6 +40,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -125,16 +125,22 @@ public class TimedAcquireLeak {
 
     /** No guarantees, but effective in practice. */
     private static void forceFullGc() {
-        CountDownLatch finalizeDone = new CountDownLatch(1);
-        WeakReference<?> ref = new WeakReference<Object>(new Object() {
-            protected void finalize() { finalizeDone.countDown(); }});
+        long timeoutMillis = 1000L;
+        CountDownLatch finalized = new CountDownLatch(1);
+        ReferenceQueue<Object> queue = new ReferenceQueue<>();
+        WeakReference<Object> ref = new WeakReference<>(
+            new Object() { protected void finalize() { finalized.countDown(); }},
+            queue);
         try {
-            for (int i = 0; i < 10; i++) {
+            for (int tries = 3; tries--> 0; ) {
                 System.gc();
-                if (finalizeDone.await(1L, SECONDS) && ref.get() == null) {
+                if (finalized.await(timeoutMillis, MILLISECONDS)
+                    && queue.remove(timeoutMillis) != null
+                    && ref.get() == null) {
                     System.runFinalization(); // try to pick up stragglers
                     return;
                 }
+                timeoutMillis *= 4;
             }
         } catch (InterruptedException unexpected) {
             throw new AssertionError("unexpected InterruptedException");

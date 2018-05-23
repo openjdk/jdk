@@ -47,6 +47,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadLocalRandom;
 
 import junit.framework.Test;
 
@@ -60,7 +61,9 @@ public class PriorityBlockingQueueTest extends JSR166TestCase {
 
     public static class InitialCapacity extends BlockingQueueTest {
         protected BlockingQueue emptyCollection() {
-            return new PriorityBlockingQueue(SIZE);
+            ThreadLocalRandom rnd = ThreadLocalRandom.current();
+            int initialCapacity = rnd.nextInt(1, SIZE);
+            return new PriorityBlockingQueue(initialCapacity);
         }
     }
 
@@ -71,19 +74,35 @@ public class PriorityBlockingQueueTest extends JSR166TestCase {
     public static Test suite() {
         class Implementation implements CollectionImplementation {
             public Class<?> klazz() { return PriorityBlockingQueue.class; }
-            public Collection emptyCollection() { return new PriorityBlockingQueue(); }
+            public Collection emptyCollection() {
+                return new PriorityBlockingQueue();
+            }
             public Object makeElement(int i) { return i; }
             public boolean isConcurrent() { return true; }
             public boolean permitsNulls() { return false; }
         }
-        return newTestSuite(PriorityBlockingQueueTest.class,
-                            new Generic().testSuite(),
-                            new InitialCapacity().testSuite(),
-                            CollectionTest.testSuite(new Implementation()));
+        class ComparatorImplementation implements CollectionImplementation {
+            public Class<?> klazz() { return PriorityBlockingQueue.class; }
+            public Collection emptyCollection() {
+                ThreadLocalRandom rnd = ThreadLocalRandom.current();
+                int initialCapacity = rnd.nextInt(1, 10);
+                return new PriorityBlockingQueue(
+                    initialCapacity, new MyReverseComparator());
+            }
+            public Object makeElement(int i) { return i; }
+            public boolean isConcurrent() { return true; }
+            public boolean permitsNulls() { return false; }
+        }
+        return newTestSuite(
+            PriorityBlockingQueueTest.class,
+            new Generic().testSuite(),
+            new InitialCapacity().testSuite(),
+            CollectionTest.testSuite(new Implementation()),
+            CollectionTest.testSuite(new ComparatorImplementation()));
     }
 
     /** Sample Comparator */
-    static class MyReverseComparator implements Comparator {
+    static class MyReverseComparator implements Comparator, java.io.Serializable {
         public int compare(Object x, Object y) {
             return ((Comparable)y).compareTo(x);
         }
