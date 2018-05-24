@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@ public enum JdkRelease {
     JDK7(7, "1.7"),
     JDK8(8, "1.8"),
     JDK9(9, "9"),
-    JDK10(10, "10");
+    JDK10(10, "10"),
+    JDK11(11, "11");
 
     public final int sequence;
     public final String release;
@@ -51,6 +52,8 @@ public enum JdkRelease {
             return JDK9;
         } else if (jdkVersion.startsWith(JDK10.release)) {
             return JDK10;
+        } else if (jdkVersion.startsWith(JDK11.release)) {
+            return JDK11;
         }
 
         return null;
