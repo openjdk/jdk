@@ -485,9 +485,7 @@ public class LambdaToMethod extends TreeTranslator {
 
         //first determine the method symbol to be used to generate the sam instance
         //this is either the method reference symbol, or the bridged reference symbol
-        Symbol refSym = localContext.isSignaturePolymorphic()
-                ? localContext.sigPolySym
-                : tree.sym;
+        Symbol refSym = tree.sym;
 
         //the qualifying expression is treated as a special captured arg
         JCExpression init;
@@ -2309,17 +2307,10 @@ public class LambdaToMethod extends TreeTranslator {
         final class ReferenceTranslationContext extends TranslationContext<JCMemberReference> {
 
             final boolean isSuper;
-            final Symbol sigPolySym;
 
             ReferenceTranslationContext(JCMemberReference tree) {
                 super(tree);
                 this.isSuper = tree.hasKind(ReferenceKind.SUPER);
-                this.sigPolySym = isSignaturePolymorphic()
-                        ? makePrivateSyntheticMethod(tree.sym.flags(),
-                                              tree.sym.name,
-                                              bridgedRefSig(),
-                                              tree.sym.enclClass())
-                        : null;
             }
 
             /**
@@ -2362,15 +2353,6 @@ public class LambdaToMethod extends TreeTranslator {
                 return ((tree.sym.flags() & PROTECTED) != 0 &&
                         tree.sym.packge() != owner.packge() &&
                         !owner.enclClass().isSubClass(tree.sym.owner, types));
-            }
-
-            /**
-             * Signature polymorphic methods need special handling.
-             * e.g. MethodHandle.invoke() MethodHandle.invokeExact()
-             */
-            final boolean isSignaturePolymorphic() {
-                return  tree.sym.kind == MTH &&
-                        types.isSignaturePolymorphic((MethodSymbol)tree.sym);
             }
 
             /**
