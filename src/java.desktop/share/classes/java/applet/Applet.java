@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.applet;
 
-import java.awt.*;
-import java.awt.image.ColorModel;
+import java.awt.AWTPermission;
+import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
+import java.awt.Image;
+import java.awt.Panel;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.URL;
 import java.net.MalformedURLException;
-import java.util.Hashtable;
+import java.net.URL;
 import java.util.Locale;
-import javax.accessibility.*;
+
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
 
 /**
  * An applet is a small program that is intended not to be run on
@@ -47,11 +55,8 @@ import javax.accessibility.*;
  * @author      Chris Warth
  * @since       1.0
  *
- * @deprecated  The Applet API is deprecated. See the
- * <a href="package-summary.html"> java.applet package documentation</a>
- * for further information.
+ * @deprecated The Applet API is deprecated, no replacement.
  */
-
 @Deprecated(since = "9")
 public class Applet extends Panel {
 
