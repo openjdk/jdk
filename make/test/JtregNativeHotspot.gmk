@@ -74,6 +74,11 @@ NSK_SHARE_JNI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
     -I$(VM_TESTBASE_DIR)/nsk/share/jni
 
+RUNTIME_DEFMETH_INCLUDES := \
+    -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/jni \
+    -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/native \
+    -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/jvmti
+
 NSK_SHARE_LOCKS_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
     -I$(VM_TESTBASE_DIR)/nsk/share/locks
@@ -123,6 +128,8 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libDeadlock := $(NSK_MONITORING_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libRecursiveMonitoringThread := $(NSK_MONITORING_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libLockingThreads := $(NSK_MONITORING_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libStackTraceController := $(NSK_MONITORING_INCLUDES)
+
+BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libredefineClasses := $(RUNTIME_DEFMETH_INCLUDES)
 
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libforceEarlyReturn005a := $(NSK_JDI_INCLUDES)
 
@@ -183,6 +190,7 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libstepBreakPopReturn := -lpthread
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libIndyRedefineClass := -lpthread
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libredefineClasses := -lpthread
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeinvoke := -ljvm -lpthread
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exestack-gap := -ljvm -lpthread
     BUILD_TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
