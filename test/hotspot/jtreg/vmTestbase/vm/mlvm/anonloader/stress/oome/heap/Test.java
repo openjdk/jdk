@@ -37,7 +37,7 @@
  * @build vm.mlvm.anonloader.stress.oome.heap.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm -XX:-UseGCOverheadLimit vm.mlvm.anonloader.stress.oome.heap.Test
+ * @run main/othervm -XX:-UseGCOverheadLimit -Xmx128m vm.mlvm.anonloader.stress.oome.heap.Test
  */
 
 package vm.mlvm.anonloader.stress.oome.heap;
