@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8189131 8198240
+ * @bug 8189131 8198240 8191844
  * @requires java.runtime.name ~= "OpenJDK.*"
  * @summary Check root CA entries in cacerts file
  */
@@ -41,7 +41,7 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 80;
+    private static final int COUNT = 79;
 
     // map of cert alias to SHA-256 fingerprint
     private static final Map<String, String> FINGERPRINT_MAP
@@ -193,8 +193,6 @@ public class VerifyCACerts {
                     "E7:5E:72:ED:9F:56:0E:EC:6E:B4:80:00:73:A4:3F:C3:AD:19:19:5A:39:22:82:01:78:95:97:4A:99:02:6B:6C");
             put("secomscrootca2 [jdk]",
                     "51:3B:2C:EC:B8:10:D4:CD:E5:DD:85:39:1A:DF:C6:C2:DD:60:D8:7B:B7:36:D2:B5:21:48:4A:A4:7A:0E:BE:F6");
-            put("secomevrootca1 [jdk]",
-                    "A2:2D:BA:68:1E:97:37:6E:2D:39:7D:72:8A:AE:3A:9B:62:96:B9:FD:BA:60:BC:2E:11:F6:47:F2:C6:75:FB:37");
             put("swisssigngoldg2ca [jdk]",
                     "62:DD:0B:E9:B9:F5:0A:16:3E:A0:F8:E7:5C:05:3B:1E:CA:57:EA:55:C8:68:8F:64:7C:68:81:F2:C8:35:7B:95");
             put("swisssignplatinumg2ca [jdk]",
