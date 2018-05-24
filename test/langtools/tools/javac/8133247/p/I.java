@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,12 +23,8 @@
  * questions.
  */
 
-// key: compiler.err.bad.target.sigpoly.call
-// options: -Xlint:-options -source 6 -target 6
+package p;
 
-class MethodInvokedWithWrongNumberOfArgs {
-    static java.lang.invoke.MethodHandle getNamedMember;
-    public static Object getMember(String name, Object rec) throws Throwable {
-        return getNamedMember.invoke(rec, name);
-    }
+public interface I<T> {
+    void f(T t);
 }

@@ -90,6 +90,7 @@ public class Check {
     private final JCDiagnostic.Factory diags;
     private final JavaFileManager fileManager;
     private final Source source;
+    private final Target target;
     private final Profile profile;
     private final boolean warnOnAnyAccessToMembers;
 
@@ -130,6 +131,7 @@ public class Check {
         fileManager = context.get(JavaFileManager.class);
 
         source = Source.instance(context);
+        target = Target.instance(context);
         warnOnAnyAccessToMembers = options.isSet("warnOnAccessToMembers");
 
         Target target = Target.instance(context);
@@ -1001,9 +1003,10 @@ public class Check {
                  !isTrustMeAllowedOnMethod(sym))) {
                 warnUnchecked(env.tree.pos(), Warnings.UncheckedGenericArrayCreation(argtype));
             }
-            if ((sym.baseSymbol().flags() & SIGNATURE_POLYMORPHIC) == 0) {
-                TreeInfo.setVarargsElement(env.tree, types.elemtype(argtype));
-            }
+            TreeInfo.setVarargsElement(env.tree, types.elemtype(argtype));
+         }
+         if ((sym.flags() & SIGNATURE_POLYMORPHIC) != 0 && !target.hasMethodHandles()) {
+            log.error(env.tree, Errors.BadTargetSigpolyCall(target, Target.JDK1_7));
          }
          return owntype;
     }

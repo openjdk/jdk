@@ -3004,7 +3004,7 @@ public class Attr extends JCTree.Visitor {
             List<Type> saved_undet = resultInfo.checkContext.inferenceContext().save();
             try {
                 refResult = rs.resolveMemberReference(localEnv, that, that.expr.type,
-                        that.name, argtypes, typeargtypes, referenceCheck,
+                        that.name, argtypes, typeargtypes, targetInfo.descriptor, referenceCheck,
                         resultInfo.checkContext.inferenceContext(), rs.basicReferenceChooser);
             } finally {
                 resultInfo.checkContext.inferenceContext().rollback(saved_undet);
@@ -3060,7 +3060,7 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
-            that.sym = refSym.baseSymbol();
+            that.sym = refSym.isConstructor() ? refSym.baseSymbol() : refSym;
             that.kind = lookupHelper.referenceKind(that.sym);
             that.ownerAccessible = rs.isAccessible(localEnv, that.sym.enclClass());
 
@@ -3798,31 +3798,8 @@ public class Attr extends JCTree.Visitor {
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
             return (resultInfo.pt.hasTag(FORALL) || resultInfo.pt.hasTag(METHOD)) ?
-                    checkMethodId(tree, site, sym, env, resultInfo) :
+                    checkMethodIdInternal(tree, site, sym, env, resultInfo) :
                     checkIdInternal(tree, site, sym, resultInfo.pt, env, resultInfo);
-        }
-
-        Type checkMethodId(JCTree tree,
-                     Type site,
-                     Symbol sym,
-                     Env<AttrContext> env,
-                     ResultInfo resultInfo) {
-            boolean isPolymorhicSignature =
-                (sym.baseSymbol().flags() & SIGNATURE_POLYMORPHIC) != 0;
-            return isPolymorhicSignature ?
-                    checkSigPolyMethodId(tree, site, sym, env, resultInfo) :
-                    checkMethodIdInternal(tree, site, sym, env, resultInfo);
-        }
-
-        Type checkSigPolyMethodId(JCTree tree,
-                     Type site,
-                     Symbol sym,
-                     Env<AttrContext> env,
-                     ResultInfo resultInfo) {
-            //recover original symbol for signature polymorphic methods
-            checkMethodIdInternal(tree, site, sym.baseSymbol(), env, resultInfo);
-            env.info.pendingResolutionPhase = Resolve.MethodResolutionPhase.BASIC;
-            return sym.type;
         }
 
         Type checkMethodIdInternal(JCTree tree,
