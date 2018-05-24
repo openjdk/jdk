@@ -38,6 +38,7 @@ import jdk.test.lib.Utils;
  * @test TestStartStopRecording
  *
  * @key jfr
+ * @library /test/lib
  * @run main/othervm jdk.jfr.api.recorder.TestStartStopRecording
  */
 public class TestStartStopRecording {
