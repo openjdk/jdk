@@ -588,6 +588,12 @@ vmTestbase_nsk_monitoring_quick = \
   vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/noAllocationTest_proxy_default/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/GetThreadAllocatedBytes/noAllocationTest_proxy_custom/TestDescription.java
 
+
+# Tests for default method implementation
+vmTestbase_vm_defmeth = \
+  vmTestbase/vm/runtime/defmeth
+
+
 # JDI tests
 vmTestbase_nsk_jdi = \
   vmTestbase/nsk/jdi
@@ -1283,4 +1289,3 @@ vmTestbase_vm_heapdump_quick = \
 # JDB tests
 vmTestbase_nsk_jdb = \
   vmTestbase/nsk/jdb
-
