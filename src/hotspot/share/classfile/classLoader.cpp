@@ -711,8 +711,11 @@ void ClassLoader::add_to_module_path_entries(const char* path,
 void ClassLoader::update_module_path_entry_list(const char *path, TRAPS) {
   assert(DumpSharedSpaces, "dump time only");
   struct stat st;
-  int ret = os::stat(path, &st);
-  assert(ret == 0, "module path must exist");
+  if (os::stat(path, &st) != 0) {
+    tty->print_cr("os::stat error %d (%s). CDS dump aborted (path was \"%s\").",
+      errno, os::errno_name(errno), path);
+    vm_exit_during_initialization();
+  }
   // File or directory found
   ClassPathEntry* new_entry = NULL;
   new_entry = create_class_path_entry(path, &st, true /* throw_exception */,
