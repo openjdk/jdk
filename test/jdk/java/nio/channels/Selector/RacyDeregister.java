@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,23 @@ import java.nio.channels.SocketChannel;
 
 /*
  * @test
- * @bug 6429204
+ * @bug 6429204 8203766
  * @summary SelectionKey.interestOps does not update interest set on Windows.
  * @author Frank Ding
+ * @run main/timeout=1200 RacyDeregister
  */
 public class RacyDeregister {
 
-    // FIXME: numOuterLoopIterations should be reverted to the hard-coded value
-    // 15 when JDK-8161083 is resolved as either a bug or a non-issue.
-    static final int numOuterLoopIterations =
+    // FIXME: NUM_OUTER_LOOP_ITERATIONS should be reverted to the hard-coded
+    // value 15 when JDK-8161083 is resolved as either a bug or a non-issue.
+    static final int NUM_OUTER_LOOP_ITERATIONS =
         System.getProperty("os.name").startsWith("Windows") ? 150 : 15;
+
+    // 90% of 1200 second timeout as milliseconds
+    static final int TIMEOUT_THRESHOLD_MILLIS = 1200*900;
+
+    // Time at start of main().
+    static long t0;
 
     static boolean notified;
     static final Object selectorLock = new Object();
@@ -56,6 +63,8 @@ public class RacyDeregister {
     static volatile Boolean succTermination = null;
 
     public static void main(String[] args) throws Exception {
+        t0 = System.currentTimeMillis();
+
         InetAddress addr = InetAddress.getByName(null);
         ServerSocketChannel sc = ServerSocketChannel.open();
         sc.socket().bind(new InetSocketAddress(addr, 0));
@@ -76,13 +85,12 @@ public class RacyDeregister {
         final SelectionKey[] key = new SelectionKey[]{
             accepted.register(sel, SelectionKey.OP_READ)};
 
-
         // thread that will be changing key[0].interestOps to OP_READ | OP_WRITE
         new Thread() {
 
             public void run() {
                 try {
-                    for (int k = 0; k < numOuterLoopIterations; k++) {
+                    for (int k = 0; k < NUM_OUTER_LOOP_ITERATIONS; k++) {
                         for (int i = 0; i < 10000; i++) {
                             synchronized (notifyLock) {
                                 synchronized (selectorLock) {
@@ -104,7 +112,7 @@ public class RacyDeregister {
                                             if (notified) {
                                                 long t =
                                                     System.currentTimeMillis();
-                                                System.out.printf
+                                                System.err.printf
                                                     ("Notified after %d ms%n",
                                                      t - beginTime);
                                                 break;
@@ -117,6 +125,15 @@ public class RacyDeregister {
                                     }
                                 }
                             }
+                        }
+                        long t = System.currentTimeMillis();
+                        if (t - t0 > TIMEOUT_THRESHOLD_MILLIS) {
+                            System.err.format
+                                ("Timeout after %d outer loop iterations%n", k);
+                            succTermination = false;
+                            // wake up main thread doing select()
+                            sel.wakeup();
+                            return;
                         }
                     }
                     succTermination = true;
@@ -140,7 +157,7 @@ public class RacyDeregister {
                 sc.close();
                 break;
             } else if (Boolean.FALSE.equals(succTermination)) {
-                System.out.println("Failed to pass the test");
+                System.err.println("Failed to pass the test");
                 sel.close();
                 sc.close();
                 throw new RuntimeException("Failed to pass the test");
