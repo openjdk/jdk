@@ -29,7 +29,7 @@
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/semaphore.hpp"
+#include "runtime/semaphore.inline.hpp"
 #include "runtime/task.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/thread.hpp"
@@ -299,8 +299,7 @@ void HandshakeState::process_self_inner(JavaThread* thread) {
   CautiouslyPreserveExceptionMark pem(thread);
   ThreadInVMForHandshake tivm(thread);
   if (!_semaphore.trywait()) {
-    ThreadBlockInVM tbivm(thread);
-    _semaphore.wait();
+    _semaphore.wait_with_safepoint_check(thread);
   }
   if (has_operation()) {
     HandshakeOperation* op = _operation;

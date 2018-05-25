@@ -443,37 +443,29 @@ void os::init_before_ergo() {
   VM_Version::init_before_ergo();
 }
 
-void os::signal_init(TRAPS) {
+void os::initialize_jdk_signal_support(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
-    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    instanceHandle thread_oop = ik->allocate_instance_handle(CHECK);
-
     const char thread_name[] = "Signal Dispatcher";
     Handle string = java_lang_String::create_from_str(thread_name, CHECK);
 
     // Initialize thread_oop to put it into the system threadGroup
     Handle thread_group (THREAD, Universe::system_thread_group());
-    JavaValue result(T_VOID);
-    JavaCalls::call_special(&result, thread_oop,
-                           ik,
-                           vmSymbols::object_initializer_name(),
+    Handle thread_oop = JavaCalls::construct_new_instance(SystemDictionary::Thread_klass(),
                            vmSymbols::threadgroup_string_void_signature(),
                            thread_group,
                            string,
                            CHECK);
 
     Klass* group = SystemDictionary::ThreadGroup_klass();
+    JavaValue result(T_VOID);
     JavaCalls::call_special(&result,
                             thread_group,
                             group,
                             vmSymbols::add_method_name(),
                             vmSymbols::thread_void_signature(),
-                            thread_oop,         // ARG 1
+                            thread_oop,
                             CHECK);
-
-    os::signal_init_pd();
 
     { MutexLocker mu(Threads_lock);
       JavaThread* signal_thread = new JavaThread(&signal_thread_entry);

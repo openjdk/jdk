@@ -3665,7 +3665,7 @@ const bool Matcher::strict_fp_requires_explicit_rounding = false;
 
 // Are floats converted to double when stored to stack during
 // deoptimization?
-bool Matcher::float_in_double() { return true; }
+bool Matcher::float_in_double() { return false; }
 
 // Do ints take an entire long register or just half?
 // The relevant question is how the int is callee-saved:

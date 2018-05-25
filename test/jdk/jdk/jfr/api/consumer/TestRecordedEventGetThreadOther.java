@@ -25,7 +25,6 @@
 
 package jdk.jfr.api.consumer;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -35,6 +34,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -99,7 +99,7 @@ public class TestRecordedEventGetThreadOther {
         TestEvent t = new TestEvent();
         t.commit();
         r.stop();
-        Path path = Files.createTempFile("recording", ".jfr");
+        Path path = Utils.createTempFile("event-thread", ".jfr");
         System.out.println("Created path: " + path);
         r.dump(path);
         r.close();

@@ -28,8 +28,8 @@
  *
  * @moduleGraph
  * @since 9
- * @see <a href="../specs/jdwp/jdwp-spec.html">JDWP Specification</a>
- * @see <a href="../specs/jdwp/jdwp-transport.html">JDWP Transport Specification</a>
+ * @see <a href="{@docRoot}/../specs/jdwp/jdwp-spec.html">JDWP Specification</a>
+ * @see <a href="{@docRoot}/../specs/jdwp/jdwp-transport.html">JDWP Transport Specification</a>
  */
 module jdk.jdwp.agent {
 }

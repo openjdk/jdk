@@ -54,6 +54,7 @@ class CardTableBarrierSet: public ModRefBarrierSet {
 
   CardTableBarrierSet(BarrierSetAssembler* barrier_set_assembler,
                       BarrierSetC1* barrier_set_c1,
+                      BarrierSetC2* barrier_set_c2,
                       CardTable* card_table,
                       const BarrierSet::FakeRtti& fake_rtti);
 
@@ -88,23 +89,6 @@ class CardTableBarrierSet: public ModRefBarrierSet {
   // this informs it to flush such a deferred store barrier to the
   // remembered set.
   void flush_deferred_card_mark_barrier(JavaThread* thread);
-
-  // Can a compiler initialize a new object without store barriers?
-  // This permission only extends from the creation of a new object
-  // via a TLAB up to the first subsequent safepoint. If such permission
-  // is granted for this heap type, the compiler promises to call
-  // defer_store_barrier() below on any slow path allocation of
-  // a new object for which such initializing store barriers will
-  // have been elided. G1, like CMS, allows this, but should be
-  // ready to provide a compensating write barrier as necessary
-  // if that storage came out of a non-young region. The efficiency
-  // of this implementation depends crucially on being able to
-  // answer very efficiently in constant time whether a piece of
-  // storage in the heap comes from a young region or not.
-  // See ReduceInitialCardMarks.
-  virtual bool can_elide_tlab_store_barriers() const {
-    return true;
-  }
 
   // If a compiler is eliding store barriers for TLAB-allocated objects,
   // we will be informed of a slow-path allocation by a call

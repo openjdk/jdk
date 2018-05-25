@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type.IntersectionClassType;
+import com.sun.tools.javac.code.Types.FunctionDescriptorLookupError;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -90,7 +92,6 @@ public class TransTypes extends TreeTranslator {
         log = Log.instance(context);
         syms = Symtab.instance(context);
         enter = Enter.instance(context);
-        bridgeSpans = new HashMap<>();
         types = Types.instance(context);
         make = TreeMaker.instance(context);
         resolve = Resolve.instance(context);
@@ -100,13 +101,6 @@ public class TransTypes extends TreeTranslator {
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
     }
-
-    /** A hashtable mapping bridge methods to the pair of methods they bridge.
-     *  The bridge overrides the first of the pair after type erasure and deflects
-     *  to the second of the pair (which differs in type erasure from the one
-     *  it overrides thereby necessitating the bridge)
-     */
-    Map<MethodSymbol, Pair<MethodSymbol, MethodSymbol>> bridgeSpans;
 
     /** Construct an attributed tree for a cast of expression to target type,
      *  unless it already has precisely that type.
@@ -241,17 +235,12 @@ public class TransTypes extends TreeTranslator {
      *  @param meth    The method for which a bridge needs to be added
      *  @param impl    That method's implementation (possibly the method itself)
      *  @param origin  The class to which the bridge will be added
-     *  @param hypothetical
-     *                 True if the bridge method is not strictly necessary in the
-     *                 binary, but is represented in the symbol table to detect
-     *                 erasure clashes.
      *  @param bridges The list buffer to which the bridge will be added
      */
     void addBridge(DiagnosticPosition pos,
                    MethodSymbol meth,
                    MethodSymbol impl,
                    ClassSymbol origin,
-                   boolean hypothetical,
                    ListBuffer<JCTree> bridges) {
         make.at(pos);
         Type implTypeErasure = erasure(impl.type);
@@ -260,7 +249,6 @@ public class TransTypes extends TreeTranslator {
         Type bridgeType = meth.erasure(types);
         long flags = impl.flags() & AccessFlags | SYNTHETIC | BRIDGE |
                 (origin.isInterface() ? DEFAULT : 0);
-        if (hypothetical) flags |= HYPOTHETICAL;
         MethodSymbol bridge = new MethodSymbol(flags,
                                                meth.name,
                                                bridgeType,
@@ -271,38 +259,35 @@ public class TransTypes extends TreeTranslator {
         bridge.params = createBridgeParams(impl, bridge, bridgeType);
         bridge.setAttributes(impl);
 
-        if (!hypothetical) {
-            JCMethodDecl md = make.MethodDef(bridge, null);
+        JCMethodDecl md = make.MethodDef(bridge, null);
 
-            // The bridge calls this.impl(..), if we have an implementation
-            // in the current class, super.impl(...) otherwise.
-            JCExpression receiver = (impl.owner == origin)
-                ? make.This(origin.erasure(types))
-                : make.Super(types.supertype(origin.type).tsym.erasure(types), origin);
+        // The bridge calls this.impl(..), if we have an implementation
+        // in the current class, super.impl(...) otherwise.
+        JCExpression receiver = (impl.owner == origin)
+            ? make.This(origin.erasure(types))
+            : make.Super(types.supertype(origin.type).tsym.erasure(types), origin);
 
-            // The type returned from the original method.
-            Type calltype = implTypeErasure.getReturnType();
+        // The type returned from the original method.
+        Type calltype = implTypeErasure.getReturnType();
 
-            // Construct a call of  this.impl(params), or super.impl(params),
-            // casting params and possibly results as needed.
-            JCExpression call =
-                make.Apply(
-                           null,
-                           make.Select(receiver, impl).setType(calltype),
-                           translateArgs(make.Idents(md.params), implTypeErasure.getParameterTypes(), null))
-                .setType(calltype);
-            JCStatement stat = (implTypeErasure.getReturnType().hasTag(VOID))
-                ? make.Exec(call)
-                : make.Return(coerce(call, bridgeType.getReturnType()));
-            md.body = make.Block(0, List.of(stat));
+        // Construct a call of  this.impl(params), or super.impl(params),
+        // casting params and possibly results as needed.
+        JCExpression call =
+            make.Apply(
+                       null,
+                       make.Select(receiver, impl).setType(calltype),
+                       translateArgs(make.Idents(md.params), implTypeErasure.getParameterTypes(), null))
+            .setType(calltype);
+        JCStatement stat = (implTypeErasure.getReturnType().hasTag(VOID))
+            ? make.Exec(call)
+            : make.Return(coerce(call, bridgeType.getReturnType()));
+        md.body = make.Block(0, List.of(stat));
 
-            // Add bridge to `bridges' buffer
-            bridges.append(md);
-        }
+        // Add bridge to `bridges' buffer
+        bridges.append(md);
 
         // Add bridge to scope of enclosing class and keep track of the bridge span.
         origin.members().enter(bridge);
-        bridgeSpans.put(bridge, new Pair<>(meth, impl));
     }
 
     private List<VarSymbol> createBridgeParams(MethodSymbol impl, MethodSymbol bridge,
@@ -348,11 +333,10 @@ public class TransTypes extends TreeTranslator {
                            ClassSymbol origin,
                            ListBuffer<JCTree> bridges) {
         if (sym.kind == MTH &&
-            sym.name != names.init &&
-            (sym.flags() & (PRIVATE | STATIC)) == 0 &&
-            (sym.flags() & SYNTHETIC) != SYNTHETIC &&
-            sym.isMemberOf(origin, types))
-        {
+                sym.name != names.init &&
+                (sym.flags() & (PRIVATE | STATIC)) == 0 &&
+                (sym.flags() & SYNTHETIC) != SYNTHETIC &&
+                sym.isMemberOf(origin, types)) {
             MethodSymbol meth = (MethodSymbol)sym;
             MethodSymbol bridge = meth.binaryImplementation(origin, types);
             MethodSymbol impl = meth.implementation(origin, types, true);
@@ -360,8 +344,8 @@ public class TransTypes extends TreeTranslator {
                 bridge == meth ||
                 (impl != null && !bridge.owner.isSubClass(impl.owner, types))) {
                 // No bridge was added yet.
-                if (impl != null && isBridgeNeeded(meth, impl, origin.type)) {
-                    addBridge(pos, meth, impl, origin, bridge==impl, bridges);
+                if (impl != null && bridge != impl && isBridgeNeeded(meth, impl, origin.type)) {
+                    addBridge(pos, meth, impl, origin, bridges);
                 } else if (impl == meth
                            && impl.owner != origin
                            && (impl.flags() & FINAL) == 0
@@ -369,36 +353,7 @@ public class TransTypes extends TreeTranslator {
                            && (origin.flags() & PUBLIC) > (impl.owner.flags() & PUBLIC)) {
                     // this is to work around a horrible but permanent
                     // reflection design error.
-                    addBridge(pos, meth, impl, origin, false, bridges);
-                }
-            } else if ((bridge.flags() & SYNTHETIC) == SYNTHETIC) {
-                final Pair<MethodSymbol, MethodSymbol> bridgeSpan = bridgeSpans.get(bridge);
-                MethodSymbol other = bridgeSpan == null ? null : bridgeSpan.fst;
-                if (other != null && other != meth) {
-                    if (impl == null || !impl.overrides(other, origin, types, true)) {
-                        // Is bridge effectively also the bridge for `meth', if so no clash.
-                        MethodSymbol target = bridgeSpan == null ? null : bridgeSpan.snd;
-                        if (target == null || !target.overrides(meth, origin, types, true, false)) {
-                            // Bridge for other symbol pair was added
-                            log.error(pos, Errors.NameClashSameErasureNoOverride(
-                                    other.name, types.memberType(origin.type, other).asMethodType().getParameterTypes(),
-                                    other.location(origin.type, types),
-                                    meth.name, types.memberType(origin.type, meth).asMethodType().getParameterTypes(),
-                                    meth.location(origin.type, types)));
-                        }
-                    }
-                }
-            } else if (!bridge.overrides(meth, origin, types, true)) {
-                // Accidental binary override without source override.
-                // Don't diagnose the problem if it would already
-                // have been reported in the superclass
-                if (bridge.owner == origin ||
-                    types.asSuper(bridge.owner.type, meth.owner) == null) {
-                    log.error(pos, Errors.NameClashSameErasureNoOverride(
-                            bridge.name, types.memberType(origin.type, bridge).asMethodType().getParameterTypes(),
-                            bridge.location(origin.type, types),
-                            meth.name, types.memberType(origin.type, meth).asMethodType().getParameterTypes(),
-                            meth.location(origin.type, types)));
+                    addBridge(pos, meth, impl, origin, bridges);
                 }
             }
         }
@@ -537,16 +492,6 @@ public class TransTypes extends TreeTranslator {
         } finally {
             currentMethod = previousMethod;
         }
-
-        // Check that we do not introduce a name clash by erasing types.
-        for (Symbol sym : tree.sym.owner.members().getSymbolsByName(tree.name)) {
-            if (sym != tree.sym &&
-                types.isSameType(erasure(sym.type), tree.type)) {
-                log.error(tree.pos(),
-                          Errors.NameClashSameErasure(tree.sym, sym));
-                return;
-            }
-        }
     }
 
     public void visitVarDef(JCVariableDecl tree) {
@@ -593,7 +538,11 @@ public class TransTypes extends TreeTranslator {
             currentMethod = null;
             tree.params = translate(tree.params);
             tree.body = translate(tree.body, tree.body.type==null? null : erasure(tree.body.type));
-            tree.type = erasure(tree.type);
+            if (!tree.type.isIntersection()) {
+                tree.type = erasure(tree.type);
+            } else {
+                tree.type = types.erasure(types.findDescriptorSymbol(tree.type.tsym).owner.type);
+            }
             result = tree;
         }
         finally {
@@ -683,9 +632,8 @@ public class TransTypes extends TreeTranslator {
             tree.varargsElement = types.erasure(tree.varargsElement);
         else
             if (tree.args.length() != argtypes.length()) {
-                log.error(tree.pos(),
-                          Errors.MethodInvokedWithIncorrectNumberArguments(tree.args.length(),
-                                                                           argtypes.length()));
+                Assert.error(String.format("Incorrect number of arguments; expected %d, found %d",
+                        tree.args.length(), argtypes.length()));
             }
         tree.args = translateArgs(tree.args, argtypes, tree.varargsElement);
 
@@ -876,8 +824,11 @@ public class TransTypes extends TreeTranslator {
         } else {
             tree.expr = translate(tree.expr, receiverTarget);
         }
-
-        tree.type = erasure(tree.type);
+        if (!tree.type.isIntersection()) {
+            tree.type = erasure(tree.type);
+        } else {
+            tree.type = types.erasure(types.findDescriptorSymbol(tree.type.tsym).owner.type);
+        }
         if (tree.varargsElement != null)
             tree.varargsElement = erasure(tree.varargsElement);
         result = tree;

@@ -28,6 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/filemap.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
@@ -140,12 +141,80 @@ bool SharedPathsMiscInfo::check() {
   return true;
 }
 
+char* skip_first_path_entry(const char* path) {
+  size_t path_sep_len = strlen(os::path_separator());
+  char* p = strstr((char*)path, os::path_separator());
+  if (p != NULL) {
+    debug_only( {
+      size_t image_name_len = strlen(MODULES_IMAGE_NAME);
+      assert(strncmp(p - image_name_len, MODULES_IMAGE_NAME, image_name_len) == 0,
+             "first entry must be the modules image");
+    } );
+    p += path_sep_len;
+  } else {
+    debug_only( {
+      assert(ClassLoader::string_ends_with(path, MODULES_IMAGE_NAME),
+             "first entry must be the modules image");
+    } );
+  }
+  return p;
+}
+
 bool SharedPathsMiscInfo::check(jint type, const char* path) {
+  assert(UseSharedSpaces, "runtime only");
   switch (type) {
   case BOOT_PATH:
-    // In the future we should perform the check based on the content of the mapped archive.
-    if (os::file_name_strcmp(path, Arguments::get_sysclasspath()) != 0) {
-      return fail("[BOOT classpath mismatch, actual =", Arguments::get_sysclasspath());
+    {
+      //
+      // - Archive contains boot classes only - relaxed boot path check:
+      //   Extra path elements appended to the boot path at runtime are allowed.
+      //
+      // - Archive contains application or platform classes - strict boot path check:
+      //   Validate the entire runtime boot path, which must be compactible
+      //   with the dump time boot path. Appending boot path at runtime is not
+      //   allowed.
+      //
+
+      // The first entry in boot path is the modules_image (guaranteed by
+      // ClassLoader::setup_boot_search_path()). Skip the first entry. The
+      // path of the runtime modules_image may be different from the dump
+      // time path (e.g. the JDK image is copied to a different location
+      // after generating the shared archive), which is acceptable. For most
+      // common cases, the dump time boot path might contain modules_image only.
+      char* runtime_boot_path = Arguments::get_sysclasspath();
+      char* rp = skip_first_path_entry(runtime_boot_path);
+      char* dp = skip_first_path_entry(path);
+
+      bool relaxed_check = !FileMapInfo::current_info()->header()->has_platform_or_app_classes();
+      if (dp == NULL && rp == NULL) {
+        break;   // ok, both runtime and dump time boot paths have modules_images only
+      } else if (dp == NULL && rp != NULL && relaxed_check) {
+        break;   // ok, relaxed check, runtime has extra boot append path entries
+      } else if (dp != NULL && rp != NULL) {
+        size_t num;
+        size_t dp_len = strlen(dp);
+        size_t rp_len = strlen(rp);
+        if (rp_len >= dp_len) {
+          if (relaxed_check) {
+            // only check the leading entries in the runtime boot path, up to
+            // the length of the dump time boot path
+            num = dp_len;
+          } else {
+            // check the full runtime boot path, must match with dump time
+            num = rp_len;
+          }
+
+          if (os::file_name_strncmp(dp, rp, num) == 0) {
+            // make sure it is the end of an entry in the runtime boot path
+            if (rp[dp_len] == '\0' || rp[dp_len] == os::path_separator()[0]) {
+              break; // ok, runtime and dump time paths match
+            }
+          }
+        }
+      }
+
+      // The paths are different
+      return fail("[BOOT classpath mismatch, actual =", runtime_boot_path);
     }
     break;
   case NON_EXIST:
@@ -160,7 +229,6 @@ bool SharedPathsMiscInfo::check(jint type, const char* path) {
     break;
   case APP_PATH:
     {
-      // Prefix is OK: E.g., dump with -cp foo.jar, but run with -cp foo.jar:bar.jar
       size_t len = strlen(path);
       const char *appcp = Arguments::get_appclasspath();
       assert(appcp != NULL, "NULL app classpath");
@@ -168,16 +236,8 @@ bool SharedPathsMiscInfo::check(jint type, const char* path) {
       if (appcp_len < len) {
         return fail("Run time APP classpath is shorter than the one at dump time: ", appcp);
       }
-      ResourceMark rm;
-      char* tmp_path;
-      if (len == appcp_len) {
-        tmp_path = (char*)appcp;
-      } else {
-        tmp_path = NEW_RESOURCE_ARRAY(char, len + 1);
-        strncpy(tmp_path, appcp, len);
-        tmp_path[len] = 0;
-      }
-      if (os::file_name_strcmp(path, tmp_path) != 0) {
+      // Prefix is OK: E.g., dump with -cp foo.jar, but run with -cp foo.jar:bar.jar.
+      if (os::file_name_strncmp(path, appcp, len) != 0) {
         return fail("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
       }
       if (appcp[len] != '\0' && appcp[len] != os::path_separator()[0]) {

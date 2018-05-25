@@ -149,8 +149,6 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
                          CHECK);
 
   _java_platform_loader = (oop)result.get_jobject();
-
-  CDS_ONLY(SystemDictionaryShared::initialize(CHECK);)
 }
 
 ClassLoaderData* SystemDictionary::register_loader(Handle class_loader) {
@@ -2122,14 +2120,8 @@ void SystemDictionary::check_constraints(unsigned int d_hash,
   stringStream ss;
   bool throwException = false;
 
-  const char *linkage_error1 = NULL;
-  const char *linkage_error2 = NULL;
-  const char *linkage_error3 = "";
-  // Remember the loader of the similar class that is already loaded.
-  const char *existing_klass_loader_name = "";
-
   {
-    Symbol*  name  = k->name();
+    Symbol *name = k->name();
     ClassLoaderData *loader_data = class_loader_data(class_loader);
 
     MutexLocker mu(SystemDictionary_lock, THREAD);

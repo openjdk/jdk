@@ -354,7 +354,6 @@ class ZipEntry implements ZipConstants, Cloneable {
      * or ZIP file formatted stream.
      *
      * @return The last access time of the entry, null if not specified
-
      * @see #setLastAccessTime(FileTime)
      * @since 1.8
      */

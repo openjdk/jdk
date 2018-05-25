@@ -2024,7 +2024,7 @@ class StubGenerator: public StubCodeGenerator {
       STUB_ENTRY(arrayof_oop_disjoint_arraycopy) :
       STUB_ENTRY(oop_disjoint_arraycopy);
 
-    DecoratorSet decorators = 0;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
@@ -2063,7 +2063,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
     assert_positive_int(R5_ARG3);
 
-    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
@@ -2159,7 +2159,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_CHECKCAST;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
@@ -2198,7 +2198,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // ======== loop entry is here ========
     __ bind(load_element);
-    __ load_heap_oop(R10_oop, R8_offset, R3_from, &store_null);  // Load the oop.
+    __ load_heap_oop(R10_oop, R8_offset, R3_from, R12_tmp, noreg, false, AS_RAW, &store_null);
 
     __ load_klass(R11_klass, R10_oop); // Query the object klass.
 

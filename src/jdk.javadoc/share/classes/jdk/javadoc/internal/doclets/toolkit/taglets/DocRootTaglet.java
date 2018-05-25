@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.DOC_ROOT;
 
 /**
  * An inline Taglet representing {&#064;docRoot}.  This taglet is
@@ -46,25 +47,16 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * @author Doug Kramer
  */
 
-public class DocRootTaglet extends BaseInlineTaglet {
-
+public class DocRootTaglet extends BaseTaglet {
 
     /**
      * Construct a new DocRootTaglet.
      */
     public DocRootTaglet() {
-        name = DOC_ROOT.tagName;
+        super(DOC_ROOT.tagName, true, EnumSet.allOf(Site.class));
     }
 
-    /**
-     * Given a <code>Doc</code> object, check if it holds any tags of
-     * this type.  If it does, return the string representing the output.
-     * If it does not, return null.
-     * @param holder
-     * @param tag a tag representing the custom tag.
-     * @param writer a {@link TagletWriter} Taglet writer.
-     * @return the string representation of this <code>Tag</code>.
-     */
+    @Override
     public Content getTagletOutput(Element holder, DocTree tag, TagletWriter writer) {
         return writer.getDocRootOutput();
     }

@@ -37,11 +37,8 @@ class PhaseMacroExpand : public Phase {
 private:
   PhaseIterGVN &_igvn;
 
+public:
   // Helper methods roughly modeled after GraphKit:
-  Node* top()                   const { return C->top(); }
-  Node* intcon(jint con)        const { return _igvn.intcon(con); }
-  Node* longcon(jlong con)      const { return _igvn.longcon(con); }
-  Node* makecon(const Type *t)  const { return _igvn.makecon(t); }
   Node* basic_plus_adr(Node* base, int offset) {
     return (offset == 0)? base: basic_plus_adr(base, MakeConX(offset));
   }
@@ -66,6 +63,7 @@ private:
   Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
                    Node* value, BasicType bt);
 
+private:
   // projections extracted from a call node
   ProjNode *_fallthroughproj;
   ProjNode *_fallthroughcatchproj;
@@ -94,7 +92,7 @@ private:
   bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
   void process_users_of_allocation(CallNode *alloc);
 
-  void eliminate_card_mark(Node *cm);
+  void eliminate_gc_barrier(Node *p2x);
   void mark_eliminated_box(Node* box, Node* obj);
   void mark_eliminated_locking_nodes(AbstractLockNode *alock);
   bool eliminate_locking_node(AbstractLockNode *alock);
@@ -209,6 +207,14 @@ public:
   void eliminate_macro_nodes();
   bool expand_macro_nodes();
 
+  PhaseIterGVN &igvn() const { return _igvn; }
+
+  // Members accessed from BarrierSetC2
+  void replace_node(Node* source, Node* target) { _igvn.replace_node(source, target); }
+  Node* intcon(jint con)        const { return _igvn.intcon(con); }
+  Node* longcon(jlong con)      const { return _igvn.longcon(con); }
+  Node* makecon(const Type *t)  const { return _igvn.makecon(t); }
+  Node* top()                   const { return C->top(); }
 };
 
 #endif // SHARE_VM_OPTO_MACRO_HPP

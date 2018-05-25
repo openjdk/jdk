@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,10 +321,14 @@ public class Cipher {
             while (parser.hasMoreTokens() && count < 3) {
                 parts[count++] = parser.nextToken().trim();
             }
-            if (count == 0 || count == 2 || parser.hasMoreTokens()) {
+            if (count == 0 || count == 2) {
                 throw new NoSuchAlgorithmException("Invalid transformation"
                                                + " format:" +
                                                transformation);
+            }
+            // treats all subsequent tokens as part of padding
+            if (count == 3 && parser.hasMoreTokens()) {
+                parts[2] = parts[2] + parser.nextToken("\r\n");
             }
         } catch (NoSuchElementException e) {
             throw new NoSuchAlgorithmException("Invalid transformation " +

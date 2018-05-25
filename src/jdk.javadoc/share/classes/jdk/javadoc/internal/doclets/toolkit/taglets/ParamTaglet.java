@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.PARAM;
 
 /**
  * A taglet that represents the @param tag.
@@ -58,7 +58,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * Construct a ParamTaglet.
      */
     public ParamTaglet() {
-        name = PARAM.tagName;
+        super(PARAM.tagName, false, EnumSet.of(Site.TYPE, Site.CONSTRUCTOR, Site.METHOD));
     }
 
     /**
@@ -85,9 +85,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         return result;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
         Utils utils = input.utils;
         if (input.tagId == null) {
@@ -129,61 +127,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public boolean inField() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean inMethod() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean inOverview() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean inModule() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean inPackage() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean inType() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public boolean isInlineTag() {
-        return false;
-    }
-
-    /**
-     * Given an array of <code>ParamTag</code>s,return its string representation.
-     * @param holder the member that holds the param tags.
-     * @param writer the TagletWriter that will write this tag.
-     * @return the TagletOutput representation of these <code>ParamTag</code>s.
-     */
+    @Override
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         if (utils.isExecutableElement(holder)) {
@@ -201,7 +145,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Given an array of <code>ParamTag</code>s,return its string representation.
+     * Given an array of {@code @param DocTree}s,return its string representation.
      * Try to inherit the param tags that are missing.
      *
      * @param holder            the element that holds the param tags.
@@ -209,7 +153,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * @param formalParameters  The array of parmeters (from type or executable
      *                          member) to check.
      *
-     * @return the TagletOutput representation of these <code>ParamTag</code>s.
+     * @return the content representation of these {@code @param DocTree}s.
      */
     private Content getTagletOutput(boolean isParameters, Element holder,
             TagletWriter writer, List<? extends Element> formalParameters, List<? extends DocTree> paramTags) {
@@ -269,12 +213,12 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Given an array of <code>Tag</code>s representing this custom
+     * Given an array of {@code @param DocTree}s representing this
      * tag, return its string representation.  Print a warning for param
      * tags that do not map to parameters.  Print a warning for param
      * tags that are duplicated.
      *
-     * @param paramTags the array of <code>ParamTag</code>s to convert.
+     * @param paramTags the array of {@code @param DocTree} to convert.
      * @param writer the TagletWriter that will write this tag.
      * @param alreadyDocumented the set of exceptions that have already
      *        been documented.
@@ -284,7 +228,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 of a rank of a parameter to its name.  This is
                 used to ensure that the right name is used
                 when parameter documentation is inherited.
-     * @return the Content representation of this <code>Tag</code>.
+     * @return the Content representation of this {@code @param DocTree}.
      */
     private Content processParamTags(Element e, boolean isParams,
             List<? extends DocTree> paramTags, Map<String, String> rankMap, TagletWriter writer,

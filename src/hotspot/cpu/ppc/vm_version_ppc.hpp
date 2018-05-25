@@ -44,7 +44,6 @@ protected:
     lqarx,
     vcipher,
     vpmsumb,
-    tcheck,
     mfdscr,
     vsx,
     ldbrx,
@@ -67,7 +66,6 @@ protected:
     vcipher_m             = (1 << vcipher),
     vshasig_m             = (1 << vshasig),
     vpmsumb_m             = (1 << vpmsumb),
-    tcheck_m              = (1 << tcheck ),
     mfdscr_m              = (1 << mfdscr ),
     vsx_m                 = (1 << vsx    ),
     ldbrx_m               = (1 << ldbrx  ),
@@ -103,7 +101,6 @@ public:
   static bool has_lqarx()   { return (_features & lqarx_m) != 0; }
   static bool has_vcipher() { return (_features & vcipher_m) != 0; }
   static bool has_vpmsumb() { return (_features & vpmsumb_m) != 0; }
-  static bool has_tcheck()  { return (_features & tcheck_m) != 0; }
   static bool has_mfdscr()  { return (_features & mfdscr_m) != 0; }
   static bool has_vsx()     { return (_features & vsx_m) != 0; }
   static bool has_ldbrx()   { return (_features & ldbrx_m) != 0; }

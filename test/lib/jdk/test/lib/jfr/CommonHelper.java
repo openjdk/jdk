@@ -37,6 +37,7 @@ import jdk.jfr.RecordingState;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 
 /**
@@ -90,7 +91,7 @@ public final class CommonHelper {
                 r.enable(EventNames.CPUTimeStampCounter);
                 r.start();
                 r.stop();
-                Path p = Files.createTempFile("timestamo", ".jfr");
+                Path p = Utils.createTempFile("timestamo", ".jfr");
                 r.dump(p);
                 List<RecordedEvent> events = RecordingFile.readAllEvents(p);
                 Files.deleteIfExists(p);

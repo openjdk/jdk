@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -437,8 +437,20 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
             createSearchIndexFile(DocPaths.MODULE_SEARCH_INDEX_JSON, DocPaths.MODULE_SEARCH_INDEX_ZIP,
                     DocPaths.MODULE_SEARCH_INDEX_JS, configuration.moduleSearchIndex, "moduleSearchIndex");
         }
+        if (!configuration.packages.isEmpty()) {
+            SearchIndexItem si = new SearchIndexItem();
+            si.setCategory(resources.getText("doclet.Packages"));
+            si.setLabel(configuration.getText("doclet.All_Packages"));
+            si.setUrl(DocPaths.ALLPACKAGES_INDEX.getPath());
+            configuration.packageSearchIndex.add(si);
+        }
         createSearchIndexFile(DocPaths.PACKAGE_SEARCH_INDEX_JSON, DocPaths.PACKAGE_SEARCH_INDEX_ZIP,
                 DocPaths.PACKAGE_SEARCH_INDEX_JS, configuration.packageSearchIndex, "packageSearchIndex");
+        SearchIndexItem si = new SearchIndexItem();
+        si.setCategory(resources.getText("doclet.Types"));
+        si.setLabel(configuration.getText("doclet.All_Classes"));
+        si.setUrl(DocPaths.ALLCLASSES_INDEX.getPath());
+        configuration.typeSearchIndex.add(si);
         createSearchIndexFile(DocPaths.TYPE_SEARCH_INDEX_JSON, DocPaths.TYPE_SEARCH_INDEX_ZIP,
                 DocPaths.TYPE_SEARCH_INDEX_JS, configuration.typeSearchIndex, "typeSearchIndex");
         createSearchIndexFile(DocPaths.MEMBER_SEARCH_INDEX_JSON, DocPaths.MEMBER_SEARCH_INDEX_ZIP,

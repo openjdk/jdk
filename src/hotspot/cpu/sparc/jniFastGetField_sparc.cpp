@@ -153,8 +153,13 @@ address JNI_FastGetField::generate_fast_get_long_field() {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
-  __ andn (O1, JNIHandles::weak_tag_mask, O1);
-  __ ld_ptr (O1, 0, O5);
+  __ mov(O1, O5);
+
+  // Both O5 and G1 are clobbered by try_resolve_jobject_in_native.
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->try_resolve_jobject_in_native(masm, /* jni_env */ O0, /* obj */ O5, /* tmp */ G1, label1);
+  DEBUG_ONLY(__ set(0xDEADC0DE, G1);)
+
   __ add (O5, O4, O5);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
@@ -206,8 +211,12 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   __ andcc (G4, 1, G0);
   __ br (Assembler::notZero, false, Assembler::pn, label1);
   __ delayed()->srl (O2, 2, O4);
-  __ andn (O1, JNIHandles::weak_tag_mask, O1);
-  __ ld_ptr (O1, 0, O5);
+  __ mov(O1, O5);
+
+  // Both O5 and G3 are clobbered by try_resolve_jobject_in_native.
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->try_resolve_jobject_in_native(masm, /* jni_env */ O0, /* obj */ O5, /* tmp */ G3, label1);
+  DEBUG_ONLY(__ set(0xDEADC0DE, G3);)
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();

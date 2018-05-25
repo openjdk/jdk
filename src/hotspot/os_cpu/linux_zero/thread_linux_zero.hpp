@@ -110,6 +110,14 @@
     return false; // silence compile warning
   }
 
+  bool pd_get_top_frame_for_profiling(frame* fr_addr,
+                                      void* ucontext,
+                                      bool isInJava) {
+    ShouldNotCallThis();
+    return false; // silence compile warning
+  }
+
+
   // These routines are only used on cpu architectures that
   // have separate register stacks (Itanium).
   static bool register_stack_overflow() { return false; }

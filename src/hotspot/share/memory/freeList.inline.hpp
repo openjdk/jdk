@@ -27,7 +27,6 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/freeList.hpp"
-#include "memory/metachunk.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/vmThread.hpp"

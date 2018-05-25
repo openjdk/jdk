@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,12 +427,25 @@ abstract class ECDSASignature extends SignatureSpi {
         throw new UnsupportedOperationException("setParameter() not supported");
     }
 
+    @Override
+    protected void engineSetParameter(AlgorithmParameterSpec params)
+            throws InvalidAlgorithmParameterException {
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException("No parameter accepted");
+        }
+    }
+
     // get parameter, not supported. See JCA doc
     @Override
     @Deprecated
     protected Object engineGetParameter(String param)
             throws InvalidParameterException {
         throw new UnsupportedOperationException("getParameter() not supported");
+    }
+
+    @Override
+    protected AlgorithmParameters engineGetParameters() {
+        return null;
     }
 
     // Convert the concatenation of R and S into their DER encoding

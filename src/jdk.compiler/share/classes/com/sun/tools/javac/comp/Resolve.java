@@ -2648,6 +2648,7 @@ public class Resolve {
                 } else if (allowMethodHandles) {
                     MethodSymbol msym = (MethodSymbol)sym;
                     if ((msym.flags() & SIGNATURE_POLYMORPHIC) != 0) {
+                        env.info.pendingResolutionPhase = BASIC;
                         return findPolymorphicSignatureInstance(env, sym, argtypes);
                     }
                 }
@@ -2668,6 +2669,11 @@ public class Resolve {
                                             List<Type> argtypes) {
         Type mtype = infer.instantiatePolymorphicSignatureInstance(env,
                 (MethodSymbol)spMethod, currentResolutionContext, argtypes);
+        return findPolymorphicSignatureInstance(spMethod, mtype);
+    }
+
+    Symbol findPolymorphicSignatureInstance(final Symbol spMethod,
+                                            Type mtype) {
         for (Symbol sym : polymorphicSignatureScope.getSymbolsByName(spMethod.name)) {
             // Check that there is already a method symbol for the method
             // type and owner
@@ -2935,6 +2941,7 @@ public class Resolve {
                                   Name name,
                                   List<Type> argtypes,
                                   List<Type> typeargtypes,
+                                  Type descriptor,
                                   MethodCheck methodCheck,
                                   InferenceContext inferenceContext,
                                   ReferenceChooser referenceChooser) {
@@ -2971,6 +2978,15 @@ public class Resolve {
         env.info.pendingResolutionPhase = bestRes == unboundRes ?
                 unboundEnv.info.pendingResolutionPhase :
                 boundEnv.info.pendingResolutionPhase;
+
+        if (!res.fst.kind.isResolutionError()) {
+            //handle sigpoly method references
+            MethodSymbol msym = (MethodSymbol)res.fst;
+            if ((msym.flags() & SIGNATURE_POLYMORPHIC) != 0) {
+                env.info.pendingResolutionPhase = BASIC;
+                res = new Pair<>(findPolymorphicSignatureInstance(msym, descriptor), res.snd);
+            }
+        }
 
         return res;
     }

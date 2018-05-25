@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
@@ -1663,6 +1665,18 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       if (cfg->is_top()) {    // Use is dead?
         _igvn.replace_input_of(use, idx, C->top());
         continue;
+      }
+
+      // If use is referenced through control edge... (idx == 0)
+      if (mode == IgnoreStripMined && idx == 0) {
+        LoopNode *head = loop->_head->as_Loop();
+        if (head->is_strip_mined() && is_dominator(head->outer_loop_exit(), prev)) {
+          // That node is outside the inner loop, leave it outside the
+          // outer loop as well to not confuse verification code.
+          assert(!loop->_parent->is_member(use_loop), "should be out of the outer loop");
+          _igvn.replace_input_of(use, 0, head->outer_loop_exit());
+          continue;
+        }
       }
 
       while(!outer_loop->is_member(get_loop(cfg))) {

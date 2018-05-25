@@ -25,7 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2013 2012 2010 2015 2017"
+VALID_VS_VERSIONS="2017 2013 2015 2012 2010"
 
 VS_DESCRIPTION_2010="Microsoft Visual Studio 2010"
 VS_VERSION_INTERNAL_2010=100
@@ -58,7 +58,7 @@ VS_SDK_INSTALLDIR_2013=
 VS_VS_PLATFORM_NAME_2013="v120"
 VS_SDK_PLATFORM_NAME_2013=
 
-VS_DESCRIPTION_2015="Microsoft Visual Studio 2015 - CURRENTLY NOT WORKING"
+VS_DESCRIPTION_2015="Microsoft Visual Studio 2015"
 VS_VERSION_INTERNAL_2015=140
 VS_MSVCR_2015=vcruntime140.dll
 VS_MSVCP_2015=msvcp140.dll
@@ -71,7 +71,7 @@ VS_SDK_PLATFORM_NAME_2015=
 # explicitly specifying Windows Kit 8.1 to be used.
 VS_ENV_ARGS_2015="8.1"
 
-VS_DESCRIPTION_2017="Microsoft Visual Studio 2017 - CURRENTLY NOT WORKING"
+VS_DESCRIPTION_2017="Microsoft Visual Studio 2017"
 VS_VERSION_INTERNAL_2017=141
 VS_MSVCR_2017=vcruntime140.dll
 VS_MSVCP_2017=msvcp140.dll

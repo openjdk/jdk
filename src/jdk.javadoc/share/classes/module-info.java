@@ -51,7 +51,7 @@
  * @provides javax.tools.DocumentationTool
  * @provides javax.tools.Tool
  *
- * @see <a href="{@docRootParent}/specs/doc-comment-spec.html">
+ * @see <a href="{@docRoot}/../specs/doc-comment-spec.html">
  *      Documentation Comment Specification for the Standard Doclet</a>
  *
  * @moduleGraph

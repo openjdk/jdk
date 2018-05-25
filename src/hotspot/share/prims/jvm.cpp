@@ -1200,11 +1200,8 @@ static bool is_authorized(Handle context, InstanceKlass* klass, TRAPS) {
 // and null permissions - which gives no permissions.
 oop create_dummy_access_control_context(TRAPS) {
   InstanceKlass* pd_klass = SystemDictionary::ProtectionDomain_klass();
-  Handle obj = pd_klass->allocate_instance_handle(CHECK_NULL);
   // Call constructor ProtectionDomain(null, null);
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, obj, pd_klass,
-                          vmSymbols::object_initializer_name(),
+  Handle obj = JavaCalls::construct_new_instance(pd_klass,
                           vmSymbols::codesource_permissioncollection_signature(),
                           Handle(), Handle(), CHECK_NULL);
 

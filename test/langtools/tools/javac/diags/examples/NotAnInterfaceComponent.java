@@ -21,9 +21,9 @@
  * questions.
  */
 
+// key: compiler.misc.not.a.functional.intf.1
 // key: compiler.err.prob.found.req
-// key: compiler.misc.bad.intersection.target.for.functional.expr
-// key: compiler.misc.not.an.intf.component
+// key: compiler.misc.incompatible.abstracts
 
 class NotAnInterfaceComponent {
     Object o = (String & Runnable) ()-> { };

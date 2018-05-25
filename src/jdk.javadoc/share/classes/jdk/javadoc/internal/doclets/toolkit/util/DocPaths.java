@@ -57,6 +57,12 @@ public class DocPaths {
     /** The name of the file for all classes, using frames. */
     public static final DocPath ALLCLASSES_FRAME = DocPath.create("allclasses-frame.html");
 
+    /** The name of the file for all classes index. */
+    public static final DocPath ALLCLASSES_INDEX = DocPath.create("allclasses-index.html");
+
+    /** The name of the file for all packages index. */
+    public static final DocPath ALLPACKAGES_INDEX = DocPath.create("allpackages-index.html");
+
     /** The name of the file for all classes, without using frames. */
     public static final DocPath ALLCLASSES_NOFRAME = DocPath.create("allclasses-noframe.html");
 

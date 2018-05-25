@@ -96,14 +96,14 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 }
 
 void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                    const Address& src, Register dst, Register tmp1, Register tmp2, Label *is_null) {
+                                    const Address& src, Register dst, Register tmp1, Register tmp2, Label *L_handle_null) {
   bool on_oop = type == T_OBJECT || type == T_ARRAY;
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
   Label done;
-  if (on_oop && on_reference && is_null == NULL) { is_null = &done; }
-  ModRefBarrierSetAssembler::load_at(masm, decorators, type, src, dst, tmp1, tmp2, is_null);
+  if (on_oop && on_reference && L_handle_null == NULL) { L_handle_null = &done; }
+  ModRefBarrierSetAssembler::load_at(masm, decorators, type, src, dst, tmp1, tmp2, L_handle_null);
   if (on_oop && on_reference) {
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.

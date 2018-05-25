@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "runtime/os.hpp"
-#ifdef X86
+#if defined(X86) && !defined(ZERO)
 #include "rdtsc_x86.hpp"
 #endif
 
@@ -36,7 +36,7 @@ bool JfrTime::_ft_enabled = false;
 bool JfrTime::initialize() {
   static bool initialized = false;
   if (!initialized) {
-#ifdef X86
+#if defined(X86) && !defined(ZERO)
     _ft_enabled = Rdtsc::initialize();
 #else
     _ft_enabled = false;
@@ -47,7 +47,7 @@ bool JfrTime::initialize() {
 }
 
 bool JfrTime::is_ft_supported() {
-#ifdef X86
+#if defined(X86) && !defined(ZERO)
   return Rdtsc::is_supported();
 #else
   return false;
@@ -56,7 +56,7 @@ bool JfrTime::is_ft_supported() {
 
 
 const void* JfrTime::time_function() {
-#ifdef X86
+#if defined(X86) && !defined(ZERO)
   return _ft_enabled ? (const void*)Rdtsc::elapsed_counter : (const void*)os::elapsed_counter;
 #else
   return (const void*)os::elapsed_counter;
@@ -64,7 +64,7 @@ const void* JfrTime::time_function() {
 }
 
 jlong JfrTime::frequency() {
-#ifdef X86
+#if defined(X86) && !defined(ZERO)
   return _ft_enabled ? Rdtsc::frequency() : os::elapsed_frequency();
 #else
   return os::elapsed_frequency();

@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/block.hpp"
@@ -36,6 +38,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/rootnode.hpp"
+#include "utilities/macros.hpp"
 
 //=============================================================================
 #define NODE_HASH_MINIMUM_SIZE    255
@@ -939,6 +942,9 @@ PhaseIterGVN::PhaseIterGVN( PhaseGVN *gvn ) : PhaseGVN(gvn),
         n->is_Mem() )
       add_users_to_worklist(n);
   }
+
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->add_users_to_worklist(&_worklist);
 }
 
 /**
@@ -1369,6 +1375,8 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
                 }
                 assert(!(i < imax), "sanity");
               }
+            } else {
+              BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(_worklist, in);
             }
             if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
                 in->is_Proj() && in->in(0) != NULL && in->in(0)->is_Initialize()) {
@@ -1424,6 +1432,8 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
       if (dead->Opcode() == Op_Opaque4) {
         C->remove_opaque4_node(dead);
       }
+      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+      bs->unregister_potential_barrier_node(dead);
     }
   } // while (_stack.is_nonempty())
 }

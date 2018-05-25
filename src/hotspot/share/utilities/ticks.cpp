@@ -26,7 +26,7 @@
 #include "runtime/os.hpp"
 #include "utilities/ticks.hpp"
 
-#ifdef X86
+#if defined(X86) && !defined(ZERO)
 #include "rdtsc_x86.hpp"
 #endif
 
@@ -63,7 +63,7 @@ uint64_t ElapsedCounterSource::nanoseconds(Type value) {
 }
 
 uint64_t FastUnorderedElapsedCounterSource::frequency() {
-#ifdef X86
+#if defined(X86) && !defined(ZERO)
   static bool valid_rdtsc = Rdtsc::initialize();
   if (valid_rdtsc) {
     static const uint64_t freq = (uint64_t)Rdtsc::frequency();
@@ -75,7 +75,7 @@ uint64_t FastUnorderedElapsedCounterSource::frequency() {
 }
 
 FastUnorderedElapsedCounterSource::Type FastUnorderedElapsedCounterSource::now() {
-#ifdef X86
+#if defined(X86) && !defined(ZERO)
   static bool valid_rdtsc = Rdtsc::initialize();
   if (valid_rdtsc) {
     return Rdtsc::elapsed_counter();
@@ -107,7 +107,7 @@ uint64_t CompositeElapsedCounterSource::frequency() {
 CompositeElapsedCounterSource::Type CompositeElapsedCounterSource::now() {
   CompositeTime ct;
   ct.val1 = ElapsedCounterSource::now();
-#ifdef X86
+#if defined(X86) && !defined(ZERO)
   static bool initialized = false;
   static bool valid_rdtsc = false;
   if (!initialized) {

@@ -37,7 +37,7 @@
 
 // Array of all active blocks.  Refcounted for lock-free reclaim of
 // old array when a new array is allocated for expansion.
-class OopStorage::BlockArray {
+class OopStorage::ActiveArray {
   friend class OopStorage::TestAccess;
 
   size_t _size;
@@ -45,12 +45,12 @@ class OopStorage::BlockArray {
   mutable volatile int _refcount;
   // Block* _blocks[1];            // Pseudo flexible array member.
 
-  BlockArray(size_t size);
-  ~BlockArray();
+  ActiveArray(size_t size);
+  ~ActiveArray();
 
   // Noncopyable
-  BlockArray(const BlockArray&);
-  BlockArray& operator=(const BlockArray&);
+  ActiveArray(const ActiveArray&);
+  ActiveArray& operator=(const ActiveArray&);
 
   static size_t blocks_offset();
   Block* const* base_ptr() const;
@@ -59,8 +59,8 @@ class OopStorage::BlockArray {
   Block** block_ptr(size_t index);
 
 public:
-  static BlockArray* create(size_t size, AllocFailType alloc_fail = AllocFailStrategy::EXIT_OOM);
-  static void destroy(BlockArray* ba);
+  static ActiveArray* create(size_t size, AllocFailType alloc_fail = AllocFailStrategy::EXIT_OOM);
+  static void destroy(ActiveArray* ba);
 
   inline Block* at(size_t i) const;
 
@@ -82,35 +82,35 @@ public:
   // precondition: block must be present at its active_index element.
   void remove(Block* block);
 
-  void copy_from(const BlockArray* from);
+  void copy_from(const ActiveArray* from);
 };
 
-inline size_t OopStorage::BlockArray::blocks_offset() {
-  return align_up(sizeof(BlockArray), sizeof(Block*));
+inline size_t OopStorage::ActiveArray::blocks_offset() {
+  return align_up(sizeof(ActiveArray), sizeof(Block*));
 }
 
-inline OopStorage::Block* const* OopStorage::BlockArray::base_ptr() const {
+inline OopStorage::Block* const* OopStorage::ActiveArray::base_ptr() const {
   const void* ptr = reinterpret_cast<const char*>(this) + blocks_offset();
   return reinterpret_cast<Block* const*>(ptr);
 }
 
-inline OopStorage::Block* const* OopStorage::BlockArray::block_ptr(size_t index) const {
+inline OopStorage::Block* const* OopStorage::ActiveArray::block_ptr(size_t index) const {
   return base_ptr() + index;
 }
 
-inline OopStorage::Block** OopStorage::BlockArray::block_ptr(size_t index) {
+inline OopStorage::Block** OopStorage::ActiveArray::block_ptr(size_t index) {
   return const_cast<Block**>(base_ptr() + index);
 }
 
-inline OopStorage::Block* OopStorage::BlockArray::at(size_t index) const {
+inline OopStorage::Block* OopStorage::ActiveArray::at(size_t index) const {
   assert(index < _block_count, "precondition");
   return *block_ptr(index);
 }
 
-// A Block has an embedded BlockEntry to provide the links between
-// Blocks in a BlockList.
-class OopStorage::BlockEntry {
-  friend class OopStorage::BlockList;
+// A Block has an embedded AllocateEntry to provide the links between
+// Blocks in a AllocateList.
+class OopStorage::AllocateEntry {
+  friend class OopStorage::AllocateList;
 
   // Members are mutable, and we deal exclusively with pointers to
   // const, to make const blocks easier to use; a block being const
@@ -119,12 +119,12 @@ class OopStorage::BlockEntry {
   mutable const Block* _next;
 
   // Noncopyable.
-  BlockEntry(const BlockEntry&);
-  BlockEntry& operator=(const BlockEntry&);
+  AllocateEntry(const AllocateEntry&);
+  AllocateEntry& operator=(const AllocateEntry&);
 
 public:
-  BlockEntry();
-  ~BlockEntry();
+  AllocateEntry();
+  ~AllocateEntry();
 };
 
 // Fixed-sized array of oops, plus bookkeeping data.
@@ -140,7 +140,7 @@ class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
   const OopStorage* _owner;
   void* _memory;              // Unaligned storage containing block.
   size_t _active_index;
-  BlockEntry _allocate_entry;
+  AllocateEntry _allocate_entry;
   Block* volatile _deferred_updates_next;
   volatile uintx _release_refcount;
 
@@ -158,7 +158,7 @@ class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
   Block& operator=(const Block&);
 
 public:
-  static const BlockEntry& get_allocate_entry(const Block& block);
+  static const AllocateEntry& get_allocate_entry(const Block& block);
 
   static size_t allocation_size();
   static size_t allocation_alignment_shift();
@@ -197,35 +197,35 @@ public:
   template<typename F> bool iterate(F f) const;
 }; // class Block
 
-inline OopStorage::Block* OopStorage::BlockList::head() {
+inline OopStorage::Block* OopStorage::AllocateList::head() {
   return const_cast<Block*>(_head);
 }
 
-inline OopStorage::Block* OopStorage::BlockList::tail() {
+inline OopStorage::Block* OopStorage::AllocateList::tail() {
   return const_cast<Block*>(_tail);
 }
 
-inline const OopStorage::Block* OopStorage::BlockList::chead() const {
+inline const OopStorage::Block* OopStorage::AllocateList::chead() const {
   return _head;
 }
 
-inline const OopStorage::Block* OopStorage::BlockList::ctail() const {
+inline const OopStorage::Block* OopStorage::AllocateList::ctail() const {
   return _tail;
 }
 
-inline OopStorage::Block* OopStorage::BlockList::prev(Block& block) {
+inline OopStorage::Block* OopStorage::AllocateList::prev(Block& block) {
   return const_cast<Block*>(_get_entry(block)._prev);
 }
 
-inline OopStorage::Block* OopStorage::BlockList::next(Block& block) {
+inline OopStorage::Block* OopStorage::AllocateList::next(Block& block) {
   return const_cast<Block*>(_get_entry(block)._next);
 }
 
-inline const OopStorage::Block* OopStorage::BlockList::prev(const Block& block) const {
+inline const OopStorage::Block* OopStorage::AllocateList::prev(const Block& block) const {
   return _get_entry(block)._prev;
 }
 
-inline const OopStorage::Block* OopStorage::BlockList::next(const Block& block) const {
+inline const OopStorage::Block* OopStorage::AllocateList::next(const Block& block) const {
   return _get_entry(block)._next;
 }
 
@@ -357,7 +357,7 @@ inline bool OopStorage::iterate_impl(F f, Storage* storage) {
   // Propagate const/non-const iteration to the block layer, by using
   // const or non-const blocks as corresponding to Storage.
   typedef typename Conditional<IsConst<Storage>::value, const Block*, Block*>::type BlockPtr;
-  BlockArray* blocks = storage->_active_array;
+  ActiveArray* blocks = storage->_active_array;
   size_t limit = blocks->block_count();
   for (size_t i = 0; i < limit; ++i) {
     BlockPtr block = blocks->at(i);

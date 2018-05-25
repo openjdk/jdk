@@ -116,9 +116,11 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
   if (init_n != NULL && limit_n != NULL) {
     // Use longs to avoid integer overflow.
     int stride_con = cl->stride_con();
-    jlong init_con = phase->_igvn.type(init_n)->is_int()->_lo;
-    jlong limit_con = phase->_igvn.type(limit_n)->is_int()->_hi;
-    int stride_m   = stride_con - (stride_con > 0 ? 1 : -1);
+    const TypeInt* init_type = phase->_igvn.type(init_n)->is_int();
+    const TypeInt* limit_type = phase->_igvn.type(limit_n)->is_int();
+    jlong init_con = (stride_con > 0) ? init_type->_lo : init_type->_hi;
+    jlong limit_con = (stride_con > 0) ? limit_type->_hi : limit_type->_lo;
+    int stride_m = stride_con - (stride_con > 0 ? 1 : -1);
     jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
     if (trip_count > 0 && (julong)trip_count < (julong)max_juint) {
       if (init_n->is_Con() && limit_n->is_Con()) {

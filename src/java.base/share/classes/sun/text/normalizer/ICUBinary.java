@@ -255,7 +255,7 @@ public final class ICUBinary {
     * Error messages
     */
     private static final String MAGIC_NUMBER_AUTHENTICATION_FAILED_ =
-                       "ICUBinary data file error: Magin number authentication failed";
+                       "ICUBinary data file error: Magic number authentication failed";
     private static final String HEADER_AUTHENTICATION_FAILED_ =
         "ICUBinary data file error: Header authentication failed";
 }

@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import jdk.jfr.FlightRecorder;
@@ -105,7 +106,7 @@ abstract class AbstractDCmd {
 
     protected final List<Recording> getRecordings() {
         List<Recording> list = new ArrayList<>(getFlightRecorder().getRecordings());
-        Collections.sort(list, (a, b) -> a.getName().compareTo(b.getName()));
+        Collections.sort(list, Comparator.comparing(Recording::getId));
         return list;
     }
 

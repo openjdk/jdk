@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import java.security.spec.RSAKeyGenParameterSpec;
 
 import sun.security.jca.JCAUtil;
 import static sun.security.util.SecurityProviderConstants.DEF_RSA_KEY_SIZE;
+import static sun.security.util.SecurityProviderConstants.DEF_RSASSA_PSS_KEY_SIZE;
+import sun.security.x509.AlgorithmId;
+import static sun.security.rsa.RSAUtil.KeyType;
 
 /**
  * RSA keypair generation. Standard algorithm, minimum key length 512 bit.
@@ -43,7 +46,7 @@ import static sun.security.util.SecurityProviderConstants.DEF_RSA_KEY_SIZE;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
-public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
+public abstract class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
 
     // public exponent to use
     private BigInteger publicExponent;
@@ -51,35 +54,31 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     // size of the key to generate, >= RSAKeyFactory.MIN_MODLEN
     private int keySize;
 
+    private final KeyType type;
+    private AlgorithmId rsaId;
+
     // PRNG to use
     private SecureRandom random;
 
-    public RSAKeyPairGenerator() {
+    RSAKeyPairGenerator(KeyType type, int defKeySize) {
+        this.type = type;
         // initialize to default in case the app does not call initialize()
-        initialize(DEF_RSA_KEY_SIZE, null);
+        initialize(defKeySize, null);
     }
 
     // initialize the generator. See JCA doc
     public void initialize(int keySize, SecureRandom random) {
-
-        // do not allow unreasonably small or large key sizes,
-        // probably user error
         try {
-            RSAKeyFactory.checkKeyLengths(keySize, RSAKeyGenParameterSpec.F4,
-                512, 64 * 1024);
-        } catch (InvalidKeyException e) {
-            throw new InvalidParameterException(e.getMessage());
+            initialize(new RSAKeyGenParameterSpec(keySize,
+                    RSAKeyGenParameterSpec.F4), null);
+        } catch (InvalidAlgorithmParameterException iape) {
+            throw new InvalidParameterException(iape.getMessage());
         }
-
-        this.keySize = keySize;
-        this.random = random;
-        this.publicExponent = RSAKeyGenParameterSpec.F4;
     }
 
     // second initialize method. See JCA doc.
     public void initialize(AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidAlgorithmParameterException {
-
         if (params instanceof RSAKeyGenParameterSpec == false) {
             throw new InvalidAlgorithmParameterException
                 ("Params must be instance of RSAKeyGenParameterSpec");
@@ -88,6 +87,7 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
         RSAKeyGenParameterSpec rsaSpec = (RSAKeyGenParameterSpec)params;
         int tmpKeySize = rsaSpec.getKeysize();
         BigInteger tmpPublicExponent = rsaSpec.getPublicExponent();
+        AlgorithmParameterSpec tmpParams = rsaSpec.getKeyParams();
 
         if (tmpPublicExponent == null) {
             tmpPublicExponent = RSAKeyGenParameterSpec.F4;
@@ -109,6 +109,13 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
         } catch (InvalidKeyException e) {
             throw new InvalidAlgorithmParameterException(
                 "Invalid key sizes", e);
+        }
+
+        try {
+            this.rsaId = RSAUtil.createAlgorithmId(type, tmpParams);
+        } catch (ProviderException e) {
+            throw new InvalidAlgorithmParameterException(
+                "Invalid key parameters", e);
         }
 
         this.keySize = tmpKeySize;
@@ -166,9 +173,9 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
             BigInteger coeff = q.modInverse(p);
 
             try {
-                PublicKey publicKey = new RSAPublicKeyImpl(n, e);
-                PrivateKey privateKey =
-                        new RSAPrivateCrtKeyImpl(n, e, d, p, q, pe, qe, coeff);
+                PublicKey publicKey = new RSAPublicKeyImpl(rsaId, n, e);
+                PrivateKey privateKey = new RSAPrivateCrtKeyImpl(
+                    rsaId, n, e, d, p, q, pe, qe, coeff);
                 return new KeyPair(publicKey, privateKey);
             } catch (InvalidKeyException exc) {
                 // invalid key exception only thrown for keys < 512 bit,
@@ -178,4 +185,15 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
         }
     }
 
+    public static final class Legacy extends RSAKeyPairGenerator {
+        public Legacy() {
+            super(KeyType.RSA, DEF_RSA_KEY_SIZE);
+        }
+    }
+
+    public static final class PSS extends RSAKeyPairGenerator {
+        public PSS() {
+            super(KeyType.PSS, DEF_RSASSA_PSS_KEY_SIZE);
+        }
+    }
 }

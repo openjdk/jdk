@@ -49,7 +49,6 @@ public class TestJcmdStartStopDefault {
         JcmdAsserts.assertRecordingHasStarted(output);
 
         String name = parseRecordingName(output);
-        name= "Recording-" + name;
         JcmdHelper.waitUntilRunning(name);
 
         output = JcmdHelper.jcmd("JFR.dump",

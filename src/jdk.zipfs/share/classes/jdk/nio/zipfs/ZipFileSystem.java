@@ -1374,7 +1374,7 @@ class ZipFileSystem extends FileSystem {
         // store size, compressed size, and crc-32 in LOC header
         e.flag = 0;
         if (zc.isUTF8())
-            e.flag |= FLAG_EFS;
+            e.flag |= FLAG_USE_UTF8;
         OutputStream os;
         if (useTempFile) {
             e.file = getTempPathForEntry(null);

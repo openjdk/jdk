@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178070
+ * @bug 8178070 8196201
  * @summary Test packages table in module summary pages
  * @library /tools/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -419,17 +419,17 @@ public class TestModulePackages extends JavadocTester {
                         + "<span class=\"tabEnd\">&nbsp;</span></span>");
             if (kindSet.contains(TabKind.EXPORTS)) {
                 sb.append("<span id=\"t1\" class=\"tableTab\">"
-                        + "<span><a href=\"javascript:showPkgs(1);\">Exports</a></span>"
+                        + "<span><a href=\"javascript:show(1);\">Exports</a></span>"
                         + "<span class=\"tabEnd\">&nbsp;</span></span>");
             }
             if (kindSet.contains(TabKind.OPENS)) {
                 sb.append("<span id=\"t2\" class=\"tableTab\">"
-                        + "<span><a href=\"javascript:showPkgs(2);\">Opens</a></span>"
+                        + "<span><a href=\"javascript:show(2);\">Opens</a></span>"
                         + "<span class=\"tabEnd\">&nbsp;</span></span>");
             }
             if (kindSet.contains(TabKind.CONCEALED)) {
                 sb.append("<span id=\"t3\" class=\"tableTab\"><span>"
-                        + "<a href=\"javascript:showPkgs(4);\">Concealed</a></span>"
+                        + "<a href=\"javascript:show(4);\">Concealed</a></span>"
                         + "<span class=\"tabEnd\">&nbsp;</span></span>");
             }
             sb.append("</caption>");

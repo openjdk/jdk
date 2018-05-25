@@ -37,6 +37,8 @@
 # error "No semaphore implementation provided for this OS"
 #endif
 
+class JavaThread;
+
 // Implements the limited, platform independent Semaphore API.
 class Semaphore : public CHeapObj<mtInternal> {
   SemaphoreImpl _impl;
@@ -54,7 +56,8 @@ class Semaphore : public CHeapObj<mtInternal> {
   void wait()                 { _impl.wait(); }
 
   bool trywait()              { return _impl.trywait(); }
-};
 
+  void wait_with_safepoint_check(JavaThread* thread);
+};
 
 #endif // SHARE_VM_RUNTIME_SEMAPHORE_HPP

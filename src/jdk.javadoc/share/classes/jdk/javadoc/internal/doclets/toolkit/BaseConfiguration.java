@@ -352,6 +352,11 @@ public abstract class BaseConfiguration {
      */
     public boolean disableJavaFxStrictChecks = false;
 
+    /**
+     * Show taglets (internal debug switch)
+     */
+    public boolean showTaglets = false;
+
     VisibleMemberCache visibleMemberCache = null;
 
     public PropertyUtils propertyUtils = null;
@@ -727,7 +732,14 @@ public abstract class BaseConfiguration {
                         disableJavaFxStrictChecks = true;
                         return true;
                     }
-                }
+                },
+                new Hidden(resources, "--show-taglets") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        showTaglets = true;
+                        return true;
+                    }
+                },
         };
         Set<Doclet.Option> set = new TreeSet<>();
         set.addAll(Arrays.asList(options));
@@ -814,25 +826,32 @@ public abstract class BaseConfiguration {
                 continue;
             }
             List<String> tokens = tokenize(args.get(1), TagletManager.SIMPLE_TAGLET_OPT_SEPARATOR, 3);
-            if (tokens.size() == 1) {
-                String tagName = args.get(1);
-                if (tagletManager.isKnownCustomTag(tagName)) {
-                    //reorder a standard tag
-                    tagletManager.addNewSimpleCustomTag(tagName, null, "");
-                } else {
-                    //Create a simple tag with the heading that has the same name as the tag.
-                    StringBuilder heading = new StringBuilder(tagName + ":");
-                    heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
-                    tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
-                }
-            } else if (tokens.size() == 2) {
-                //Add simple taglet without heading, probably to excluding it in the output.
-                tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(1), "");
-            } else if (tokens.size() >= 3) {
-                tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
-            } else {
-                Messages messages = getMessages();
-                messages.error("doclet.Error_invalid_custom_tag_argument", args.get(1));
+            switch (tokens.size()) {
+                case 1:
+                    String tagName = args.get(1);
+                    if (tagletManager.isKnownCustomTag(tagName)) {
+                        //reorder a standard tag
+                        tagletManager.addNewSimpleCustomTag(tagName, null, "");
+                    } else {
+                        //Create a simple tag with the heading that has the same name as the tag.
+                        StringBuilder heading = new StringBuilder(tagName + ":");
+                        heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
+                        tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
+                    }
+                    break;
+
+                case 2:
+                    //Add simple taglet without heading, probably to excluding it in the output.
+                    tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(1), "");
+                    break;
+
+                case 3:
+                    tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
+                    break;
+
+                default:
+                    Messages messages = getMessages();
+                    messages.error("doclet.Error_invalid_custom_tag_argument", args.get(1));
             }
         }
     }

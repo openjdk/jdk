@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,9 @@
 
 package java.security.cert;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.InvalidKeyException;
-import java.security.SignatureException;
-import java.security.Principal;
-import java.security.Provider;
-import java.security.PublicKey;
-import java.security.Signature;
+import java.security.*;
+import java.security.spec.*;
+
 import javax.security.auth.x500.X500Principal;
 
 import java.math.BigInteger;
@@ -41,6 +36,7 @@ import java.util.Set;
 import java.util.Arrays;
 
 import sun.security.x509.X509CRLImpl;
+import sun.security.util.SignatureUtil;
 
 /**
  * <p>
@@ -246,7 +242,18 @@ public abstract class X509CRL extends CRL implements X509Extension {
         Signature sig = (sigProvider == null)
             ? Signature.getInstance(getSigAlgName())
             : Signature.getInstance(getSigAlgName(), sigProvider);
+
         sig.initVerify(key);
+
+        // set parameters after Signature.initSign/initVerify call,
+        // so the deferred provider selections occur when key is set
+        try {
+            SignatureUtil.specialSetParameter(sig, getSigAlgParams());
+        } catch (ProviderException e) {
+            throw new CRLException(e.getMessage(), e.getCause());
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new CRLException(e);
+        }
 
         byte[] tbsCRL = getTBSCertList();
         sig.update(tbsCRL, 0, tbsCRL.length);

@@ -131,6 +131,8 @@ class oopDesc {
   // Need this as public for garbage collection.
   template <class T> inline T* obj_field_addr_raw(int offset) const;
 
+  template <typename T> inline size_t field_offset(T* p) const;
+
   // Standard compare function returns negative value if o1 < o2
   //                                   0              if o1 == o2
   //                                   positive value if o1 > o2

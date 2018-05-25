@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class TestGenerator {
             + "/**\n"
             + " * @test %1$s\n"
             + " * @library /test/lib /\n"
-            + " * @run driver " + JcstressRunner.class.getName()
+            + " * @run driver/timeout=2400 " + JcstressRunner.class.getName()
                     // verbose output
                     + " -v"
                     // test mode preset
@@ -215,4 +215,3 @@ public class TestGenerator {
                 count[0], group.groupName);
     }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,40 +32,53 @@ import java.security.spec.MGF1ParameterSpec;
 /**
  * This class specifies the set of parameters used with OAEP Padding,
  * as defined in the
- * <a href="http://www.ietf.org/rfc/rfc3447.txt">PKCS #1</a>
- * standard.
+ * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard.
  *
  * Its ASN.1 definition in PKCS#1 standard is described below:
  * <pre>
  * RSAES-OAEP-params ::= SEQUENCE {
- *   hashAlgorithm      [0] OAEP-PSSDigestAlgorithms     DEFAULT sha1,
- *   maskGenAlgorithm   [1] PKCS1MGFAlgorithms  DEFAULT mgf1SHA1,
- *   pSourceAlgorithm   [2] PKCS1PSourceAlgorithms  DEFAULT pSpecifiedEmpty
+ *   hashAlgorithm      [0] HashAlgorithm     DEFAULT sha1,
+ *   maskGenAlgorithm   [1] MaskGenAlgorithm  DEFAULT mgf1SHA1,
+ *   pSourceAlgorithm   [2] PSourceAlgorithm  DEFAULT pSpecifiedEmpty
  * }
  * </pre>
  * where
  * <pre>
+ * HashAlgorithm ::= AlgorithmIdentifier {
+ *   {OAEP-PSSDigestAlgorithms}
+ * }
+ * MaskGenAlgorithm ::= AlgorithmIdentifier { {PKCS1MGFAlgorithms} }
+ * PSourceAlgorithm ::= AlgorithmIdentifier {
+ *   {PKCS1PSourceAlgorithms}
+ * }
+ *
  * OAEP-PSSDigestAlgorithms    ALGORITHM-IDENTIFIER ::= {
- *   { OID id-sha1 PARAMETERS NULL   }|
- *   { OID id-sha256 PARAMETERS NULL }|
- *   { OID id-sha384 PARAMETERS NULL }|
- *   { OID id-sha512 PARAMETERS NULL },
+ *   { OID id-sha1       PARAMETERS NULL }|
+ *   { OID id-sha224     PARAMETERS NULL }|
+ *   { OID id-sha256     PARAMETERS NULL }|
+ *   { OID id-sha384     PARAMETERS NULL }|
+ *   { OID id-sha512     PARAMETERS NULL }|
+ *   { OID id-sha512-224 PARAMETERS NULL }|
+ *   { OID id-sha512-256 PARAMETERS NULL },
  *   ...  -- Allows for future expansion --
  * }
  * PKCS1MGFAlgorithms    ALGORITHM-IDENTIFIER ::= {
- *   { OID id-mgf1 PARAMETERS OAEP-PSSDigestAlgorithms },
+ *   { OID id-mgf1 PARAMETERS HashAlgorithm },
  *   ...  -- Allows for future expansion --
  * }
  * PKCS1PSourceAlgorithms    ALGORITHM-IDENTIFIER ::= {
- *   { OID id-pSpecified PARAMETERS OCTET STRING },
+ *   { OID id-pSpecified PARAMETERS EncodingParameters },
  *   ...  -- Allows for future expansion --
  * }
+ * EncodingParameters ::= OCTET STRING(SIZE(0..MAX))
  * </pre>
  * <p>Note: the OAEPParameterSpec.DEFAULT uses the following:
+ * <pre>
  *     message digest  -- "SHA-1"
  *     mask generation function (mgf) -- "MGF1"
  *     parameters for mgf -- MGF1ParameterSpec.SHA1
  *     source of encoding input -- PSource.PSpecified.DEFAULT
+ * </pre>
  *
  * @see java.security.spec.MGF1ParameterSpec
  * @see PSource

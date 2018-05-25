@@ -184,7 +184,8 @@ var getJibProfiles = function (input) {
 
     // Identifies the version of this format to the tool reading it.
     // 1.1 signifies that the publish, publish-src and get-src features are usable.
-    data.format_version = "1.1";
+    // 1.2 signifies that artifact uploads should fail on missing artifacts by default.
+    data.format_version = "1.2";
 
     // Organization, product and version are used when uploading/publishing build results
     data.organization = "";
@@ -822,7 +823,7 @@ var getJibProfilesDependencies = function (input, common) {
         macosx_x64: "Xcode6.3-MacOSX10.9+1.0",
         solaris_x64: "SS12u4-Solaris11u1+1.0",
         solaris_sparcv9: "SS12u4-Solaris11u1+1.1",
-        windows_x64: "VS2013SP4+1.0",
+        windows_x64: "VS2017-15.5.5+1.0",
         linux_aarch64: (input.profile != null && input.profile.indexOf("arm64") >= 0
                     ? "gcc-linaro-aarch64-linux-gnu-4.8-2013.11_linux+1.0"
                     : "gcc7.3.0-Fedora27+1.0"),

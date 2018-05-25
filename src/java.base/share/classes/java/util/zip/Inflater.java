@@ -73,7 +73,7 @@ import sun.nio.ch.DirectBuffer;
  *
  *     // Decode the bytes into a String
  *     String outputString = new String(result, 0, resultLength, "UTF-8");
- * } catch(java.io.UnsupportedEncodingException ex) {
+ * } catch (java.io.UnsupportedEncodingException ex) {
  *     // handle
  * } catch (java.util.zip.DataFormatException ex) {
  *     // handle

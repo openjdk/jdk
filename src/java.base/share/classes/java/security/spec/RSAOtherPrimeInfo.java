@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,16 @@ import java.math.BigInteger;
 
 /**
  * This class represents the triplet (prime, exponent, and coefficient)
- * inside RSA's OtherPrimeInfo structure, as defined in the PKCS#1 v2.1.
+ * inside RSA's OtherPrimeInfo structure, as defined in the
+ * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard.
  * The ASN.1 syntax of RSA's OtherPrimeInfo is as follows:
  *
  * <pre>
  * OtherPrimeInfo ::= SEQUENCE {
- *   prime INTEGER,
- *   exponent INTEGER,
- *   coefficient INTEGER
- *   }
+ *   prime        INTEGER,
+ *   exponent     INTEGER,
+ *   coefficient  INTEGER
+ * }
  *
  * </pre>
  *

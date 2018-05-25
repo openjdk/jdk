@@ -23,11 +23,13 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
-#include "memory/metachunk.hpp"
+#include "memory/metaspace/metachunk.hpp"
 #include "unittest.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+
+using namespace metaspace;
 
 class MetachunkTest {
  public:

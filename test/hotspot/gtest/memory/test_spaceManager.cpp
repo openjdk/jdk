@@ -22,18 +22,53 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace/spaceManager.hpp"
+
+using metaspace::SpaceManager;
 
 // The test function is only available in debug builds
 #ifdef ASSERT
 
 #include "unittest.hpp"
 
-void SpaceManager_test_adjust_initial_chunk_size();
+
+static void test_adjust_initial_chunk_size(bool is_class) {
+  const size_t smallest = SpaceManager::smallest_chunk_size(is_class);
+  const size_t normal   = SpaceManager::small_chunk_size(is_class);
+  const size_t medium   = SpaceManager::medium_chunk_size(is_class);
+
+#define do_test(value, expected, is_class_value)                                 \
+    do {                                                                         \
+      size_t v = value;                                                          \
+      size_t e = expected;                                                       \
+      assert(SpaceManager::adjust_initial_chunk_size(v, (is_class_value)) == e,  \
+             "Expected: " SIZE_FORMAT " got: " SIZE_FORMAT, e, v);               \
+    } while (0)
+
+    // Smallest (specialized)
+    do_test(1,            smallest, is_class);
+    do_test(smallest - 1, smallest, is_class);
+    do_test(smallest,     smallest, is_class);
+
+    // Small
+    do_test(smallest + 1, normal, is_class);
+    do_test(normal - 1,   normal, is_class);
+    do_test(normal,       normal, is_class);
+
+    // Medium
+    do_test(normal + 1, medium, is_class);
+    do_test(medium - 1, medium, is_class);
+    do_test(medium,     medium, is_class);
+
+    // Humongous
+    do_test(medium + 1, medium + 1, is_class);
+
+#undef test_adjust_initial_chunk_size
+}
 
 TEST(SpaceManager, adjust_initial_chunk_size) {
-  // The SpaceManager is only available in metaspace.cpp,
-  // so the test code is located in that file.
-  SpaceManager_test_adjust_initial_chunk_size();
+  test_adjust_initial_chunk_size(true);
+  test_adjust_initial_chunk_size(false);
 }
 
 #endif // ASSERT

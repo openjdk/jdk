@@ -926,6 +926,18 @@ bool os::Posix::is_valid_signal(int sig) {
 #endif
 }
 
+bool os::Posix::is_sig_ignored(int sig) {
+  struct sigaction oact;
+  sigaction(sig, (struct sigaction*)NULL, &oact);
+  void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oact.sa_sigaction)
+                                 : CAST_FROM_FN_PTR(void*,  oact.sa_handler);
+  if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // Returns:
 // NULL for an invalid signal number
 // "SIG<num>" for a valid but unknown signal number

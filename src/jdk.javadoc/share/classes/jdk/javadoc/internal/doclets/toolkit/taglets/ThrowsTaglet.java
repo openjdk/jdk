@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.THROWS;
 
 /**
  * A taglet that represents the @throws tag.
@@ -52,16 +52,13 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  *
  * @author Jamie Ho
  */
-public class ThrowsTaglet extends BaseExecutableMemberTaglet
+public class ThrowsTaglet extends BaseTaglet
     implements InheritableTaglet {
 
     public ThrowsTaglet() {
-        name = THROWS.tagName;
+        super(THROWS.tagName, false, EnumSet.of(Site.CONSTRUCTOR, Site.METHOD));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
         Utils utils = input.utils;

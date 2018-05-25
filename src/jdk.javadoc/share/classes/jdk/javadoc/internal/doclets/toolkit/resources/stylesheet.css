@@ -311,7 +311,8 @@ ul.blockList li.blockList h2 {
 /*
  * Styles for page layout containers.
  */
-.contentContainer, .sourceContainer, .classUseContainer, .serializedFormContainer, .constantValuesContainer {
+.contentContainer, .sourceContainer, .classUseContainer, .serializedFormContainer, .constantValuesContainer,
+.allClassesContainer, .allPackagesContainer {
     clear:both;
     padding:10px 20px;
     position:relative;
@@ -480,7 +481,7 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
     height:16px;
 }
 .memberSummary caption span.activeTableTab span, .packagesSummary caption span.activeTableTab span,
-.overviewSummary caption span.activeTableTab span {
+.overviewSummary caption span.activeTableTab span, .typeSummary caption span.activeTableTab span {
     white-space:nowrap;
     padding-top:5px;
     padding-left:12px;
@@ -492,7 +493,7 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
     height:16px;
 }
 .memberSummary caption span.tableTab span, .packagesSummary caption span.tableTab span,
-.overviewSummary caption span.tableTab span {
+.overviewSummary caption span.tableTab span, .typeSummary caption span.tableTab span {
     white-space:nowrap;
     padding-top:5px;
     padding-left:12px;
@@ -505,7 +506,8 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
 }
 .memberSummary caption span.tableTab, .memberSummary caption span.activeTableTab,
 .packagesSummary caption span.tableTab, .packagesSummary caption span.activeTableTab,
-.overviewSummary caption span.tableTab, .overviewSummary caption span.activeTableTab {
+.overviewSummary caption span.tableTab, .overviewSummary caption span.activeTableTab,
+.typeSummary caption span.tableTab, .typeSummary caption span.activeTableTab {
     padding-top:0px;
     padding-left:0px;
     padding-right:0px;
@@ -523,7 +525,7 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
     background-color:#F8981D;
 }
 .memberSummary .activeTableTab .tabEnd, .packagesSummary .activeTableTab .tabEnd,
-.overviewSummary .activeTableTab .tabEnd {
+.overviewSummary .activeTableTab .tabEnd, .typeSummary .activeTableTab .tabEnd {
     display:none;
     width:5px;
     margin-right:3px;
@@ -532,7 +534,7 @@ table tr td dl, table tr td dl dt, table tr td dl dd {
     background-color:#F8981D;
 }
 .memberSummary .tableTab .tabEnd, .packagesSummary .tableTab .tabEnd,
-.overviewSummary .tableTab .tabEnd {
+.overviewSummary .tableTab .tabEnd, .typeSummary .tableTab .tabEnd {
     display:none;
     width:5px;
     margin-right:3px;
@@ -585,7 +587,7 @@ td.colSecond, th.colSecond, td.colLast, th.colConstructorName, th.colDeprecatedI
 .providesSummary td.colFirst, .providesSummary th.colFirst,
 .memberSummary td.colFirst, .memberSummary th.colFirst,
 .memberSummary td.colSecond, .memberSummary th.colSecond, .memberSummary th.colConstructorName,
-.typeSummary td.colFirst {
+.typeSummary td.colFirst, .typeSummary th.colFirst {
     vertical-align:top;
 }
 .packagesSummary th.colLast, .packagesSummary td.colLast {
@@ -597,7 +599,9 @@ th.colFirst a:link, th.colFirst a:visited,
 th.colSecond a:link, th.colSecond a:visited,
 th.colConstructorName a:link, th.colConstructorName a:visited,
 th.colDeprecatedItemName a:link, th.colDeprecatedItemName a:visited, 
-.constantValuesContainer td a:link, .constantValuesContainer td a:visited {
+.constantValuesContainer td a:link, .constantValuesContainer td a:visited, 
+.allClassesContainer td a:link, .allClassesContainer td a:visited, 
+.allPackagesContainer td a:link, .allPackagesContainer td a:visited {
     font-weight:bold;
 }
 .tableSubHeadingColor {

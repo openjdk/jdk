@@ -205,17 +205,23 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
   _has_platform_or_app_classes = ClassLoaderExt::has_platform_or_app_classes();
 }
 
-void SharedClassPathEntry::init(const char* name, TRAPS) {
+void SharedClassPathEntry::init(const char* name, bool is_modules_image, TRAPS) {
+  assert(DumpSharedSpaces, "dump time only");
   _timestamp = 0;
   _filesize  = 0;
 
   struct stat st;
   if (os::stat(name, &st) == 0) {
     if ((st.st_mode & S_IFMT) == S_IFDIR) {
-      _is_dir = true;
+      _type = dir_entry;
     } else {
-      _is_dir = false;
-      _timestamp = st.st_mtime;
+      // The timestamp of the modules_image is not checked at runtime.
+      if (is_modules_image) {
+        _type = modules_image_entry;
+      } else {
+        _type = jar_entry;
+        _timestamp = st.st_mtime;
+      }
       _filesize = st.st_size;
     }
   } else {
@@ -236,7 +242,18 @@ bool SharedClassPathEntry::validate(bool is_class_path) {
   assert(UseSharedSpaces, "runtime only");
 
   struct stat st;
-  const char* name = this->name();
+  const char* name;
+
+  // In order to validate the runtime modules image file size against the archived
+  // size information, we need to obtain the runtime modules image path. The recorded
+  // dump time modules image path in the archive may be different from the runtime path
+  // if the JDK image has beed moved after generating the archive.
+  if (is_modules_image()) {
+    name = ClassLoader::get_jrt_entry()->name();
+  } else {
+    name = this->name();
+  }
+
   bool ok = true;
   log_info(class, path)("checking shared classpath entry: %s", name);
   if (os::stat(name, &st) != 0 && is_class_path) {
@@ -251,18 +268,16 @@ bool SharedClassPathEntry::validate(bool is_class_path) {
       FileMapInfo::fail_continue("directory is not empty: %s", name);
       ok = false;
     }
-  } else if (is_jar_or_bootimage()) {
-    if (_timestamp != st.st_mtime ||
-        _filesize != st.st_size) {
-      ok = false;
-      if (PrintSharedArchiveAndExit) {
-        FileMapInfo::fail_continue(_timestamp != st.st_mtime ?
-                                   "Timestamp mismatch" :
-                                   "File size mismatch");
-      } else {
-        FileMapInfo::fail_continue("A jar/jimage file is not the one used while building"
-                                   " the shared archive file: %s", name);
-      }
+  } else if ((has_timestamp() && _timestamp != st.st_mtime) ||
+             _filesize != st.st_size) {
+    ok = false;
+    if (PrintSharedArchiveAndExit) {
+      FileMapInfo::fail_continue(_timestamp != st.st_mtime ?
+                                 "Timestamp mismatch" :
+                                 "File size mismatch");
+    } else {
+      FileMapInfo::fail_continue("A jar file is not the one used while building"
+                                 " the shared archive file: %s", name);
     }
   }
   return ok;
@@ -298,11 +313,12 @@ void FileMapInfo::allocate_shared_path_table() {
   int i = 0;
   ClassPathEntry* cpe = jrt;
   while (cpe != NULL) {
-    const char* type = ((cpe == jrt) ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
+    bool is_jrt = (cpe == jrt);
+    const char* type = (is_jrt ? "jrt" : (cpe->is_jar_file() ? "jar" : "dir"));
     log_info(class, path)("add main shared path (%s) %s", type, cpe->name());
     SharedClassPathEntry* ent = shared_path(i);
-    ent->init(cpe->name(), THREAD);
-    if (cpe != jrt) { // No need to do jimage.
+    ent->init(cpe->name(), is_jrt, THREAD);
+    if (!is_jrt) {    // No need to do the modules image.
       EXCEPTION_MARK; // The following call should never throw, but would exit VM on error.
       update_shared_classpath(cpe, ent, THREAD);
     }
@@ -317,7 +333,7 @@ void FileMapInfo::allocate_shared_path_table() {
   while (acpe != NULL) {
     log_info(class, path)("add app shared path %s", acpe->name());
     SharedClassPathEntry* ent = shared_path(i);
-    ent->init(acpe->name(), THREAD);
+    ent->init(acpe->name(), false, THREAD);
     EXCEPTION_MARK;
     update_shared_classpath(acpe, ent, THREAD);
     acpe = acpe->next();
@@ -329,7 +345,7 @@ void FileMapInfo::allocate_shared_path_table() {
   while (mpe != NULL) {
     log_info(class, path)("add module path %s",mpe->name());
     SharedClassPathEntry* ent = shared_path(i);
-    ent->init(mpe->name(), THREAD);
+    ent->init(mpe->name(), false, THREAD);
     EXCEPTION_MARK;
     update_shared_classpath(mpe, ent, THREAD);
     mpe = mpe->next();
@@ -417,16 +433,15 @@ void FileMapInfo::update_shared_classpath(ClassPathEntry *cpe, SharedClassPathEn
   ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
   ResourceMark rm(THREAD);
   jint manifest_size;
-  bool isSigned;
 
   if (cpe->is_jar_file()) {
+    assert(ent->is_jar(), "the shared class path entry is not a JAR file");
     char* manifest = ClassLoaderExt::read_manifest(cpe, &manifest_size, CHECK);
     if (manifest != NULL) {
       ManifestStream* stream = new ManifestStream((u1*)manifest,
                                                   manifest_size);
-      isSigned = stream->check_is_signed();
-      if (isSigned) {
-        ent->set_is_signed(true);
+      if (stream->check_is_signed()) {
+        ent->set_is_signed();
       } else {
         // Copy the manifest into the shared archive
         manifest = ClassLoaderExt::read_raw_manifest(cpe, &manifest_size, CHECK);
@@ -436,7 +451,6 @@ void FileMapInfo::update_shared_classpath(ClassPathEntry *cpe, SharedClassPathEn
         char* p = (char*)(buf->data());
         memcpy(p, manifest, manifest_size);
         ent->set_manifest(buf);
-        ent->set_is_signed(false);
       }
     }
   }

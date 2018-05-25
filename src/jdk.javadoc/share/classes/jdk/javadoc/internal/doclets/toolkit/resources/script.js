@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,12 +104,11 @@ function createElem(doc, tag, path) {
     scriptElement.parentNode.insertBefore(script, scriptElement);
 }
 
-function show(type)
-{
+function show(type) {
     count = 0;
-    for (var key in methods) {
+    for (var key in data) {
         var row = document.getElementById(key);
-        if ((methods[key] &  type) !== 0) {
+        if ((data[key] &  type) !== 0) {
             row.style.display = '';
             row.className = (count++ % 2) ? rowColor : altColor;
         }
@@ -119,38 +118,7 @@ function show(type)
     updateTabs(type);
 }
 
-function showPkgs(type)
-{
-    count = 0;
-    for (var key in packages) {
-        var row = document.getElementById(key);
-        if ((packages[key] &  type) !== 0) {
-            row.style.display = '';
-            row.className = (count++ % 2) ? rowColor : altColor;
-        }
-        else
-            row.style.display = 'none';
-    }
-    updatePkgsTabs(type);
-}
-
-function showGroups(type)
-{
-    count = 0;
-    for (var key in groups) {
-        var row = document.getElementById(key);
-        if ((groups[key] &  type) !== 0) {
-            row.style.display = '';
-            row.className = (count++ % 2) ? rowColor : altColor;
-        }
-        else
-            row.style.display = 'none';
-    }
-    updateGroupsTabs(type);
-}
-
-function updateTabs(type)
-{
+function updateTabs(type) {
     for (var value in tabs) {
         var sNode = document.getElementById(tabs[value][0]);
         var spanNode = sNode.firstChild;
@@ -165,40 +133,7 @@ function updateTabs(type)
     }
 }
 
-function updateModuleFrame(pFrame, cFrame)
-{
+function updateModuleFrame(pFrame, cFrame) {
     top.packageFrame.location = pFrame;
     top.classFrame.location = cFrame;
-}
-
-function updatePkgsTabs(type)
-{
-    for (var value in tabs) {
-        var sNode = document.getElementById(tabs[value][0]);
-        var spanNode = sNode.firstChild;
-        if (value == type) {
-            sNode.className = activeTableTab;
-            spanNode.innerHTML = tabs[value][1];
-        }
-        else {
-            sNode.className = tableTab;
-            spanNode.innerHTML = "<a href=\"javascript:showPkgs(" + value + ");\">" + tabs[value][1] + "</a>";
-        }
-    }
-}
-
-function updateGroupsTabs(type)
-{
-    for (var value in tabs) {
-        var sNode = document.getElementById(tabs[value][0]);
-        var spanNode = sNode.firstChild;
-        if (value == type) {
-            sNode.className = activeTableTab;
-            spanNode.innerHTML = tabs[value][1];
-        }
-        else {
-            sNode.className = tableTab;
-            spanNode.innerHTML = "<a href=\"javascript:showGroups(" + value + ");\">" + tabs[value][1] + "</a>";
-        }
-    }
 }

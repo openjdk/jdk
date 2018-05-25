@@ -83,7 +83,10 @@ static jclass xorCompClass;
 jint useMitShmExt = CANT_USE_MITSHM;
 jint useMitShmPixmaps = CANT_USE_MITSHM;
 jint forceSharedPixmaps = JNI_FALSE;
+
+#ifdef MITSHM
 int mitShmPermissionMask = MITSHM_PERM_OWNER;
+#endif
 
 /* Cached shared image, one for all surface datas. */
 static XImage * cachedXImage;

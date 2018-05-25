@@ -18,9 +18,9 @@ Some example command-lines:
     $ make run-test-jdk_lang JTREG="JOBS=8"
     $ make run-test TEST=jdk_lang
     $ make run-test-only TEST="gtest:LogTagSet gtest:LogTagSetDescriptions" GTEST="REPEAT=-1"
-    $ make run-test TEST="hotspot/test:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
-    $ make run-test TEST="jtreg:hotspot/test:hotspot_gc hotspot/test/native_sanity/JniVersion.java"
-    $ make exploded-run-test TEST=hotspot_tier1
+    $ make run-test TEST="hotspot:hotspot_gc" JTREG="JOBS=1;TIMEOUT=8;VM_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"
+    $ make run-test TEST="jtreg:test/hotspot:hotspot_gc test/hotspot/jtreg/native_sanity/JniVersion.java"
+    $ make exploded-run-test TEST=tier2
 
 ### Configuration
 
@@ -46,30 +46,41 @@ test runs, the `run-test TEST="x"` solution needs to be used.
 
 The test specifications given in `TEST` is parsed into fully qualified test
 descriptors, which clearly and unambigously show which tests will be run. As an
-example, `:tier1` will expand to `jtreg:jdk/test:tier1
-jtreg:langtools/test:tier1 jtreg:nashorn/test:tier1 jtreg:jaxp/test:tier1`. You
-can always submit a list of fully qualified test descriptors in the `TEST`
-variable if you want to shortcut the parser.
+example, `:tier1` will expand to `jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1
+jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1
+jtreg:$(TOPDIR)/test/nashorn:tier1 jtreg:$(TOPDIR)/test/jaxp:tier1`. You can
+always submit a list of fully qualified test descriptors in the `TEST` variable
+if you want to shortcut the parser.
 
 ### JTReg
 
-JTReg test groups can be specified either without a test root, e.g. `:tier1`
-(or `tier1`, the initial colon is optional), or with, e.g.
-`hotspot/test:tier1`, `jdk/test:jdk_util`.
+JTReg tests can be selected either by picking a JTReg test group, or a selection
+of files or directories containing JTReg tests.
 
-When specified without a test root, all matching groups from all tests roots
+JTReg test groups can be specified either without a test root, e.g. `:tier1`
+(or `tier1`, the initial colon is optional), or with, e.g. `hotspot:tier1`,
+`test/jdk:jdk_util` or `$(TOPDIR)/test/hotspot/jtreg:hotspot_all`. The test
+root can be specified either as an absolute path, or a path relative to the
+OpenJDK top directory, or the `test` directory. For simplicity, the hotspot
+JTReg test root, which really is `hotspot/jtreg` can be abbreviated as
+just `hotspot`.
+
+When specified without a test root, all matching groups from all test roots
 will be added. Otherwise, only the group from the specified test root will be
 added.
 
 Individual JTReg tests or directories containing JTReg tests can also be
-specified, like `hotspot/test/native_sanity/JniVersion.java` or
-`hotspot/test/native_sanity`. You can also specify an absolute path, to point
-to a JTReg test outside the source tree.
+specified, like `test/hotspot/jtreg/native_sanity/JniVersion.java` or
+`hotspot/jtreg/native_sanity`. Just like for test root selection, you can
+either specify an absolute path (which can even point to JTReg tests outside
+the source tree), or a path relative to either the OpenJDK top directory or the
+`test` directory. `hotspot` can be used as an alias for `hotspot/jtreg` here as
+well.
 
 As long as the test groups or test paths can be uniquely resolved, you do not
 need to enter the `jtreg:` prefix. If this is not possible, or if you want to
 use a fully qualified test descriptor, add `jtreg:`, e.g.
-`jtreg:hotspot/test/native_sanity`.
+`jtreg:test/hotspot/jtreg/native_sanity`.
 
 ### Gtest
 

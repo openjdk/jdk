@@ -728,24 +728,14 @@ void CompileBroker::compilation_init_phase2() {
 }
 
 Handle CompileBroker::create_thread_oop(const char* name, TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::java_lang_Thread(), Handle(), Handle(), CHECK_NH);
-  assert(k != NULL, "must be initialized");
-  InstanceKlass* klass = InstanceKlass::cast(k);
-  instanceHandle thread_handle = klass->allocate_instance_handle(CHECK_NH);
   Handle string = java_lang_String::create_from_str(name, CHECK_NH);
-
-  // Initialize thread_oop to put it into the system threadGroup
   Handle thread_group(THREAD, Universe::system_thread_group());
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, thread_handle,
-                       klass,
-                       vmSymbols::object_initializer_name(),
+  return JavaCalls::construct_new_instance(
+                       SystemDictionary::Thread_klass(),
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
                        CHECK_NH);
-
-  return thread_handle;
 }
 
 

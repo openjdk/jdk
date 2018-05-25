@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
 // returns the updated value
@@ -69,22 +70,25 @@ void JfrStorageControl::set_to_disk(bool enable) {
   _to_disk = enable;
 }
 
-// concurrent with lax requirement
-
 size_t JfrStorageControl::full_count() const {
   return _full_count;
 }
 
+// mutexed access
 size_t JfrStorageControl::increment_full() {
-  return atomic_add(1, &_full_count);
+  assert(JfrBuffer_lock->owned_by_self(), "invariant");
+  return ++_full_count;
 }
 
 size_t JfrStorageControl::decrement_full() {
-  return atomic_dec(&_full_count);
+  assert(JfrBuffer_lock->owned_by_self(), "invariant");
+  assert(_full_count > 0, "invariant");
+  return --_full_count;
 }
 
 void JfrStorageControl::reset_full() {
-  Atomic::store((size_t)0, &_full_count);
+  assert(JfrBuffer_lock->owned_by_self(), "invariant");
+  _full_count = 0;
 }
 
 bool JfrStorageControl::should_post_buffer_full_message() const {

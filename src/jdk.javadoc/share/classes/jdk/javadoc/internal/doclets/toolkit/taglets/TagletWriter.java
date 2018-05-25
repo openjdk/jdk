@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,8 +220,8 @@ public abstract class TagletWriter {
     public static void genTagOutput(TagletManager tagletManager, Element element,
             List<Taglet> taglets, TagletWriter writer, Content output) {
         Utils utils = writer.configuration().utils;
-        tagletManager.checkTags(utils, element, utils.getBlockTags(element), false);
-        tagletManager.checkTags(utils, element, utils.getFullBody(element), true);
+        tagletManager.checkTags(element, utils.getBlockTags(element), false);
+        tagletManager.checkTags(element, utils.getFullBody(element), true);
         for (Taglet taglet : taglets) {
             if (utils.isTypeElement(element) && taglet instanceof ParamTaglet) {
                 //The type parameters are documented in a special section away
@@ -231,6 +231,10 @@ public abstract class TagletWriter {
             if (taglet instanceof DeprecatedTaglet) {
                 //Deprecated information is documented "inline", not in tag info
                 //section.
+                continue;
+            }
+            if (taglet instanceof SimpleTaglet && !((SimpleTaglet) taglet).enabled) {
+                // taglet has been disabled
                 continue;
             }
             Content currentOutput = null;
@@ -262,7 +266,7 @@ public abstract class TagletWriter {
      */
     public static Content getInlineTagOutput(Element holder, TagletManager tagletManager,
             DocTree holderTag, DocTree inlineTag, TagletWriter tagletWriter) {
-        List<Taglet> definedTags = tagletManager.getInlineCustomTaglets();
+        List<Taglet> definedTags = tagletManager.getInlineTaglets();
         CommentHelper ch = tagletWriter.configuration().utils.getCommentHelper(holder);
         final String inlineTagName = ch.getTagName(inlineTag);
         //This is a custom inline tag.

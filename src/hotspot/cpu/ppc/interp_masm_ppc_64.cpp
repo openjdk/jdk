@@ -471,7 +471,7 @@ void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
 }
 
 // Load object from cpool->resolved_references(index).
-void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Label *is_null) {
+void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result, Register index, Label *L_handle_null) {
   assert_different_registers(result, index);
   get_constant_pool(result);
 
@@ -494,8 +494,7 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
 #endif
   // Add in the index.
   add(result, tmp, result);
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(this, IN_HEAP, T_OBJECT, result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, tmp, R0, false, is_null);
+  load_heap_oop(result, arrayOopDesc::base_offset_in_bytes(T_OBJECT), result, tmp, R0, false, 0, L_handle_null);
 }
 
 // load cpool->resolved_klass_at(index)

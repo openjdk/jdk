@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
+import sun.security.rsa.RSAPublicKeyImpl;
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
@@ -60,7 +61,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
             } else if ("X.509".equals(key.getFormat())) {
                 // let SunRsaSign provider parse for us, then recurse
                 byte[] encoded = key.getEncoded();
-                key = new sun.security.rsa.RSAPublicKeyImpl(encoded);
+                key = RSAPublicKeyImpl.newKey(encoded);
                 return implTranslatePublicKey(key);
             } else {
                 throw new InvalidKeyException("PublicKey must be instance "
@@ -113,7 +114,7 @@ final class P11RSAKeyFactory extends P11KeyFactory {
         if (keySpec instanceof X509EncodedKeySpec) {
             try {
                 byte[] encoded = ((X509EncodedKeySpec)keySpec).getEncoded();
-                PublicKey key = new sun.security.rsa.RSAPublicKeyImpl(encoded);
+                PublicKey key = RSAPublicKeyImpl.newKey(encoded);
                 return implTranslatePublicKey(key);
             } catch (InvalidKeyException e) {
                 throw new InvalidKeySpecException

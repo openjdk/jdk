@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public final class SecurityProviderConstants {
 
     public static final int DEF_DSA_KEY_SIZE;
     public static final int DEF_RSA_KEY_SIZE;
+    public static final int DEF_RSASSA_PSS_KEY_SIZE;
     public static final int DEF_DH_KEY_SIZE;
     public static final int DEF_EC_KEY_SIZE;
 
@@ -66,6 +67,7 @@ public final class SecurityProviderConstants {
             (KEY_LENGTH_PROP);
         int dsaKeySize = 2048;
         int rsaKeySize = 2048;
+        int rsaSsaPssKeySize = rsaKeySize; // default to same value as RSA
         int dhKeySize = 2048;
         int ecKeySize = 256;
 
@@ -98,6 +100,8 @@ public final class SecurityProviderConstants {
                         dsaKeySize = value;
                     } else if (algoName.equals("RSA")) {
                         rsaKeySize = value;
+                    } else if (algoName.equals("RSASSA-PSS")) {
+                        rsaSsaPssKeySize = value;
                     } else if (algoName.equals("DH")) {
                         dhKeySize = value;
                     } else if (algoName.equals("EC")) {
@@ -125,6 +129,7 @@ public final class SecurityProviderConstants {
         }
         DEF_DSA_KEY_SIZE = dsaKeySize;
         DEF_RSA_KEY_SIZE = rsaKeySize;
+        DEF_RSASSA_PSS_KEY_SIZE = rsaSsaPssKeySize;
         DEF_DH_KEY_SIZE = dhKeySize;
         DEF_EC_KEY_SIZE = ecKeySize;
     }

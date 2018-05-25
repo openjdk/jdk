@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 
 /**
  * @test
- * @bug 4853305 4963723
+ * @bug 4853305 4963723 8146293
  * @summary Test signing/verifying using all the signature algorithms
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
+ * @run main TestSignatures
  * @author Andreas Sterbenz
  * @key randomness
  */
@@ -34,6 +37,9 @@ import java.util.*;
 
 import java.security.*;
 import java.security.interfaces.*;
+
+import jdk.test.lib.SigTestUtil;
+import static jdk.test.lib.SigTestUtil.SignatureType;
 
 public class TestSignatures {
 
@@ -53,9 +59,12 @@ public class TestSignatures {
         return ks;
     }
 
-    private static void testSignature(String algorithm, PrivateKey privateKey, PublicKey publicKey) throws Exception {
-        System.out.println("Testing " + algorithm + "...");
-        Signature s = Signature.getInstance(algorithm, provider);
+    private static void testSignature(String mdAlg, PrivateKey privateKey,
+            PublicKey publicKey) throws NoSuchAlgorithmException,
+            InvalidKeyException, SignatureException {
+        System.out.println("Testing against " + mdAlg + "...");
+        String sigAlg = SigTestUtil.generateSigAlg(SignatureType.RSA, mdAlg);
+        Signature s = Signature.getInstance(sigAlg, provider);
         s.initSign(privateKey);
         s.update(data);
         byte[] sig = s.sign();
@@ -64,31 +73,40 @@ public class TestSignatures {
         boolean result;
         result = s.verify(sig);
         if (result == false) {
-            throw new Exception("Verification 1 failed");
+            throw new RuntimeException("Verification 1 failed");
         }
         s.update(data);
         result = s.verify(sig);
         if (result == false) {
-            throw new Exception("Verification 2 failed");
+            throw new RuntimeException("Verification 2 failed");
         }
         result = s.verify(sig);
         if (result == true) {
-            throw new Exception("Verification 3 succeeded");
+            throw new RuntimeException("Verification 3 succeeded");
         }
     }
 
-    private static void test(PrivateKey privateKey, PublicKey publicKey) throws Exception {
-        testSignature("MD2withRSA", privateKey, publicKey);
-        testSignature("MD5withRSA", privateKey, publicKey);
-        testSignature("SHA1withRSA", privateKey, publicKey);
-        testSignature("SHA224withRSA", privateKey, publicKey);
-        testSignature("SHA256withRSA", privateKey, publicKey);
-        RSAPublicKey rsaKey = (RSAPublicKey)publicKey;
-        if (rsaKey.getModulus().bitLength() > 512) {
-            // for SHA384 and SHA512 the data is too long for 512 bit keys
-            testSignature("SHA384withRSA", privateKey, publicKey);
-            testSignature("SHA512withRSA", privateKey, publicKey);
+    private static void test(PrivateKey privateKey, PublicKey publicKey)
+            throws Exception {
+
+        int testSize = ((RSAPublicKey)publicKey).getModulus().bitLength();
+        System.out.println("modulus size = " + testSize);
+        // work around a corner case where the key size is one bit short
+        if ((testSize & 0x07) != 0) {
+            testSize += (8 - (testSize & 0x07));
+            System.out.println("adjusted modulus size = " + testSize);
         }
+        Iterable<String> sign_alg_pkcs15 =
+            SigTestUtil.getDigestAlgorithms(SignatureType.RSA, testSize);
+        sign_alg_pkcs15.forEach(testAlg -> {
+            try {
+                testSignature(testAlg, privateKey, publicKey);
+            } catch (NoSuchAlgorithmException | InvalidKeyException |
+                     SignatureException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        );
     }
 
     public static void main(String[] args) throws Exception {

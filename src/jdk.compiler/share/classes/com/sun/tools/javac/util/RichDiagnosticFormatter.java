@@ -556,7 +556,7 @@ public class RichDiagnosticFormatter extends
                 //has not been attributed the bound is not set
                 List<Type> bounds = (bound != null) &&
                         (bound.hasTag(CLASS) || bound.hasTag(TYPEVAR)) ?
-                    types.getBounds(t) :
+                    getBounds(bound) :
                     List.nil();
 
                 nameSimplifier.addUsage(t.tsym);
@@ -584,6 +584,10 @@ public class RichDiagnosticFormatter extends
             }
             return null;
         }
+        //where:
+            private List<Type> getBounds(Type bound) {
+                return bound.isCompound() ? types.directSupertypes(bound) : List.of(bound);
+            }
     };
     // </editor-fold>
 

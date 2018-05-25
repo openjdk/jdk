@@ -54,7 +54,6 @@ class DeflaterOutputStream extends FilterOutputStream {
     /**
      * Indicates that the stream has been closed.
      */
-
     private boolean closed = false;
 
     private final boolean syncFlush;
@@ -62,7 +61,7 @@ class DeflaterOutputStream extends FilterOutputStream {
     /**
      * Creates a new output stream with the specified compressor,
      * buffer size and flush mode.
-
+     *
      * @param out the output stream
      * @param def the compressor ("deflater")
      * @param size the output buffer size

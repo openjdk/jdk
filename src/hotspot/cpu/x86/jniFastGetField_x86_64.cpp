@@ -188,9 +188,11 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
                                                 // robj is data dependent on rcounter.
   }
 
-  __ clear_jweak_tag(robj);
+  // Both robj and rtmp are clobbered by try_resolve_jobject_in_native.
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->try_resolve_jobject_in_native(masm, /* jni_env */ c_rarg0, robj, rtmp, slow);
+  DEBUG_ONLY(__ movl(rtmp, 0xDEADC0DE);)
 
-  __ movptr(robj, Address(robj, 0));             // *obj
   __ mov   (roffset, c_rarg2);
   __ shrptr(roffset, 2);                         // offset
 

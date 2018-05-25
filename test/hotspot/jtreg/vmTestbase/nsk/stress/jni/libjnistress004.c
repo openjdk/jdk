@@ -1,0 +1,168 @@
+/*
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+#include <jni.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "jnihelper.h"
+
+#define DIGESTLENGTH 16
+
+JNIEXPORT jcharArray JNICALL
+Java_nsk_stress_jni_JNIter004_CheckSum (JNIEnv *env, jobject jobj, jstring jstr) {
+
+    unsigned char digest[DIGESTLENGTH];
+    jchar *tmp;
+    static jint upper = 0;
+    jcharArray jArr;
+    int i;
+    const jchar *critstr;
+    char *str;
+    jint len=(*env)->GetStringUTFLength(env,jstr); CE
+
+    for(i=0;i<DIGESTLENGTH;i++) {
+      digest[i]=0;
+    }
+    str=(char *)malloc(len*sizeof(char));
+/*     const char *threadName=(*env)->GetStringUTFChars(env, jstr, 0); */
+
+    (*env)->MonitorEnter(env, jobj); CE
+    if (upper==0) tmp=(jchar *)malloc(DIGESTLENGTH*sizeof(char));
+    if ((*env)->ExceptionOccurred(env)) {
+    (*env)->ExceptionDescribe(env);
+    (*env)->ExceptionClear(env);
+    }
+    critstr=(*env)->GetStringCritical(env, jstr, 0); CE
+    for(i=0;i<len;i++)
+    str[i] = (char) critstr[i];
+    (*env)->ReleaseStringCritical(env,jstr,critstr); CE
+    for(i=0;i<len;i++) {
+        digest[i % DIGESTLENGTH]+=str[i];
+    }
+    free(str);
+
+    if ((*env)->ExceptionOccurred(env)) {
+    (*env)->ExceptionDescribe(env);
+    (*env)->ExceptionClear(env);
+    }
+    memcpy(tmp,digest,DIGESTLENGTH);
+    jArr=(*env)->NewCharArray(env,DIGESTLENGTH/sizeof(jchar)); CE
+    len=(*env)->GetArrayLength(env,jArr); CE
+    (*env)->SetCharArrayRegion(env,jArr,0,len,tmp); CE
+/*     ++upper; */
+    (*env)->MonitorExit(env, jobj); CE
+    return jArr;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring jstr,
+            jcharArray cArr, jint limit) {
+
+    unsigned char digest[DIGESTLENGTH];
+    jchar *tmp;
+/*     jcharArray jArr; */
+    const jchar *critstr;
+    jint strlen;
+    char *str;
+    jboolean ret=JNI_TRUE;
+    int i;
+    static jint upper = 0;
+    jint len;
+    jchar *ch;
+
+    for(i=0;i<DIGESTLENGTH;i++) {
+      digest[i]=0;
+    }
+    strlen =  (*env)->GetStringUTFLength(env,jstr); CE
+    str = (char *)malloc(strlen*sizeof(char));
+
+    len =(*env)->GetArrayLength(env,cArr); CE
+
+    (*env)->MonitorEnter(env, jobj); CE
+    if (upper>limit) {
+    (*env)->MonitorExit(env, jobj); CE
+    return JNI_FALSE;
+    }
+    tmp=(jchar *)malloc(DIGESTLENGTH*sizeof(char));
+    if ((*env)->ExceptionOccurred(env)) {
+    (*env)->ExceptionDescribe(env);
+    (*env)->ExceptionClear(env);
+    }
+    critstr=(*env)->GetStringCritical(env, jstr, 0); CE
+    for(i=0;i<strlen;i++)
+    str[i] = (char) critstr[i];
+    (*env)->ReleaseStringCritical(env,jstr,critstr); CE
+    for(i=0;i<strlen; i++) {
+      digest[i % DIGESTLENGTH]+=str[i % DIGESTLENGTH];
+    }
+
+    free(str);
+
+    if ((*env)->ExceptionOccurred(env)) {
+    (*env)->ExceptionDescribe(env);
+    (*env)->ExceptionClear(env);
+    }
+    memcpy(tmp,digest,DIGESTLENGTH);
+
+/*     jArr=(*env)->NewCharArray(env,DIGESTLENGTH/sizeof(jchar)); */
+/*     len=(*env)->GetArrayLength(env,jArr); */
+/*     (*env)->SetCharArrayRegion(env,jArr,0,len,tmp); */
+/*     ++upper; */
+/*     (*env)->MonitorExit(env, jobj); */
+
+/* Compare  */
+/*     (*env)->MonitorEnter(env, jobj); */
+
+    ch=(jchar *)(*env)->GetPrimitiveArrayCritical(env,cArr,0); CE
+
+    printf("Comparing: ");
+    for(i=0;i<len;i++)
+    if(ch[i]!=tmp[i]) {
+        printf("Error in %d\n",i);
+        printf("ch[%d]=%02x tmp[%d]=%02x\n",i,ch[i],i,tmp[i]);
+        ret=JNI_FALSE;
+    }
+    else {
+        printf("ch[%d]=%02x tmp[%d]=%02x\n",i,ch[i],i,tmp[i]);
+    }
+    printf("\n");
+    (*env)->ReleasePrimitiveArrayCritical(env,cArr,ch,0); CE
+    ++upper;
+    if (!(upper % 500))
+    fprintf(stderr,"There are %d elements now.\n", upper);
+    if (upper==limit) {
+    jclass clazz;
+    jmethodID methodID;
+    char *name="halt";
+    char *sig="()V";
+
+    clazz=(*env)->GetObjectClass(env, jobj); CE
+    methodID=(*env)->GetStaticMethodID(env, clazz, name, sig); CE
+    (*env)->CallStaticVoidMethod(env, clazz, methodID); CE
+    free(tmp);
+    ret=JNI_TRUE;
+    }
+    (*env)->MonitorExit(env, jobj); CE
+    return ret;
+}

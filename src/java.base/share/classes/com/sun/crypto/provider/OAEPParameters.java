@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,10 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
                     mgfSpec = MGF1ParameterSpec.SHA384;
                 } else if (mgfDigestName.equals("SHA-512")) {
                     mgfSpec = MGF1ParameterSpec.SHA512;
+                } else if (mgfDigestName.equals("SHA-512/224")) {
+                    mgfSpec = MGF1ParameterSpec.SHA512_224;
+                } else if (mgfDigestName.equals("SHA-512/256")) {
+                    mgfSpec = MGF1ParameterSpec.SHA512_256;
                 } else {
                     throw new IOException(
                         "Unrecognized message digest algorithm");

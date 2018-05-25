@@ -25,8 +25,8 @@
 
 package jdk.jfr.api.consumer;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,6 +35,7 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 
 /*
@@ -61,7 +62,7 @@ public class TestReadTwice {
         r.stop();
 
         // Dump the recording to a file
-        Path path = Files.createTempFile("recording", ".jfr");
+        Path path = Utils.createTempFile("read-twice", ".jfr");
         System.out.println("Dumping to " + path);
         r.dump(path);
         r.close();

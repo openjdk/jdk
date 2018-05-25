@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.lang.model.element.Element;
@@ -40,7 +41,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.RETURN;
 
 /**
  * A taglet that represents the @return tag.
@@ -52,15 +53,13 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  *
  * @author Jamie Ho
  */
-public class ReturnTaglet extends BaseExecutableMemberTaglet implements InheritableTaglet {
+public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
 
     public ReturnTaglet() {
-        name = RETURN.tagName;
+        super(RETURN.tagName, false, EnumSet.of(Site.METHOD));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
         List<? extends DocTree> tags = input.utils.getBlockTags(input.element, DocTree.Kind.RETURN);
         CommentHelper ch = input.utils.getCommentHelper(input.element);
@@ -73,20 +72,7 @@ public class ReturnTaglet extends BaseExecutableMemberTaglet implements Inherita
         }
     }
 
-    /**
-     * Return true if this <code>Taglet</code>
-     * is used in constructor documentation.
-     * @return true if this <code>Taglet</code>
-     * is used in constructor documentation and false
-     * otherwise.
-     */
-    public boolean inConstructor() {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         Messages messages = writer.configuration().getMessages();
         Utils utils = writer.configuration().utils;

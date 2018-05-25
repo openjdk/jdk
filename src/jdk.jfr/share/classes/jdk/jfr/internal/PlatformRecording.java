@@ -101,7 +101,7 @@ public final class PlatformRecording implements AutoCloseable {
         RecordingState oldState;
         RecordingState newState;
         synchronized (recorder) {
-            oldState = recording.getState();
+            oldState = getState();
             if (!Utils.isBefore(state, RecordingState.RUNNING)) {
                 throw new IllegalStateException("Recording can only be started once.");
             }
@@ -139,7 +139,7 @@ public final class PlatformRecording implements AutoCloseable {
                     }
                     return "Started recording \"" + getName() + "\" (" + getId() + ") " + optionText;
                 });
-            newState = recording.getState();
+            newState = getState();
         }
         notifyIfStateChanged(oldState, newState);
     }
@@ -156,16 +156,16 @@ public final class PlatformRecording implements AutoCloseable {
         RecordingState oldState;
         RecordingState newState;
         synchronized (recorder) {
-            oldState = recording.getState();
+            oldState = getState();
             if (stopTask != null) {
                 stopTask.cancel();
                 stopTask = null;
             }
-            recorder.stop(this);
-            String endTExt = reason == null ? "" : ". Reason \"" + reason + "\".";
-            Logger.log(LogTag.JFR, LogLevel.INFO, "Stopped recording \"" + recording.getName() + "\" (" + recording.getId()+ ")" + endTExt);
+            recorder.stop(this, alternativePath);
+            String endText = reason == null ? "" : ". Reason \"" + reason + "\".";
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Stopped recording \"" + getName() + "\" (" + getId()+ ")" + endText);
             this.stopTime = Instant.now();
-            newState = recording.getState();
+            newState = getState();
         }
         WriteableUserPath dest = getDestination();
         if (dest == null && alternativePath != null) {
@@ -174,7 +174,7 @@ public final class PlatformRecording implements AutoCloseable {
         if (dest != null) {
             try {
                 copyTo(dest, reason, overlaySettings);
-                Logger.log(LogTag.JFR, LogLevel.INFO, "Wrote recording \"" + recording.getName() + "\" (" + recording.getId()+ ") to " + dest.getText());
+                Logger.log(LogTag.JFR, LogLevel.INFO, "Wrote recording \"" + getName() + "\" (" + getId()+ ") to " + dest.getText());
                 notifyIfStateChanged(newState, oldState);
                 close(); // remove if copied out
             } catch (IOException e) {
@@ -195,7 +195,7 @@ public final class PlatformRecording implements AutoCloseable {
             setState(RecordingState.DELAYED);
             startTask = createStartTask();
             recorder.getTimer().schedule(startTask, delay.toMillis());
-            Logger.log(LogTag.JFR, LogLevel.INFO, "Scheduled recording \"" + recording.getName() + "\" (" + recording.getId()+ ") to start at " + now);
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Scheduled recording \"" + getName() + "\" (" + getId()+ ") to start at " + now);
         }
     }
 
@@ -319,8 +319,7 @@ public final class PlatformRecording implements AutoCloseable {
             }
 
             // Recording is RUNNING, create a clone
-            try(Recording r = new Recording()) {
-                PlatformRecording clone = PrivateAccess.getInstance().getPlatformRecording(r);
+            try(PlatformRecording clone = recorder.newRecording(Collections.emptyMap(), 0)) {
                 clone.setShouldWriteActiveRecordingEvent(false);
                 clone.setName(getName());
                 clone.setDestination(path);

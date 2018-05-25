@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
  * Results of running the JstatGcTool ("jstat -gcnew <pid>")
  *
  * Output example:
- * S0C           S1C         S0U    S1U   TT   MTT  DSS      EC                EU       YGC     YGCT
- * 11264.0  11264.0    0.0    0.0      15  15       0.0      67584.0   1351.7      0      0.000
+ * S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+ *   0.0 7168.0    0.0 7168.0 15  15 3584.0  62464.0   5120.0     27    0.340
 
  * Output description:
  * S0C     Current survivor space 0 capacity (KB).
@@ -76,10 +76,6 @@ public class JstatGcNewResults extends JstatResults {
 
         int YGC = getIntValue("YGC");
         float YGCT = getFloatValue("YGCT");
-
-        if (YGC > 0) {
-            assertThat(YGCT > 0, "Number of young generation GC Events is " + YGC + ", but YGCT is 0");
-        }
 
         int TT = getIntValue("TT");
         int MTT = getIntValue("MTT");

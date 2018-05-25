@@ -326,6 +326,10 @@ class InstanceKlass: public Klass {
     return (_misc_flags & _misc_is_shared_app_class) != 0;
   }
 
+  void clear_class_loader_type() {
+    _misc_flags &= ~loader_type_bits();
+  }
+
   void set_class_loader_type(s2 loader_type) {
     switch (loader_type) {
     case ClassLoader::BOOT_LOADER:

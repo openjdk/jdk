@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,8 +113,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setDefaultTab(resources.getText("doclet.All_Packages"))
-                    .setTabScriptVariable("groups")
-                    .setTabScript(i -> "showGroups(" + i + ");")
+                    .setTabScript(i -> "show(" + i + ");")
                     .setTabId(i -> (i == 0) ? "t0" : ("t" + (1 << (i - 1))));
 
             // add the tabs in command-line order

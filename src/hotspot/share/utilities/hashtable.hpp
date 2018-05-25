@@ -265,7 +265,7 @@ public:
     return this->hash_to_index(compute_hash(name));
   }
 
-  void print_table_statistics(outputStream* st, const char *table_name);
+  void print_table_statistics(outputStream* st, const char *table_name, T (*literal_load_barrier)(HashtableEntry<T, F>*) = NULL);
 
  protected:
 

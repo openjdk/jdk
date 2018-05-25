@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,1080 +26,1080 @@
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.large.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.arraycopy.arrays.small.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.large.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.arrays.small.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.clone.objects.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.clone.objects.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.large.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.copyof.arrays.small.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.large.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.arrays.small.volatiles.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.plain.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.plain.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.plain.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.plain.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.plain.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.plain.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.plain.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.plain.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.plain.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.plain.StringTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.volatiles.BooleanTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.BooleanTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.BooleanTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.volatiles.ByteTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.ByteTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.ByteTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.volatiles.CharTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.CharTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.CharTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.volatiles.DoubleTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.DoubleTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.DoubleTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.volatiles.FloatTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.FloatTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.FloatTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.volatiles.IntTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.IntTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.IntTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.volatiles.LongTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.LongTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.LongTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.volatiles.ShortTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.ShortTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.ShortTest
  */
 
 /**
  * @test org.openjdk.jcstress.tests.copy.manual.objects.volatiles.StringTest
  * @library /test/lib /
- * @run driver applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.StringTest
+ * @run driver/timeout=2400 applications.jcstress.JcstressRunner -v -m default -t org.openjdk.jcstress.tests.copy.manual.objects.volatiles.StringTest
  */
 
