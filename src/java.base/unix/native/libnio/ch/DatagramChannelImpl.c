@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
         retry = JNI_FALSE;
         n = recvfrom(fd, buf, len, 0, &sa.sa, &sa_len);
         if (n < 0) {
-            if (errno == EWOULDBLOCK) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 return IOS_UNAVAILABLE;
             }
             if (errno == EINTR) {
@@ -217,7 +217,7 @@ Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
 
     n = sendto(fd, buf, len, 0, &sa.sa, sa_len);
     if (n < 0) {
-        if (errno == EAGAIN) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return IOS_UNAVAILABLE;
         }
         if (errno == EINTR) {

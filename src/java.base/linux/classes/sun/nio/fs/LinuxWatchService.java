@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,7 +319,7 @@ class LinuxWatchService
                     try {
                         bytesRead = read(ifd, address, BUFFER_SIZE);
                     } catch (UnixException x) {
-                        if (x.errno() != EAGAIN)
+                        if (x.errno() != EAGAIN && x.errno() != EWOULDBLOCK)
                             throw x;
                         bytesRead = 0;
                     }
@@ -367,7 +367,7 @@ class LinuxWatchService
                             if (shutdown)
                                 break;
                         } catch (UnixException x) {
-                            if (x.errno() != UnixConstants.EAGAIN)
+                            if (x.errno() != EAGAIN && x.errno() != EWOULDBLOCK)
                                 throw x;
                         }
                     }

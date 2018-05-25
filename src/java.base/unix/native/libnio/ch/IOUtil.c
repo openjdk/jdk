@@ -120,7 +120,7 @@ Java_sun_nio_ch_IOUtil_drain(JNIEnv *env, jclass cl, jint fd)
     for (;;) {
         int n = read(fd, buf, sizeof(buf));
         tn += n;
-        if ((n < 0) && (errno != EAGAIN))
+        if ((n < 0) && (errno != EAGAIN && errno != EWOULDBLOCK))
             JNU_ThrowIOExceptionWithLastError(env, "Drain");
         if (n == (int)sizeof(buf))
             continue;
@@ -136,7 +136,7 @@ Java_sun_nio_ch_IOUtil_drain1(JNIEnv *env, jclass cl, jint fd)
 
     res = read(fd, buf, 1);
     if (res < 0) {
-        if (errno == EAGAIN) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
             res = 0;
         } else if (errno == EINTR) {
             return IOS_INTERRUPTED;
@@ -187,7 +187,7 @@ convertReturnVal(JNIEnv *env, jint n, jboolean reading)
             return 0;
         }
     }
-    else if (errno == EAGAIN)
+    else if (errno == EAGAIN || errno == EWOULDBLOCK)
         return IOS_UNAVAILABLE;
     else if (errno == EINTR)
         return IOS_INTERRUPTED;
@@ -212,7 +212,7 @@ convertLongReturnVal(JNIEnv *env, jlong n, jboolean reading)
             return 0;
         }
     }
-    else if (errno == EAGAIN)
+    else if (errno == EAGAIN || errno == EWOULDBLOCK)
         return IOS_UNAVAILABLE;
     else if (errno == EINTR)
         return IOS_INTERRUPTED;
