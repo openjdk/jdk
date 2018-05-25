@@ -211,10 +211,8 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         ArrayList<String> listOfString = new ArrayList<String>();
         getCascadeList(nativeFontPtr, listOfString);
 
-        // add JRE "Lucida Sans Regular" to the cascade list to enable fallback
-        // to happen to this JRE font in case the intended glyph is missing in
-        // fonts provided in the CoreText provided cascaded list
-        listOfString.add("Lucida Sans Regular");
+        // In some italic cases the standard Mac cascade list is missing Arabic.
+        listOfString.add("GeezaPro");
         FontManager fm = FontManagerFactory.getInstance();
         int numFonts = 1 + listOfString.size();
         PhysicalFont[] fonts = new PhysicalFont[numFonts];

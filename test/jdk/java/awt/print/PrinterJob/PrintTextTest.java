@@ -97,14 +97,14 @@ public class PrintTextTest extends Component implements Printable {
         book.append(ptt, portrait);
         book.append(ptt, landscape);
 
-        font = new Font("Lucida Sans", Font.PLAIN, 18);
+        font = getPhysicalFont();
         name = "Page " + new Integer(page++);
         ptt = new PrintTextTest(name, font, null, false);
         p.add(name, ptt);
         book.append(ptt, portrait);
         book.append(ptt, landscape);
 
-        font = new Font("Lucida Sans", Font.PLAIN, 18);
+        font = getPhysicalFont();
         AffineTransform rotTx = AffineTransform.getRotateInstance(0.15);
         rotTx.translate(60,0);
         name = "Page " + new Integer(page++);
@@ -207,6 +207,36 @@ public class PrintTextTest extends Component implements Printable {
         } catch (PrinterException e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    // The test needs a physical font that supports Latin.
+    private static Font physicalFont;
+    private static Font getPhysicalFont() {
+        if (physicalFont != null) {
+            return physicalFont;
+        }
+        GraphicsEnvironment ge =
+            GraphicsEnvironment.getLocalGraphicsEnvironment();
+        String[] names = ge.getAvailableFontFamilyNames();
+
+        for (String n : names) {
+            switch (n.toLowerCase()) {
+                case "dialog":
+                case "dialoginput":
+                case "serif":
+                case "sansserif":
+                case "monospaced":
+                     break;
+                default:
+                    Font f = new Font(n, Font.PLAIN, 18);
+                    if (f.canDisplayUpTo("AZaz09") == -1) {
+                        physicalFont = f;
+                        return f;
+                    }
+             }
+        }
+        physicalFont = new Font(Font.DIALOG, Font.PLAIN, 18);
+        return physicalFont;
     }
 
     public PrintTextTest(String page, Font font, AffineTransform gxTx,

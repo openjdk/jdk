@@ -23,8 +23,6 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, gendata/GendataFontConfig.gmk))
-
 GENDATA_FONT_CONFIG_DST := $(SUPPORT_OUTPUTDIR)/modules_libs/$(MODULE)
 
 GENDATA_FONT_CONFIG_DATA_DIR ?= $(TOPDIR)/make/data/fontconfig

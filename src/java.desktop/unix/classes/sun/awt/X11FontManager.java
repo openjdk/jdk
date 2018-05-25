@@ -126,17 +126,6 @@ public final class X11FontManager extends FcFontManager {
       */
      private static HashSet<String> fontConfigDirs = null;
 
-    /* These maps are used on Linux where we reference the Lucida oblique
-     * fonts in fontconfig files even though they aren't in the standard
-     * font directory. This explicitly remaps the XLFDs for these to the
-     * correct base font. This is needed to prevent composite fonts from
-     * defaulting to the Lucida Sans which is a bad substitute for the
-     * monospaced Lucida Sans Typewriter. Also these maps prevent the
-     * JRE from doing wasted work at start up.
-     */
-    HashMap<String, String> oblmap = null;
-
-
     /*
      * Used to eliminate redundant work. When a font directory is
      * registered it added to this list. Subsequent registrations for the
@@ -232,16 +221,6 @@ public final class X11FontManager extends FcFontManager {
 
         if (fontID != null) {
             fileName = fontNameMap.get(fontID);
-            /* On Linux check for the Lucida Oblique fonts */
-            if (fileName == null && FontUtilities.isLinux && !isOpenJDK()) {
-                if (oblmap == null) {
-                    initObliqueLucidaFontMap();
-                }
-                String oblkey = getObliqueLucidaFontID(fontID);
-                if (oblkey != null) {
-                    fileName = oblmap.get(oblkey);
-                }
-            }
             if (fontPath == null &&
                 (fileName == null || !fileName.startsWith("/"))) {
                 if (FontUtilities.debugFonts()) {
@@ -471,17 +450,6 @@ public final class X11FontManager extends FcFontManager {
         fontNameMap = new HashMap<>(1);
     }
 
-    private String getObliqueLucidaFontID(String fontID) {
-        if (fontID.startsWith("-lucidasans-medium-i-normal") ||
-            fontID.startsWith("-lucidasans-bold-i-normal") ||
-            fontID.startsWith("-lucidatypewriter-medium-i-normal") ||
-            fontID.startsWith("-lucidatypewriter-bold-i-normal")) {
-            return fontID.substring(0, fontID.indexOf("-i-"));
-        } else {
-            return null;
-        }
-    }
-
     private static String getX11FontName(String platName) {
         String xlfd = platName.replaceAll("%d", "*");
         if (NativeFont.fontExists(xlfd)) {
@@ -489,18 +457,6 @@ public final class X11FontManager extends FcFontManager {
         } else {
             return null;
         }
-    }
-
-    private void initObliqueLucidaFontMap() {
-        oblmap = new HashMap<String, String>();
-        oblmap.put("-lucidasans-medium",
-                   jreLibDirName+"/fonts/LucidaSansRegular.ttf");
-        oblmap.put("-lucidasans-bold",
-                   jreLibDirName+"/fonts/LucidaSansDemiBold.ttf");
-        oblmap.put("-lucidatypewriter-medium",
-                   jreLibDirName+"/fonts/LucidaTypewriterRegular.ttf");
-        oblmap.put("-lucidatypewriter-bold",
-                   jreLibDirName+"/fonts/LucidaTypewriterBold.ttf");
     }
 
     private boolean isHeadless() {
@@ -749,9 +705,7 @@ public final class X11FontManager extends FcFontManager {
          * For Linux we require an exact match of distro and version to
          * use the preconfigured file.
          * If synthesising fails, we fall back to any preconfigured file
-         * and do the best we can. For the commercial JDK this will be
-         * fine as it includes the Lucida fonts. OpenJDK should not hit
-         * this as the synthesis should always work on its platforms.
+         * and do the best we can.
          */
         FontConfiguration mFontConfig = new MFontConfiguration(this);
         if ((FontUtilities.isLinux && !mFontConfig.foundOsSpecificFile()) ||

@@ -1016,8 +1016,6 @@ public abstract class FontConfiguration {
     /**
      * Returns an array of composite font descriptors for all logical font
      * faces.
-     * If the font configuration file doesn't specify Lucida Sans Regular
-     * or the given fallback font as component fonts, they are added here.
      */
     public CompositeFontDescriptor[] get2DCompositeFontInfo() {
         CompositeFontDescriptor[] result =
@@ -1053,7 +1051,6 @@ public abstract class FontConfiguration {
             // other info is per style
             for (int styleIndex = 0; styleIndex < NUM_STYLES; styleIndex++) {
                 int maxComponentFontCount = compFontNameIDs[fontIndex][styleIndex].length;
-                boolean sawDefaultFontFile = false;
                 // fall back fonts listed in the lib/fonts/fallback directory
                 if (installedFallbackFontFiles != null) {
                     maxComponentFontCount += installedFallbackFontFiles.length;
@@ -1074,33 +1071,10 @@ public abstract class FontConfiguration {
                         needToSearchForFile(componentFileNames[index])) {
                         componentFileNames[index] = getFileNameFromComponentFontName(getComponentFontName(fontNameID));
                     }
-                    if (!sawDefaultFontFile &&
-                        defaultFontFile.equals(componentFileNames[index])) {
-                        sawDefaultFontFile = true;
-                    }
                     /*
                     System.out.println(publicFontNames[fontIndex] + "." + styleNames[styleIndex] + "."
                         + getString(table_scriptIDs[coreScripts[index]]) + "=" + componentFileNames[index]);
                     */
-                }
-
-                //"Lucida Sans Regular" is not in the list, we add it here
-                if (!sawDefaultFontFile) {
-                    int len = 0;
-                    if (installedFallbackFontFiles != null) {
-                        len = installedFallbackFontFiles.length;
-                    }
-                    if (index + len == maxComponentFontCount) {
-                        String[] newComponentFaceNames = new String[maxComponentFontCount + 1];
-                        System.arraycopy(componentFaceNames, 0, newComponentFaceNames, 0, index);
-                        componentFaceNames = newComponentFaceNames;
-                        String[] newComponentFileNames = new String[maxComponentFontCount + 1];
-                        System.arraycopy(componentFileNames, 0, newComponentFileNames, 0, index);
-                        componentFileNames = newComponentFileNames;
-                    }
-                    componentFaceNames[index] = defaultFontFaceName;
-                    componentFileNames[index] = defaultFontFile;
-                    index++;
                 }
 
                 if (installedFallbackFontFiles != null) {
@@ -1458,8 +1432,7 @@ public abstract class FontConfiguration {
             for (int ii = 0; ii < table_awtfontpaths.length; ii++) {
                 if (table_awtfontpaths[ii] == 0) {
                     String script = getString(table_scriptIDs[ii]);
-                    if (script.contains("lucida") ||
-                        script.contains("dingbats") ||
+                    if (script.contains("dingbats") ||
                         script.contains("symbol")) {
                         continue;
                     }
