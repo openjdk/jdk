@@ -60,8 +60,11 @@ java/util/logging/LogManager/RootLogger/setLevel/TestRootLoggerLevel.java   8185
 java/util/logging/RootLogger/RootLevelInConfigFile.java                 8185139   generic-all
 java/util/logging/TestAppletLoggerContext.java                          8185139   generic-all
 java/util/logging/TestConfigurationListeners.java                       8185139   generic-all
+java/util/logging/LogManager/Configuration/ParentLoggerWithHandlerGC.java 8185139 generic-all
+java/util/logging/FileHandlerLongLimit.java                             8185139   generic-all
 
 java/util/concurrent/tck/JSR166TestCase.java                            8187486   generic-all
 
 java/lang/ref/OOMEInReferenceHandler.java                               8196611   generic-all
 java/lang/Runtime/exec/LotsOfOutput.java                                8196611   generic-all
+java/util/concurrent/ScheduledThreadPoolExecutor/BasicCancelTest.java   8196611   generic-all
