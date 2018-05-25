@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8009977 8186884 8194486
+ * @bug 8009977 8186884 8194486 8201627
  * @summary A test to launch multiple Java processes using either Java GSS
  *          or native GSS
  * @library ../../../../java/security/testlibrary/ /test/lib
@@ -37,9 +37,9 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
 import java.util.PropertyPermission;
-import java.util.Random;
 import java.util.Set;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import org.ietf.jgss.Oid;
 import sun.security.krb5.Config;
@@ -84,6 +84,7 @@ public class BasicProc {
     private static final String REALM = "REALM";
 
     private static final int MSGSIZE = 1024;
+    private static final byte[] MSG = new byte[MSGSIZE];
 
     public static void main(String[] args) throws Exception {
 
@@ -165,9 +166,11 @@ public class BasicProc {
                         Context.fromUserPass(USER, PASS, false);
                 c.startAsClient(SERVER, oid);
                 c.x().requestCredDeleg(true);
+                c.x().requestMutualAuth(true);
                 Proc.binOut(c.take(new byte[0])); // AP-REQ
-                token = Proc.binIn(); // AP-REP
-                c.take(token);
+                c.take(Proc.binIn()); // AP-REP
+                Proc.binOut(c.wrap(MSG, true));
+                Proc.binOut(c.getMic(MSG));
                 break;
             case "server":
                 Context s = args[1].equals("n") ?
@@ -175,41 +178,27 @@ public class BasicProc {
                         Context.fromUserKtab(SERVER, KTAB_S, true);
                 s.startAsServer(oid);
                 token = Proc.binIn(); // AP-REQ
-                token = s.take(token);
-                Proc.binOut(token); // AP-REP
+                Proc.binOut(s.take(token)); // AP-REP
+                msg = s.unwrap(Proc.binIn(), true);
+                Asserts.assertTrue(Arrays.equals(msg, MSG));
+                s.verifyMic(Proc.binIn(), msg);
                 Context s2 = s.delegated();
                 s2.startAsClient(BACKEND, oid);
+                s2.x().requestMutualAuth(false);
                 Proc.binOut(s2.take(new byte[0])); // AP-REQ
-                token = Proc.binIn();
-                s2.take(token); // AP-REP
-                Random r = new Random();
-                msg = new byte[MSGSIZE];
-                r.nextBytes(msg);
-                Proc.binOut(s2.wrap(msg, true)); // enc1
-                Proc.binOut(s2.wrap(msg, true)); // enc2
-                Proc.binOut(s2.wrap(msg, true)); // enc3
-                s2.verifyMic(Proc.binIn(), msg); // mic
-                byte[] msg2 = Proc.binIn(); // msg
-                if (!Arrays.equals(msg, msg2)) {
-                    throw new Exception("diff msg");
-                }
+                msg = s2.unwrap(Proc.binIn(), true);
+                Asserts.assertTrue(Arrays.equals(msg, MSG));
+                s2.verifyMic(Proc.binIn(), msg);
                 break;
             case "backend":
                 Context b = args[1].equals("n") ?
                         Context.fromThinAir() :
                         Context.fromUserKtab(BACKEND, KTAB_B, true);
                 b.startAsServer(oid);
-                token = Proc.binIn(); // AP-REQ
-                Proc.binOut(b.take(token)); // AP-REP
-                msg = b.unwrap(Proc.binIn(), true); // enc1
-                if (!Arrays.equals(msg, b.unwrap(Proc.binIn(), true))) {  // enc2
-                    throw new Exception("diff msg");
-                }
-                if (!Arrays.equals(msg, b.unwrap(Proc.binIn(), true))) {  // enc3
-                    throw new Exception("diff msg");
-                }
-                Proc.binOut(b.getMic(msg)); // mic
-                Proc.binOut(msg); // msg
+                token = b.take(Proc.binIn()); // AP-REQ
+                Asserts.assertTrue(token == null);
+                Proc.binOut(b.wrap(MSG, true));
+                Proc.binOut(b.getMic(MSG));
                 break;
         }
     }
@@ -281,20 +270,18 @@ public class BasicProc {
         }
         pb.start();
 
-        // Client and server handshake
-        ps.println(pc.readData());
-        pc.println(ps.readData());
+        // Client and server
+        ps.println(pc.readData()); // AP-REQ
+        pc.println(ps.readData()); // AP-REP
 
-        // Server and backend handshake
-        pb.println(ps.readData());
-        ps.println(pb.readData());
+        ps.println(pc.readData()); // KRB-PRIV
+        ps.println(pc.readData()); // KRB-SAFE
 
-        // wrap/unwrap/getMic/verifyMic and plain text
-        pb.println(ps.readData());
-        pb.println(ps.readData());
-        pb.println(ps.readData());
-        ps.println(pb.readData());
-        ps.println(pb.readData());
+        // Server and backend
+        pb.println(ps.readData()); // AP-REQ
+
+        ps.println(pb.readData()); // KRB-PRIV
+        ps.println(pb.readData()); // KRB-SAFE
 
         if ((pc.waitFor() | ps.waitFor() | pb.waitFor()) != 0) {
             throw new Exception("Process failed");

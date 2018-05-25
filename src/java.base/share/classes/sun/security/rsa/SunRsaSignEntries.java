@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,10 @@ public final class SunRsaSignEntries {
     public static void putEntries(Map<Object, Object> map) {
 
         // main algorithms
-
         map.put("KeyFactory.RSA",
-                "sun.security.rsa.RSAKeyFactory");
+                "sun.security.rsa.RSAKeyFactory$Legacy");
         map.put("KeyPairGenerator.RSA",
-                "sun.security.rsa.RSAKeyPairGenerator");
+                "sun.security.rsa.RSAKeyPairGenerator$Legacy");
         map.put("Signature.MD2withRSA",
                 "sun.security.rsa.RSASignature$MD2withRSA");
         map.put("Signature.MD5withRSA",
@@ -60,9 +59,21 @@ public final class SunRsaSignEntries {
                 "sun.security.rsa.RSASignature$SHA384withRSA");
         map.put("Signature.SHA512withRSA",
                 "sun.security.rsa.RSASignature$SHA512withRSA");
+        map.put("Signature.SHA512/224withRSA",
+                "sun.security.rsa.RSASignature$SHA512_224withRSA");
+        map.put("Signature.SHA512/256withRSA",
+                "sun.security.rsa.RSASignature$SHA512_256withRSA");
+
+        map.put("KeyFactory.RSASSA-PSS",
+                "sun.security.rsa.RSAKeyFactory$PSS");
+        map.put("KeyPairGenerator.RSASSA-PSS",
+                "sun.security.rsa.RSAKeyPairGenerator$PSS");
+        map.put("Signature.RSASSA-PSS",
+                "sun.security.rsa.RSAPSSSignature");
+        map.put("AlgorithmParameters.RSASSA-PSS",
+                "sun.security.rsa.PSSParameters");
 
         // attributes for supported key classes
-
         String rsaKeyClasses = "java.security.interfaces.RSAPublicKey" +
                 "|java.security.interfaces.RSAPrivateKey";
         map.put("Signature.MD2withRSA SupportedKeyClasses", rsaKeyClasses);
@@ -72,9 +83,11 @@ public final class SunRsaSignEntries {
         map.put("Signature.SHA256withRSA SupportedKeyClasses", rsaKeyClasses);
         map.put("Signature.SHA384withRSA SupportedKeyClasses", rsaKeyClasses);
         map.put("Signature.SHA512withRSA SupportedKeyClasses", rsaKeyClasses);
+        map.put("Signature.SHA512/224withRSA SupportedKeyClasses", rsaKeyClasses);
+        map.put("Signature.SHA512/256withRSA SupportedKeyClasses", rsaKeyClasses);
+        map.put("Signature.RSASSA-PSS SupportedKeyClasses", rsaKeyClasses);
 
         // aliases
-
         map.put("Alg.Alias.KeyFactory.1.2.840.113549.1.1",     "RSA");
         map.put("Alg.Alias.KeyFactory.OID.1.2.840.113549.1.1", "RSA");
 
@@ -102,6 +115,21 @@ public final class SunRsaSignEntries {
 
         map.put("Alg.Alias.Signature.1.2.840.113549.1.1.13",     "SHA512withRSA");
         map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.13", "SHA512withRSA");
+        map.put("Alg.Alias.Signature.1.2.840.113549.1.1.15",     "SHA512/224withRSA");
+        map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.15", "SHA512/224withRSA");
+        map.put("Alg.Alias.Signature.1.2.840.113549.1.1.16",     "SHA512/256withRSA");
+        map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.16", "SHA512/256withRSA");
 
+        map.put("Alg.Alias.KeyFactory.1.2.840.113549.1.1.10",     "RSASSA-PSS");
+        map.put("Alg.Alias.KeyFactory.OID.1.2.840.113549.1.1.10", "RSASSA-PSS");
+
+        map.put("Alg.Alias.KeyPairGenerator.1.2.840.113549.1.1.10",     "RSASSA-PSS");
+        map.put("Alg.Alias.KeyPairGenerator.OID.1.2.840.113549.1.1.10", "RSASSA-PSS");
+
+        map.put("Alg.Alias.Signature.1.2.840.113549.1.1.10",     "RSASSA-PSS");
+        map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.10", "RSASSA-PSS");
+
+        map.put("Alg.Alias.AlgorithmParameters.1.2.840.113549.1.1.10",     "RSASSA-PSS");
+        map.put("Alg.Alias.AlgorithmParameters.OID.1.2.840.113549.1.1.10", "RSASSA-PSS");
     }
 }

@@ -98,7 +98,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
     public ZipInputStream(InputStream in, Charset charset) {
         super(new PushbackInputStream(in, 512), new Inflater(true), 512);
         usesDefaultInflater = true;
-        if(in == null) {
+        if (in == null) {
             throw new NullPointerException("in is null");
         }
         if (charset == null)
@@ -283,7 +283,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
         if (get32(tmpbuf, 0) != LOCSIG) {
             return null;
         }
-        // get flag first, we need check EFS.
+        // get flag first, we need check USE_UTF8.
         flag = get16(tmpbuf, LOCFLG);
         // get the entry name and create the ZipEntry first
         int len = get16(tmpbuf, LOCNAM);
@@ -295,8 +295,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
             b = new byte[blen];
         }
         readFully(b, 0, len);
-        // Force to use UTF-8 if the EFS bit is ON, even the cs is NOT UTF-8
-        ZipEntry e = createZipEntry(((flag & EFS) != 0)
+        // Force to use UTF-8 if the USE_UTF8 bit is ON
+        ZipEntry e = createZipEntry(((flag & USE_UTF8) != 0)
                                     ? zc.toStringUTF8(b, len)
                                     : zc.toString(b, len));
         // now get the remaining fields for the entry

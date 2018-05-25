@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,9 +176,15 @@ class NativeRSASignature extends SignatureSpi {
     }
 
     // deprecated but abstract
+    @Override
     @SuppressWarnings("deprecation")
     protected Object engineGetParameter(String param) throws InvalidParameterException {
         throw new UnsupportedOperationException("getParameter() not supported");
+    }
+
+    @Override
+    protected AlgorithmParameters engineGetParameters() {
+        return null;
     }
 
     @Override
@@ -251,9 +257,18 @@ class NativeRSASignature extends SignatureSpi {
     }
 
     // deprecated but abstract
+    @Override
     @SuppressWarnings("deprecation")
     protected void engineSetParameter(String param, Object value) throws InvalidParameterException {
         throw new UnsupportedOperationException("setParameter() not supported");
+    }
+
+    @Override
+    protected void engineSetParameter(AlgorithmParameterSpec params)
+            throws InvalidAlgorithmParameterException {
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException("No parameter accepted");
+        }
     }
 
     @Override

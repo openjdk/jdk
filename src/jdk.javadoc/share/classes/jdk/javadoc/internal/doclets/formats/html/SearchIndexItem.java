@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,13 +103,21 @@ public class SearchIndexItem {
             if (!containingModule.isEmpty()) {
                 item.append("\"m\":\"").append(containingModule).append("\",");
             }
-            item.append("\"l\":\"").append(label).append("\"")
-                    .append("}");
+            item.append("\"l\":\"").append(label).append("\"");
+            if (!url.equals("")) {
+                item.append(",\"url\":\"").append(url).append("\"");
+            }
+            item.append("}");
         } else if (category.equals("Types")) {
-            item.append("{")
-                    .append("\"p\":\"").append(containingPackage).append("\",")
-                    .append("\"l\":\"").append(label).append("\"")
-                    .append("}");
+            item.append("{");
+            if (!containingPackage.equals("")) {
+                item.append("\"p\":\"").append(containingPackage).append("\",");
+            }
+            item.append("\"l\":\"").append(label).append("\"");
+            if (!url.equals("")) {
+                item.append(",\"url\":\"").append(url).append("\"");
+            }
+            item.append("}");
         } else if (category.equals("Members")) {
             item.append("{")
                     .append("\"p\":\"").append(containingPackage).append("\",")

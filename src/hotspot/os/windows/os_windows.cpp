@@ -1745,13 +1745,46 @@ void os::print_memory_info(outputStream* st) {
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
+  int r1 = GlobalMemoryStatusEx(&ms);
 
-  st->print(", physical %uk", os::physical_memory() >> 10);
-  st->print("(%uk free)", os::available_memory() >> 10);
+  if (r1 != 0) {
+    st->print(", system-wide physical " INT64_FORMAT "M ",
+             (int64_t) ms.ullTotalPhys >> 20);
+    st->print("(" INT64_FORMAT "M free)\n", (int64_t) ms.ullAvailPhys >> 20);
 
-  st->print(", swap %uk", ms.ullTotalPageFile >> 10);
-  st->print("(%uk free)", ms.ullAvailPageFile >> 10);
+    st->print("TotalPageFile size " INT64_FORMAT "M ",
+             (int64_t) ms.ullTotalPageFile >> 20);
+    st->print("(AvailPageFile size " INT64_FORMAT "M)",
+             (int64_t) ms.ullAvailPageFile >> 20);
+
+    // on 32bit Total/AvailVirtual are interesting (show us how close we get to 2-4 GB per process borders)
+#if defined(_M_IX86)
+    st->print(", user-mode portion of virtual address-space " INT64_FORMAT "M ",
+             (int64_t) ms.ullTotalVirtual >> 20);
+    st->print("(" INT64_FORMAT "M free)", (int64_t) ms.ullAvailVirtual >> 20);
+#endif
+  } else {
+    st->print(", GlobalMemoryStatusEx did not succeed so we miss some memory values.");
+  }
+
+  // extended memory statistics for a process
+  PROCESS_MEMORY_COUNTERS_EX pmex;
+  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
+  pmex.cb = sizeof(pmex);
+  int r2 = GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*) &pmex, sizeof(pmex));
+
+  if (r2 != 0) {
+    st->print("\ncurrent process WorkingSet (physical memory assigned to process): " INT64_FORMAT "M, ",
+             (int64_t) pmex.WorkingSetSize >> 20);
+    st->print("peak: " INT64_FORMAT "M\n", (int64_t) pmex.PeakWorkingSetSize >> 20);
+
+    st->print("current process commit charge (\"private bytes\"): " INT64_FORMAT "M, ",
+             (int64_t) pmex.PrivateUsage >> 20);
+    st->print("peak: " INT64_FORMAT "M", (int64_t) pmex.PeakPagefileUsage >> 20);
+  } else {
+    st->print("\nGetProcessMemoryInfo did not succeed so we miss some memory values.");
+  }
+
   st->cr();
 }
 
@@ -1993,7 +2026,7 @@ int os::sigexitnum_pd() {
 static volatile jint pending_signals[NSIG+1] = { 0 };
 static Semaphore* sig_sem = NULL;
 
-void os::signal_init_pd() {
+static void jdk_misc_signal_init() {
   // Initialize signal structures
   memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -2014,10 +2047,8 @@ void os::signal_init_pd() {
   // the CTRL-BREAK thread dump mechanism is also disabled in this
   // case.  See bugs 4323062, 4345157, and related bugs.
 
-  if (!ReduceSignalUsage) {
-    // Add a CTRL-C handler
-    SetConsoleCtrlHandler(consoleHandler, TRUE);
-  }
+  // Add a CTRL-C handler
+  SetConsoleCtrlHandler(consoleHandler, TRUE);
 }
 
 void os::signal_notify(int sig) {
@@ -2025,7 +2056,7 @@ void os::signal_notify(int sig) {
     Atomic::inc(&pending_signals[sig]);
     sig_sem->signal();
   } else {
-    // Signal thread is not created with ReduceSignalUsage and signal_init_pd
+    // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
     // initialization isn't called.
     assert(ReduceSignalUsage, "signal semaphore should be created");
   }
@@ -4131,6 +4162,11 @@ jint os::init_2(void) {
   }
 
   SymbolEngine::recalc_search_path();
+
+  // Initialize data for jdk.internal.misc.Signal
+  if (!ReduceSignalUsage) {
+    jdk_misc_signal_init();
+  }
 
   return JNI_OK;
 }

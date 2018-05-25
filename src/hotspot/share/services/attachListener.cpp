@@ -409,16 +409,6 @@ bool AttachListener::has_init_error(TRAPS) {
 // Starts the Attach Listener thread
 void AttachListener::init() {
   EXCEPTION_MARK;
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, THREAD);
-  if (has_init_error(THREAD)) {
-    return;
-  }
-
-  InstanceKlass* klass = InstanceKlass::cast(k);
-  instanceHandle thread_oop = klass->allocate_instance_handle(THREAD);
-  if (has_init_error(THREAD)) {
-    return;
-  }
 
   const char thread_name[] = "Attach Listener";
   Handle string = java_lang_String::create_from_str(thread_name, THREAD);
@@ -428,26 +418,23 @@ void AttachListener::init() {
 
   // Initialize thread_oop to put it into the system threadGroup
   Handle thread_group (THREAD, Universe::system_thread_group());
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, thread_oop,
-                       klass,
-                       vmSymbols::object_initializer_name(),
+  Handle thread_oop = JavaCalls::construct_new_instance(SystemDictionary::Thread_klass(),
                        vmSymbols::threadgroup_string_void_signature(),
                        thread_group,
                        string,
                        THREAD);
-
   if (has_init_error(THREAD)) {
     return;
   }
 
   Klass* group = SystemDictionary::ThreadGroup_klass();
+  JavaValue result(T_VOID);
   JavaCalls::call_special(&result,
                         thread_group,
                         group,
                         vmSymbols::add_method_name(),
                         vmSymbols::thread_void_signature(),
-                        thread_oop,             // ARG 1
+                        thread_oop,
                         THREAD);
   if (has_init_error(THREAD)) {
     return;

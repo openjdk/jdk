@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, SAP and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 #include "precompiled.hpp"
 
-#include "memory/metachunk.hpp"
+#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "utilities/debug.hpp"
@@ -32,7 +32,6 @@
 #include "utilities/ostream.hpp"
 
 namespace metaspace {
-namespace internals {
 
 // FreeChunksStatistics methods
 
@@ -271,8 +270,7 @@ void ClassLoaderMetaspaceStatistics::print_on(outputStream* st, size_t scale, bo
   st->cr();
 }
 
-
-} // end namespace internals
 } // end namespace metaspace
+
 
 

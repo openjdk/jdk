@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.method.invoked.with.incorrect.number.arguments
+// key: compiler.err.bad.target.sigpoly.call
 // options: -Xlint:-options -source 6 -target 6
 
 class MethodInvokedWithWrongNumberOfArgs {

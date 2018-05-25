@@ -27,6 +27,7 @@
 
 #include "ci/ciEnv.hpp"
 #include "ci/ciMethodData.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -38,6 +39,7 @@
 #include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
 
+class BarrierSetC2;
 class FastLockNode;
 class FastUnlockNode;
 class IdealKit;
@@ -63,6 +65,7 @@ class GraphKit : public Phase {
   SafePointNode*    _exceptions;// Parser map(s) for exception state(s)
   int               _bci;       // JVM Bytecode Pointer
   ciMethod*         _method;    // JVM Current Method
+  BarrierSetC2*     _barrier_set;
 
  private:
   int               _sp;        // JVM Expression Stack Pointer; don't modify directly!
@@ -86,8 +89,9 @@ class GraphKit : public Phase {
   virtual Parse*          is_Parse()          const { return NULL; }
   virtual LibraryCallKit* is_LibraryCallKit() const { return NULL; }
 
-  ciEnv*        env()           const { return _env; }
-  PhaseGVN&     gvn()           const { return _gvn; }
+  ciEnv*        env()               const { return _env; }
+  PhaseGVN&     gvn()               const { return _gvn; }
+  void*         barrier_set_state() const { return C->barrier_set_state(); }
 
   void record_for_igvn(Node* n) const { C->record_for_igvn(n); }  // delegate to Compile
 
@@ -102,9 +106,6 @@ class GraphKit : public Phase {
   Node* makecon(const Type *t)  const { return _gvn.makecon(t); }
   Node* zerocon(BasicType bt)   const { return _gvn.zerocon(bt); }
   // (See also macro MakeConX in type.hpp, which uses intcon or longcon.)
-
-  // Helper for byte_map_base
-  Node* byte_map_base_node();
 
   jint  find_int_con(Node* n, jint value_if_unknown) {
     return _gvn.find_int_con(n, value_if_unknown);
@@ -569,70 +570,67 @@ class GraphKit : public Phase {
                         bool unaligned = false,
                         bool mismatched = false);
 
+  // Perform decorated accesses
 
-  // All in one pre-barrier, store, post_barrier
-  // Insert a write-barrier'd store.  This is to let generational GC
-  // work; we have to flag all oop-stores before the next GC point.
-  //
-  // It comes in 3 flavors of store to an object, array, or unknown.
-  // We use precise card marks for arrays to avoid scanning the entire
-  // array. We use imprecise for object. We use precise for unknown
-  // since we don't know if we have an array or and object or even
-  // where the object starts.
-  //
-  // If val==NULL, it is taken to be a completely unknown value. QQQ
+  Node* access_store_at(Node* ctl,
+                        Node* obj,   // containing obj
+                        Node* adr,   // actual adress to store val at
+                        const TypePtr* adr_type,
+                        Node* val,
+                        const Type* val_type,
+                        BasicType bt,
+                        DecoratorSet decorators);
 
-  Node* store_oop(Node* ctl,
-                  Node* obj,   // containing obj
-                  Node* adr,   // actual adress to store val at
-                  const TypePtr* adr_type,
-                  Node* val,
-                  const TypeOopPtr* val_type,
-                  BasicType bt,
-                  bool use_precise,
-                  MemNode::MemOrd mo,
-                  bool mismatched = false);
+  Node* access_load_at(Node* obj,   // containing obj
+                       Node* adr,   // actual adress to store val at
+                       const TypePtr* adr_type,
+                       const Type* val_type,
+                       BasicType bt,
+                       DecoratorSet decorators);
 
-  Node* store_oop_to_object(Node* ctl,
-                            Node* obj,   // containing obj
-                            Node* adr,   // actual adress to store val at
-                            const TypePtr* adr_type,
-                            Node* val,
-                            const TypeOopPtr* val_type,
-                            BasicType bt,
-                            MemNode::MemOrd mo) {
-    return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, false, mo);
-  }
+  Node* access_atomic_cmpxchg_val_at(Node* ctl,
+                                     Node* obj,
+                                     Node* adr,
+                                     const TypePtr* adr_type,
+                                     int alias_idx,
+                                     Node* expected_val,
+                                     Node* new_val,
+                                     const Type* value_type,
+                                     BasicType bt,
+                                     DecoratorSet decorators);
 
-  Node* store_oop_to_array(Node* ctl,
-                           Node* obj,   // containing obj
-                           Node* adr,   // actual adress to store val at
-                           const TypePtr* adr_type,
-                           Node* val,
-                           const TypeOopPtr* val_type,
-                           BasicType bt,
-                           MemNode::MemOrd mo) {
-    return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, true, mo);
-  }
+  Node* access_atomic_cmpxchg_bool_at(Node* ctl,
+                                      Node* obj,
+                                      Node* adr,
+                                      const TypePtr* adr_type,
+                                      int alias_idx,
+                                      Node* expected_val,
+                                      Node* new_val,
+                                      const Type* value_type,
+                                      BasicType bt,
+                                      DecoratorSet decorators);
 
-  // Could be an array or object we don't know at compile time (unsafe ref.)
-  Node* store_oop_to_unknown(Node* ctl,
-                             Node* obj,   // containing obj
-                             Node* adr,   // actual adress to store val at
+  Node* access_atomic_xchg_at(Node* ctl,
+                              Node* obj,
+                              Node* adr,
+                              const TypePtr* adr_type,
+                              int alias_idx,
+                              Node* new_val,
+                              const Type* value_type,
+                              BasicType bt,
+                              DecoratorSet decorators);
+
+  Node* access_atomic_add_at(Node* ctl,
+                             Node* obj,
+                             Node* adr,
                              const TypePtr* adr_type,
-                             Node* val,
+                             int alias_idx,
+                             Node* new_val,
+                             const Type* value_type,
                              BasicType bt,
-                             MemNode::MemOrd mo,
-                             bool mismatched = false);
+                             DecoratorSet decorators);
 
-  // For the few case where the barriers need special help
-  void pre_barrier(bool do_load, Node* ctl,
-                   Node* obj, Node* adr, uint adr_idx, Node* val, const TypeOopPtr* val_type,
-                   Node* pre_val,
-                   BasicType bt);
-
-  void post_barrier(Node* ctl, Node* store, Node* obj, Node* adr, uint adr_idx,
-                    Node* val, BasicType bt, bool use_precise);
+  void access_clone(Node* ctl, Node* src, Node* dst, Node* size, bool is_array);
 
   // Return addressing for an array element.
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt,
@@ -754,48 +752,9 @@ class GraphKit : public Phase {
   // Returns the object (if any) which was created the moment before.
   Node* just_allocated_object(Node* current_control);
 
-  static bool use_ReduceInitialCardMarks();
-
   // Sync Ideal and Graph kits.
   void sync_kit(IdealKit& ideal);
   void final_sync(IdealKit& ideal);
-
-  // vanilla/CMS post barrier
-  void write_barrier_post(Node *store, Node* obj,
-                          Node* adr,  uint adr_idx, Node* val, bool use_precise);
-
-  // Allow reordering of pre-barrier with oop store and/or post-barrier.
-  // Used for load_store operations which loads old value.
-  bool can_move_pre_barrier() const;
-
-#if INCLUDE_G1GC
-  // G1 pre/post barriers
-  void g1_write_barrier_pre(bool do_load,
-                            Node* obj,
-                            Node* adr,
-                            uint alias_idx,
-                            Node* val,
-                            const TypeOopPtr* val_type,
-                            Node* pre_val,
-                            BasicType bt);
-
-  void g1_write_barrier_post(Node* store,
-                             Node* obj,
-                             Node* adr,
-                             uint alias_idx,
-                             Node* val,
-                             BasicType bt,
-                             bool use_precise);
-  // Helper function for g1
-  private:
-  void g1_mark_card(IdealKit& ideal, Node* card_adr, Node* store, uint oop_alias_idx,
-                    Node* index, Node* index_adr,
-                    Node* buffer, const TypeFunc* tf);
-
-  bool g1_can_remove_pre_barrier(PhaseTransform* phase, Node* adr, BasicType bt, uint adr_idx);
-
-  bool g1_can_remove_post_barrier(PhaseTransform* phase, Node* store, Node* adr);
-#endif // INCLUDE_G1GC
 
   public:
   // Helper function to round double arguments before a call

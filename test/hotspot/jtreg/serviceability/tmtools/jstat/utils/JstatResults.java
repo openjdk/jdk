@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,12 +109,12 @@ abstract public class JstatResults extends ToolResults {
      * measurements
      *
      * @param measurement1 -first measurement
-     * @param measurement2 -first measurement
+     * @param measurement2 -second measurement
      */
     public static void assertGCTimeIncreased(JstatResults measurement1, JstatResults measurement2) {
-        assertThat(measurement2.getFloatValue("YGCT") > measurement1.getFloatValue("YGCT"), "YGCT time didn't increase between measurements 1 and 2");
-        assertThat(measurement2.getFloatValue("FGCT") > measurement1.getFloatValue("FGCT"), "FGCT time didn't increase between measurements 1 and 2");
-        assertThat(measurement2.getFloatValue("GCT") > measurement1.getFloatValue("GCT"), "GCT time didn't increase between measurements 1 and 2");
+        assertThat(measurement2.getFloatValue("YGCT") >= measurement1.getFloatValue("YGCT"), "YGCT time rewinded between measurements 1 and 2");
+        assertThat(measurement2.getFloatValue("FGCT") >= measurement1.getFloatValue("FGCT"), "FGCT time rewinded between measurements 1 and 2");
+        assertThat(measurement2.getFloatValue("GCT") >= measurement1.getFloatValue("GCT"), "GCT time rewinded between measurements 1 and 2");
     }
 
     /**

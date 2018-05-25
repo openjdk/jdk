@@ -37,8 +37,10 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
 import jdk.testlibrary.ProcessTools;
 
 public class MainModuleOnly {
@@ -172,15 +174,59 @@ public class MainModuleOnly {
                        "--module-path", moduleDir.toString(),
                        "-m", TEST_MODULE1)
             .assertAbnormalExit(
-                "A jar/jimage file is not the one used while building the shared archive file:");
+                "A jar file is not the one used while building the shared archive file:");
         // create an archive with a non-empty directory in the --module-path.
         // The dumping process will exit with an error due to non-empty directory
         // in the --module-path.
         output = TestCommon.createArchive(destJar.toString(), appClasses,
-                                          "-Xlog:class+load=trace",
                                           "--module-path", MODS_DIR.toString(),
                                           "-m", TEST_MODULE1);
         output.shouldHaveExitValue(1)
               .shouldMatch("Error: non-empty directory.*com.simple");
+
+        // test module path with very long length
+        //
+        // This test can't be run on the windows platform due to an existing
+        // issue in ClassLoader::get_canonical_path() (JDK-8190737).
+        if (Platform.isWindows()) {
+            System.out.println("Long module path test cannot be tested on the Windows platform.");
+            return;
+        }
+        Path longDir = USER_DIR;
+        int pathLen = longDir.toString().length();
+        int PATH_LEN = 2034;
+        int MAX_DIR_LEN = 250;
+        while (pathLen < PATH_LEN) {
+            int remaining = PATH_LEN - pathLen;
+            int subPathLen = remaining > MAX_DIR_LEN ? MAX_DIR_LEN : remaining;
+            char[] chars = new char[subPathLen];
+            Arrays.fill(chars, 'x');
+            String subPath = new String(chars);
+            longDir = Paths.get(longDir.toString(), subPath);
+            pathLen = longDir.toString().length();
+        }
+        File longDirFile = new File(longDir.toString());
+        try {
+            longDirFile.mkdirs();
+        } catch (Exception e) {
+            throw e;
+        }
+        Path longDirJar = longDir.resolve(TEST_MODULE1 + ".jar");
+        // IOException results from the Files.copy() call on platform
+        // such as MacOS X. Test can't be proceeded further with the
+        // exception.
+        try {
+            Files.copy(destJar, longDirJar);
+        } catch (java.io.IOException ioe) {
+            System.out.println("Caught IOException from Files.copy(). Cannot continue.");
+            return;
+        }
+        output = TestCommon.createArchive(destJar.toString(), appClasses,
+                                          "-Xlog:exceptions=trace",
+                                          "--module-path", longDirJar.toString(),
+                                          "-m", TEST_MODULE1);
+        if (output.getExitValue() != 0) {
+            output.shouldMatch("os::stat error.*CDS dump aborted");
+        }
     }
 }

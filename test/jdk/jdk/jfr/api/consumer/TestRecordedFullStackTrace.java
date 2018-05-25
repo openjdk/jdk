@@ -24,7 +24,6 @@
  */
 package jdk.jfr.api.consumer;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -36,6 +35,7 @@ import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.RecurseThread;
@@ -84,7 +84,7 @@ public class TestRecordedFullStackTrace {
             Thread.sleep(500);
             recording.stop();
             // Dump the recording to a file
-            path = Files.createTempFile("recording", ".jfr");
+            path = Utils.createTempFile("execution-stack-trace", ".jfr");
             System.out.println("Dumping to " + path);
             recording.dump(path);
             recording.close();

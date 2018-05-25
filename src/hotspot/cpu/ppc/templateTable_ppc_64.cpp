@@ -62,8 +62,7 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register           tmp3,
                          DecoratorSet       decorators) {
   assert_different_registers(tmp1, tmp2, tmp3, val, base);
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->store_at(_masm, decorators, T_OBJECT, base, offset, val, tmp1, tmp2, tmp3, false);
+  __ store_heap_oop(val, offset, base, tmp1, tmp2, tmp3, false, decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
@@ -75,8 +74,7 @@ static void do_oop_load(InterpreterMacroAssembler* _masm,
                         DecoratorSet decorators) {
   assert_different_registers(base, tmp1, tmp2);
   assert_different_registers(dst, tmp1, tmp2);
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(_masm, decorators, T_OBJECT, base, offset, dst, tmp1, tmp2, false);
+  __ load_heap_oop(dst, offset, base, tmp1, tmp2, false, decorators);
 }
 
 // ============================================================================

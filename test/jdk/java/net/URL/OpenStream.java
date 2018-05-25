@@ -55,7 +55,7 @@ public class OpenStream {
     static void checkThrows(String url) throws IOException {
         URL u = new URL(url);
         try {
-            InputStream in = u.openStream();
+            InputStream in = u.openConnection(Proxy.NO_PROXY).getInputStream();
         } catch (UnknownHostException x) {
             System.out.println("UnknownHostException is thrown as expected.");
             return;

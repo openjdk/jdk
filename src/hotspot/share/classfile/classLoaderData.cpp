@@ -573,9 +573,6 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
 void ClassLoaderData::unload() {
   _unloading = true;
 
-  // Tell serviceability tools these classes are unloading
-  classes_do(InstanceKlass::notify_unload_class);
-
   LogTarget(Debug, class, loader, data) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
@@ -588,6 +585,10 @@ void ClassLoaderData::unload() {
   // Some items on the _deallocate_list need to free their C heap structures
   // if they are not already on the _klasses list.
   unload_deallocate_list();
+
+  // Tell serviceability tools these classes are unloading
+  // after erroneous classes are released.
+  classes_do(InstanceKlass::notify_unload_class);
 
   // Clean up global class iterator for compiler
   static_klass_iterator.adjust_saved_class(this);

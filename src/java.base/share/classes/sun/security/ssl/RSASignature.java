@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 package sun.security.ssl;
 
 import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * Signature implementation for the SSL/TLS RSA Signature variant with both
@@ -201,10 +202,22 @@ public final class RSASignature extends SignatureSpi {
     }
 
     @Override
+    protected void engineSetParameter(AlgorithmParameterSpec params)
+            throws InvalidAlgorithmParameterException {
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException("No parameters accepted");
+        }
+    }
+
+    @Override
     @SuppressWarnings("deprecation")
     protected Object engineGetParameter(String param)
             throws InvalidParameterException {
         throw new InvalidParameterException("Parameters not supported");
     }
 
+    @Override
+    protected AlgorithmParameters engineGetParameters() {
+        return null;
+    }
 }

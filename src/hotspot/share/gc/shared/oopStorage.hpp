@@ -171,22 +171,22 @@ public:
   // version 12 rejects it.
 NOT_AIX( private: )
   class Block;                  // Fixed-size array of oops, plus bookkeeping.
-  class BlockArray;             // Array of Blocks, plus bookkeeping.
-  class BlockEntry;             // Provides BlockList links in a Block.
+  class ActiveArray;            // Array of Blocks, plus bookkeeping.
+  class AllocateEntry;          // Provides AllocateList links in a Block.
 
   // Doubly-linked list of Blocks.
-  class BlockList {
+  class AllocateList {
     const Block* _head;
     const Block* _tail;
-    const BlockEntry& (*_get_entry)(const Block& block);
+    const AllocateEntry& (*_get_entry)(const Block& block);
 
     // Noncopyable.
-    BlockList(const BlockList&);
-    BlockList& operator=(const BlockList&);
+    AllocateList(const AllocateList&);
+    AllocateList& operator=(const AllocateList&);
 
   public:
-    BlockList(const BlockEntry& (*get_entry)(const Block& block));
-    ~BlockList();
+    AllocateList(const AllocateEntry& (*get_entry)(const Block& block));
+    ~AllocateList();
 
     Block* head();
     Block* tail();
@@ -219,8 +219,8 @@ NOT_AIX( private: )
 
 private:
   const char* _name;
-  BlockArray* _active_array;
-  BlockList _allocate_list;
+  ActiveArray* _active_array;
+  AllocateList _allocate_list;
   Block* volatile _deferred_updates;
 
   Mutex* _allocate_mutex;
@@ -241,9 +241,9 @@ private:
 
   // Managing _active_array.
   bool expand_active_array();
-  void replace_active_array(BlockArray* new_array);
-  BlockArray* obtain_active_array() const;
-  void relinquish_block_array(BlockArray* array) const;
+  void replace_active_array(ActiveArray* new_array);
+  ActiveArray* obtain_active_array() const;
+  void relinquish_block_array(ActiveArray* array) const;
   class WithActiveArray;        // RAII helper for active array access.
 
   template<typename F, typename Storage>

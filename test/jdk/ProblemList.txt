@@ -775,9 +775,9 @@ tools/jimage/JImageListTest.java                                8198405 windows-
 
 com/sun/jdi/RedefineImplementor.sh                              8004127 generic-all
 
-com/sun/jdi/JdbExprTest.sh                                      8185803 generic-all
+com/sun/jdi/JdbExprTest.sh                                      8203393 solaris-all
 
-com/sun/jdi/JdbMethodExitTest.sh                                8171483 generic-all
+com/sun/jdi/JdbMethodExitTest.sh                                8203393 solaris-all
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
@@ -794,6 +794,8 @@ com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-
 ############################################################################
 
 # jdk_util
+
+java/util/Map/InPlaceOpsCollisions.java                         8203387 generic-all
 
 ############################################################################
 

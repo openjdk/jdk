@@ -2937,7 +2937,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // Exception pending
 
-  RegisterSaver::restore_live_registers(masm);
+  RegisterSaver::restore_live_registers(masm, save_vectors);
 
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 /*
  * @test
- * @bug 8050374
+ * @bug 8050374 8146293
  * @summary Verify a chain of signed objects
+ * @library /test/lib
+ * @build jdk.test.lib.SigTestUtil
  * @compile ../../../../java/security/SignedObject/Chain.java
  * @run main SignedObjectChain
  */

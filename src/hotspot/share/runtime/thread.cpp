@@ -1025,44 +1025,32 @@ static void initialize_class(Symbol* class_name, TRAPS) {
 
 // Creates the initial ThreadGroup
 static Handle create_initial_thread_group(TRAPS) {
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_ThreadGroup(), true, CHECK_NH);
-  InstanceKlass* ik = InstanceKlass::cast(k);
-
-  Handle system_instance = ik->allocate_instance_handle(CHECK_NH);
-  {
-    JavaValue result(T_VOID);
-    JavaCalls::call_special(&result,
-                            system_instance,
-                            ik,
-                            vmSymbols::object_initializer_name(),
+  Handle system_instance = JavaCalls::construct_new_instance(
+                            SystemDictionary::ThreadGroup_klass(),
                             vmSymbols::void_method_signature(),
                             CHECK_NH);
-  }
   Universe::set_system_thread_group(system_instance());
 
-  Handle main_instance = ik->allocate_instance_handle(CHECK_NH);
-  {
-    JavaValue result(T_VOID);
-    Handle string = java_lang_String::create_from_str("main", CHECK_NH);
-    JavaCalls::call_special(&result,
-                            main_instance,
-                            ik,
-                            vmSymbols::object_initializer_name(),
+  Handle string = java_lang_String::create_from_str("main", CHECK_NH);
+  Handle main_instance = JavaCalls::construct_new_instance(
+                            SystemDictionary::ThreadGroup_klass(),
                             vmSymbols::threadgroup_string_void_signature(),
                             system_instance,
                             string,
                             CHECK_NH);
-  }
   return main_instance;
 }
 
 // Creates the initial Thread
 static oop create_initial_thread(Handle thread_group, JavaThread* thread,
                                  TRAPS) {
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK_NULL);
-  InstanceKlass* ik = InstanceKlass::cast(k);
+  InstanceKlass* ik = SystemDictionary::Thread_klass();
+  assert(ik->is_initialized(), "must be");
   instanceHandle thread_oop = ik->allocate_instance_handle(CHECK_NULL);
 
+  // Cannot use JavaCalls::construct_new_instance because the java.lang.Thread
+  // constructor calls Thread.current(), which must be set here for the
+  // initial thread.
   java_lang_Thread::set_thread(thread_oop(), thread);
   java_lang_Thread::set_priority(thread_oop(), NormPriority);
   thread->set_threadObj(thread_oop());
@@ -1170,10 +1158,13 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
   assert(thread_group.not_null(), "thread group should be specified");
   assert(threadObj() == NULL, "should only create Java thread object once");
 
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(), true, CHECK);
-  InstanceKlass* ik = InstanceKlass::cast(k);
+  InstanceKlass* ik = SystemDictionary::Thread_klass();
+  assert(ik->is_initialized(), "must be");
   instanceHandle thread_oop = ik->allocate_instance_handle(CHECK);
 
+  // We are called from jni_AttachCurrentThread/jni_AttachCurrentThreadAsDaemon.
+  // We cannot use JavaCalls::construct_new_instance because the java.lang.Thread
+  // constructor calls Thread.current(), which must be set here.
   java_lang_Thread::set_thread(thread_oop(), this);
   java_lang_Thread::set_priority(thread_oop(), NormPriority);
   set_threadObj(thread_oop());
@@ -1187,8 +1178,8 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             ik,
                             vmSymbols::object_initializer_name(),
                             vmSymbols::threadgroup_string_void_signature(),
-                            thread_group, // Argument 1
-                            name,         // Argument 2
+                            thread_group,
+                            name,
                             THREAD);
   } else {
     // Thread gets assigned name "Thread-nnn" and null target
@@ -1198,8 +1189,8 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             ik,
                             vmSymbols::object_initializer_name(),
                             vmSymbols::threadgroup_runnable_void_signature(),
-                            thread_group, // Argument 1
-                            Handle(),     // Argument 2
+                            thread_group,
+                            Handle(),
                             THREAD);
   }
 
@@ -3813,7 +3804,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif // INCLUDE_MANAGEMENT
 
   // Signal Dispatcher needs to be started before VMInit event is posted
-  os::signal_init(CHECK_JNI_ERR);
+  os::initialize_jdk_signal_support(CHECK_JNI_ERR);
 
   // Start Attach Listener if +StartAttachListener or it can't be started lazily
   if (!DisableAttachMechanism) {

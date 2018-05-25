@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,18 +475,21 @@ public class Context {
                     out = me.x.wrap(input, 0, input.length, p1);
                 }
                 System.out.println(printProp(p1));
+                if ((x.getConfState() && privacy) != p1.getPrivacy()) {
+                    throw new Exception("unexpected privacy status");
+                }
                 return out;
             }
         }, t);
     }
 
-    public byte[] unwrap(byte[] t, final boolean privacy)
+    public byte[] unwrap(byte[] t, final boolean privacyExpected)
             throws Exception {
         return doAs(new Action() {
             @Override
             public byte[] run(Context me, byte[] input) throws Exception {
-                System.out.printf("unwrap %s privacy from %s: ", privacy?"with":"without", me.name);
-                MessageProp p1 = new MessageProp(0, privacy);
+                System.out.printf("unwrap from %s", me.name);
+                MessageProp p1 = new MessageProp(0, true);
                 byte[] bytes;
                 if (usingStream) {
                     ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -496,6 +499,9 @@ public class Context {
                     bytes = me.x.unwrap(input, 0, input.length, p1);
                 }
                 System.out.println(printProp(p1));
+                if (p1.getPrivacy() != privacyExpected) {
+                    throw new Exception("Unexpected privacy: " + p1.getPrivacy());
+                }
                 return bytes;
             }
         }, t);
@@ -537,6 +543,10 @@ public class Context {
                             p1);
                 }
                 System.out.println(printProp(p1));
+                if (p1.isUnseqToken() || p1.isOldToken()
+                        || p1.isDuplicateToken() || p1.isGapToken()) {
+                    throw new Exception("Wrong sequence number detected");
+                }
                 return null;
             }
         }, t);
@@ -572,7 +582,7 @@ public class Context {
         System.out.printf("-------------------- TRANSMIT from %s to %s------------------------\n",
                 s1.name, s2.name);
         byte[] wrapped = s1.wrap(messageBytes, true);
-        byte[] unwrapped = s2.unwrap(wrapped, true);
+        byte[] unwrapped = s2.unwrap(wrapped, s2.x.getConfState());
         if (!Arrays.equals(messageBytes, unwrapped)) {
             throw new Exception("wrap/unwrap mismatch");
         }

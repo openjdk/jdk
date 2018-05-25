@@ -25,7 +25,6 @@
 
 package jdk.jfr.api.metadata.annotations;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,6 +44,7 @@ import jdk.jfr.Threshold;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -110,7 +110,7 @@ public class TestInheritedAnnotations {
             c.commit();
 
             r.stop();
-            Path p = Files.createTempFile("temp", ".jfr");
+            Path p = Utils.createTempFile("inherited-annotations", ".jfr");
             r.dump(p);
             List<RecordedEvent> events = RecordingFile.readAllEvents(p);
             assertNoGrandFather(events);

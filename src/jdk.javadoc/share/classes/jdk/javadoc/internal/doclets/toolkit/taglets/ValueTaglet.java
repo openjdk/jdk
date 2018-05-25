@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.EnumSet;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.VariableElement;
 
@@ -35,7 +36,7 @@ import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.VALUE;
 
 /**
  * An inline Taglet representing the value tag. This tag should only be used with
@@ -54,67 +55,15 @@ import static com.sun.source.doctree.DocTree.Kind.*;
  * @author Jamie Ho
  */
 
-public class ValueTaglet extends BaseInlineTaglet {
+public class ValueTaglet extends BaseTaglet {
 
     /**
      * Construct a new ValueTaglet.
      */
     public ValueTaglet() {
-        name = VALUE.tagName;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * only appear in Fields.
-     * @return false since this is not a method.
-     */
-    public boolean inMethod() {
-        return true;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * only appear in Fields.
-     * @return false since this is not a method.
-     */
-    public boolean inConstructor() {
-        return true;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * only appear in Fields.
-     * @return false since this is not a method.
-     */
-    public boolean inOverview() {
-        return true;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * only appear in Fields.
-     * @return false since this is not a field.
-     */
-    public boolean inModule() {
-        return false;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * only appear in Fields.
-     * @return false since this is not a method.
-     */
-    public boolean inPackage() {
-        return true;
-    }
-
-    /**
-     * Will return false because this inline tag may
-     * only appear in Fields.
-     * @return false since this is not a method.
-     */
-    public boolean inType() {
-        return true;
+        super(VALUE.tagName, true,
+                EnumSet.of(Site.OVERVIEW, Site.PACKAGE, Site.TYPE, Site.CONSTRUCTOR,
+                    Site.METHOD, Site.FIELD)); // not Site.MODULE at this time!
     }
 
     /**
@@ -140,9 +89,7 @@ public class ValueTaglet extends BaseInlineTaglet {
                 : null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element holder, DocTree tag, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         Messages messages = writer.configuration().getMessages();

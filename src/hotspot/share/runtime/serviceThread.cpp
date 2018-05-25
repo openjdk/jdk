@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,19 +39,13 @@ ServiceThread* ServiceThread::_instance = NULL;
 void ServiceThread::initialize() {
   EXCEPTION_MARK;
 
-  InstanceKlass* klass = SystemDictionary::Thread_klass();
-  instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
-
   const char* name = "Service Thread";
-
   Handle string = java_lang_String::create_from_str(name, CHECK);
 
   // Initialize thread_oop to put it into the system threadGroup
   Handle thread_group (THREAD, Universe::system_thread_group());
-  JavaValue result(T_VOID);
-  JavaCalls::call_special(&result, thread_oop,
-                          klass,
-                          vmSymbols::object_initializer_name(),
+  Handle thread_oop = JavaCalls::construct_new_instance(
+                          SystemDictionary::Thread_klass(),
                           vmSymbols::threadgroup_string_void_signature(),
                           thread_group,
                           string,

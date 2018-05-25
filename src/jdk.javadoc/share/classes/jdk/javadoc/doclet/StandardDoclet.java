@@ -36,7 +36,7 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
  * This doclet generates HTML-formatted documentation for the specified modules,
  * packages and types.
  *
- * @see <a href="{@docRootParent}/specs/doc-comment-spec.html">
+ * @see <a href="{@docRoot}/../specs/doc-comment-spec.html">
  *      Documentation Comment Specification for the Standard Doclet</a>
  */
 public class StandardDoclet implements Doclet {

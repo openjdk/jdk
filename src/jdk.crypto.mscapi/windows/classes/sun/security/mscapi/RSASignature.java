@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,8 @@
 package sun.security.mscapi;
 
 import java.nio.ByteBuffer;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.InvalidKeyException;
-import java.security.InvalidParameterException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.ProviderException;
-import java.security.MessageDigest;
-import java.security.SignatureException;
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
 import java.math.BigInteger;
 
 import sun.security.rsa.RSAKeyFactory;
@@ -230,6 +223,7 @@ abstract class RSASignature extends java.security.SignatureSpi
     }
 
     // initialize for signing. See JCA doc
+    @Override
     protected void engineInitVerify(PublicKey key)
         throws InvalidKeyException
     {
@@ -280,6 +274,7 @@ abstract class RSASignature extends java.security.SignatureSpi
     }
 
     // initialize for signing. See JCA doc
+    @Override
     protected void engineInitSign(PrivateKey key) throws InvalidKeyException
     {
         // This signature accepts only RSAPrivateKey
@@ -326,6 +321,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      * @exception SignatureException if the engine is not initialized
      * properly.
      */
+    @Override
     protected void engineUpdate(byte b) throws SignatureException
     {
         messageDigest.update(b);
@@ -343,6 +339,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      * @exception SignatureException if the engine is not initialized
      * properly
      */
+    @Override
     protected void engineUpdate(byte[] b, int off, int len)
         throws SignatureException
     {
@@ -356,6 +353,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      *
      * @param input the ByteBuffer
      */
+    @Override
     protected void engineUpdate(ByteBuffer input)
     {
         messageDigest.update(input);
@@ -374,6 +372,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      * initialized properly or if this signature algorithm is unable to
      * process the input data provided.
      */
+    @Override
     protected byte[] engineSign() throws SignatureException {
 
         byte[] hash = getDigestValue();
@@ -435,6 +434,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      * encoded or of the wrong type, if this signature algorithm is unable to
      * process the input data provided, etc.
      */
+    @Override
     protected boolean engineVerify(byte[] sigBytes)
         throws SignatureException
     {
@@ -470,6 +470,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      * #engineSetParameter(java.security.spec.AlgorithmParameterSpec)
      * engineSetParameter}.
      */
+    @Override
     @Deprecated
     protected void engineSetParameter(String param, Object value)
         throws InvalidParameterException
@@ -477,6 +478,22 @@ abstract class RSASignature extends java.security.SignatureSpi
         throw new InvalidParameterException("Parameter not supported");
     }
 
+    /**
+     * Sets this signature engine with the specified algorithm parameter.
+     *
+     * @param params the parameters
+     *
+     * @exception InvalidAlgorithmParameterException if the given
+     * parameter is invalid
+     */
+    @Override
+    protected void engineSetParameter(AlgorithmParameterSpec params)
+        throws InvalidAlgorithmParameterException
+    {
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException("No parameter accepted");
+        }
+    }
 
     /**
      * Gets the value of the specified algorithm parameter.
@@ -500,11 +517,22 @@ abstract class RSASignature extends java.security.SignatureSpi
      *
      * @deprecated
      */
+    @Override
     @Deprecated
     protected Object engineGetParameter(String param)
         throws InvalidParameterException
     {
         throw new InvalidParameterException("Parameter not supported");
+    }
+
+    /**
+     * Gets the algorithm parameter from this signature engine.
+     *
+     * @return the parameter, or null if no parameter is used.
+     */
+    @Override
+    protected AlgorithmParameters engineGetParameters() {
+        return null;
     }
 
     /**

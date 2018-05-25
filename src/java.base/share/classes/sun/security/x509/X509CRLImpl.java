@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,27 +29,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.Principal;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.Signature;
-import java.security.NoSuchAlgorithmException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchProviderException;
-import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.CRLException;
+import java.security.*;
 import java.util.*;
 
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.provider.X509Factory;
 import sun.security.util.*;
-import sun.security.util.HexDumpEncoder;
 
 /**
  * <p>
@@ -384,7 +375,18 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
         } else {
             sigVerf = Signature.getInstance(sigAlgId.getName(), sigProvider);
         }
+
         sigVerf.initVerify(key);
+
+        // set parameters after Signature.initSign/initVerify call,
+        // so the deferred provider selection happens when key is set
+        try {
+            SignatureUtil.specialSetParameter(sigVerf, getSigAlgParams());
+        } catch (ProviderException e) {
+            throw new CRLException(e.getMessage(), e.getCause());
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new CRLException(e);
+        }
 
         if (tbsCertList == null) {
             throw new CRLException("Uninitialized CRL");
@@ -428,7 +430,18 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
         } else {
             sigVerf = Signature.getInstance(sigAlgId.getName(), sigProvider);
         }
+
         sigVerf.initVerify(key);
+
+        // set parameters after Signature.initSign/initVerify call,
+        // so the deferred provider selection happens when key is set
+        try {
+            SignatureUtil.specialSetParameter(sigVerf, getSigAlgParams());
+        } catch (ProviderException e) {
+            throw new CRLException(e.getMessage(), e.getCause());
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new CRLException(e);
+        }
 
         if (tbsCertList == null) {
             throw new CRLException("Uninitialized CRL");

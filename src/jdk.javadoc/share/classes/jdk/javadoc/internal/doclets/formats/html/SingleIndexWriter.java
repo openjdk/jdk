@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,5 +147,13 @@ public class SingleIndexWriter extends AbstractIndexWriter {
                             new StringContent(unicode)));
             contentTree.addContent(Contents.SPACE);
         }
+        contentTree.addContent(new HtmlTree(HtmlTag.BR));
+        contentTree.addContent(links.createLink(DocPaths.ALLCLASSES_INDEX,
+                contents.allClassesLabel));
+        if (!configuration.packages.isEmpty()) {
+            contentTree.addContent(Contents.SPACE);
+            contentTree.addContent(links.createLink(DocPaths.ALLPACKAGES_INDEX,
+                    contents.allPackagesLabel));
     }
+}
 }

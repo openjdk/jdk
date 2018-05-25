@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.synthetic.name.conflict
+// key: compiler.err.cannot.generate.class
+// key: compiler.misc.synthetic.name.conflict
 
 class ErrSyntheticNameConflict {
 

@@ -1157,7 +1157,8 @@ void LIRGenerator::do_If(If* x) {
   // Add safepoint before generating condition code so it can be recomputed.
   if (x->is_safepoint()) {
     // Increment backedge counter if needed.
-    increment_backedge_counter(state_for(x, x->state_before()), x->profiled_bci());
+    increment_backedge_counter_conditionally(lir_cond(cond), left, right, state_for(x, x->state_before()),
+        x->tsux()->bci(), x->fsux()->bci(), x->profiled_bci());
     __ safepoint(safepoint_poll_register(), state_for(x, x->state_before()));
   }
 

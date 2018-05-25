@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.lang.model.element.Element;
@@ -36,7 +37,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.*;
+import static com.sun.source.doctree.DocTree.Kind.SEE;
 
 /**
  * A taglet that represents the @see tag.
@@ -51,12 +52,10 @@ import static com.sun.source.doctree.DocTree.Kind.*;
 public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
     public SeeTaglet() {
-        name = SEE.tagName;
+        super(SEE.tagName, false, EnumSet.allOf(Site.class));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void inherit(DocFinder.Input input, DocFinder.Output output) {
         List<? extends DocTree> tags = input.utils.getSeeTrees(input.element);
         if (!tags.isEmpty()) {
@@ -69,9 +68,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
         List<? extends DocTree> tags = utils.getSeeTrees(holder);

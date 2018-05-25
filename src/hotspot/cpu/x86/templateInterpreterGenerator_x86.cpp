@@ -973,7 +973,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ testl(t, JVM_ACC_STATIC);
     __ jcc(Assembler::zero, L);
     // get mirror
-    __ load_mirror(t, method);
+    __ load_mirror(t, method, rax);
     // copy mirror into activation frame
     __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize),
             t);

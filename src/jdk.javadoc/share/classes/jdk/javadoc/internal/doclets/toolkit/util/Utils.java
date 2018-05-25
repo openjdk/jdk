@@ -2505,6 +2505,7 @@ public class Utils {
             return null;
         while (!(kind.isClass() || kind.isInterface())) {
             encl = encl.getEnclosingElement();
+            kind = encl.getKind();
         }
         return (TypeElement)encl;
     }

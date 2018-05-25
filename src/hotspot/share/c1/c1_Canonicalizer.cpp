@@ -779,7 +779,7 @@ void Canonicalizer::do_If(If* x) {
         if (cmp->x() == cmp->y()) {
           do_If(canon);
         } else {
-          if (compilation()->profile_branches()) {
+          if (compilation()->profile_branches() || compilation()->count_backedges()) {
             // TODO: If profiling, leave floating point comparisons unoptimized.
             // We currently do not support profiling of the unordered case.
             switch(cmp->op()) {

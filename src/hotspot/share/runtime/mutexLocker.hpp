@@ -33,6 +33,7 @@
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
+extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
 extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer

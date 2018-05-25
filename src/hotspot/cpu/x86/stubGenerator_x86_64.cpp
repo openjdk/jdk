@@ -1820,7 +1820,7 @@ class StubGenerator: public StubCodeGenerator {
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
 
-    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
@@ -1914,7 +1914,7 @@ class StubGenerator: public StubCodeGenerator {
     setup_arg_regs(); // from => rdi, to => rsi, count => rdx
                       // r9 and r10 may be used to save non-volatile registers
 
-    DecoratorSet decorators = 0;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
@@ -2018,7 +2018,7 @@ class StubGenerator: public StubCodeGenerator {
                       // r9 and r10 may be used to save non-volatile registers
     // 'from', 'to' and 'qword_count' are now valid
 
-    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
@@ -2111,7 +2111,7 @@ class StubGenerator: public StubCodeGenerator {
                       // r9 and r10 may be used to save non-volatile registers
     // 'from', 'to' and 'qword_count' are now valid
 
-    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
@@ -2294,7 +2294,7 @@ class StubGenerator: public StubCodeGenerator {
     Address from_element_addr(end_from, count, TIMES_OOP, 0);
     Address   to_element_addr(end_to,   count, TIMES_OOP, 0);
 
-    DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_CHECKCAST;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }

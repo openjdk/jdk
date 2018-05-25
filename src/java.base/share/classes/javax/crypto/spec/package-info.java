@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
  *
  *
  * <ul>
+ * <li>PKCS #1: RSA Cryptography Specifications, Version 2.2 (RFC 8017)</li>
  * <li>PKCS #3: Diffie-Hellman Key-Agreement Standard, Version 1.4,
  * November 1993.</li>
  * <li>PKCS #5: Password-Based Encryption Standard, Version 1.5,

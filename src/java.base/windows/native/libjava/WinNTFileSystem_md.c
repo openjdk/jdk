@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include <direct.h>
 #include <windows.h>
 #include <io.h>
+#include <limits.h>
 
 #include "jni.h"
 #include "io_util.h"
@@ -527,13 +528,40 @@ Java_java_io_WinNTFileSystem_getLength(JNIEnv *env, jobject this, jobject file)
         }
     } else {
         if (GetLastError() == ERROR_SHARING_VIOLATION) {
-            /* The error is "share violation", which means the file/dir
-               must exists. Try _wstati64, we know this at least works
-               for pagefile.sys and hiberfil.sys.
-            */
-            struct _stati64 sb;
-            if (_wstati64(pathbuf, &sb) == 0) {
-                rv = sb.st_size;
+            //
+            // The error is a "share violation", which means the file/dir
+            // must exist. Try FindFirstFile, we know this at least works
+            // for pagefile.sys.
+            //
+
+            WIN32_FIND_DATAW fileData;
+            HANDLE h = FindFirstFileW(pathbuf, &fileData);
+            if (h != INVALID_HANDLE_VALUE) {
+                if ((fileData.dwFileAttributes &
+                     FILE_ATTRIBUTE_REPARSE_POINT) == 0) {
+                    WCHAR backslash = L'\\';
+                    WCHAR *pslash = wcsrchr(pathbuf, backslash);
+                    if (pslash == NULL) {
+                        pslash = pathbuf;
+                    } else {
+                        pslash++;
+                    }
+                    WCHAR *fslash = wcsrchr(fileData.cFileName, backslash);
+                    if (fslash == NULL) {
+                        fslash = fileData.cFileName;
+                    } else {
+                        fslash++;
+                    }
+                    if (wcscmp(pslash, fslash) == 0) {
+                        ULARGE_INTEGER length;
+                        length.LowPart = fileData.nFileSizeLow;
+                        length.HighPart = fileData.nFileSizeHigh;
+                        if (length.QuadPart <= _I64_MAX) {
+                            rv = (jlong)length.QuadPart;
+                        }
+                    }
+                }
+                FindClose(h);
             }
         }
     }

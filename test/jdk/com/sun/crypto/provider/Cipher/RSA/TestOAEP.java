@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4894151
+ * @bug 4894151 8146293
  * @summary encryption/decryption test for OAEP
  * @author Andreas Sterbenz
  * @key randomness
@@ -63,6 +63,8 @@ public class TestOAEP {
         Cipher.getInstance("RSA/ECB/OAEPwithSHA-256andMGF1Padding");
         Cipher.getInstance("RSA/ECB/OAEPwithSHA-384andMGF1Padding");
         Cipher.getInstance("RSA/ECB/OAEPwithSHA-512andMGF1Padding");
+        Cipher.getInstance("RSA/ECB/OAEPwithSHA-512/224andMGF1Padding");
+        Cipher.getInstance("RSA/ECB/OAEPwithSHA-512/256andMGF1Padding");
 
         // basic test using MD5
         testEncryptDecrypt("MD5", 0);
@@ -90,28 +92,32 @@ public class TestOAEP {
         // tests alias works
         testEncryptDecrypt("SHA-1", 16);
 
-        // basic test using SHA-224
-        testEncryptDecrypt("SHA-224", 0);
-        testEncryptDecrypt("SHA-224", 16);
-        testEncryptDecrypt("SHA-224", 38);
-        try {
-            testEncryptDecrypt("SHA-224", 39);
-            throw new Exception("Unexpectedly completed call");
-        } catch (IllegalBlockSizeException e) {
-            // ok
-            System.out.println(e);
+        String[] HASH_ALG_224 = { "SHA-224", "SHA-512/224" };
+        for (String ha : HASH_ALG_224) {
+            testEncryptDecrypt(ha, 0);
+            testEncryptDecrypt(ha, 16);
+            testEncryptDecrypt(ha, 38);
+            try {
+                testEncryptDecrypt(ha, 39);
+                throw new Exception("Unexpectedly completed call");
+            } catch (IllegalBlockSizeException e) {
+                // ok
+                System.out.println(e);
+            }
         }
 
-        // basic test using SHA-256
-        testEncryptDecrypt("SHA-256", 0);
-        testEncryptDecrypt("SHA-256", 16);
-        testEncryptDecrypt("SHA-256", 30);
-        try {
-            testEncryptDecrypt("SHA-256", 31);
-            throw new Exception("Unexpectedly completed call");
-        } catch (IllegalBlockSizeException e) {
-            // ok
-            System.out.println(e);
+        String[] HASH_ALG_256 = { "SHA-256", "SHA-512/256" };
+        for (String ha : HASH_ALG_256) {
+            testEncryptDecrypt(ha, 0);
+            testEncryptDecrypt(ha, 16);
+            testEncryptDecrypt(ha, 30);
+            try {
+                testEncryptDecrypt(ha, 31);
+                throw new Exception("Unexpectedly completed call");
+            } catch (IllegalBlockSizeException e) {
+                // ok
+                System.out.println(e);
+            }
         }
 
         // 768 bit key too short for OAEP with 64 byte digest

@@ -55,23 +55,23 @@
 //                       +-------------------+
 //
 
-class ChunkManager;
 class ClassLoaderData;
-class Metablock;
-class Metachunk;
 class MetaspaceTracer;
 class MetaWord;
 class Mutex;
 class outputStream;
-class PrintCLDMetaspaceInfoClosure;
-class SpaceManager;
-class VirtualSpaceList;
+
 class CollectedHeap;
 
 namespace metaspace {
-namespace internals {
+  class ChunkManager;
   class ClassLoaderMetaspaceStatistics;
-}}
+  class Metablock;
+  class Metachunk;
+  class PrintCLDMetaspaceInfoClosure;
+  class SpaceManager;
+  class VirtualSpaceList;
+}
 
 // Metaspaces each have a  SpaceManager and allocations
 // are done by the SpaceManager.  Allocations are done
@@ -131,31 +131,31 @@ class Metaspace : public AllStatic {
   DEBUG_ONLY(static bool   _frozen;)
 
   // Virtual Space lists for both classes and other metadata
-  static VirtualSpaceList* _space_list;
-  static VirtualSpaceList* _class_space_list;
+  static metaspace::VirtualSpaceList* _space_list;
+  static metaspace::VirtualSpaceList* _class_space_list;
 
-  static ChunkManager* _chunk_manager_metadata;
-  static ChunkManager* _chunk_manager_class;
+  static metaspace::ChunkManager* _chunk_manager_metadata;
+  static metaspace::ChunkManager* _chunk_manager_class;
 
   static const MetaspaceTracer* _tracer;
 
  public:
-  static VirtualSpaceList* space_list()       { return _space_list; }
-  static VirtualSpaceList* class_space_list() { return _class_space_list; }
-  static VirtualSpaceList* get_space_list(MetadataType mdtype) {
+  static metaspace::VirtualSpaceList* space_list()       { return _space_list; }
+  static metaspace::VirtualSpaceList* class_space_list() { return _class_space_list; }
+  static metaspace::VirtualSpaceList* get_space_list(MetadataType mdtype) {
     assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
     return mdtype == ClassType ? class_space_list() : space_list();
   }
 
-  static ChunkManager* chunk_manager_metadata() { return _chunk_manager_metadata; }
-  static ChunkManager* chunk_manager_class()    { return _chunk_manager_class; }
-  static ChunkManager* get_chunk_manager(MetadataType mdtype) {
+  static metaspace::ChunkManager* chunk_manager_metadata() { return _chunk_manager_metadata; }
+  static metaspace::ChunkManager* chunk_manager_class()    { return _chunk_manager_class; }
+  static metaspace::ChunkManager* get_chunk_manager(MetadataType mdtype) {
     assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
     return mdtype == ClassType ? chunk_manager_class() : chunk_manager_metadata();
   }
 
   // convenience function
-  static ChunkManager* get_chunk_manager(bool is_class) {
+  static metaspace::ChunkManager* get_chunk_manager(bool is_class) {
     return is_class ? chunk_manager_class() : chunk_manager_metadata();
   }
 
@@ -231,7 +231,7 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   friend class CollectedHeap; // For expand_and_allocate()
   friend class Metaspace;
   friend class MetaspaceUtils;
-  friend class PrintCLDMetaspaceInfoClosure;
+  friend class metaspace::PrintCLDMetaspaceInfoClosure;
   friend class VM_CollectForMetadataAllocation; // For expand_and_allocate()
 
  private:
@@ -242,16 +242,16 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   // special cases such as the boot class loader, reflection
   // class loader and anonymous class loader.
   void initialize_first_chunk(Metaspace::MetaspaceType type, Metaspace::MetadataType mdtype);
-  Metachunk* get_initialization_chunk(Metaspace::MetaspaceType type, Metaspace::MetadataType mdtype);
+  metaspace::Metachunk* get_initialization_chunk(Metaspace::MetaspaceType type, Metaspace::MetadataType mdtype);
 
   const Metaspace::MetaspaceType _space_type;
   Mutex* const  _lock;
-  SpaceManager* _vsm;
-  SpaceManager* _class_vsm;
+  metaspace::SpaceManager* _vsm;
+  metaspace::SpaceManager* _class_vsm;
 
-  SpaceManager* vsm() const { return _vsm; }
-  SpaceManager* class_vsm() const { return _class_vsm; }
-  SpaceManager* get_space_manager(Metaspace::MetadataType mdtype) {
+  metaspace::SpaceManager* vsm() const { return _vsm; }
+  metaspace::SpaceManager* class_vsm() const { return _class_vsm; }
+  metaspace::SpaceManager* get_space_manager(Metaspace::MetadataType mdtype) {
     assert(mdtype != Metaspace::MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
     return mdtype == Metaspace::ClassType ? class_vsm() : vsm();
   }
@@ -263,14 +263,14 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   size_t class_chunk_size(size_t word_size);
 
   // Adds to the given statistic object. Must be locked with CLD metaspace lock.
-  void add_to_statistics_locked(metaspace::internals::ClassLoaderMetaspaceStatistics* out) const;
+  void add_to_statistics_locked(metaspace::ClassLoaderMetaspaceStatistics* out) const;
+
+  Metaspace::MetaspaceType space_type() const { return _space_type; }
 
  public:
 
   ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType type);
   ~ClassLoaderMetaspace();
-
-  Metaspace::MetaspaceType space_type() const { return _space_type; }
 
   // Allocate space for metadata of type mdtype. This is space
   // within a Metachunk and is used by
@@ -287,14 +287,14 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   void verify();
 
   // Adds to the given statistic object. Will lock with CLD metaspace lock.
-  void add_to_statistics(metaspace::internals::ClassLoaderMetaspaceStatistics* out) const;
+  void add_to_statistics(metaspace::ClassLoaderMetaspaceStatistics* out) const;
 
 }; // ClassLoaderMetaspace
 
 class MetaspaceUtils : AllStatic {
 
   // Spacemanager updates running counters.
-  friend class SpaceManager;
+  friend class metaspace::SpaceManager;
 
   // Running counters for statistics concerning in-use chunks.
   // Note: capacity = used + free + waste + overhead. Note that we do not
@@ -328,7 +328,7 @@ public:
   // Collect used metaspace statistics. This involves walking the CLDG. The resulting
   // output will be the accumulated values for all live metaspaces.
   // Note: method does not do any locking.
-  static void collect_statistics(metaspace::internals::ClassLoaderMetaspaceStatistics* out);
+  static void collect_statistics(metaspace::ClassLoaderMetaspaceStatistics* out);
 
   // Used by MetaspaceCounters
   static size_t free_chunks_total_words();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ public class RSAKeyGenParameterSpec implements AlgorithmParameterSpec {
 
     private int keysize;
     private BigInteger publicExponent;
+    private AlgorithmParameterSpec keyParams;
 
     /**
      * The public-exponent value F0 = 3.
@@ -55,15 +56,30 @@ public class RSAKeyGenParameterSpec implements AlgorithmParameterSpec {
     public static final BigInteger F4 = BigInteger.valueOf(65537);
 
     /**
-     * Constructs a new {@code RSAParameterSpec} object from the
-     * given keysize and public-exponent value.
+     * Constructs a new {@code RSAKeyGenParameterSpec} object from the
+     * given keysize, public-exponent value, and null key parameters.
      *
      * @param keysize the modulus size (specified in number of bits)
      * @param publicExponent the public exponent
      */
     public RSAKeyGenParameterSpec(int keysize, BigInteger publicExponent) {
+        this(keysize, publicExponent, null);
+    }
+
+    /**
+     * Constructs a new {@code RSAKeyGenParameterSpec} object from the
+     * given keysize, public-exponent value, and key parameters.
+     *
+     * @param keysize the modulus size (specified in number of bits)
+     * @param publicExponent the public exponent
+     * @param keyParams the key parameters, may be null
+     * @since 11
+     */
+    public RSAKeyGenParameterSpec(int keysize, BigInteger publicExponent,
+            AlgorithmParameterSpec keyParams) {
         this.keysize = keysize;
         this.publicExponent = publicExponent;
+        this.keyParams = keyParams;
     }
 
     /**
@@ -82,5 +98,16 @@ public class RSAKeyGenParameterSpec implements AlgorithmParameterSpec {
      */
     public BigInteger getPublicExponent() {
         return publicExponent;
+    }
+
+    /**
+     * Returns the parameters to be associated with key.
+     *
+     * @return the associated parameters, may be null if
+     *         not present
+     * @since 11
+     */
+    public AlgorithmParameterSpec getKeyParams() {
+        return keyParams;
     }
 }

@@ -2122,11 +2122,11 @@ LEAF(TableSwitch, Switch)
   // creation
   TableSwitch(Value tag, BlockList* sux, int lo_key, ValueStack* state_before, bool is_safepoint)
     : Switch(tag, sux, state_before, is_safepoint)
-  , _lo_key(lo_key) {}
+  , _lo_key(lo_key) { assert(_lo_key <= hi_key(), "integer overflow"); }
 
   // accessors
   int lo_key() const                             { return _lo_key; }
-  int hi_key() const                             { return _lo_key + length() - 1; }
+  int hi_key() const                             { return _lo_key + (length() - 1); }
 };
 
 

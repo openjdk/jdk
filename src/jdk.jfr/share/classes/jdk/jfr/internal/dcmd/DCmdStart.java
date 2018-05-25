@@ -125,9 +125,7 @@ final class DCmdStart extends AbstractDCmd {
         }
 
         Recording recording = new Recording();
-        if (name == null) {
-            recording.setName("Recording-" + recording.getId());
-        } else {
+        if (name != null) {
             recording.setName(name);
         }
 

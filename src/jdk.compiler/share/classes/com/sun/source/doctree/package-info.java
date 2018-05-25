@@ -30,7 +30,7 @@
  * @author Jonathan Gibbons
  * @since 1.8
  *
- * @see <a href="{@docRootParent}/specs/doc-comment-spec.html">
+ * @see <a href="{@docRoot}/../specs/doc-comment-spec.html">
  *      Documentation Comment Specification for the Standard Doclet</a>
  */
 package com.sun.source.doctree;

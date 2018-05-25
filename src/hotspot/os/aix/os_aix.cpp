@@ -622,18 +622,6 @@ extern "C" void breakpoint() {
 debug_only(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs;
 
-bool os::Aix::is_sig_ignored(int sig) {
-  struct sigaction oact;
-  sigaction(sig, (struct sigaction*)NULL, &oact);
-  void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*, oact.sa_sigaction)
-    : CAST_FROM_FN_PTR(void*, oact.sa_handler);
-  if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN)) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 void os::Aix::signal_sets_init() {
   // Should also have an assertion stating we are still single-threaded.
   assert(!signal_sets_initialized, "Already initialized");
@@ -659,13 +647,13 @@ void os::Aix::signal_sets_init() {
   sigaddset(&unblocked_sigs, SR_signum);
 
   if (!ReduceSignalUsage) {
-   if (!os::Aix::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
+   if (!os::Posix::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
      sigaddset(&unblocked_sigs, SHUTDOWN1_SIGNAL);
    }
-   if (!os::Aix::is_sig_ignored(SHUTDOWN2_SIGNAL)) {
+   if (!os::Posix::is_sig_ignored(SHUTDOWN2_SIGNAL)) {
      sigaddset(&unblocked_sigs, SHUTDOWN2_SIGNAL);
    }
-   if (!os::Aix::is_sig_ignored(SHUTDOWN3_SIGNAL)) {
+   if (!os::Posix::is_sig_ignored(SHUTDOWN3_SIGNAL)) {
      sigaddset(&unblocked_sigs, SHUTDOWN3_SIGNAL);
    }
   }
@@ -1377,6 +1365,21 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   snprintf(buf, buflen, "%s %s", name.release, name.version);
 }
 
+int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
+  // Not yet implemented.
+  return 0;
+}
+
+void os::print_os_info_brief(outputStream* st) {
+  uint32_t ver = os::Aix::os_version();
+  st->print_cr("AIX kernel version %u.%u.%u.%u",
+               (ver >> 24) & 0xFF, (ver >> 16) & 0xFF, (ver >> 8) & 0xFF, ver & 0xFF);
+
+  os::Posix::print_uname_info(st);
+
+  // Linux uses print_libversion_info(st); here.
+}
+
 void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
@@ -1795,7 +1798,7 @@ static void local_sem_wait() {
   }
 }
 
-void os::signal_init_pd() {
+static void jdk_misc_signal_init() {
   // Initialize signal structures
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -3020,7 +3023,7 @@ bool unblock_program_error_signals() {
 }
 
 // Renamed from 'signalHandler' to avoid collision with other shared libs.
-void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
+static void javaSignalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
 
   // Never leave program error signals blocked;
@@ -3579,6 +3582,10 @@ jint os::init_2(void) {
 
   Aix::signal_sets_init();
   Aix::install_signal_handlers();
+  // Initialize data for jdk.internal.misc.Signal
+  if (!ReduceSignalUsage) {
+    jdk_misc_signal_init();
+  }
 
   // Check and sets minimum stack sizes against command line options
   if (Posix::set_minimum_stack_sizes() == JNI_ERR) {

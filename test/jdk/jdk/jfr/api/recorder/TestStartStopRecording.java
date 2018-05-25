@@ -32,11 +32,13 @@ import java.nio.file.Path;
 
 import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
+import jdk.test.lib.Utils;
 
 /*
  * @test TestStartStopRecording
  *
  * @key jfr
+ * @library /test/lib
  * @run main/othervm jdk.jfr.api.recorder.TestStartStopRecording
  */
 public class TestStartStopRecording {
@@ -49,7 +51,7 @@ public class TestStartStopRecording {
 
         inMemory.start();
 
-        Path memoryFile = Files.createTempFile("memory-recording", ".jfr");
+        Path memoryFile = Utils.createTempFile("start-stop-memory-recording", ".jfr");
         inMemory.dump(memoryFile);
         assertValid(memoryFile, "Not a valid memory file.");
         inMemory.stop();
@@ -60,7 +62,7 @@ public class TestStartStopRecording {
 
         toDisk.start();
         toDisk.stop();
-        Path diskFile = Files.createTempFile("disk-recording", ".jfr");
+        Path diskFile = Utils.createTempFile("start-stop-disk-recording", ".jfr");
         toDisk.dump(diskFile);
         assertValid(diskFile, "Not a valid disk file.");
         toDisk.close();

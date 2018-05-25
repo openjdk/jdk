@@ -27,6 +27,7 @@
 #define CPU_PPC_VM_MACROASSEMBLER_PPC_HPP
 
 #include "asm/assembler.hpp"
+#include "oops/accessDecorators.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "utilities/macros.hpp"
 
@@ -691,17 +692,26 @@ class MacroAssembler: public Assembler {
   inline void null_check_throw(Register a, int offset, Register temp_reg, address exception_entry);
   inline void null_check(Register a, int offset, Label *Lis_null); // implicit only if Lis_null not provided
 
-  // Load heap oop and decompress. Loaded oop may not be null.
-  // Specify tmp to save one cycle.
-  inline void load_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1 = noreg,
-                                     Register tmp = noreg);
-  // Store heap oop and decompress.  Decompressed oop may not be null.
-  // Specify tmp register if d should not be changed.
-  inline void store_heap_oop_not_null(Register d, RegisterOrConstant offs, Register s1,
-                                      Register tmp = noreg);
+  // Access heap oop, handle encoding and GC barriers.
+  // Some GC barriers call C so use needs_frame = true if an extra frame is needed at the current call site.
+ private:
+  inline void access_store_at(BasicType type, DecoratorSet decorators,
+                              Register base, RegisterOrConstant ind_or_offs, Register val,
+                              Register tmp1, Register tmp2, Register tmp3, bool needs_frame);
+  inline void access_load_at(BasicType type, DecoratorSet decorators,
+                             Register base, RegisterOrConstant ind_or_offs, Register dst,
+                             Register tmp1, Register tmp2, bool needs_frame, Label *L_handle_null = NULL);
 
-  // Null allowed.
-  inline void load_heap_oop(Register d, RegisterOrConstant offs, Register s1 = noreg, Label *is_null = NULL);
+ public:
+  // Specify tmp1 for better code in certain compressed oops cases. Specify Label to bail out on null oop.
+  // tmp1, tmp2 and needs_frame are used with decorators ON_PHANTOM_OOP_REF or ON_WEAK_OOP_REF.
+  inline void load_heap_oop(Register d, RegisterOrConstant offs, Register s1,
+                            Register tmp1, Register tmp2, bool needs_frame,
+                            DecoratorSet decorators = 0, Label *L_handle_null = NULL);
+
+  inline void store_heap_oop(Register d, RegisterOrConstant offs, Register s1,
+                             Register tmp1, Register tmp2, Register tmp3, bool needs_frame,
+                             DecoratorSet decorators = 0);
 
   // Encode/decode heap oop. Oop may not be null, else en/decoding goes wrong.
   // src == d allowed.

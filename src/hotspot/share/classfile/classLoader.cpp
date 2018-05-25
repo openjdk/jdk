@@ -711,8 +711,11 @@ void ClassLoader::add_to_module_path_entries(const char* path,
 void ClassLoader::update_module_path_entry_list(const char *path, TRAPS) {
   assert(DumpSharedSpaces, "dump time only");
   struct stat st;
-  int ret = os::stat(path, &st);
-  assert(ret == 0, "module path must exist");
+  if (os::stat(path, &st) != 0) {
+    tty->print_cr("os::stat error %d (%s). CDS dump aborted (path was \"%s\").",
+      errno, os::errno_name(errno), path);
+    vm_exit_during_initialization();
+  }
   // File or directory found
   ClassPathEntry* new_entry = NULL;
   new_entry = create_class_path_entry(path, &st, true /* throw_exception */,
@@ -1410,16 +1413,12 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
   s2 classpath_index = 0;
   ClassPathEntry* e = NULL;
 
-  // If DumpSharedSpaces is true boot loader visibility boundaries are set to:
-  //   - [jimage] + [_first_append_entry to _last_append_entry] (all path entries).
-  //
   // If search_append_only is true, boot loader visibility boundaries are
   // set to be _first_append_entry to the end. This includes:
   //   [-Xbootclasspath/a]; [jvmti appended entries]
   //
-  // If both DumpSharedSpaces and search_append_only are false, boot loader
-  // visibility boundaries are set to be the --patch-module entries plus the base piece.
-  // This would include:
+  // If search_append_only is false, boot loader visibility boundaries are
+  // set to be the --patch-module entries plus the base piece. This includes:
   //   [--patch-module=<module>=<file>(<pathsep><file>)*]; [jimage | exploded module build]
   //
 
@@ -1455,7 +1454,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
   }
 
   // Load Attempt #3: [-Xbootclasspath/a]; [jvmti appended entries]
-  if ((search_append_only || DumpSharedSpaces) && (NULL == stream)) {
+  if (search_append_only && (NULL == stream)) {
     // For the boot loader append path search, the starting classpath_index
     // for the appended piece is always 1 to account for either the
     // _jrt_entry or the _exploded_entries.

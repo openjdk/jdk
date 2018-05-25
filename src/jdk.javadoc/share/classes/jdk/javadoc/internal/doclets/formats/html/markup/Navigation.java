@@ -89,6 +89,8 @@ public class Navigation {
             + "//-->\n");
 
     public enum PageMode {
+        ALLCLASSES,
+        ALLPACKAGES,
         CLASS,
         CONSTANTVALUES,
         DEPRECATED,
@@ -378,6 +380,8 @@ public class Navigation {
                     addHelpLink(tree);
                 }
                 break;
+            case ALLCLASSES:
+            case ALLPACKAGES:
             case CONSTANTVALUES:
             case SERIALIZEDFORM:
                 addOverviewLink(tree);

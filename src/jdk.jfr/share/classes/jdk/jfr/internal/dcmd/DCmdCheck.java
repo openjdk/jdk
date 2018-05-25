@@ -99,8 +99,7 @@ final class DCmdCheck extends AbstractDCmd {
     }
 
     private void printGeneral(Recording recording) {
-        String format = "Recording: recording=%d name=\"%s\"";
-        print(format, recording.getId(), recording.getName());
+        print("Recording " + recording.getId() + ": name=" + recording.getName());
 
         Duration duration = recording.getDuration();
         if (duration != null) {

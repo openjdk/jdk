@@ -1351,7 +1351,7 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    DecoratorSet decorators = ARRAYCOPY_DISJOINT;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
@@ -1425,7 +1425,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cmp(rscratch1, count, Assembler::LSL, exact_log2(size));
     __ br(Assembler::HS, nooverlap_target);
 
-    DecoratorSet decorators = 0;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
     }
@@ -1789,7 +1789,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif //ASSERT
 
-    DecoratorSet decorators = ARRAYCOPY_CHECKCAST;
+    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_CHECKCAST;
     bool is_oop = true;
     if (dest_uninitialized) {
       decorators |= AS_DEST_NOT_INITIALIZED;
@@ -3851,7 +3851,9 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(cnt1, cnt1, 8 * wordSize);
     __ eor(tmp7, tmp7, tmp8);
     __ ldp(tmp2, tmp4, Address(__ post(a2, 2 * wordSize)));
-    __ cmp(cnt1, loopThreshold);
+    // tmp6 is not used. MacroAssembler::subs is used here (rather than
+    // cmp) because subs allows an unlimited range of immediate operand.
+    __ subs(tmp6, cnt1, loopThreshold);
     __ orr(tmp5, tmp5, tmp7);
     __ cbnz(tmp5, NOT_EQUAL);
     __ br(__ GE, LOOP);
@@ -3877,7 +3879,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ld1(v0, v1, v2, v3, __ T2D, Address(__ post(a1, 4 * 2 * wordSize)));
     __ sub(cnt1, cnt1, 8 * wordSize);
     __ ld1(v4, v5, v6, v7, __ T2D, Address(__ post(a2, 4 * 2 * wordSize)));
-    __ cmp(cnt1, loopThreshold);
+    __ subs(tmp1, cnt1, loopThreshold);
     __ eor(v0, __ T16B, v0, v4);
     __ eor(v1, __ T16B, v1, v5);
     __ eor(v2, __ T16B, v2, v6);
@@ -3936,7 +3938,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (UseSIMDForArrayEquals) {
       if (SoftwarePrefetchHintDistance >= 0) {
-        __ cmp(cnt1, prefetchLoopThreshold);
+        __ subs(tmp1, cnt1, prefetchLoopThreshold);
         __ br(__ LE, NO_PREFETCH_LARGE_LOOP);
         generate_large_array_equals_loop_simd(prefetchLoopThreshold,
             /* prfm = */ true, NOT_EQUAL);
@@ -3949,7 +3951,7 @@ class StubGenerator: public StubCodeGenerator {
     } else {
       __ push(spilled_regs, sp);
       if (SoftwarePrefetchHintDistance >= 0) {
-        __ cmp(cnt1, prefetchLoopThreshold);
+        __ subs(tmp1, cnt1, prefetchLoopThreshold);
         __ br(__ LE, NO_PREFETCH_LARGE_LOOP);
         generate_large_array_equals_loop_nonsimd(prefetchLoopThreshold,
             /* prfm = */ true, NOT_EQUAL);

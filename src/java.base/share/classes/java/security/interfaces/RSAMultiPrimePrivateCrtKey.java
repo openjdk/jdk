@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import java.security.spec.RSAOtherPrimeInfo;
 
 /**
  * The interface to an RSA multi-prime private key, as defined in the
- * PKCS#1 v2.1, using the <i>Chinese Remainder Theorem</i>
- * (CRT) information values.
+ * <a href="https://tools.ietf.org/rfc/rfc8017.txt">PKCS#1 v2.2</a> standard,
+ * using the <i>Chinese Remainder Theorem</i> (CRT) information values.
  *
  * @author Valerie Peng
  *

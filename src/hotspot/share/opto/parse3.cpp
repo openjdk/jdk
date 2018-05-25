@@ -177,7 +177,12 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
 
   bool must_assert_null = false;
 
-  if( bt == T_OBJECT ) {
+  DecoratorSet decorators = IN_HEAP;
+  decorators |= is_vol ? MO_SEQ_CST : MO_UNORDERED;
+
+  bool is_obj = bt == T_OBJECT || bt == T_ARRAY;
+
+  if (is_obj) {
     if (!field->type()->is_loaded()) {
       type = TypeInstPtr::BOTTOM;
       must_assert_null = true;
@@ -198,14 +203,8 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   } else {
     type = Type::get_const_basic_type(bt);
   }
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu && field->is_volatile()) {
-    insert_mem_bar(Op_MemBarVolatile);   // StoreLoad barrier
-  }
-  // Build the load.
-  //
-  MemNode::MemOrd mo = is_vol ? MemNode::acquire : MemNode::unordered;
-  bool needs_atomic_access = is_vol || AlwaysAtomicAccesses;
-  Node* ld = make_load(NULL, adr, type, bt, adr_type, mo, LoadNode::DependsOnlyOnTest, needs_atomic_access);
+
+  Node* ld = access_load_at(obj, adr, adr_type, type, bt, decorators);
 
   // Adjust Java stack
   if (type2size[bt] == 1)
@@ -236,22 +235,10 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
     null_assert(peek());
     set_bci(iter().cur_bci()); // put it back
   }
-
-  // If reference is volatile, prevent following memory ops from
-  // floating up past the volatile read.  Also prevents commoning
-  // another volatile read.
-  if (field->is_volatile()) {
-    // Memory barrier includes bogus read of value to force load BEFORE membar
-    insert_mem_bar(Op_MemBarAcquire, ld);
-  }
 }
 
 void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   bool is_vol = field->is_volatile();
-  // If reference is volatile, prevent following memory ops from
-  // floating down past the volatile write.  Also prevents commoning
-  // another volatile read.
-  if (is_vol)  insert_mem_bar(Op_MemBarRelease);
 
   // Compute address and memory type.
   int offset = field->offset_in_bytes();
@@ -260,71 +247,50 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   BasicType bt = field->layout_type();
   // Value to be stored
   Node* val = type2size[bt] == 1 ? pop() : pop_pair();
-  // Round doubles before storing
-  if (bt == T_DOUBLE)  val = dstore_rounding(val);
 
-  // Conservatively release stores of object references.
-  const MemNode::MemOrd mo =
-    is_vol ?
-    // Volatile fields need releasing stores.
-    MemNode::release :
-    // Non-volatile fields also need releasing stores if they hold an
-    // object reference, because the object reference might point to
-    // a freshly created object.
-    StoreNode::release_if_reference(bt);
+  DecoratorSet decorators = IN_HEAP;
+  decorators |= is_vol ? MO_SEQ_CST : MO_UNORDERED;
+
+  bool is_obj = bt == T_OBJECT || bt == T_ARRAY;
 
   // Store the value.
-  Node* store;
-  if (bt == T_OBJECT) {
-    const TypeOopPtr* field_type;
-    if (!field->type()->is_loaded()) {
-      field_type = TypeInstPtr::BOTTOM;
-    } else {
-      field_type = TypeOopPtr::make_from_klass(field->type()->as_klass());
-    }
-    store = store_oop_to_object(control(), obj, adr, adr_type, val, field_type, bt, mo);
+  const Type* field_type;
+  if (!field->type()->is_loaded()) {
+    field_type = TypeInstPtr::BOTTOM;
   } else {
-    bool needs_atomic_access = is_vol || AlwaysAtomicAccesses;
-    store = store_to_memory(control(), adr, val, bt, adr_type, mo, needs_atomic_access);
-  }
-
-  // If reference is volatile, prevent following volatiles ops from
-  // floating up before the volatile write.
-  if (is_vol) {
-    // If not multiple copy atomic, we do the MemBarVolatile before the load.
-    if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      insert_mem_bar(Op_MemBarVolatile); // Use fat membar
+    if (is_obj) {
+      field_type = TypeOopPtr::make_from_klass(field->type()->as_klass());
+    } else {
+      field_type = Type::BOTTOM;
     }
+  }
+  access_store_at(control(), obj, adr, adr_type, val, field_type, bt, decorators);
+
+  if (is_field) {
     // Remember we wrote a volatile field.
     // For not multiple copy atomic cpu (ppc64) a barrier should be issued
     // in constructors which have such stores. See do_exits() in parse1.cpp.
-    if (is_field) {
+    if (is_vol) {
       set_wrote_volatile(true);
     }
-  }
-
-  if (is_field) {
     set_wrote_fields(true);
-  }
 
-  // If the field is final, the rules of Java say we are in <init> or <clinit>.
-  // Note the presence of writes to final non-static fields, so that we
-  // can insert a memory barrier later on to keep the writes from floating
-  // out of the constructor.
-  // Any method can write a @Stable field; insert memory barriers after those also.
-  if (is_field && (field->is_final() || field->is_stable())) {
+    // If the field is final, the rules of Java say we are in <init> or <clinit>.
+    // Note the presence of writes to final non-static fields, so that we
+    // can insert a memory barrier later on to keep the writes from floating
+    // out of the constructor.
+    // Any method can write a @Stable field; insert memory barriers after those also.
     if (field->is_final()) {
-        set_wrote_final(true);
+      set_wrote_final(true);
+      if (AllocateNode::Ideal_allocation(obj, &_gvn) != NULL) {
+        // Preserve allocation ptr to create precedent edge to it in membar
+        // generated on exit from constructor.
+        // Can't bind stable with its allocation, only record allocation for final field.
+        set_alloc_with_final(obj);
+      }
     }
     if (field->is_stable()) {
-        set_wrote_stable(true);
-    }
-
-    // Preserve allocation ptr to create precedent edge to it in membar
-    // generated on exit from constructor.
-    // Can't bind stable with its allocation, only record allocation for final field.
-    if (field->is_final() && AllocateNode::Ideal_allocation(obj, &_gvn) != NULL) {
-      set_alloc_with_final(obj);
+      set_wrote_stable(true);
     }
   }
 }
@@ -385,7 +351,7 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
       intptr_t offset = header + ((intptr_t)i << LogBytesPerHeapOop);
       Node*    eaddr  = basic_plus_adr(array, offset);
-      store_oop_to_array(control(), array, eaddr, adr_type, elem, elemtype, T_OBJECT, MemNode::unordered);
+      access_store_at(control(), array, eaddr, adr_type, elem, elemtype, T_OBJECT, IN_HEAP | IN_HEAP_ARRAY);
     }
   }
   return array;

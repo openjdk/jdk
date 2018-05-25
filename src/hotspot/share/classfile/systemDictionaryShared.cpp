@@ -60,20 +60,6 @@ objArrayOop SystemDictionaryShared::_shared_protection_domains  =  NULL;
 objArrayOop SystemDictionaryShared::_shared_jar_urls            =  NULL;
 objArrayOop SystemDictionaryShared::_shared_jar_manifests       =  NULL;
 
-static Mutex* SharedDictionary_lock = NULL;
-
-void SystemDictionaryShared::initialize(TRAPS) {
-  if (_java_system_loader != NULL) {
-    SharedDictionary_lock = new Mutex(Mutex::leaf, "SharedDictionary_lock", true);
-
-    // These classes need to be initialized before calling get_shared_jar_manifest(), etc.
-    SystemDictionary::ByteArrayInputStream_klass()->initialize(CHECK);
-    SystemDictionary::File_klass()->initialize(CHECK);
-    SystemDictionary::Jar_Manifest_klass()->initialize(CHECK);
-    SystemDictionary::CodeSource_klass()->initialize(CHECK);
-  }
-}
-
 oop SystemDictionaryShared::shared_protection_domain(int index) {
   return _shared_protection_domains->obj_at(index);
 }
@@ -88,43 +74,30 @@ oop SystemDictionaryShared::shared_jar_manifest(int index) {
 
 
 Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TRAPS) {
-  Handle empty;
   Handle manifest ;
   if (shared_jar_manifest(shared_path_index) == NULL) {
     SharedClassPathEntry* ent = FileMapInfo::shared_path(shared_path_index);
     long size = ent->manifest_size();
     if (size <= 0) {
-      return empty; // No manifest - return NULL handle
+      return Handle();
     }
 
     // ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-    InstanceKlass* bais_klass = SystemDictionary::ByteArrayInputStream_klass();
-    Handle bais = bais_klass->allocate_instance_handle(CHECK_(empty));
-    {
-      const char* src = ent->manifest();
-      assert(src != NULL, "No Manifest data");
-      typeArrayOop buf = oopFactory::new_byteArray(size, CHECK_(empty));
-      typeArrayHandle bufhandle(THREAD, buf);
-      char* dst = (char*)(buf->byte_at_addr(0));
-      memcpy(dst, src, (size_t)size);
+    const char* src = ent->manifest();
+    assert(src != NULL, "No Manifest data");
+    typeArrayOop buf = oopFactory::new_byteArray(size, CHECK_NH);
+    typeArrayHandle bufhandle(THREAD, buf);
+    char* dst = (char*)(buf->byte_at_addr(0));
+    memcpy(dst, src, (size_t)size);
 
-      JavaValue result(T_VOID);
-      JavaCalls::call_special(&result, bais, bais_klass,
-                              vmSymbols::object_initializer_name(),
-                              vmSymbols::byte_array_void_signature(),
-                              bufhandle, CHECK_(empty));
-    }
+    Handle bais = JavaCalls::construct_new_instance(SystemDictionary::ByteArrayInputStream_klass(),
+                      vmSymbols::byte_array_void_signature(),
+                      bufhandle, CHECK_NH);
 
     // manifest = new Manifest(bais)
-    InstanceKlass* manifest_klass = SystemDictionary::Jar_Manifest_klass();
-    manifest = manifest_klass->allocate_instance_handle(CHECK_(empty));
-    {
-      JavaValue result(T_VOID);
-      JavaCalls::call_special(&result, manifest, manifest_klass,
-                              vmSymbols::object_initializer_name(),
-                              vmSymbols::input_stream_void_signature(),
-                              bais, CHECK_(empty));
-    }
+    manifest = JavaCalls::construct_new_instance(SystemDictionary::Jar_Manifest_klass(),
+                      vmSymbols::input_stream_void_signature(),
+                      bais, CHECK_NH);
     atomic_set_shared_jar_manifest(shared_path_index, manifest());
   }
 
@@ -141,10 +114,10 @@ Handle SystemDictionaryShared::get_shared_jar_url(int shared_path_index, TRAPS) 
     Handle path_string = java_lang_String::create_from_str(path, CHECK_(url_h));
     Klass* classLoaders_klass =
         SystemDictionary::jdk_internal_loader_ClassLoaders_klass();
-        JavaCalls::call_static(&result, classLoaders_klass,
-                               vmSymbols::toFileURL_name(),
-                               vmSymbols::toFileURL_signature(),
-                               path_string, CHECK_(url_h));
+    JavaCalls::call_static(&result, classLoaders_klass,
+                           vmSymbols::toFileURL_name(),
+                           vmSymbols::toFileURL_signature(),
+                           path_string, CHECK_(url_h));
 
     atomic_set_shared_jar_url(shared_path_index, (oop)result.get_jobject());
   }
@@ -174,7 +147,7 @@ void SystemDictionaryShared::define_shared_package(Symbol*  class_name,
                                                    Handle manifest,
                                                    Handle url,
                                                    TRAPS) {
-  assert(class_loader == _java_system_loader, "unexpected class loader");
+  assert(SystemDictionary::is_system_class_loader(class_loader()), "unexpected class loader");
   // get_package_name() returns a NULL handle if the class is in unnamed package
   Handle pkgname_string = get_package_name(class_name, CHECK);
   if (pkgname_string.not_null()) {
@@ -228,13 +201,9 @@ void SystemDictionaryShared::define_shared_package(Symbol* class_name,
 Handle SystemDictionaryShared::get_protection_domain_from_classloader(Handle class_loader,
                                                                       Handle url, TRAPS) {
   // CodeSource cs = new CodeSource(url, null);
-  InstanceKlass* cs_klass = SystemDictionary::CodeSource_klass();
-  Handle cs = cs_klass->allocate_instance_handle(CHECK_NH);
-  JavaValue void_result(T_VOID);
-  JavaCalls::call_special(&void_result, cs, cs_klass,
-                          vmSymbols::object_initializer_name(),
-                          vmSymbols::url_code_signer_array_void_signature(),
-                          url, Handle(), CHECK_NH);
+  Handle cs = JavaCalls::construct_new_instance(SystemDictionary::CodeSource_klass(),
+                  vmSymbols::url_code_signer_array_void_signature(),
+                  url, Handle(), CHECK_NH);
 
   // protection_domain = SecureClassLoader.getProtectionDomain(cs);
   Klass* secureClassLoader_klass = SystemDictionary::SecureClassLoader_klass();
@@ -278,7 +247,7 @@ Handle SystemDictionaryShared::get_shared_protection_domain(Handle class_loader,
       JavaValue result(T_OBJECT);
       Klass* classLoaders_klass =
         SystemDictionary::jdk_internal_loader_ClassLoaders_klass();
-        JavaCalls::call_static(&result, classLoaders_klass, vmSymbols::toFileURL_name(),
+      JavaCalls::call_static(&result, classLoaders_klass, vmSymbols::toFileURL_name(),
                                vmSymbols::toFileURL_signature(),
                                url_string, CHECK_(protection_domain));
       Handle url = Handle(THREAD, (oop)result.get_jobject());

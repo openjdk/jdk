@@ -192,6 +192,10 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
   cb->initiator_addrtype = GSS_C_AF_NULLADDR;
   cb->acceptor_addrtype = GSS_C_AF_NULLADDR;
 
+  // addresses needs to be initialized to empty
+  memset(&cb->initiator_address, 0, sizeof(cb->initiator_address));
+  memset(&cb->acceptor_address, 0, sizeof(cb->acceptor_address));
+
   /* set up initiator address */
   jinetAddr = (*env)->CallObjectMethod(env, jcb,
       MID_ChannelBinding_getInitiatorAddr);

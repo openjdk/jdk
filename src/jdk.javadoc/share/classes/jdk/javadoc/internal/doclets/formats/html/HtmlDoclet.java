@@ -146,6 +146,11 @@ public class HtmlDoclet extends AbstractDoclet {
             } else {
                 SingleIndexWriter.generate(configuration, indexbuilder);
             }
+            AllClassesIndexWriter.generate(configuration,
+                    new IndexBuilder(configuration, nodeprecated, true));
+            if (!configuration.packages.isEmpty()) {
+                AllPackagesIndexWriter.generate(configuration);
+            }
         }
 
         if (!(configuration.nodeprecatedlist || nodeprecated)) {
@@ -179,7 +184,7 @@ public class HtmlDoclet extends AbstractDoclet {
         DocFile f;
         if (configuration.stylesheetfile.length() == 0) {
             f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
-            f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), false, true);
+            f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), true, true);
         }
         f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,13 @@
  * questions.
  */
 
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
+import java.security.*;
+import java.security.spec.*;
 import jdk.test.lib.RandomFactory;
 
 /*
  * @test
- * @bug 8050374 8181048
+ * @bug 8050374 8181048 8146293
  * @key randomness
  * @summary This test validates signature verification
  *          Signature.verify(byte[], int, int). The test uses RandomFactory to
@@ -47,6 +40,12 @@ import jdk.test.lib.RandomFactory;
  * @run main Offsets SUN SHA1withDSA
  * @run main Offsets SUN SHA224withDSA
  * @run main Offsets SUN SHA256withDSA
+ * @run main Offsets SunRsaSign SHA224withRSA
+ * @run main Offsets SunRsaSign SHA256withRSA
+ * @run main Offsets SunRsaSign SHA384withRSA
+ * @run main Offsets SunRsaSign SHA512withRSA
+ * @run main Offsets SunRsaSign SHA512/224withRSA
+ * @run main Offsets SunRsaSign SHA512/256withRSA
  */
 public class Offsets {
 
@@ -59,11 +58,13 @@ public class Offsets {
     private Offsets(Signature signature, PublicKey pubkey, PrivateKey privkey,
             int size, byte[] cleartext) throws InvalidKeyException,
                 SignatureException {
+        System.out.println("Testing signature " + signature.getAlgorithm());
         this.pubkey = pubkey;
         this.signature = signature;
         this.size = size;
         this.cleartext = cleartext;
 
+        String sigAlg = signature.getAlgorithm();
         signature.initSign(privkey);
         signature.update(cleartext, 0, size);
         signed = signature.sign();
@@ -86,7 +87,7 @@ public class Offsets {
 
     boolean verifySignature(byte[] sigData, int sigOffset, int sigLength,
             int updateOffset, int updateLength)
-                throws InvalidKeyException, SignatureException {
+            throws InvalidKeyException, SignatureException {
         signature.initVerify(pubkey);
         signature.update(cleartext, updateOffset, updateLength);
         return signature.verify(sigData, sigOffset, sigLength);

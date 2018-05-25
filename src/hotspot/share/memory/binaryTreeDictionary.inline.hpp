@@ -30,8 +30,8 @@
 #include "logging/logStream.hpp"
 #include "memory/binaryTreeDictionary.hpp"
 #include "memory/freeList.inline.hpp"
-#include "memory/metachunk.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -1020,6 +1020,17 @@ template <class Chunk_t, class FreeList_t>
 void BinaryTreeDictionary<Chunk_t, FreeList_t>::verify() const {
   verify_tree();
   guarantee(total_size() == total_size_in_tree(root()), "Total Size inconsistency");
+}
+
+template <class Chunk_t, class FreeList_t>
+size_t BinaryTreeDictionary<Chunk_t, FreeList_t>::total_chunk_size(debug_only(const Mutex* lock)) const {
+  debug_only(
+    if (lock != NULL && lock->owned_by_self()) {
+      assert(total_size_in_tree(root()) == total_size(),
+             "_total_size inconsistency");
+    }
+  )
+  return total_size();
 }
 
 #endif // SHARE_VM_MEMORY_BINARYTREEDICTIONARY_INLINE_HPP

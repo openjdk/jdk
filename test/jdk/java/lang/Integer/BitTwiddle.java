@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,8 @@ public class BitTwiddle {
             throw new RuntimeException("i");
         if (numberOfLeadingZeros(1) != (SIZE - 1))
             throw new RuntimeException("j");
+        if (numberOfLeadingZeros(Integer.MAX_VALUE) != 1)
+            throw new RuntimeException("lzmax");
 
         if (numberOfTrailingZeros(0) != SIZE)
             throw new RuntimeException("k");
@@ -95,6 +97,13 @@ public class BitTwiddle {
             int x = rnd.nextInt();
             if (numberOfLeadingZeros(x) != numberOfTrailingZeros(reverse(x)))
                 throw new RuntimeException("n: " + toHexString(x));
+        }
+        for (int i = 1, r = SIZE - 1; i != 0; i <<= 1, r--) {
+            if (numberOfLeadingZeros(i) != r ||
+                numberOfTrailingZeros(i) != (SIZE - r - 1) ||
+                numberOfLeadingZeros(i) != numberOfTrailingZeros(reverse(i))) {
+                throw new RuntimeException("lzx: " + toHexString(i));
+            }
         }
 
         if (bitCount(0) != 0)
@@ -152,11 +161,8 @@ public class BitTwiddle {
         }
     }
 
+    private static final String ZEROS = "0".repeat(32);
     private static String leftpad(String s, int width) {
-        String r = s;
-        for (int c = 0; c < width - s.length(); c++) {
-            r = "0" + r;
-        }
-        return r;
+        return ZEROS.substring(0, width - s.length()) + s;
     }
 }

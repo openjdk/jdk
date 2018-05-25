@@ -883,12 +883,7 @@ class ComparableTimSort {
     private Object[]  ensureCapacity(int minCapacity) {
         if (tmpLen < minCapacity) {
             // Compute smallest power of 2 > minCapacity
-            int newSize = minCapacity;
-            newSize |= newSize >> 1;
-            newSize |= newSize >> 2;
-            newSize |= newSize >> 4;
-            newSize |= newSize >> 8;
-            newSize |= newSize >> 16;
+            int newSize = -1 >>> Integer.numberOfLeadingZeros(minCapacity);
             newSize++;
 
             if (newSize < 0) // Not bloody likely!

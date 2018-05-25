@@ -622,8 +622,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 .addTab(resources.getText("doclet.Exported_Packages_Summary"), this::isExported)
                 .addTab(resources.getText("doclet.Opened_Packages_Summary"), this::isOpened)
                 .addTab(resources.getText("doclet.Concealed_Packages_Summary"), this::isConcealed)
-                .setTabScript(i -> String.format("showPkgs(%d);", i))
-                .setTabScriptVariable("packages");
+                .setTabScript(i -> String.format("show(%d);", i));
 
         // Determine whether to show the "Exported To" and "Opened To" columns,
         // based on whether such columns would provide "useful" info.

@@ -29,17 +29,7 @@
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 
-#ifdef X86
-#include "vm_version_ext_x86.hpp"
-#endif
-#ifdef ARM
-#include "vm_version_ext_arm.hpp"
-#endif
-#ifndef ARM
-#ifdef AARCH64
-#include "vm_version_ext_aarch64.hpp"
-#endif
-#endif
+#include CPU_HEADER(vm_version_ext)
 
 #include <stdio.h>
 #include <stdarg.h>

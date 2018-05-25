@@ -47,6 +47,7 @@ import jdk.jfr.Registered;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -86,7 +87,7 @@ public class TestRecordingFile {
         TestEvent3 t3 = new TestEvent3();
         t3.commit();
         r.stop();
-        Path valid = Files.createTempFile("three-event-recording", ".jfr");
+        Path valid = Utils.createTempFile("three-event-recording", ".jfr");
         r.dump(valid);
         r.close();
 
@@ -145,7 +146,7 @@ public class TestRecordingFile {
         System.out.println("Should exist: " + Arrays.toString(shouldExist));
         System.out.println("Should not exist: " + Arrays.toString(shouldNotExist));
 
-        Path p = Files.createTempFile(sb.toString(), ".jfr");
+        Path p = Utils.createTempFile(sb.toString(), ".jfr");
         System.out.println("Filename: " + p);
         try (Recording r = new Recording()) {
             r.start();
@@ -180,8 +181,8 @@ public class TestRecordingFile {
 
     private static void testReadEventTypesMultiChunk() throws Exception {
 
-        Path twoEventTypes = Files.createTempFile("two-event-types", ".jfr");
-        Path threeEventTypes = Files.createTempFile("three-event-types", ".jfr");
+        Path twoEventTypes = Utils.createTempFile("two-event-types", ".jfr");
+        Path threeEventTypes = Utils.createTempFile("three-event-types", ".jfr");
        try (Recording r1 = new Recording()) {
            r1.start();
            FlightRecorder.register(Event1.class);
@@ -251,7 +252,7 @@ public class TestRecordingFile {
 
     private static Path createBrokenWIthZeros(Path valid) throws Exception {
         try {
-            Path broken = Files.createTempFile("broken-events", ".jfr");
+            Path broken = Utils.createTempFile("broken-events", ".jfr");
             Files.delete(broken);
             Files.copy(valid, broken);
             RandomAccessFile raf = new RandomAccessFile(broken.toFile(), "rw");
@@ -271,7 +272,7 @@ public class TestRecordingFile {
 
     private static Path createBrokenMetadata(Path valid) throws Exception {
         try {
-            Path broken = Files.createTempFile("broken-metadata", ".jfr");
+            Path broken = Utils.createTempFile("broken-metadata", ".jfr");
             Files.delete(broken);
             Files.copy(valid, broken);
             RandomAccessFile raf = new RandomAccessFile(broken.toFile(), "rw");
@@ -324,7 +325,7 @@ public class TestRecordingFile {
         } catch (FileNotFoundException npe) {
             // OK
         }
-        Path testFile = Files.createTempFile("test-file", ".jfr");
+        Path testFile = Utils.createTempFile("test-empty-file", ".jfr");
         try (RecordingFile r = new RecordingFile(testFile)) {
             throw new Exception("Expected IOException if file is empty");
         } catch (IOException e) {

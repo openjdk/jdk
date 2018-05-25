@@ -34,9 +34,11 @@ class ModRefBarrierSet: public BarrierSet {
 protected:
   ModRefBarrierSet(BarrierSetAssembler* barrier_set_assembler,
                    BarrierSetC1* barrier_set_c1,
+                   BarrierSetC2* barrier_set_c2,
                    const BarrierSet::FakeRtti& fake_rtti)
     : BarrierSet(barrier_set_assembler,
                  barrier_set_c1,
+                 barrier_set_c2,
                  fake_rtti.add_tag(BarrierSet::ModRef)) { }
   ~ModRefBarrierSet() { }
 

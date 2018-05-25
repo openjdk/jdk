@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
@@ -42,7 +43,8 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  */
 public abstract class BasePropertyTaglet extends BaseTaglet {
 
-    public BasePropertyTaglet() {
+    public BasePropertyTaglet(String name) {
+        super(name, false, EnumSet.of(Site.METHOD));
     }
 
     /**
@@ -66,58 +68,4 @@ public abstract class BasePropertyTaglet extends BaseTaglet {
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
         return tagletWriter.propertyTagOutput(element, tag, getText(tagletWriter));
     }
-
-    /**
-     * Will return false because this tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
-     */
-    public boolean inConstructor() {
-        return false;
-    }
-
-    /**
-     * Will return false because this tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
-     */
-    public boolean inOverview() {
-        return false;
-    }
-
-    /**
-     * Will return false because this tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
-     */
-    public boolean inModule() {
-        return false;
-    }
-
-    /**
-     * Will return false because this tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
-     */
-    public boolean inPackage() {
-        return false;
-    }
-
-    /**
-     * Will return false because this tag may
-     * only appear in Methods.
-     * @return false since this is not a method.
-     */
-    public boolean inType() {
-        return false;
-    }
-
-    /**
-     * Will return false because this tag is not inline.
-     * @return false since this is not an inline tag.
-     */
-    public boolean isInlineTag() {
-        return false;
-    }
-
 }

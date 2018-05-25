@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,6 @@ public class Table {
     private HtmlStyle tabStyle = HtmlStyle.tableTab;
     private HtmlStyle tabEnd = HtmlStyle.tabEnd;
     private IntFunction<String> tabScript;
-    private String tabScriptVariable;
     private Function<Integer, String> tabId = (i -> "t" + i);
     private TableHeader header;
     private List<HtmlStyle> columnStyles;
@@ -179,17 +178,6 @@ public class Table {
      */
     public Table setTabScript(IntFunction<String> f) {
         tabScript = f;
-        return this;
-    }
-
-    /**
-     * Sets the name of the JavaScript variable used to contain the data for each tab.
-     *
-     * @param name the name
-     * @return this object
-     */
-    public Table setTabScriptVariable(String name) {
-        tabScriptVariable = name;
         return this;
     }
 
@@ -537,7 +525,7 @@ public class Table {
         StringBuilder sb = new StringBuilder();
 
         // Add the variable defining the bitmask for each row
-        sb.append("var ").append(tabScriptVariable).append(" = {");
+        sb.append("var data").append(" = {");
         int rowIndex = 0;
         for (int mask : bodyRowMasks) {
             if (rowIndex > 0) {

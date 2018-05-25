@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,11 +499,11 @@ abstract class MessageToken_v2 extends Krb5Token {
      */
     class MessageTokenHeader {
 
-         private int tokenId;
-         private byte[] bytes = new byte[TOKEN_HEADER_SIZE];
+        private int tokenId;
+        private byte[] bytes = new byte[TOKEN_HEADER_SIZE];
 
-         // Writes a new token header
-         public MessageTokenHeader(int tokenId, boolean conf) throws GSSException {
+        // Writes a new token header
+        public MessageTokenHeader(int tokenId, boolean conf) throws GSSException {
 
             this.tokenId = tokenId;
 
@@ -609,7 +609,7 @@ abstract class MessageToken_v2 extends Krb5Token {
             prop.setQOP(0);
 
             // sequence number
-            seqNumber = readBigEndian(bytes, 0, 8);
+            seqNumber = readBigEndian(bytes, 12, 4);
         }
 
         /**

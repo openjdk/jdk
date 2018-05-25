@@ -88,7 +88,6 @@ class ZipUtils {
     }
 
     /**
-     /*
      * Converts DOS time to Java time (number of milliseconds since epoch).
      */
     public static long dosToJavaTime(long dtime) {

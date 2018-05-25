@@ -453,6 +453,9 @@ static jlong get_monotonic_ms() {
 
 void JfrThreadSampler::run() {
   assert(_sampler_thread == NULL, "invariant");
+
+  record_stack_base_and_size();
+
   _sampler_thread = this;
 
   jlong last_java_ms = get_monotonic_ms();

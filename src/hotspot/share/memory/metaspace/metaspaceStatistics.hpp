@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, SAP and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP_
-#define SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP_
+#ifndef SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
+#define SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
 
 #include "utilities/globalDefinitions.hpp"
-#include "memory/metachunk.hpp" // for ChunkIndex enum
 #include "memory/metaspace.hpp" // for MetadataType enum
+#include "memory/metaspace/metachunk.hpp" // for ChunkIndex enum
 
 class outputStream;
 
 namespace metaspace {
-namespace internals {
 
 // Contains statistics for a number of free chunks.
 class FreeChunksStatistics {
@@ -183,7 +182,7 @@ public:
 
 }; // ClassLoaderMetaspaceStatistics
 
-} // namespace internals
 } // namespace metaspace
 
-#endif /* SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP_ */
+#endif /* SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP */
+

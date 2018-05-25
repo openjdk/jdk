@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
-import com.sun.source.doctree.DocTree;
-import java.util.Map;
+import java.util.EnumSet;
 import javax.lang.model.element.Element;
+
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+
+import static com.sun.source.doctree.DocTree.Kind.INDEX;
 
 /**
  * An inline Taglet used to index word or a phrase.
@@ -38,17 +41,13 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * @author Bhavesh Patel
  */
 
-public class IndexTaglet extends BaseInlineTaglet {
+public class IndexTaglet extends BaseTaglet {
 
-    private static final String NAME = "index";
-
-    public String getName() {
-        return NAME;
+    IndexTaglet() {
+        super(INDEX.tagName, true, EnumSet.allOf(Site.class));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Content getTagletOutput(Element element, DocTree tag, TagletWriter writer) {
         return writer.indexTagOutput(element, tag);
     }

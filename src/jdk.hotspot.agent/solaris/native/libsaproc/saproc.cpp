@@ -742,6 +742,8 @@ static void attach_internal(JNIEnv* env, jobject this_obj, jstring cmdLine, jboo
   jboolean isCopy;
   int gcode;
   const char* cmdLine_cstr = env->GetStringUTFChars(cmdLine, &isCopy);
+  char errMsg[ERR_MSG_SIZE];
+  td_err_e te;
   CHECK_EXCEPTION;
 
   // some older versions of libproc.so crash when trying to attach 32 bit
@@ -771,8 +773,7 @@ static void attach_internal(JNIEnv* env, jobject this_obj, jstring cmdLine, jboo
   env->ReleaseStringUTFChars(cmdLine, cmdLine_cstr);
   if (! ph) {
      if (gcode > 0 && gcode < sizeof(proc_arg_grab_errmsgs)/sizeof(const char*)) {
-        char errMsg[ERR_MSG_SIZE];
-        sprintf(errMsg, "Attach failed : %s", proc_arg_grab_errmsgs[gcode]);
+        snprintf(errMsg, ERR_MSG_SIZE, "Attach failed : %s", proc_arg_grab_errmsgs[gcode]);
         THROW_NEW_DEBUGGER_EXCEPTION(errMsg);
     } else {
         if (_libsaproc_debug && gcode == G_STRANGE) {
@@ -847,21 +848,25 @@ static void attach_internal(JNIEnv* env, jobject this_obj, jstring cmdLine, jboo
     HANDLE_THREADDB_FAILURE("Did not find libthread in target process/core!");
   }
 
-  if (p_td_init() != TD_OK) {
+  te = p_td_init();
+  if (te != TD_OK) {
     if (!sa_ignore_threaddb) {
       detach_internal(env, this_obj);
     }
-    HANDLE_THREADDB_FAILURE("Can't initialize thread_db!");
+    snprintf(errMsg, ERR_MSG_SIZE, "Can't initialize thread_db! td_init failed: %d", te);
+    HANDLE_THREADDB_FAILURE(errMsg);
   }
 
   p_td_ta_new_t p_td_ta_new = (p_td_ta_new_t) env->GetLongField(this_obj, p_td_ta_new_ID);
 
   td_thragent_t *p_td_thragent_t = 0;
-  if (p_td_ta_new(ph, &p_td_thragent_t) != TD_OK) {
+  te = p_td_ta_new(ph, &p_td_thragent_t);
+  if (te != TD_OK) {
     if (!sa_ignore_threaddb) {
       detach_internal(env, this_obj);
     }
-    HANDLE_THREADDB_FAILURE("Can't create thread_db agent!");
+    snprintf(errMsg, ERR_MSG_SIZE, "Can't create thread_db agent! td_ta_new failed: %d", te);
+    HANDLE_THREADDB_FAILURE(errMsg);
   }
   env->SetLongField(this_obj, p_td_thragent_t_ID, (jlong)(uintptr_t) p_td_thragent_t);
 
@@ -953,6 +958,8 @@ JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_getP
  */
 JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_getThreadIntegerRegisterSet0
   (JNIEnv *env, jobject this_obj, jlong tid) {
+  char errMsg[ERR_MSG_SIZE];
+  td_err_e te;
   // map the thread id to thread handle
   p_td_ta_map_id2thr_t p_td_ta_map_id2thr = (p_td_ta_map_id2thr_t) env->GetLongField(this_obj, p_td_ta_map_id2thr_ID);
 
@@ -962,8 +969,10 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLoca
   }
 
   td_thrhandle_t thr_handle;
-  if (p_td_ta_map_id2thr(p_td_thragent_t, (thread_t) tid, &thr_handle) != TD_OK) {
-     THROW_NEW_DEBUGGER_EXCEPTION_("can't map thread id to thread handle!", 0);
+  te = p_td_ta_map_id2thr(p_td_thragent_t, (thread_t) tid, &thr_handle);
+  if (te != TD_OK) {
+     snprintf(errMsg, ERR_MSG_SIZE, "can't map thread id to thread handle! td_ta_map_id2thr failed: %d", te);
+     THROW_NEW_DEBUGGER_EXCEPTION_(errMsg, 0);
   }
 
   p_td_thr_getgregs_t p_td_thr_getgregs = (p_td_thr_getgregs_t) env->GetLongField(this_obj, p_td_thr_getgregs_ID);
@@ -1137,14 +1146,18 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLoca
  */
 JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_writeBytesToProcess0
   (JNIEnv *env, jobject this_obj, jlong address, jlong numBytes, jbyteArray data) {
+  char errMsg[ERR_MSG_SIZE];
+  ps_err_e pe;
   jlong p_ps_prochandle = env->GetLongField(this_obj, p_ps_prochandle_ID);
   jboolean isCopy;
   jbyte* ptr = env->GetByteArrayElements(data, &isCopy);
   CHECK_EXCEPTION;
 
-  if (ps_pwrite((struct ps_prochandle*) p_ps_prochandle, address, ptr, numBytes) != PS_OK) {
+  pe = ps_pwrite((struct ps_prochandle*) p_ps_prochandle, address, ptr, numBytes);
+  if (pe != PS_OK) {
+     snprintf(errMsg, ERR_MSG_SIZE, "Process write failed! ps_pwrite failed: %d", pe);
      env->ReleaseByteArrayElements(data, ptr, JNI_ABORT);
-     THROW_NEW_DEBUGGER_EXCEPTION("Process write failed!");
+     THROW_NEW_DEBUGGER_EXCEPTION(errMsg);
   }
 
   env->ReleaseByteArrayElements(data, ptr, JNI_ABORT);

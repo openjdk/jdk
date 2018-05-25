@@ -33,6 +33,8 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -414,6 +416,8 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
       remove_opaque4_node(opaq);
     }
   }
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->eliminate_useless_gc_barriers(useful);
   // clean up the late inline lists
   remove_useless_late_inlines(&_string_late_inlines, useful);
   remove_useless_late_inlines(&_boxing_late_inlines, useful);
@@ -637,6 +641,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _stub_function(NULL),
                   _stub_entry_point(NULL),
                   _method(target),
+                  _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
                   _entry_bci(osr_bci),
                   _initial_gvn(NULL),
                   _for_igvn(NULL),
@@ -772,17 +777,12 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       StartNode* s = new StartNode(root(), tf()->domain());
       initial_gvn()->set_type_bottom(s);
       init_start(s);
-      if (method()->intrinsic_id() == vmIntrinsics::_Reference_get && UseG1GC) {
+      if (method()->intrinsic_id() == vmIntrinsics::_Reference_get) {
         // With java.lang.ref.reference.get() we must go through the
-        // intrinsic when G1 is enabled - even when get() is the root
+        // intrinsic - even when get() is the root
         // method of the compile - so that, if necessary, the value in
         // the referent field of the reference object gets recorded by
         // the pre-barrier code.
-        // Specifically, if G1 is enabled, the value in the referent
-        // field is recorded by the G1 SATB pre barrier. This will
-        // result in the referent being marked live and the reference
-        // object removed from the list of discovered references during
-        // reference processing.
         cg = find_intrinsic(method(), false);
       }
       if (cg == NULL) {
@@ -2334,6 +2334,9 @@ void Compile::Optimize() {
       if (failing())  return;
     }
   }
+
+  if (failing())  return;
+
   // Ensure that major progress is now clear
   C->clear_major_progress();
 
@@ -2349,6 +2352,11 @@ void Compile::Optimize() {
     C->remove_range_check_casts(igvn);
     igvn.optimize();
   }
+
+#ifdef ASSERT
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  bs->verify_gc_barriers(false);
+#endif
 
   {
     TracePhase tp("macroExpand", &timers[_t_macroExpand]);
@@ -2413,6 +2421,8 @@ void Compile::Code_Gen() {
   if (failing()) {
     return;
   }
+
+  print_method(PHASE_MATCHING, 2);
 
   // Build a proper-looking CFG
   PhaseCFG cfg(node_arena(), root(), matcher);

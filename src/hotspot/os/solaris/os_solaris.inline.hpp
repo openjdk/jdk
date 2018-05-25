@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,9 @@
 #include <netdb.h>
 #include <setjmp.h>
 
-// File names are case-sensitive on windows only
-inline int os::file_name_strcmp(const char* s1, const char* s2) {
-  return strcmp(s1, s2);
+// File names are case-insensitive on windows only
+inline int os::file_name_strncmp(const char* s1, const char* s2, size_t num) {
+  return strncmp(s1, s2, num);
 }
 
 inline bool os::uses_stack_guard_pages() {
