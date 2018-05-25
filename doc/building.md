@@ -833,6 +833,12 @@ installation of JTReg. If this is not picked up automatically, use the
 Note that this option should point to the JTReg home, i.e. the top directory,
 containing `lib/jtreg.jar` etc.
 
+The [Adoption Group](https://wiki.openjdk.java.net/display/Adoption) provides
+recent builds of jtreg [here](
+https://adopt-openjdk.ci.cloudbees.com/job/jtreg/lastSuccessfulBuild/artifact).
+Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
+`jtreg` directory that you just unpacked.
+
 To execute the most basic tests (tier 1), use:
 ```
 make run-test-tier1
