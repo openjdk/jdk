@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,19 @@
 
 /*
  * @test
- * @bug 8159016
+ * @bug 8159016 8202949
  * @summary Tests correct dominator information after over-unrolling a loop.
  * @requires vm.gc == "Parallel" | vm.gc == "null"
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-TieredCompilation
- *                   -XX:-UseG1GC -XX:+UseParallelGC
- *                   compiler.loopopts.TestOverunrolling
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions
+ *                   -Xcomp -XX:-TieredCompilation -XX:-UseSwitchProfiling
+ *                   -XX:-UseG1GC -XX:+UseParallelGC compiler.loopopts.TestOverunrolling
  */
 
 package compiler.loopopts;
 
 public class TestOverunrolling {
 
-    public static Object test(int arg) {
+    public static Object test1(int arg) {
         Object arr[] = new Object[3];
         int lim = (arg & 3);
         // The pre loop is executed for one iteration, initializing p[0].
@@ -53,10 +52,40 @@ public class TestOverunrolling {
         return arr;
     }
 
+    public static long lFld = 0;
+    public static volatile double dFld = 0;
+
+    public static void test2() {
+        int iArr[] = new int[10];
+        // The inner for-loop is overunrolled because we fail to determine
+        // the constant lower and upper bound (6,8]. After unrolling multiple times,
+        // the range check dependent CastII/ConvI2L emitted for the iArr access become
+        // TOP because index 'j' is out of bounds. As a result, the memory graph is
+        // corrupted with memory consuming nodes still being reachable because the dead
+        // loop is not (yet) removed (Opaque1 nodes are still guarding the bounds).
+        for (int i = 6; i < 10; i++) {
+            for (int j = 8; j > i; j--) {
+                int k = 1;
+                do {
+                    iArr[j] = 0;
+                    switch (k) {
+                    case 1:
+                        lFld = 0;
+                        break;
+                    case 10:
+                        dFld = 0;
+                        break;
+                    }
+                } while (++k < 1);
+            }
+        }
+    }
+
     public static void main(String args[]) {
         for (int i = 0; i < 42; ++i) {
-            test(i);
+            test1(i);
         }
+        test2();
     }
 }
 
