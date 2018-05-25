@@ -24,9 +24,6 @@
 /*
  * @test
  * @summary Check that appends are atomic
- * @library /test/lib
- * @build jdk.test.lib.Platform
- * @run main AtomicAppend
  * @key randomness
  */
 
@@ -42,8 +39,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import static java.nio.file.StandardOpenOption.*;
-
-import jdk.test.lib.Platform;
 
 public class AtomicAppend {
     static final Random rand = new Random();
@@ -81,15 +76,6 @@ public class AtomicAppend {
     }
 
     public static void main(String[] args) throws Throwable {
-        if (Platform.isOSX()) {
-            final String version = "10.13";
-            int ineq = Platform.compareOsVersion(version);
-            if (ineq >= 0) {
-                System.out.format("Skipping test for macOS version %s >= %s%n",
-                    Platform.getOsVersion(), version);
-                return;
-            }
-        }
         final int nThreads = 16;
         final int writes = 1000;
         final File file = File.createTempFile("foo", null);
