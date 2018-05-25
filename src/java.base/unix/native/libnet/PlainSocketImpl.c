@@ -630,8 +630,8 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
      * before accept() was called.
      *
      * If accept timeout in place and timeout is adjusted with
-     * each ECONNABORTED or EWOULDBLOCK to ensure that semantics
-     * of timeout are preserved.
+     * each ECONNABORTED or EWOULDBLOCK or EAGAIN to ensure that
+     * semantics of timeout are preserved.
      */
     for (;;) {
         int ret;
@@ -673,12 +673,12 @@ Java_java_net_PlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
             break;
         }
 
-        /* non (ECONNABORTED or EWOULDBLOCK) error */
-        if (!(errno == ECONNABORTED || errno == EWOULDBLOCK)) {
+        /* non (ECONNABORTED or EWOULDBLOCK or EAGAIN) error */
+        if (!(errno == ECONNABORTED || errno == EWOULDBLOCK || errno == EAGAIN)) {
             break;
         }
 
-        /* ECONNABORTED or EWOULDBLOCK error so adjust timeout if there is one. */
+        /* ECONNABORTED or EWOULDBLOCK or EAGAIN error so adjust timeout if there is one. */
         if (nanoTimeout >= NET_NSEC_PER_MSEC) {
             currNanoTime = JVM_NanoTime(env, 0);
             nanoTimeout -= (currNanoTime - prevNanoTime);
