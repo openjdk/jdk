@@ -923,7 +923,7 @@ void VM_Version::get_processor_features() {
       // Only C2 does RTM locking optimization.
       // Can't continue because UseRTMLocking affects UseBiasedLocking flag
       // setting during arguments processing. See use_biased_locking().
-      vm_exit_during_initialization("RTM locking optimization is not supported in emulated client VM");
+      vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
     }
     if (is_intel_family_core()) {
       if ((_model == CPU_MODEL_HASWELL_E3) ||
