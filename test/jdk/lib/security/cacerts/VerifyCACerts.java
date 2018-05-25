@@ -211,7 +211,8 @@ public class VerifyCACerts {
     // Exception list to 90 days expiry policy
     private static final HashSet<String> EXPIRY_EXC_ENTRIES
             = new HashSet<String>(Arrays.asList(
-                    "gtecybertrustglobalca [jdk]"
+                    "gtecybertrustglobalca [jdk]",
+                    "equifaxsecureca [jdk]"
             ));
 
     // Ninety days in milliseconds
