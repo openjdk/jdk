@@ -23,13 +23,11 @@
 # questions.
 #
 
-$(eval $(call IncludeCustomExtension, hotspot/gensrc/GensrcJfr.gmk))
-
 ################################################################################
-# Build tools needed for the Jfr source code generation
+# Build tools needed for the JFR source code generation
 
-JFR_TOOLS_SRCDIR := $(TOPDIR)/src/hotspot/share/jfr/metadata
-JFR_TOOLS_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/tools/jfr
+JFR_TOOLS_SRCDIR := $(TOPDIR)/make/src/classes
+JFR_TOOLS_OUTPUTDIR := $(OUTPUTDIR)/buildtools/tools_classes
 
 $(eval $(call SetupJavaCompiler, GENERATE_JFRBYTECODE, \
     JAVAC := $(JAVAC), \
@@ -42,53 +40,28 @@ $(eval $(call SetupJavaCompiler, GENERATE_JFRBYTECODE, \
 $(eval $(call SetupJavaCompilation, BUILD_JFR_TOOLS, \
     SETUP := GENERATE_JFRBYTECODE, \
     SRC := $(JFR_TOOLS_SRCDIR), \
-    INCLUDE_FILES := GenerateJfrFiles.java, \
     BIN := $(JFR_TOOLS_OUTPUTDIR), \
 ))
 
-TOOL_JFR_GEN := $(JAVA_SMALL) -cp $(JFR_TOOLS_OUTPUTDIR) GenerateJfrFiles
+TARGETS += $(BUILD_JFR_TOOLS)
 
 ################################################################################
-# Setup make rules for Jfr file file generation.
+# Setup make rules for JFR gensrc file generation.
 #
-# Parameter 1 is the name of the rule. This name is used as variable prefix,
-# and the targets generated are listed in a variable by that name. This name is
-# also used as the name of the output file.
-#
-# Remaining parameters are named arguments. These include:
-#   XML_FILE -- The input source file to use
-#   XSD_FILE -- The input schema for validation
-#   OUTPUT_DIR -- The directory to put the generated file in
-SetupJfrGeneration = $(NamedParamsMacroTemplate)
-define SetupJfrGenerationBody
-  $$($1_OUTPUT_DIR)/$1: $$($1_XML_FILE) $$($1_XSD_FILE) $$(BUILD_JFR_TOOLS)
-	$$(call LogInfo, Generating $$(@F))
-	$$(call MakeDir, $$(@D))
-	$$(call ExecuteWithLog, $$@, $$(TOOL_JFR_GEN) $$($1_XML_FILE) $$($1_XSD_FILE) $$($1_OUTPUT_DIR))
-	test -f $$@
-
-  TARGETS += $$($1_OUTPUT_DIR)/$1
-
-endef
-
-################################################################################
-# Create files in gensrc/jfrfiles
+TOOL_JFR_GEN := $(JAVA_SMALL) -cp $(JFR_TOOLS_OUTPUTDIR) build.tools.jfr.GenerateJfrFiles
 
 JFR_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/gensrc/jfrfiles
 JFR_SRCDIR := $(TOPDIR)/src/hotspot/share/jfr/metadata
 
-METADATA_XML ?= $(JFR_SRCDIR)/metadata.xml
-METADATA_XSD ?= $(JFR_SRCDIR)/metadata.xsd
-
 # Changing these will trigger a rebuild of generated jfr files.
-JFR_DEPS += \
-    $(METADATA_XML) \
-    $(METADATA_XSD) \
-    #
+METADATA_XML := $(JFR_SRCDIR)/metadata.xml
+METADATA_XSD := $(JFR_SRCDIR)/metadata.xsd
 
-# our generator will generate all files in one go, so only need to setup one target rule
-$(eval $(call SetupJfrGeneration, jfrEventClasses.hpp, \
-    XML_FILE := $(METADATA_XML), \
-    XSD_FILE := $(METADATA_XSD), \
-    OUTPUT_DIR := $(JFR_OUTPUTDIR), \
-))
+$(JFR_OUTPUTDIR)/jfrEventClasses.hpp: $(METADATA_XML) $(METADATA_XSD) \
+    $(BUILD_JFR_TOOLS)
+	$(call LogInfo, Generating $(@F))
+	$(call MakeDir, $(@D))
+	$(call ExecuteWithLog, $@, $(TOOL_JFR_GEN) $(METADATA_XML) $(METADATA_XSD) $(JFR_OUTPUTDIR))
+	test -f $@
+
+TARGETS += $(JFR_OUTPUTDIR)/jfrEventClasses.hpp

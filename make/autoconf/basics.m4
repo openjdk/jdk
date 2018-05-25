@@ -120,6 +120,33 @@ AC_DEFUN([BASIC_GET_NON_MATCHING_VALUES],
 ])
 
 ###############################################################################
+# Check if a list of space-separated words contains any word(s) from a list of
+# space-separated illegal words. Typical use is to see if a user-specified
+# set of words contains any from a set of illegal words.
+#
+# Sets the specified variable to list of matching illegal words, or to
+# the empty string if no words are matching the illegal set.
+#
+# $1: result variable name
+# $2: list of values to check
+# $3: list of illegal values
+AC_DEFUN([BASIC_GET_MATCHING_VALUES],
+[
+  # grep filter function inspired by a comment to http://stackoverflow.com/a/1617326
+  # Notice that the original variant fails on SLES 10 and 11
+  # Some grep versions (at least bsd) behaves strangely on the base case with
+  # no legal_values, so make it explicit.
+  values_to_check=`$ECHO $2 | $TR ' ' '\n'`
+  illegal_values=`$ECHO $3 | $TR ' ' '\n'`
+  if test -z "$illegal_values"; then
+    $1=""
+  else
+    result=`$GREP -Fx "$illegal_values" <<< "$values_to_check" | $GREP -v '^$'`
+    $1=${result//$'\n'/ }
+  fi
+])
+
+###############################################################################
 # Sort a space-separated list, and remove duplicates.
 #
 # Sets the specified variable to the resulting list.
