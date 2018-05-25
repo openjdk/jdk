@@ -33,7 +33,7 @@ public class TestHebrewMark {
 
     public static void main(String args[]) {
        FontRenderContext frc = new FontRenderContext(null,false,false);
-       final String fonts[] = { "Arial", "Arial Hebrew", "Arial Unicode", "Lucida Sans", "Lucida Sans Regular" };
+       final String fonts[] = { "Arial", "Arial Hebrew", "Arial Unicode" };
        final char ALEF = '\u05D0';  // a letter
        final char QAMATS = '\u05B8';  // a combining mark, should show up UNDER the alef (no advance)
        final String string1 = "\u05DE\u05B8\u05E9\u05C1\u05B0\u05DB\u05B5\u05E0\u05B4\u05D9\u05D0\u05B7\u05D7\u05B2\u05E8\u05B6\u05D9\u05DA\u05B8\u05E0\u05BC\u05B8\u05E8\u05D5\u05BC\u05E6\u05B8\u05D4\u05D4\u05B1\u05D1\u05B4\u05D9\u05D0\u05B7\u05E0\u05B4\u05D9\u05D4\u05B7\u05DE\u05BC\u05B6\u05DC\u05B6\u05DA\u05B0\u05D7\u05B2\u05D3\u05B8\u05E8\u05B8\u05D9\u05D5\u05E0\u05B8\u05D2\u05B4\u05D9\u05DC\u05B8\u05D4\u05D5\u05B0\u05E0\u05B4\u05E9\u05C2\u05B0\u05DE\u05B0\u05D7\u05B8\u05D4\u0020\u05D1\u05BC\u05B8\u05DA\u05B0\u05E0\u05B7\u05D6\u05B0\u05DB\u05BC\u05B4\u05D9\u05E8\u05B8\u05D4\u05D3\u05B9\u05D3\u05B6\u05D9\u05DA\u05B8\u05DE\u05B4\u05D9\u05BC\u05B7\u05D9\u05B4\u05DF\u05DE\u05B5\u05D9\u05E9\u05C1\u05B8\u05E8\u05B4\u05D9\u05DD\u05D0\u05B2\u05D4\u05B5\u05D1\u05D5\u05BC\u05DA\u05B8";

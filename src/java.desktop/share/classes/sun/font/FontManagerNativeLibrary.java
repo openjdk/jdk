@@ -34,8 +34,7 @@ public class FontManagerNativeLibrary {
             public Object run() {
                /* REMIND do we really have to load awt here? */
                System.loadLibrary("awt");
-               if (FontUtilities.isOpenJDK &&
-                   System.getProperty("os.name").startsWith("Windows")) {
+               if (System.getProperty("os.name").startsWith("Windows")) {
                    /* Ideally fontmanager library should not depend on
                       particular implementation of the font scaler.
                       However, freetype scaler is basically small wrapper on

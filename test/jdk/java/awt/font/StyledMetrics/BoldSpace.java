@@ -46,7 +46,6 @@ public class BoldSpace {
         // in point.
         int errorMargin = 4;
         g.setFont(new Font("monospaced", Font.BOLD, 14));
-        //g.setFont(new Font("Lucida Sans Regular", Font.BOLD, 14));
         FontMetrics fm = g.getFontMetrics();
         System.out.println("Bold: " + fm.charWidth('\u200b'));
         int cwid = fm.charWidth('\u200b');

@@ -120,7 +120,7 @@ public class PaintText extends Component implements Printable {
 
         Graphics2D g2d = (Graphics2D)g;
 
-        Font f = new Font("Lucida Sans", Font.PLAIN, 40);
+        Font f = new Font(Font.DIALOG, Font.PLAIN, 40);
         Color c = new Color(0,0,255,96);
         Paint p = new GradientPaint(0f, 0f, Color.green,
                                     10f, 10f, Color.red,

@@ -283,9 +283,8 @@ public class FontConfigManager {
             }
         }
 
-        /* If the font may hide a JRE font (eg fontconfig says it is
-         * Lucida Sans), we want to use the JRE version, so make it
-         * point to the JRE font.
+        /* If the font may hide a JRE font, we want to use the JRE version,
+         * so make it point to the JRE font.
          */
         physFont = fm.findJREDeferredFont(fcInfo.firstFont.familyName,
                                           fcInfo.style);
