@@ -86,6 +86,7 @@ compiler/jvmci/jdk.vm.ci.hotspot.test/src/jdk/vm/ci/hotspot/test/MemoryAccessPro
 compiler/jvmci/events/JvmciShutdownEventTest.java               CODETOOLS-7902162   generic-all
 
 vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn009/forceEarlyReturn009.java   8191047   generic-all
+vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java                         8191047   generic-all
 
 vmTestbase/nsk/jdi/ClassType/invokeMethod/invokemethod012/TestDescription.java                     8195600   generic-all
 vmTestbase/nsk/jdi/ClassType/setValue/setvalue006/TestDescription.java                             8195600   generic-all
@@ -138,4 +139,13 @@ vmTestbase/nsk/jdb/wherei/wherei001/wherei001.java                              
 
 vmTestbase/vm/mlvm/anonloader/stress/oome/heap/Test.java         8186299   generic-all
 vmTestbase/vm/mlvm/anonloader/stress/oome/metaspace/Test.java    8186299   generic-all
+
+vmTestbase/nsk/jvmti/IterateThroughHeap/filter-tagged/TestDescription.java         8193577   generic-all
+vmTestbase/nsk/jvmti/IterateThroughHeap/filter-class-tagged/TestDescription.java   8193577   generic-all
+
+vmTestbase/nsk/jvmti/unit/ForceEarlyReturn/earlyretbase/TestDescription.java       8195635   generic-all
+
+vmTestbase/nsk/jvmti/PopFrame/popframe009/TestDescription.java                     8195639   generic-all
+
+vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn002/TestDescription.java     8195674   generic-all
 
