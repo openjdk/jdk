@@ -128,6 +128,24 @@ vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8160008 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8160008 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8160008 generic-all
 
+vmTestbase/nsk/jvmti/ClearBreakpoint/clrbrk001/TestDescription.java 8016181 generic-all
+vmTestbase/nsk/jvmti/FieldModification/fieldmod001/TestDescription.java 8016181 generic-all
+vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java 7013634 generic-all
+vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted003/TestDescription.java 6606767 generic-all
+vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 7013634,6606767 generic-all
+vmTestbase/nsk/jvmti/ThreadStart/threadstart001/TestDescription.java 8016181 generic-all
+vmTestbase/nsk/jvmti/ThreadStart/threadstart003/TestDescription.java 8034084 generic-all
+vmTestbase/nsk/jvmti/scenarios/extension/EX03/ex03t001/TestDescription.java 8173658 generic-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS204/hs204t001/hs204t001.java 6813266 generic-all
+vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t003/TestDescription.java 8051349 generic-all
+vmTestbase/nsk/jvmti/AttachOnDemand/attach034/TestDescription.java 8042145 generic-all
+vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
+vmTestbase/nsk/jvmti/unit/heap/HeapWalkTests/TestDescription.java 8016181 generic-all
+vmTestbase/nsk/jvmti/IterateThroughHeap/filter-tagged/TestDescription.java 8201513 generic-all
+vmTestbase/nsk/jvmti/IterateThroughHeap/filter-class-untagged/TestDescription.java 8201513 generic-all
+vmTestbase/nsk/jvmti/IterateThroughHeap/filter-class-tagged/TestDescription.java 8201513 generic-all
+vmTestbase/nsk/jvmti/IterateThroughHeap/filter-untagged/TestDescription.java 8201513 generic-all
+
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8191869,8192647 generic-all
 
 vmTestbase/vm/mlvm/indy/func/jdi/breakpointOtherStratum/Test.java 8199578 generic-all
