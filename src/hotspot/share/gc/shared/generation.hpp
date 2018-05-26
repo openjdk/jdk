@@ -474,7 +474,7 @@ class Generation: public CHeapObj<mtGC> {
 
   // Iterate over all the ref-containing fields of all objects in the
   // generation, calling "cl.do_oop" on each.
-  virtual void oop_iterate(ExtendedOopClosure* cl);
+  virtual void oop_iterate(OopIterateClosure* cl);
 
   // Iterate over all objects in the generation, calling "cl.do_object" on
   // each.

@@ -81,7 +81,8 @@ Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
   return super()->uncached_lookup_method(name, signature, Klass::skip_overpass, private_mode);
 }
 
-ArrayKlass::ArrayKlass(Symbol* name) :
+ArrayKlass::ArrayKlass(Symbol* name, KlassID id) :
+  Klass(id),
   _dimension(1),
   _higher_dimension(NULL),
   _lower_dimension(NULL) {

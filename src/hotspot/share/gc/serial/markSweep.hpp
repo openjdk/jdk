@@ -56,7 +56,7 @@ class MarkSweep : AllStatic {
   //
   // Inline closure decls
   //
-  class FollowRootClosure: public OopsInGenClosure {
+  class FollowRootClosure: public BasicOopsInGenClosure {
    public:
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
@@ -170,29 +170,24 @@ class MarkSweep : AllStatic {
   static void follow_array_chunk(objArrayOop array, int index);
 };
 
-class MarkAndPushClosure: public ExtendedOopClosure {
+class MarkAndPushClosure: public OopIterateClosure {
 public:
-  template <typename T> void do_oop_nv(T* p);
+  template <typename T> void do_oop_work(T* p);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
 
-  virtual bool do_metadata();
-  bool do_metadata_nv();
-
+  virtual bool do_metadata() { return true; }
   virtual void do_klass(Klass* k);
-  void do_klass_nv(Klass* k);
-
   virtual void do_cld(ClassLoaderData* cld);
-  void do_cld_nv(ClassLoaderData* cld);
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);
   }
 };
 
-class AdjustPointerClosure: public OopsInGenClosure {
+class AdjustPointerClosure: public BasicOopsInGenClosure {
  public:
-  template <typename T> void do_oop_nv(T* p);
+  template <typename T> void do_oop_work(T* p);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }

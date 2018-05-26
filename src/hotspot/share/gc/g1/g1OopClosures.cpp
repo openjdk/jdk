@@ -26,7 +26,6 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
-#include "gc/g1/g1_specialized_oop_closures.hpp"
 #include "memory/iterator.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -61,6 +60,3 @@ void G1CLDScanClosure::do_cld(ClassLoaderData* cld) {
   }
   _count++;
 }
-
-// Generate G1 specialized oop_oop_iterate functions.
-SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(ALL_KLASS_OOP_OOP_ITERATE_DEFN)

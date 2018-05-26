@@ -26,7 +26,6 @@
 #define SHARE_VM_OOPS_INSTANCEMIRRORKLASS_HPP
 
 #include "classfile/systemDictionary.hpp"
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "oops/instanceKlass.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"
@@ -45,10 +44,13 @@ class InstanceMirrorKlass: public InstanceKlass {
   friend class VMStructs;
   friend class InstanceKlass;
 
+ public:
+  static const KlassID ID = InstanceMirrorKlassID;
+
  private:
   static int _offset_of_static_fields;
 
-  InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_misc_kind_mirror) {}
+  InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_misc_kind_mirror, ID) {}
 
  public:
   InstanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
@@ -98,60 +100,33 @@ class InstanceMirrorKlass: public InstanceKlass {
 #endif
 
   // Oop fields (and metadata) iterators
-  //  [nv = true]  Use non-virtual calls to do_oop_nv.
-  //  [nv = false] Use virtual calls to do_oop.
   //
   // The InstanceMirrorKlass iterators also visit the hidden Klass pointer.
 
- public:
   // Iterate over the static fields.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_statics(oop obj, OopClosureType* closure);
-
- private:
-  // Iterate over the static fields.
-  // Specialized for [T = oop] or [T = narrowOop].
-  template <bool nv, typename T, class OopClosureType>
-  inline void oop_oop_iterate_statics_specialized(oop obj, OopClosureType* closure);
 
   // Forward iteration
   // Iterate over the oop fields and metadata.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
-
   // Reverse iteration
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
   // Iterate over the oop fields and metadata.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
-#endif
-
 
   // Bounded range iteration
   // Iterate over the oop fields and metadata.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
+ private:
+
   // Iterate over the static fields.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_statics_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
-  // Iterate over the static fields.
-  // Specialized for [T = oop] or [T = narrowOop].
-  template <bool nv, typename T, class OopClosureType>
-  inline void oop_oop_iterate_statics_specialized_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
-
- public:
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
-
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_BACKWARDS)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_BACKWARDS)
-#endif
 };
 
 #endif // SHARE_VM_OOPS_INSTANCEMIRRORKLASS_HPP

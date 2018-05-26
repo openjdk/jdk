@@ -96,8 +96,8 @@ protected:
   PreservedMarksSet _preserved_marks_set;
 
   // Promotion failure handling
-  ExtendedOopClosure *_promo_failure_scan_stack_closure;
-  void set_promo_failure_scan_stack_closure(ExtendedOopClosure *scan_stack_closure) {
+  OopIterateClosure *_promo_failure_scan_stack_closure;
+  void set_promo_failure_scan_stack_closure(OopIterateClosure *scan_stack_closure) {
     _promo_failure_scan_stack_closure = scan_stack_closure;
   }
 

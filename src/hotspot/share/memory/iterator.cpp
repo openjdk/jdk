@@ -63,12 +63,3 @@ void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
     do_nmethod(nm);
   }
 }
-
-// Generate the *Klass::oop_oop_iterate functions for the base class
-// of the oop closures. These versions use the virtual do_oop calls,
-// instead of the devirtualized do_oop_nv version.
-ALL_KLASS_OOP_OOP_ITERATE_DEFN(ExtendedOopClosure,  _v)
-
-// Generate the *Klass::oop_oop_iterate functions
-// for the NoHeaderExtendedOopClosure helper class.
-ALL_KLASS_OOP_OOP_ITERATE_DEFN(NoHeaderExtendedOopClosure, _nv)

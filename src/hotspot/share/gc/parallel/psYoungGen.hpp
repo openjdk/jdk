@@ -168,7 +168,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   HeapWord** end_addr() const   { return eden_space()->end_addr(); }
 
   // Iteration.
-  void oop_iterate(ExtendedOopClosure* cl);
+  void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* cl);
 
   virtual void reset_after_change();

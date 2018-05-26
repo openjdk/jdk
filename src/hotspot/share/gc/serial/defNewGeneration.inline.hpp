@@ -45,7 +45,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   }
 #endif // ASSERT
 
-  _cl->do_oop_nv(p);
+  Devirtualizer::do_oop_no_verify(_cl, p);
 
   // Card marking is trickier for weak refs.
   // This oop is a 'next' field which was filled in while we
@@ -77,7 +77,7 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   }
 #endif // ASSERT
 
-  _cl->do_oop_nv(p);
+  Devirtualizer::do_oop_no_verify(_cl, p);
 
   // Optimized for Defnew generation if it's the youngest generation:
   // we set a younger_gen card if we have an older->youngest

@@ -169,7 +169,7 @@ class Space: public CHeapObj<mtGC> {
   // Iterate over all the ref-containing fields of all objects in the
   // space, calling "cl.do_oop" on each.  Fields in objects allocated by
   // applications of the closure are not included in the iteration.
-  virtual void oop_iterate(ExtendedOopClosure* cl);
+  virtual void oop_iterate(OopIterateClosure* cl);
 
   // Iterate over all objects in the space, calling "cl.do_object" on
   // each.  Objects allocated by applications of the closure are not
@@ -183,7 +183,7 @@ class Space: public CHeapObj<mtGC> {
   // overridden to return the appropriate type of closure
   // depending on the type of space in which the closure will
   // operate. ResourceArea allocated.
-  virtual DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
+  virtual DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
                                              CardTable::PrecisionStyle precision,
                                              HeapWord* boundary,
                                              bool parallel);
@@ -256,7 +256,7 @@ class Space: public CHeapObj<mtGC> {
 
 class DirtyCardToOopClosure: public MemRegionClosureRO {
 protected:
-  ExtendedOopClosure* _cl;
+  OopIterateClosure* _cl;
   Space* _sp;
   CardTable::PrecisionStyle _precision;
   HeapWord* _boundary;          // If non-NULL, process only non-NULL oops
@@ -286,7 +286,7 @@ protected:
   virtual void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
 
 public:
-  DirtyCardToOopClosure(Space* sp, ExtendedOopClosure* cl,
+  DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl,
                         CardTable::PrecisionStyle precision,
                         HeapWord* boundary) :
     _sp(sp), _cl(cl), _precision(precision), _boundary(boundary),
@@ -582,7 +582,7 @@ class ContiguousSpace: public CompactibleSpace {
   HeapWord* allocate_aligned(size_t word_size);
 
   // Iteration
-  void oop_iterate(ExtendedOopClosure* cl);
+  void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* blk);
   // For contiguous spaces this method will iterate safely over objects
   // in the space (i.e., between bottom and top) when at a safepoint.
@@ -621,7 +621,7 @@ class ContiguousSpace: public CompactibleSpace {
   }
 
   // Override.
-  DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
+  DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
                                      CardTable::PrecisionStyle precision,
                                      HeapWord* boundary,
                                      bool parallel);
@@ -689,13 +689,13 @@ protected:
   // apparent.
   virtual void walk_mem_region_with_cl(MemRegion mr,
                                        HeapWord* bottom, HeapWord* top,
-                                       ExtendedOopClosure* cl) = 0;
+                                       OopIterateClosure* cl) = 0;
   virtual void walk_mem_region_with_cl(MemRegion mr,
                                        HeapWord* bottom, HeapWord* top,
                                        FilteringClosure* cl) = 0;
 
 public:
-  FilteringDCTOC(Space* sp, ExtendedOopClosure* cl,
+  FilteringDCTOC(Space* sp, OopIterateClosure* cl,
                   CardTable::PrecisionStyle precision,
                   HeapWord* boundary) :
     DirtyCardToOopClosure(sp, cl, precision, boundary) {}
@@ -718,13 +718,13 @@ protected:
 
   virtual void walk_mem_region_with_cl(MemRegion mr,
                                        HeapWord* bottom, HeapWord* top,
-                                       ExtendedOopClosure* cl);
+                                       OopIterateClosure* cl);
   virtual void walk_mem_region_with_cl(MemRegion mr,
                                        HeapWord* bottom, HeapWord* top,
                                        FilteringClosure* cl);
 
 public:
-  ContiguousSpaceDCTOC(ContiguousSpace* sp, ExtendedOopClosure* cl,
+  ContiguousSpaceDCTOC(ContiguousSpace* sp, OopIterateClosure* cl,
                        CardTable::PrecisionStyle precision,
                        HeapWord* boundary) :
     FilteringDCTOC(sp, cl, precision, boundary)

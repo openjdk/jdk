@@ -34,6 +34,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.inline.hpp"
 
 class G1AdjustLiveClosure : public StackObj {
   G1AdjustClosure* _adjust_closure;

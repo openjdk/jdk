@@ -30,7 +30,7 @@
 
 class EdgeQueue;
 
-class RootSetClosure: public ExtendedOopClosure {
+class RootSetClosure: public BasicOopIterateClosure {
  private:
   RootSetClosure(EdgeQueue* edge_queue);
   EdgeQueue* _edge_queue;

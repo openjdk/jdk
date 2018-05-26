@@ -190,9 +190,10 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
 // which doesn't zero out the memory before calling the constructor.
 // Need to set the _java_mirror field explicitly to not hit an assert that the field
 // should be NULL before setting it.
-Klass::Klass() : _prototype_header(markOopDesc::prototype()),
-                 _shared_class_path_index(-1),
-                 _java_mirror(NULL) {
+Klass::Klass(KlassID id) : _id(id),
+                           _prototype_header(markOopDesc::prototype()),
+                           _shared_class_path_index(-1),
+                           _java_mirror(NULL) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror = 0;)
   _primary_supers[0] = this;

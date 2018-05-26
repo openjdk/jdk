@@ -34,6 +34,10 @@
 class ObjArrayKlass : public ArrayKlass {
   friend class VMStructs;
   friend class JVMCIVMStructs;
+
+ public:
+  static const KlassID ID = ObjArrayKlassID;
+
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ObjArrayKlass::metaspace_pointers_do().
@@ -127,63 +131,39 @@ class ObjArrayKlass : public ArrayKlass {
 #endif
 
   // Oop fields (and metadata) iterators
-  //  [nv = true]  Use non-virtual calls to do_oop_nv.
-  //  [nv = false] Use virtual calls to do_oop.
   //
   // The ObjArrayKlass iterators also visits the Object's klass.
 
- private:
-
   // Iterate over oop elements and metadata.
-  template <bool nv, typename OopClosureType>
+  template <typename T, typename OopClosureType>
   inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
+  // Iterate over oop elements and metadata.
+  template <typename T, typename OopClosureType>
+  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+
   // Iterate over oop elements within mr, and metadata.
-  template <bool nv, typename OopClosureType>
+  template <typename T, typename OopClosureType>
   inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
-  // Iterate over oop elements with indices within [start, end), and metadata.
-  template <bool nv, class OopClosureType>
-  inline void oop_oop_iterate_range(oop obj, OopClosureType* closure, int start, int end);
-
   // Iterate over oop elements within [start, end), and metadata.
-  // Specialized for [T = oop] or [T = narrowOop].
-  template <bool nv, typename T, class OopClosureType>
-  inline void oop_oop_iterate_range_specialized(objArrayOop a, OopClosureType* closure, int start, int end);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
 
  public:
   // Iterate over all oop elements.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure);
 
  private:
-  // Iterate over all oop elements.
-  // Specialized for [T = oop] or [T = narrowOop].
-  template <bool nv, typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements_specialized(objArrayOop a, OopClosureType* closure);
-
   // Iterate over all oop elements with indices within mr.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
+
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, MemRegion mr);
 
-  // Iterate over oop elements within [low, high)..
-  // Specialized for [T = oop] or [T = narrowOop].
-  template <bool nv, typename T, class OopClosureType>
-  inline void oop_oop_iterate_elements_specialized_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
-
-
  public:
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_RANGE)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_RANGE)
-
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_NO_BACKWARDS)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_NO_BACKWARDS)
-#endif
-
   // JVM support
   jint compute_modifier_flags(TRAPS) const;
 
