@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,8 @@
 
 void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
   // Clear the nonstatic oop-map entries corresponding to referent
-  // and nextPending field.  They are treated specially by the
+  // and discovered fields.  They are treated specially by the
   // garbage collector.
-  // The discovered field is used only by the garbage collector
-  // and is also treated specially.
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // Check that we have the right class
@@ -45,22 +43,33 @@ void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
 
   OopMapBlock* map = ik->start_of_nonstatic_oop_maps();
 
-  // Check that the current map is (2,4) - currently points at field with
-  // offset 2 (words) and has 4 map entries.
-  debug_only(int offset = java_lang_ref_Reference::referent_offset);
-  debug_only(unsigned int count = ((java_lang_ref_Reference::discovered_offset -
-    java_lang_ref_Reference::referent_offset)/heapOopSize) + 1);
+#ifdef ASSERT
+  // Verify fields are in the expected places.
+  int referent_offset = java_lang_ref_Reference::referent_offset;
+  int queue_offset = java_lang_ref_Reference::queue_offset;
+  int next_offset = java_lang_ref_Reference::next_offset;
+  int discovered_offset = java_lang_ref_Reference::discovered_offset;
+  assert(referent_offset < queue_offset, "just checking");
+  assert(queue_offset < next_offset, "just checking");
+  assert(next_offset < discovered_offset, "just checking");
+  const unsigned int count =
+    1 + ((discovered_offset - referent_offset) / heapOopSize);
+  assert(count == 4, "just checking");
+#endif // ASSERT
 
+  // Updated map starts at "queue", covers "queue" and "next".
+  const int new_offset = java_lang_ref_Reference::queue_offset;
+  const unsigned int new_count = 2; // queue and next
+
+  // Verify existing map is as expected, and update if needed.
   if (UseSharedSpaces) {
-    assert(map->offset() == java_lang_ref_Reference::queue_offset &&
-           map->count() == 1, "just checking");
+    assert(map->offset() == new_offset, "just checking");
+    assert(map->count() == new_count, "just checking");
   } else {
-    assert(map->offset() == offset && map->count() == count,
-           "just checking");
-
-    // Update map to (3,1) - point to offset of 3 (words) with 1 map entry.
-    map->set_offset(java_lang_ref_Reference::queue_offset);
-    map->set_count(1);
+    assert(map->offset() == referent_offset, "just checking");
+    assert(map->count() == count, "just checking");
+    map->set_offset(new_offset);
+    map->set_count(new_count);
   }
 }
 
@@ -74,7 +83,7 @@ void InstanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
   if (referent != NULL) {
     guarantee(oopDesc::is_oop(referent), "referent field heap failed");
   }
-  // Verify next field
+  // Additional verification for next field, which must be a Reference or null
   oop next = java_lang_ref_Reference::next(obj);
   if (next != NULL) {
     guarantee(oopDesc::is_oop(next), "next field should be an oop");

@@ -3081,13 +3081,10 @@ void InstanceClassLoaderKlass::oop_pc_update_pointers(oop obj, ParCompactionMana
 #ifdef ASSERT
 template <class T> static void trace_reference_gc(const char *s, oop obj,
                                                   T* referent_addr,
-                                                  T* next_addr,
                                                   T* discovered_addr) {
   log_develop_trace(gc, ref)("%s obj " PTR_FORMAT, s, p2i(obj));
   log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
                              p2i(referent_addr), referent_addr ? p2i((oop)RawAccess<>::oop_load(referent_addr)) : NULL);
-  log_develop_trace(gc, ref)("     next_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-                             p2i(next_addr), next_addr ? p2i((oop)RawAccess<>::oop_load(next_addr)) : NULL);
   log_develop_trace(gc, ref)("     discovered_addr/* " PTR_FORMAT " / " PTR_FORMAT,
                              p2i(discovered_addr), discovered_addr ? p2i((oop)RawAccess<>::oop_load(discovered_addr)) : NULL);
 }
@@ -3097,12 +3094,10 @@ template <class T>
 static void oop_pc_update_pointers_specialized(oop obj, ParCompactionManager* cm) {
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr_raw(obj);
   PSParallelCompact::adjust_pointer(referent_addr, cm);
-  T* next_addr = (T*)java_lang_ref_Reference::next_addr_raw(obj);
-  PSParallelCompact::adjust_pointer(next_addr, cm);
   T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr_raw(obj);
   PSParallelCompact::adjust_pointer(discovered_addr, cm);
   debug_only(trace_reference_gc("InstanceRefKlass::oop_update_ptrs", obj,
-                                referent_addr, next_addr, discovered_addr);)
+                                referent_addr, discovered_addr);)
 }
 
 void InstanceRefKlass::oop_pc_update_pointers(oop obj, ParCompactionManager* cm) {

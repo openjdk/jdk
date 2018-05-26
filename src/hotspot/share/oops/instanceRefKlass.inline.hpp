@@ -46,14 +46,6 @@ void InstanceRefKlass::do_referent(oop obj, OopClosureType* closure, Contains& c
 }
 
 template <bool nv, typename T, class OopClosureType, class Contains>
-void InstanceRefKlass::do_next(oop obj, OopClosureType* closure, Contains& contains) {
-  T* next_addr = (T*)java_lang_ref_Reference::next_addr_raw(obj);
-  if (contains(next_addr)) {
-    Devirtualizer<nv>::do_oop(closure, next_addr);
-  }
-}
-
-template <bool nv, typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::do_discovered(oop obj, OopClosureType* closure, Contains& contains) {
   T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr_raw(obj);
   if (contains(discovered_addr)) {
@@ -84,24 +76,15 @@ void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, ReferenceType type, Oo
     return;
   }
 
-  // Treat referent as normal oop.
+  // Treat referent and discovered as normal oops.
   do_referent<nv, T>(obj, closure, contains);
-
-  // Treat discovered as normal oop, if ref is not "active" (next non-NULL).
-  T next_oop  = RawAccess<>::oop_load((T*)java_lang_ref_Reference::next_addr_raw(obj));
-  if (!CompressedOops::is_null(next_oop)) {
-    do_discovered<nv, T>(obj, closure, contains);
-  }
-
-  // Treat next as normal oop.
-  do_next<nv, T>(obj, closure, contains);
+  do_discovered<nv, T>(obj, closure, contains);
 }
 
 template <bool nv, typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains) {
   do_referent<nv, T>(obj, closure, contains);
   do_discovered<nv, T>(obj, closure, contains);
-  do_next<nv, T>(obj, closure, contains);
 }
 
 template <bool nv, typename T, class OopClosureType, class Contains>
@@ -192,14 +175,11 @@ void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure,
 template <typename T>
 void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
   T* referent_addr   = (T*) java_lang_ref_Reference::referent_addr_raw(obj);
-  T* next_addr       = (T*) java_lang_ref_Reference::next_addr_raw(obj);
   T* discovered_addr = (T*) java_lang_ref_Reference::discovered_addr_raw(obj);
 
   log_develop_trace(gc, ref)("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
   log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
       p2i(referent_addr), p2i(referent_addr ? RawAccess<>::oop_load(referent_addr) : (oop)NULL));
-  log_develop_trace(gc, ref)("     next_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-      p2i(next_addr), p2i(next_addr ? RawAccess<>::oop_load(next_addr) : (oop)NULL));
   log_develop_trace(gc, ref)("     discovered_addr/* " PTR_FORMAT " / " PTR_FORMAT,
       p2i(discovered_addr), p2i(discovered_addr ? RawAccess<>::oop_load(discovered_addr) : (oop)NULL));
 }
