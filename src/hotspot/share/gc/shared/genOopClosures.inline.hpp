@@ -38,7 +38,7 @@
 #endif
 
 inline OopsInGenClosure::OopsInGenClosure(Generation* gen) :
-  ExtendedOopClosure(gen->ref_processor()), _orig_gen(gen), _rs(NULL) {
+  OopIterateClosure(gen->ref_processor()), _orig_gen(gen), _rs(NULL) {
   set_generation(gen);
 }
 
@@ -73,6 +73,9 @@ template <class T> inline void OopsInGenClosure::par_do_barrier(T* p) {
   }
 }
 
+inline BasicOopsInGenClosure::BasicOopsInGenClosure(Generation* gen) : OopsInGenClosure(gen) {
+}
+
 inline void OopsInClassLoaderDataOrGenClosure::do_cld_barrier() {
   assert(_scanned_cld != NULL, "Must be");
   if (!_scanned_cld->has_modified_oops()) {
@@ -105,8 +108,8 @@ template <class T> inline void ScanClosure::do_oop_work(T* p) {
   }
 }
 
-inline void ScanClosure::do_oop_nv(oop* p)       { ScanClosure::do_oop_work(p); }
-inline void ScanClosure::do_oop_nv(narrowOop* p) { ScanClosure::do_oop_work(p); }
+inline void ScanClosure::do_oop(oop* p)       { ScanClosure::do_oop_work(p); }
+inline void ScanClosure::do_oop(narrowOop* p) { ScanClosure::do_oop_work(p); }
 
 // NOTE! Any changes made here should also be made
 // in ScanClosure::do_oop_work()
@@ -130,8 +133,8 @@ template <class T> inline void FastScanClosure::do_oop_work(T* p) {
   }
 }
 
-inline void FastScanClosure::do_oop_nv(oop* p)       { FastScanClosure::do_oop_work(p); }
-inline void FastScanClosure::do_oop_nv(narrowOop* p) { FastScanClosure::do_oop_work(p); }
+inline void FastScanClosure::do_oop(oop* p)       { FastScanClosure::do_oop_work(p); }
+inline void FastScanClosure::do_oop(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
 #endif // INCLUDE_SERIALGC
 
@@ -145,8 +148,8 @@ template <class T> void FilteringClosure::do_oop_work(T* p) {
   }
 }
 
-void FilteringClosure::do_oop_nv(oop* p)       { FilteringClosure::do_oop_work(p); }
-void FilteringClosure::do_oop_nv(narrowOop* p) { FilteringClosure::do_oop_work(p); }
+inline void FilteringClosure::do_oop(oop* p)       { FilteringClosure::do_oop_work(p); }
+inline void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_work(p); }
 
 #if INCLUDE_SERIALGC
 
@@ -163,8 +166,8 @@ template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {
   }
 }
 
-inline void ScanWeakRefClosure::do_oop_nv(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
-inline void ScanWeakRefClosure::do_oop_nv(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
+inline void ScanWeakRefClosure::do_oop(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
+inline void ScanWeakRefClosure::do_oop(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
 
 #endif // INCLUDE_SERIALGC
 

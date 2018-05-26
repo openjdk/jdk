@@ -57,8 +57,6 @@ class ParScanWithBarrierClosure: public ParScanClosure {
     ParScanClosure(g, par_scan_state) {}
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p);
-  inline void do_oop_nv(narrowOop* p);
 };
 
 class ParScanWithoutBarrierClosure: public ParScanClosure {
@@ -68,8 +66,6 @@ class ParScanWithoutBarrierClosure: public ParScanClosure {
     ParScanClosure(g, par_scan_state) {}
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p);
-  inline void do_oop_nv(narrowOop* p);
 };
 
 class ParRootScanWithBarrierTwoGensClosure: public ParScanClosure {
@@ -99,8 +95,6 @@ class ParScanWeakRefClosure: public ScanWeakRefClosure {
                         ParScanThreadState* par_scan_state);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p);
-  inline void do_oop_nv(narrowOop* p);
 };
 
 class ParEvacuateFollowersClosure: public VoidClosure {

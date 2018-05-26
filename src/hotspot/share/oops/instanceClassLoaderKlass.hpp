@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_HPP
 #define SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_HPP
 
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "oops/instanceKlass.hpp"
 #include "utilities/macros.hpp"
 
@@ -40,8 +39,11 @@ class ClassFileParser;
 class InstanceClassLoaderKlass: public InstanceKlass {
   friend class VMStructs;
   friend class InstanceKlass;
- private:
-  InstanceClassLoaderKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_misc_kind_class_loader) {}
+public:
+  static const KlassID ID = InstanceClassLoaderKlassID;
+
+private:
+  InstanceClassLoaderKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_misc_kind_class_loader, ID) {}
 
 public:
   InstanceClassLoaderKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
@@ -57,39 +59,24 @@ public:
 #endif
 
   // Oop fields (and metadata) iterators
-  //  [nv = true]  Use non-virtual calls to do_oop_nv.
-  //  [nv = false] Use virtual calls to do_oop.
   //
   // The InstanceClassLoaderKlass iterators also visit the CLD pointer (or mirror of anonymous klasses.)
 
- private:
+ public:
   // Forward iteration
   // Iterate over the oop fields and metadata.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
   // Reverse iteration
   // Iterate over the oop fields and metadata.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
-#endif
 
   // Bounded range iteration
   // Iterate over the oop fields and metadata.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
- public:
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
-
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_BACKWARDS)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_BACKWARDS)
-#endif
-
 };
 
 #endif // SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_HPP

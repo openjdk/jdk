@@ -433,7 +433,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   Mutex* freelistLock() const { return &_freelistLock; }
 
   // Iteration support
-  void oop_iterate(ExtendedOopClosure* cl);
+  void oop_iterate(OopIterateClosure* cl);
 
   void object_iterate(ObjectClosure* blk);
   // Apply the closure to each object in the space whose references
@@ -463,7 +463,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
                                      ObjectClosureCareful* cl);
 
   // Override: provides a DCTO_CL specific to this kind of space.
-  DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
+  DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
                                      CardTable::PrecisionStyle precision,
                                      HeapWord* boundary,
                                      bool parallel);

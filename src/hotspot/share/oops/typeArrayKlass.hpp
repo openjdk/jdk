@@ -33,6 +33,10 @@
 
 class TypeArrayKlass : public ArrayKlass {
   friend class VMStructs;
+
+ public:
+  static const KlassID ID = TypeArrayKlassID;
+
  private:
   jint _max_length;            // maximum number of elements allowed in an array
 
@@ -87,28 +91,20 @@ class TypeArrayKlass : public ArrayKlass {
 
  private:
   // The implementation used by all oop_oop_iterate functions in TypeArrayKlasses.
-  inline void oop_oop_iterate_impl(oop obj, ExtendedOopClosure* closure);
+  inline void oop_oop_iterate_impl(oop obj, OopIterateClosure* closure);
 
+ public:
   // Wraps oop_oop_iterate_impl to conform to macros.
-  template <bool nv, typename OopClosureType>
+  template <typename T, typename OopClosureType>
   inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
   // Wraps oop_oop_iterate_impl to conform to macros.
-  template <bool nv, typename OopClosureType>
+  template <typename T, typename OopClosureType>
   inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
- public:
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_RANGE)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_RANGE)
-
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_NO_BACKWARDS)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_NO_BACKWARDS)
-#endif
-
+  // Wraps oop_oop_iterate_impl to conform to macros.
+  template <typename T, typename OopClosureType>
+  inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 
  protected:
   // Find n'th dimensional array

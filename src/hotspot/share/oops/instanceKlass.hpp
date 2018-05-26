@@ -29,7 +29,6 @@
 #include "classfile/classLoaderData.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
@@ -120,8 +119,11 @@ class InstanceKlass: public Klass {
   friend class ClassFileParser;
   friend class CompileReplay;
 
+ public:
+  static const KlassID ID = InstanceKlassID;
+
  protected:
-  InstanceKlass(const ClassFileParser& parser, unsigned kind);
+  InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id = ID);
 
  public:
   InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
@@ -1225,89 +1227,56 @@ public:
 #endif
 
   // Oop fields (and metadata) iterators
-  //  [nv = true]  Use non-virtual calls to do_oop_nv.
-  //  [nv = false] Use virtual calls to do_oop.
   //
   // The InstanceKlass iterators also visits the Object's klass.
 
   // Forward iteration
  public:
   // Iterate over all oop fields in the oop maps.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_maps(oop obj, OopClosureType* closure);
 
- protected:
   // Iterate over all oop fields and metadata.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline int oop_oop_iterate(oop obj, OopClosureType* closure);
 
- private:
-  // Iterate over all oop fields in the oop maps.
-  // Specialized for [T = oop] or [T = narrowOop].
-  template <bool nv, typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_maps_specialized(oop obj, OopClosureType* closure);
-
   // Iterate over all oop fields in one oop map.
-  template <bool nv, typename T, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure);
 
 
   // Reverse iteration
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
- public:
-  // Iterate over all oop fields in the oop maps.
-  template <bool nv, class OopClosureType>
-  inline void oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure);
-
- protected:
   // Iterate over all oop fields and metadata.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline int oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
 
  private:
   // Iterate over all oop fields in the oop maps.
-  // Specialized for [T = oop] or [T = narrowOop].
-  template <bool nv, typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_maps_specialized_reverse(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  inline void oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure);
 
   // Iterate over all oop fields in one oop map.
-  template <bool nv, typename T, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure);
-#endif // INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 
 
   // Bounded range iteration
  public:
   // Iterate over all oop fields in the oop maps.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
- protected:
   // Iterate over all oop fields and metadata.
-  template <bool nv, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
  private:
-  // Iterate over all oop fields in the oop maps.
-  // Specialized for [T = oop] or [T = narrowOop].
-  template <bool nv, typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_maps_specialized_bounded(oop obj, OopClosureType* closure, MemRegion mr);
-
   // Iterate over all oop fields in one oop map.
-  template <bool nv, typename T, class OopClosureType>
+  template <typename T, class OopClosureType>
   inline void oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr);
 
 
  public:
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL)
-
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_OOP_ITERATE_DECL_BACKWARDS)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_BACKWARDS)
-#endif
-
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
 public:

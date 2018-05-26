@@ -125,11 +125,11 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
 }
 
 template <typename T>
-void PSParallelCompact::AdjustPointerClosure::do_oop_nv(T* p) {
+void PSParallelCompact::AdjustPointerClosure::do_oop_work(T* p) {
   adjust_pointer(p, _cm);
 }
 
-inline void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { do_oop_nv(p); }
-inline void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
+inline void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
+inline void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 #endif // SHARE_VM_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP

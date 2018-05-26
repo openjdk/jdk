@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
@@ -35,12 +36,14 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/padded.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
@@ -394,19 +397,19 @@ void PSPromotionManager::process_array_chunk(oop old) {
   }
 }
 
-class PushContentsClosure : public ExtendedOopClosure {
+class PushContentsClosure : public BasicOopIterateClosure {
   PSPromotionManager* _pm;
  public:
   PushContentsClosure(PSPromotionManager* pm) : _pm(pm) {}
 
-  template <typename T> void do_oop_nv(T* p) {
+  template <typename T> void do_oop_work(T* p) {
     if (PSScavenge::should_scavenge(p)) {
       _pm->claim_or_forward_depth(p);
     }
   }
 
-  virtual void do_oop(oop* p)       { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 
   // Don't use the oop verification code in the oop_oop_iterate framework.
   debug_only(virtual bool should_verify_oops() { return false; })
@@ -414,7 +417,11 @@ class PushContentsClosure : public ExtendedOopClosure {
 
 void InstanceKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
   PushContentsClosure cl(pm);
-  oop_oop_iterate_oop_maps_reverse<true>(obj, &cl);
+  if (UseCompressedOops) {
+    oop_oop_iterate_oop_maps_reverse<narrowOop>(obj, &cl);
+  } else {
+    oop_oop_iterate_oop_maps_reverse<oop>(obj, &cl);
+  }
 }
 
 void InstanceMirrorKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
@@ -425,7 +432,11 @@ void InstanceMirrorKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) 
   InstanceKlass::oop_ps_push_contents(obj, pm);
 
   PushContentsClosure cl(pm);
-  oop_oop_iterate_statics<true>(obj, &cl);
+  if (UseCompressedOops) {
+    oop_oop_iterate_statics<narrowOop>(obj, &cl);
+  } else {
+    oop_oop_iterate_statics<oop>(obj, &cl);
+  }
 }
 
 void InstanceClassLoaderKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
@@ -469,7 +480,11 @@ void InstanceRefKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
 void ObjArrayKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {
   assert(obj->is_objArray(), "obj must be obj array");
   PushContentsClosure cl(pm);
-  oop_oop_iterate_elements<true>(objArrayOop(obj), &cl);
+  if (UseCompressedOops) {
+    oop_oop_iterate_elements<narrowOop>(objArrayOop(obj), &cl);
+  } else {
+    oop_oop_iterate_elements<oop>(objArrayOop(obj), &cl);
+  }
 }
 
 void TypeArrayKlass::oop_ps_push_contents(oop obj, PSPromotionManager* pm) {

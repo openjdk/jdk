@@ -32,6 +32,7 @@
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/serial/markSweep.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 

@@ -31,27 +31,27 @@
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
 
-class ExtendedOopClosure;
+class OopIterateClosure;
 
-inline void TypeArrayKlass::oop_oop_iterate_impl(oop obj, ExtendedOopClosure* closure) {
+inline void TypeArrayKlass::oop_oop_iterate_impl(oop obj, OopIterateClosure* closure) {
   assert(obj->is_typeArray(),"must be a type array");
-  // Performance tweak: We skip iterating over the klass pointer since we
-  // know that Universe::TypeArrayKlass never moves.
+  // Performance tweak: We skip processing the klass pointer since all
+  // TypeArrayKlasses are guaranteed processed via the null class loader.
 }
 
-template <bool nv, typename OopClosureType>
+template <typename T, typename OopClosureType>
 void TypeArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   oop_oop_iterate_impl(obj, closure);
 }
 
-template <bool nv, typename OopClosureType>
+template <typename T, typename OopClosureType>
 void TypeArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
   oop_oop_iterate_impl(obj, closure);
 }
 
-#define ALL_TYPE_ARRAY_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)    \
-  OOP_OOP_ITERATE_DEFN(             TypeArrayKlass, OopClosureType, nv_suffix)  \
-  OOP_OOP_ITERATE_DEFN_BOUNDED(     TypeArrayKlass, OopClosureType, nv_suffix)  \
-  OOP_OOP_ITERATE_DEFN_NO_BACKWARDS(TypeArrayKlass, OopClosureType, nv_suffix)
+template <typename T, typename OopClosureType>
+void TypeArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
+  oop_oop_iterate_impl(obj, closure);
+}
 
 #endif // SHARE_VM_OOPS_TYPEARRAYKLASS_INLINE_HPP

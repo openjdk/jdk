@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -43,12 +42,3 @@ oop objArrayOopDesc::atomic_compare_exchange_oop(int index, oop exchange_value,
 Klass* objArrayOopDesc::element_klass() {
   return ObjArrayKlass::cast(klass())->element_klass();
 }
-
-#define ObjArrayOop_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                    \
-                                                                                   \
-void objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {  \
-  ((ObjArrayKlass*)klass())->oop_oop_iterate_range##nv_suffix(this, blk, start, end); \
-}
-
-ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayOop_OOP_ITERATE_DEFN)

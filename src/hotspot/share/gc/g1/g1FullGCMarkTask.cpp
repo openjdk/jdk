@@ -31,6 +31,7 @@
 #include "gc/g1/g1FullGCReferenceProcessorExecutor.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "memory/iterator.inline.hpp"
 
 G1FullGCMarkTask::G1FullGCMarkTask(G1FullCollector* collector) :
     G1FullGCTask("G1 Parallel Marking Task", collector),

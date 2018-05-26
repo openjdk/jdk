@@ -34,7 +34,7 @@ class EdgeStore;
 class EdgeQueue;
 
 // Class responsible for iterating the heap breadth-first
-class BFSClosure : public ExtendedOopClosure {
+class BFSClosure : public BasicOopIterateClosure {
  private:
   EdgeQueue* _edge_queue;
   EdgeStore* _edge_store;

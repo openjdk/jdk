@@ -59,7 +59,7 @@ class ImmutableSpace: public CHeapObj<mtGC> {
   virtual size_t capacity_in_words(Thread*) const { return capacity_in_words(); }
 
   // Iteration.
-  virtual void oop_iterate(ExtendedOopClosure* cl);
+  virtual void oop_iterate(OopIterateClosure* cl);
   virtual void object_iterate(ObjectClosure* cl);
 
   // Debugging

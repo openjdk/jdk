@@ -31,6 +31,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psTasks.hpp"
 #include "gc/parallel/psYoungGen.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"

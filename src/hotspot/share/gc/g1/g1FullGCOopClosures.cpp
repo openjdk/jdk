@@ -26,31 +26,11 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
-#include "gc/g1/g1_specialized_oop_closures.hpp"
 #include "logging/logStream.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-
-void G1MarkAndPushClosure::do_oop(oop* p) {
-  do_oop_nv(p);
-}
-
-void G1MarkAndPushClosure::do_oop(narrowOop* p) {
-  do_oop_nv(p);
-}
-
-bool G1MarkAndPushClosure::do_metadata() {
-  return do_metadata_nv();
-}
-
-void G1MarkAndPushClosure::do_klass(Klass* k) {
-  do_klass_nv(k);
-}
-
-void G1MarkAndPushClosure::do_cld(ClassLoaderData* cld) {
-  do_cld_nv(cld);
-}
 
 void G1FollowStackClosure::do_void() { _marker->drain_stack(); }
 
@@ -75,7 +55,7 @@ void G1VerifyOopClosure::print_object(outputStream* out, oop obj) {
 #endif // PRODUCT
 }
 
-template <class T> void G1VerifyOopClosure::do_oop_nv(T* p) {
+template <class T> void G1VerifyOopClosure::do_oop_work(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(heap_oop)) {
     _cc++;
@@ -121,8 +101,5 @@ template <class T> void G1VerifyOopClosure::do_oop_nv(T* p) {
   }
 }
 
-template void G1VerifyOopClosure::do_oop_nv(oop*);
-template void G1VerifyOopClosure::do_oop_nv(narrowOop*);
-
-// Generate G1 full GC specialized oop_oop_iterate functions.
-SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(ALL_KLASS_OOP_OOP_ITERATE_DEFN)
+template void G1VerifyOopClosure::do_oop_work(oop*);
+template void G1VerifyOopClosure::do_oop_work(narrowOop*);

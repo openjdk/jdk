@@ -140,7 +140,11 @@ void InstanceKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
   // everything else.
 
   ParCompactionManager::MarkAndPushClosure cl(cm);
-  InstanceKlass::oop_oop_iterate_oop_maps<true>(obj, &cl);
+  if (UseCompressedOops) {
+    InstanceKlass::oop_oop_iterate_oop_maps<narrowOop>(obj, &cl);
+  } else {
+    InstanceKlass::oop_oop_iterate_oop_maps<oop>(obj, &cl);
+  }
 }
 
 void InstanceMirrorKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
@@ -169,7 +173,11 @@ void InstanceMirrorKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* 
   }
 
   ParCompactionManager::MarkAndPushClosure cl(cm);
-  oop_oop_iterate_statics<true>(obj, &cl);
+  if (UseCompressedOops) {
+    oop_oop_iterate_statics<narrowOop>(obj, &cl);
+  } else {
+    oop_oop_iterate_statics<oop>(obj, &cl);
+  }
 }
 
 void InstanceClassLoaderKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {

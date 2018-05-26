@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_OOPS_OOP_HPP
 #define SHARE_VM_OOPS_OOP_HPP
 
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/access.hpp"
@@ -288,32 +287,20 @@ class oopDesc {
   inline void ps_push_contents(PSPromotionManager* pm);
 #endif
 
+  template <typename OopClosureType>
+  inline void oop_iterate(OopClosureType* cl);
 
-  // iterators, returns size of object
-#define OOP_ITERATE_DECL(OopClosureType, nv_suffix)                     \
-  inline void oop_iterate(OopClosureType* blk);                         \
-  inline void oop_iterate(OopClosureType* blk, MemRegion mr);  // Only in mr.
+  template <typename OopClosureType>
+  inline void oop_iterate(OopClosureType* cl, MemRegion mr);
 
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_DECL)
+  template <typename OopClosureType>
+  inline int oop_iterate_size(OopClosureType* cl);
 
-#define OOP_ITERATE_SIZE_DECL(OopClosureType, nv_suffix)                \
-  inline int oop_iterate_size(OopClosureType* blk);                     \
-  inline int oop_iterate_size(OopClosureType* blk, MemRegion mr);  // Only in mr.
+  template <typename OopClosureType>
+  inline int oop_iterate_size(OopClosureType* cl, MemRegion mr);
 
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_SIZE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_SIZE_DECL)
-
-
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-
-#define OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)  \
-  inline void oop_iterate_backwards(OopClosureType* blk);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(OOP_ITERATE_BACKWARDS_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_ITERATE_BACKWARDS_DECL)
-
-#endif // INCLUDE_OOP_OOP_ITERATE_BACKWARDS
+  template <typename OopClosureType>
+  inline void oop_iterate_backwards(OopClosureType* cl);
 
   inline int oop_iterate_no_header(OopClosure* bk);
   inline int oop_iterate_no_header(OopClosure* bk, MemRegion mr);
