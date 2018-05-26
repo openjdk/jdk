@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ public class ReferenceQueue<T> {
                 return false;
             }
             assert queue == this;
+            // Self-loop end, so if a FinalReference it remains inactive.
             r.next = (head == null) ? r : head;
             head = r;
             queueLength++;
@@ -90,7 +91,10 @@ public class ReferenceQueue<T> {
             // poll().  Volatiles ensure ordering.
             @SuppressWarnings("unchecked")
             Reference<? extends T> rn = r.next;
+            // Handle self-looped next as end of list designator.
             head = (rn == r) ? null : rn;
+            // Self-loop next rather than setting to null, so if a
+            // FinalReference it remains inactive.
             r.next = r;
             queueLength--;
             if (r instanceof FinalReference) {
