@@ -144,7 +144,7 @@ class Monitor : public CHeapObj<mtInternal> {
 #endif
 
   void set_owner_implementation(Thread* owner)                        PRODUCT_RETURN;
-  void check_prelock_state     (Thread* thread)                       PRODUCT_RETURN;
+  void check_prelock_state     (Thread* thread, bool safepoint_check) PRODUCT_RETURN;
   void check_block_state       (Thread* thread)                       PRODUCT_RETURN;
 
   // platform-dependent support code can go here (in os_<os_family>.cpp)
