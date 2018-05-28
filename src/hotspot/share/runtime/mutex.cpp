@@ -903,7 +903,7 @@ void Monitor::lock(Thread * Self) {
   }
 #endif // CHECK_UNHANDLED_OOPS
 
-  debug_only(check_prelock_state(Self));
+  debug_only(check_prelock_state(Self, StrictSafepointChecks));
   assert(_owner != Self, "invariant");
   assert(_OnDeck != Self->_MutexEvent, "invariant");
 
@@ -971,7 +971,7 @@ void Monitor::lock_without_safepoint_check() {
 
 bool Monitor::try_lock() {
   Thread * const Self = Thread::current();
-  debug_only(check_prelock_state(Self));
+  debug_only(check_prelock_state(Self, false));
   // assert(!thread->is_inside_signal_handler(), "don't lock inside signal handler");
 
   // Special case, where all Java threads are stopped.
@@ -1381,10 +1381,10 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
 
 
 // Factored out common sanity checks for locking mutex'es. Used by lock() and try_lock()
-void Monitor::check_prelock_state(Thread *thread) {
-  assert((!thread->is_Java_thread() || ((JavaThread *)thread)->thread_state() == _thread_in_vm)
-         || rank() == Mutex::special, "wrong thread state for using locks");
-  if (StrictSafepointChecks) {
+void Monitor::check_prelock_state(Thread *thread, bool safepoint_check) {
+  if (safepoint_check) {
+    assert((!thread->is_Java_thread() || ((JavaThread *)thread)->thread_state() == _thread_in_vm)
+           || rank() == Mutex::special, "wrong thread state for using locks");
     if (thread->is_VM_thread() && !allow_vm_block()) {
       fatal("VM thread using lock %s (not allowed to block on)", name());
     }
