@@ -1611,6 +1611,9 @@ jint G1CollectedHeap::initialize() {
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
 
+  // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
+  // start within the first card.
+  guarantee(g1_rs.base() >= (char*)G1CardTable::card_size, "Java heap must not start within the first card.");
   // Also create a G1 rem set.
   _g1_rem_set = new G1RemSet(this, _card_table, _hot_card_cache);
   _g1_rem_set->initialize(max_capacity(), max_regions());
