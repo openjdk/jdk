@@ -1108,6 +1108,15 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # (1999-09-27) writes that Giles Meteorological Station uses
 # South Australian time even though it's located in Western Australia.
 
+# From Paul Eggert (2018-04-01):
+# The Guardian Express of Perth, Australia reported today that the
+# government decided to advance the clocks permanently on January 1,
+# 2019, from UT +08 to UT +09.  The article noted that an exemption
+# would be made for people aged 61 and over, who "can apply in writing
+# to have the extra hour of sunshine removed from their area."  See:
+# Daylight saving coming to WA in 2019. Guardian Express. 2018-04-01.
+# https://www.communitynews.com.au/guardian-express/news/exclusive-daylight-savings-coming-wa-summer-2018/
+
 # Queensland
 
 # From Paul Eggert (2018-02-26):
