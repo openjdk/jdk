@@ -132,18 +132,17 @@ size_t MetaspaceGC::capacity_until_GC() {
 bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size_t* old_cap_until_GC) {
   assert_is_aligned(v, Metaspace::commit_alignment());
 
-  size_t capacity_until_GC = _capacity_until_GC;
-  size_t new_value = capacity_until_GC + v;
+  size_t old_capacity_until_GC = _capacity_until_GC;
+  size_t new_value = old_capacity_until_GC + v;
 
-  if (new_value < capacity_until_GC) {
+  if (new_value < old_capacity_until_GC) {
     // The addition wrapped around, set new_value to aligned max value.
     new_value = align_down(max_uintx, Metaspace::commit_alignment());
   }
 
-  size_t expected = _capacity_until_GC;
-  size_t actual = Atomic::cmpxchg(new_value, &_capacity_until_GC, expected);
+  size_t prev_value = Atomic::cmpxchg(new_value, &_capacity_until_GC, old_capacity_until_GC);
 
-  if (expected != actual) {
+  if (old_capacity_until_GC != prev_value) {
     return false;
   }
 
@@ -151,7 +150,7 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
     *new_cap_until_GC = new_value;
   }
   if (old_cap_until_GC != NULL) {
-    *old_cap_until_GC = capacity_until_GC;
+    *old_cap_until_GC = old_capacity_until_GC;
   }
   return true;
 }
