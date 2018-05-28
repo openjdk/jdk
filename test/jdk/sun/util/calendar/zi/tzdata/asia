@@ -2006,6 +2006,19 @@ Rule	ROK	1987	1988	-	Oct	Sun>=8	3:00	0	S
 # There is no common English-language abbreviation for this time zone.
 # Use KST, as that's what we already use for 1954-1961 in ROK.
 
+# From Kang Seonghoon (2018-04-29):
+# North Korea will revert its time zone from UTC+8:30 (PYT; Pyongyang
+# Time) back to UTC+9 (KST; Korea Standard Time).
+#
+# From Seo Sanghyeon (2018-04-30):
+# Rodong Sinmun 2018-04-30 announced Pyongyang Time transition plan.
+# https://www.nknews.org/kcna/wp-content/uploads/sites/5/2018/04/rodong-2018-04-30.pdf
+# ... the transition date is 2018-05-05 ...  Citation should be Decree
+# No. 2232 of April 30, 2018, of the Presidium of the Supreme People's
+# Assembly, as published in Rodong Sinmun.
+# From Tim Parenti (2018-04-29):
+# It appears to be the front page story at the top in the right-most column.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Seoul	8:27:52	-	LMT	1908 Apr  1
 			8:30	-	KST	1912 Jan  1
@@ -2017,7 +2030,8 @@ Zone	Asia/Pyongyang	8:23:00 -	LMT	1908 Apr  1
 			8:30	-	KST	1912 Jan  1
 			9:00	-	JST	1945 Aug 24
 			9:00	-	KST	2015 Aug 15 00:00
-			8:30	-	KST
+			8:30	-	KST	2018 May  5
+			9:00	-	KST
 
 ###############################################################################
 
@@ -2681,7 +2695,7 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # From Sharef Mustafa (2018-03-16):
 # Palestine summer time will start on Mar 24th 2018 by advancing the
 # clock by 60 minutes as per Palestinian cabinet decision published on
-# the offical website, though the decree did not specify the exact
+# the official website, though the decree did not specify the exact
 # time of the time shift.
 # http://www.palestinecabinet.gov.ps/Website/AR/NDecrees/ViewFile.ashx?ID=e7a42ab7-ee23-435a-b9c8-a4f7e81f3817
 #
