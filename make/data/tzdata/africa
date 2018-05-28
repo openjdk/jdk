@@ -29,7 +29,7 @@
 # tz@iana.org for general use in the future).  For more, please see
 # the file CONTRIBUTING in the tz distribution.
 
-# From Paul Eggert (2017-02-20):
+# From Paul Eggert (2017-04-09):
 #
 # Unless otherwise specified, the source for data through 1990 is:
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
@@ -75,7 +75,7 @@
 # cannot now come up with solid citations.
 #
 # I invented the following abbreviations; corrections are welcome!
-#	 +02	WAST	West Africa Summer Time
+#	 +02	WAST	West Africa Summer Time (no longer used)
 #	 +03	CAST	Central Africa Summer Time (no longer used)
 #	 +03	SAST	South Africa Summer Time (no longer used)
 #	 +03	EAT	East Africa Time
@@ -990,6 +990,10 @@ Link Africa/Maputo Africa/Lusaka	# Zambia
 # commence at OOhOO on Monday 21 March 1994 and shall end at 02h00 on
 # Sunday 4 September 1994.
 
+# From Michael Deckers (2017-04-06):
+# ... both summer and winter time are called "standard"
+# (which differs from the use in Ireland) ...
+
 # From Petronella Sibeene (2007-03-30):
 # http://allafrica.com/stories/200703300178.html
 # While the entire country changes its time, Katima Mulilo and other
@@ -1015,19 +1019,42 @@ Link Africa/Maputo Africa/Lusaka	# Zambia
 # the same time they would normally start DST, the first Sunday in September:
 # https://www.timeanddate.com/news/time/namibia-new-time-zone.html
 
+# From Paul Eggert (2017-04-09):
+# Before the change, summer and winter time were both standard time legally.
+# However in common parlance, winter time was considered to be DST.  See, e.g.:
+# http://www.nbc.na/news/namibias-winter-time-could-be-scrapped.2706
+# https://zone.my.na/news/times-are-changing-in-namibia
+# https://www.newera.com.na/2017/02/23/namibias-winter-time-might-be-repealed/
+# Use plain "WAT" and "CAT" for the time zone abbreviations, to be compatible
+# with Namibia's neighbors.
+
 # RULE	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Namibia	1994	only	-	Mar	21	0:00	0	-
-Rule	Namibia	1994	2016	-	Sep	Sun>=1	2:00	1:00	S
-Rule	Namibia	1995	2017	-	Apr	Sun>=1	2:00	0	-
+# Vanguard section, for zic and other parsers that support negative DST.
+#Rule	Namibia	1994	only	-	Mar	21	0:00	-1:00	WAT
+#Rule	Namibia	1994	2017	-	Sep	Sun>=1	2:00	0	CAT
+#Rule	Namibia	1995	2017	-	Apr	Sun>=1	2:00	-1:00	WAT
+# Rearguard section, for parsers that do not support negative DST.
+Rule	Namibia	1994	only	-	Mar	21	0:00	0	WAT
+Rule	Namibia	1994	2017	-	Sep	Sun>=1	2:00	1:00	CAT
+Rule	Namibia	1995	2017	-	Apr	Sun>=1	2:00	0	WAT
+# End of rearguard section.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 			1:30	-	+0130	1903 Mar
 			2:00	-	SAST	1942 Sep 20  2:00
 			2:00	1:00	SAST	1943 Mar 21  2:00
 			2:00	-	SAST	1990 Mar 21 # independence
+# Vanguard section, for zic and other parsers that support negative DST.
+#			2:00	Namibia	%s
+# Rearguard section, for parsers that do not support negative DST.
 			2:00	-	CAT	1994 Mar 21  0:00
-			1:00	Namibia	WA%sT	2017 Sep  3  2:00
+# From Paul Eggert (2017-04-07):
+# The official date of the 2017 rule change was 2017-10-24.  See:
+# http://www.lac.org.na/laws/annoSTAT/Namibian%20Time%20Act%209%20of%202017.pdf
+			1:00	Namibia	%s	2017 Oct 24
 			2:00	-	CAT
+# End of rearguard section.
 
 # Niger
 # See Africa/Lagos.
