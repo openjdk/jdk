@@ -1140,6 +1140,7 @@ public class LambdaToMethod extends TreeTranslator {
             for (Type t : targets) {
                 t = types.erasure(t);
                 if (t.tsym != syms.serializableType.tsym &&
+                    t.tsym != tree.type.tsym &&
                     t.tsym != syms.objectType.tsym) {
                     markers.append(t.tsym);
                 }
