@@ -56,6 +56,7 @@ tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         
 tools/javac/warnings/suppress/TypeAnnotations.java                              8057683    generic-all    improve ordering of errors with type annotations
 tools/javac/modules/SourceInSymlinkTest.java                                    8180263    windows-all    fails when run on a subst drive
 tools/javac/options/release/ReleaseOptionUnsupported.java                       8193784    generic-all    temporary until support for --release 11 is worked out
+tools/javac/importscope/T8193717.java                                           8203925    generic-all    the test requires too much memory
 
 ###########################################################################
 #
