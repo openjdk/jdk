@@ -276,6 +276,7 @@ public:
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
   static void printFlags(outputStream* out, bool withComments, bool printRanges = false, bool skipDefaults = false);
+  void printError(bool verbose, const char* msg, ...);
 
   static void verify() PRODUCT_RETURN;
 };
