@@ -222,7 +222,7 @@ void G1FullCollector::phase1_mark_live_objects() {
   if (ClassUnloading) {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
     // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(&_is_alive, scope()->timer());
+    bool purged_class = SystemDictionary::do_unloading(scope()->timer());
     _heap->complete_cleaning(&_is_alive, purged_class);
   } else {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: String and Symbol Tables Cleanup", scope()->timer());

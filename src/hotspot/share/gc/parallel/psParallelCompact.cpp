@@ -2139,7 +2139,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
 
     // Follow system dictionary roots and unload classes.
-    bool purged_class = SystemDictionary::do_unloading(is_alive_closure(), &_gc_timer);
+    bool purged_class = SystemDictionary::do_unloading(&_gc_timer);
 
     // Unload nmethods.
     CodeCache::do_unloading(is_alive_closure(), purged_class);
