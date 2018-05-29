@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test TestBasicLogOutput
+ * @bug 8203370
  * @summary Ensure -XX:-JVMCIPrintProperties can be enabled and successfully prints expected output to stdout.
  * @requires vm.jvmci
  * @library /test/lib
@@ -34,9 +35,14 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestJVMCIPrintProperties {
 
     public static void main(String[] args) throws Exception {
+        test("-XX:+EnableJVMCI");
+        test("-XX:+UseJVMCICompiler");
+    }
+
+    static void test(String enableFlag) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+EnableJVMCI", "-Djvmci.Compiler=null",
+            enableFlag, "-Djvmci.Compiler=null",
             "-XX:+JVMCIPrintProperties");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("[JVMCI properties]"); // expected message

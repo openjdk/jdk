@@ -3365,16 +3365,16 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   UNSUPPORTED_OPTION(TieredCompilation);
 #endif
 
+  if (!check_vm_args_consistency()) {
+    return JNI_ERR;
+  }
+
 #if INCLUDE_JVMCI
   if (EnableJVMCI &&
       !create_numbered_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
     return JNI_ENOMEM;
   }
 #endif
-
-  if (!check_vm_args_consistency()) {
-    return JNI_ERR;
-  }
 
 #if INCLUDE_JVMCI
   if (UseJVMCICompiler) {
