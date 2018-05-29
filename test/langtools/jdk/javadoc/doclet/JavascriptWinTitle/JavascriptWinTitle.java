@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4645058 4747738 4855054 8024756 8141492
+ * @bug 4645058 4747738 4855054 8024756 8141492 8196202
  * @summary  Javascript IE load error when linked by -linkoffline
  *           Window title shouldn't change when loading left frames (javascript)
  * @author dkramer
@@ -43,6 +43,7 @@ public class JavascriptWinTitle extends JavadocTester {
     @Test
     void test() {
         javadoc("-d", "out",
+                "--frames",
                 "-doctitle", "Document Title",
                 "-windowtitle", "Window Title",
                 "-overview", testSrc("overview.html"),

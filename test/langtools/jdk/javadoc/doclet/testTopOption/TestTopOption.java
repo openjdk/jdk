@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6227616 8043186
+ * @bug      6227616 8043186 8196202
  * @summary  Test the new -top option.
  * @author   jamieh
  * @library  ../lib
@@ -45,6 +45,7 @@ public class TestTopOption extends JavadocTester {
                 "-use",
                 "-top", "TOP TEXT",
                 "-d", "out-1",
+                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -68,6 +69,7 @@ public class TestTopOption extends JavadocTester {
                 "-use",
                 "-top", "\u0130{@docroot}TOP TEXT",
                 "-d", "out-2",
+                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

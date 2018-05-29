@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8071982
+ * @bug 8071982 8196202
  * @summary Test for package-frame.html.
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -41,6 +41,7 @@ public class TestClassDocCatalog extends JavadocTester {
     @Test
     void test() {
         javadoc("-d", "out",
+                "--frames",
                 testSrc("pkg1/EmptyAnnotation.java"),
                 testSrc("pkg1/EmptyClass.java"),
                 testSrc("pkg1/EmptyEnum.java"),
