@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8158123 8161906 8162713
+ * @bug 8158123 8161906 8162713 8202832
  * @summary tests for module declarations
  * @library /tools/lib
  * @modules
@@ -37,6 +37,7 @@
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -738,6 +739,63 @@ public class ModuleInfoTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:11: compiler.err.expected: '}'"))
+            throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testJDK8202832(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src.resolve("m1a"),
+                          "module m1a {\n" +
+                          "    requires m2a;\n" +
+                          "    requires m2b;\n" +
+                          "}");
+        tb.writeJavaFiles(src.resolve("m1b"),
+                          "module m1b {\n" +
+                          "    requires m2b;\n" +
+                          "    requires m2a;\n" +
+                          "}");
+        tb.writeJavaFiles(src.resolve("m2a"),
+                          "module m2a {\n" +
+                          "    requires m3;\n" +
+                          "    requires m1a;\n" +
+                          "    requires m1b;\n" +
+                          "}");
+        tb.writeJavaFiles(src.resolve("m2b"),
+                          "module m2b {\n" +
+                          "    requires m3;\n" +
+                          "    requires m1a;\n" +
+                          "    requires m1b;\n" +
+                          "}");
+        tb.writeJavaFiles(src.resolve("m3"),
+                          "module m3 { }");
+
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--module-source-path", src.toString())
+                .outdir(classes)
+                .files(src.resolve("m1a").resolve("module-info.java"),
+                       src.resolve("m1b").resolve("module-info.java"),
+                       src.resolve("m2a").resolve("module-info.java"),
+                       src.resolve("m2b").resolve("module-info.java"),
+                       src.resolve("m3").resolve("module-info.java"))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expected = List.of("module-info.java:2:14: compiler.err.cyclic.requires: m2b",
+                                        "module-info.java:3:14: compiler.err.cyclic.requires: m2a",
+                                        "module-info.java:3:14: compiler.err.cyclic.requires: m1a",
+                                        "module-info.java:4:14: compiler.err.cyclic.requires: m1b",
+                                        "module-info.java:2:14: compiler.err.cyclic.requires: m2a",
+                                        "module-info.java:3:14: compiler.err.cyclic.requires: m2b",
+                                        "module-info.java:3:14: compiler.err.cyclic.requires: m1a",
+                                        "module-info.java:4:14: compiler.err.cyclic.requires: m1b",
+                                        "8 errors");
+        if (!expected.equals(log))
             throw new Exception("expected output not found");
     }
 }

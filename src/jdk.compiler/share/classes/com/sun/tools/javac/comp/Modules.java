@@ -673,7 +673,6 @@ public class Modules extends JCTree.Visitor {
             msym.requires = List.nil();
             msym.uses = List.nil();
             msym.directives = directives.toList();
-            msym.flags_field |= Flags.ACYCLIC;
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
@@ -1739,7 +1738,7 @@ public class Modules extends JCTree.Visitor {
                 if (!nonSyntheticDeps.add(current))
                     continue;
                 current.complete();
-                if ((current.flags() & Flags.ACYCLIC) != 0)
+                if ((current.flags() & Flags.AUTOMATIC_MODULE) != 0)
                     continue;
                 Assert.checkNonNull(current.requires, current::toString);
                 for (RequiresDirective dep : current.requires) {
@@ -1750,7 +1749,6 @@ public class Modules extends JCTree.Visitor {
             if (nonSyntheticDeps.contains(mod.sym)) {
                 log.error(rd.moduleName.pos(), Errors.CyclicRequires(rd.directive.module));
             }
-            mod.sym.flags_field |= Flags.ACYCLIC;
         }
     }
 
