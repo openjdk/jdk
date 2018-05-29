@@ -740,58 +740,91 @@ public abstract class Scope {
          * No further changes to class hierarchy or class content will be reflected.
          */
         public void finalizeScope() {
-            for (List<Scope> scopes = this.subScopes; scopes.nonEmpty(); scopes = scopes.tail) {
-                Scope impScope = scopes.head;
+            for (List<Scope> scopes = this.subScopes.toList(); scopes.nonEmpty(); scopes = scopes.tail) {
+                scopes.head = finalizeSingleScope(scopes.head);
+            }
+        }
 
-                if (impScope instanceof FilterImportScope && impScope.owner.kind == Kind.TYP) {
-                    WriteableScope finalized = WriteableScope.create(impScope.owner);
+        protected Scope finalizeSingleScope(Scope impScope) {
+            if (impScope instanceof FilterImportScope && impScope.owner.kind == Kind.TYP) {
+                WriteableScope finalized = WriteableScope.create(impScope.owner);
 
-                    for (Symbol sym : impScope.getSymbols()) {
-                        finalized.enter(sym);
+                for (Symbol sym : impScope.getSymbols()) {
+                    finalized.enter(sym);
+                }
+
+                finalized.listeners.add(new ScopeListener() {
+                    @Override
+                    public void symbolAdded(Symbol sym, Scope s) {
+                        Assert.error("The scope is sealed.");
                     }
 
-                    finalized.listeners.add(new ScopeListener() {
-                        @Override
-                        public void symbolAdded(Symbol sym, Scope s) {
-                            Assert.error("The scope is sealed.");
-                        }
+                    @Override
+                    public void symbolRemoved(Symbol sym, Scope s) {
+                        Assert.error("The scope is sealed.");
+                    }
+                });
 
-                        @Override
-                        public void symbolRemoved(Symbol sym, Scope s) {
-                            Assert.error("The scope is sealed.");
-                        }
-                    });
-
-                    scopes.head = finalized;
-                }
+                return finalized;
             }
+
+            return impScope;
         }
 
     }
 
     public static class NamedImportScope extends ImportScope {
 
-        public NamedImportScope(Symbol owner, Scope currentFileScope) {
+        /*A cache for quick lookup of Scopes that may contain the given name.
+          ScopeImpl and Entry is not used, as it is maps names to Symbols,
+          but it is necessary to map names to Scopes at this place (so that any
+          changes to the content of the Scopes is reflected when looking up the
+          Symbols.
+         */
+        private final Map<Name, Scope[]> name2Scopes = new HashMap<>();
+
+        public NamedImportScope(Symbol owner) {
             super(owner);
-            prependSubScope(currentFileScope);
         }
 
         public Scope importByName(Types types, Scope origin, Name name, ImportFilter filter, JCImport imp, BiConsumer<JCImport, CompletionFailure> cfHandler) {
-            return appendScope(new FilterImportScope(types, origin, name, filter, imp, cfHandler));
+            return appendScope(new FilterImportScope(types, origin, name, filter, imp, cfHandler), name);
         }
 
         public Scope importType(Scope delegate, Scope origin, Symbol sym) {
-            return appendScope(new SingleEntryScope(delegate.owner, sym, origin));
+            return appendScope(new SingleEntryScope(delegate.owner, sym, origin), sym.name);
         }
 
-        private Scope appendScope(Scope newScope) {
-            List<Scope> existingScopes = this.subScopes.reverse();
-            subScopes = List.of(existingScopes.head);
-            subScopes = subScopes.prepend(newScope);
-            for (Scope s : existingScopes.tail) {
-                subScopes = subScopes.prepend(s);
-            }
+        private Scope appendScope(Scope newScope, Name name) {
+            appendSubScope(newScope);
+            Scope[] existing = name2Scopes.get(name);
+            if (existing != null)
+                existing = Arrays.copyOf(existing, existing.length + 1);
+            else
+                existing = new Scope[1];
+            existing[existing.length - 1] = newScope;
+            name2Scopes.put(name, existing);
             return newScope;
+        }
+
+        @Override
+        public Iterable<Symbol> getSymbolsByName(Name name, Filter<Symbol> sf, LookupKind lookupKind) {
+            Scope[] scopes = name2Scopes.get(name);
+            if (scopes == null)
+                return Collections.emptyList();
+            return () -> Iterators.createCompoundIterator(Arrays.asList(scopes),
+                                                          scope -> scope.getSymbolsByName(name,
+                                                                                          sf,
+                                                                                          lookupKind)
+                                                                        .iterator());
+        }
+        public void finalizeScope() {
+            super.finalizeScope();
+            for (Scope[] scopes : name2Scopes.values()) {
+                for (int i = 0; i < scopes.length; i++) {
+                    scopes[i] = finalizeSingleScope(scopes[i]);
+                }
+            }
         }
 
         private static class SingleEntryScope extends Scope {
@@ -977,7 +1010,7 @@ public abstract class Scope {
      */
     public static class CompoundScope extends Scope implements ScopeListener {
 
-        List<Scope> subScopes = List.nil();
+        ListBuffer<Scope> subScopes = new ListBuffer<>();
         private int mark = 0;
 
         public CompoundScope(Symbol owner) {
@@ -986,7 +1019,16 @@ public abstract class Scope {
 
         public void prependSubScope(Scope that) {
            if (that != null) {
-                subScopes = subScopes.prepend(that);
+                subScopes.prepend(that);
+                that.listeners.add(this);
+                mark++;
+                listeners.symbolAdded(null, this);
+           }
+        }
+
+        public void appendSubScope(Scope that) {
+           if (that != null) {
+                subScopes.append(that);
                 that.listeners.add(this);
                 mark++;
                 listeners.symbolAdded(null, this);

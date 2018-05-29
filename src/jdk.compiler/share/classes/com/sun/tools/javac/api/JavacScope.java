@@ -31,6 +31,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.tools.javac.code.Kinds.Kind;
+import com.sun.tools.javac.code.Scope.CompoundScope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -63,7 +64,10 @@ public class JavacScope implements com.sun.source.tree.Scope {
             return new JavacScope(env) {
                 @Override @DefinedBy(Api.COMPILER_TREE)
                 public Iterable<? extends Element> getLocalElements() {
-                    return env.toplevel.namedImportScope.getSymbols(VALIDATOR);
+                    CompoundScope result = new CompoundScope(env.toplevel.packge);
+                    result.prependSubScope(env.toplevel.toplevelScope);
+                    result.prependSubScope(env.toplevel.namedImportScope);
+                    return result.getSymbols(VALIDATOR);
                 }
             };
         } else {
