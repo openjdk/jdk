@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,17 +35,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
-#include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
-
-void CommandLineError::print(bool verbose, const char* msg, ...) {
-  if (verbose) {
-    va_list listPointer;
-    va_start(listPointer, msg);
-    jio_vfprintf(defaultStream::error_stream(), msg, listPointer);
-    va_end(listPointer);
-  }
-}
 
 class JVMFlagRange_int : public JVMFlagRange {
   int _min;
@@ -63,10 +53,10 @@ public:
 
   JVMFlag::Error check_int(int value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      CommandLineError::print(verbose,
-                              "int %s=%d is outside the allowed range "
-                              "[ %d ... %d ]\n",
-                              name(), value, _min, _max);
+      JVMFlag::printError(verbose,
+                          "int %s=%d is outside the allowed range "
+                          "[ %d ... %d ]\n",
+                          name(), value, _min, _max);
       return JVMFlag::OUT_OF_BOUNDS;
     } else {
       return JVMFlag::SUCCESS;
@@ -93,10 +83,10 @@ public:
 
   JVMFlag::Error check_intx(intx value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      CommandLineError::print(verbose,
-                              "intx %s=" INTX_FORMAT " is outside the allowed range "
-                              "[ " INTX_FORMAT " ... " INTX_FORMAT " ]\n",
-                              name(), value, _min, _max);
+      JVMFlag::printError(verbose,
+                          "intx %s=" INTX_FORMAT " is outside the allowed range "
+                          "[ " INTX_FORMAT " ... " INTX_FORMAT " ]\n",
+                          name(), value, _min, _max);
       return JVMFlag::OUT_OF_BOUNDS;
     } else {
       return JVMFlag::SUCCESS;
@@ -124,10 +114,10 @@ public:
 
   JVMFlag::Error check_uint(uint value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      CommandLineError::print(verbose,
-                              "uint %s=%u is outside the allowed range "
-                              "[ %u ... %u ]\n",
-                              name(), value, _min, _max);
+      JVMFlag::printError(verbose,
+                          "uint %s=%u is outside the allowed range "
+                          "[ %u ... %u ]\n",
+                          name(), value, _min, _max);
       return JVMFlag::OUT_OF_BOUNDS;
     } else {
       return JVMFlag::SUCCESS;
@@ -155,10 +145,10 @@ public:
 
   JVMFlag::Error check_uintx(uintx value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      CommandLineError::print(verbose,
-                              "uintx %s=" UINTX_FORMAT " is outside the allowed range "
-                              "[ " UINTX_FORMAT " ... " UINTX_FORMAT " ]\n",
-                              name(), value, _min, _max);
+      JVMFlag::printError(verbose,
+                          "uintx %s=" UINTX_FORMAT " is outside the allowed range "
+                          "[ " UINTX_FORMAT " ... " UINTX_FORMAT " ]\n",
+                          name(), value, _min, _max);
       return JVMFlag::OUT_OF_BOUNDS;
     } else {
       return JVMFlag::SUCCESS;
@@ -186,10 +176,10 @@ public:
 
   JVMFlag::Error check_uint64_t(uint64_t value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      CommandLineError::print(verbose,
-                              "uint64_t %s=" UINT64_FORMAT " is outside the allowed range "
-                              "[ " UINT64_FORMAT " ... " UINT64_FORMAT " ]\n",
-                              name(), value, _min, _max);
+      JVMFlag::printError(verbose,
+                          "uint64_t %s=" UINT64_FORMAT " is outside the allowed range "
+                          "[ " UINT64_FORMAT " ... " UINT64_FORMAT " ]\n",
+                          name(), value, _min, _max);
       return JVMFlag::OUT_OF_BOUNDS;
     } else {
       return JVMFlag::SUCCESS;
@@ -217,10 +207,10 @@ public:
 
   JVMFlag::Error check_size_t(size_t value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      CommandLineError::print(verbose,
-                              "size_t %s=" SIZE_FORMAT " is outside the allowed range "
-                              "[ " SIZE_FORMAT " ... " SIZE_FORMAT " ]\n",
-                              name(), value, _min, _max);
+      JVMFlag::printError(verbose,
+                          "size_t %s=" SIZE_FORMAT " is outside the allowed range "
+                          "[ " SIZE_FORMAT " ... " SIZE_FORMAT " ]\n",
+                          name(), value, _min, _max);
       return JVMFlag::OUT_OF_BOUNDS;
     } else {
       return JVMFlag::SUCCESS;
@@ -248,10 +238,10 @@ public:
 
   JVMFlag::Error check_double(double value, bool verbose = true) {
     if ((value < _min) || (value > _max)) {
-      CommandLineError::print(verbose,
-                              "double %s=%f is outside the allowed range "
-                              "[ %f ... %f ]\n",
-                              name(), value, _min, _max);
+      JVMFlag::printError(verbose,
+                          "double %s=%f is outside the allowed range "
+                          "[ %f ... %f ]\n",
+                          name(), value, _min, _max);
       return JVMFlag::OUT_OF_BOUNDS;
     } else {
       return JVMFlag::SUCCESS;
@@ -432,7 +422,6 @@ void JVMFlagRangeList::print(outputStream* st, const char* name, RangeStrFunc de
 }
 
 bool JVMFlagRangeList::check_ranges() {
-  // Check ranges.
   bool status = true;
   for (int i=0; i<length(); i++) {
     JVMFlagRange* range = at(i);
