@@ -2305,6 +2305,10 @@ public class Resolve {
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
 
+            sym = findGlobalType(env, env.toplevel.toplevelScope, name, noRecovery);
+            if (sym.exists()) return sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
+
             sym = findGlobalType(env, env.toplevel.packge.members(), name, noRecovery);
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);

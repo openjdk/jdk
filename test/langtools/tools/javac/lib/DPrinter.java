@@ -81,6 +81,7 @@ import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 
 
@@ -405,7 +406,7 @@ public class DPrinter {
             printScope("origin",
                     (Scope) getField(scope, scope.getClass(), "origin"), Details.FULL);
         } else if (scope instanceof CompoundScope) {
-            printList("delegates", (List<?>) getField(scope, CompoundScope.class, "subScopes"));
+            printList("delegates", ((ListBuffer<?>) getField(scope, CompoundScope.class, "subScopes")).toList());
         } else {
             for (Symbol sym : scope.getSymbols()) {
                 printSymbol(sym.name.toString(), sym, Details.SUMMARY);
