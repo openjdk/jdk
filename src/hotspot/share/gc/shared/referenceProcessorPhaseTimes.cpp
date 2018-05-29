@@ -31,60 +31,95 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 
-RefProcWorkerTimeTracker::RefProcWorkerTimeTracker(ReferenceProcessorPhaseTimes::RefProcPhaseNumbers number,
-                                                   ReferenceProcessorPhaseTimes* phase_times,
-                                                   uint worker_id) :
-  _worker_time(NULL), _start_time(os::elapsedTime()), _worker_id(worker_id) {
-  assert (phase_times != NULL, "Invariant");
+#define ASSERT_REF_TYPE(ref_type) assert((ref_type) >= REF_SOFT && (ref_type) <= REF_PHANTOM, \
+                                         "Invariant (%d)", (int)ref_type)
 
-  _worker_time = phase_times->worker_time_sec(phase_times->par_phase(number));
+#define ASSERT_PHASE(phase) assert((phase) >= ReferenceProcessor::RefPhase1 && \
+                                   (phase) < ReferenceProcessor::RefPhaseMax,  \
+                                   "Invariant (%d)", (int)phase);
+
+#define ASSERT_SUB_PHASE(phase) assert((phase) >= ReferenceProcessor::SoftRefSubPhase1 && \
+                                       (phase) < ReferenceProcessor::RefSubPhaseMax, \
+                                       "Invariant (%d)", (int)phase);
+
+static const char* SubPhasesParWorkTitle[ReferenceProcessor::RefSubPhaseMax] = {
+       "SoftRef (ms):",
+       "SoftRef (ms):",
+       "WeakRef (ms):",
+       "FinalRef (ms):",
+       "FinalRef (ms):",
+       "PhantomRef (ms):"
+       };
+
+static const char* Phase2ParWorkTitle = "Total (ms):";
+
+static const char* SubPhasesSerWorkTitle[ReferenceProcessor::RefSubPhaseMax] = {
+       "SoftRef:",
+       "SoftRef:",
+       "WeakRef:",
+       "FinalRef:",
+       "FinalRef:",
+       "PhantomRef:"
+       };
+
+static const char* Phase2SerWorkTitle = "Total:";
+
+static const char* Indents[6] = {"", "  ", "    ", "      ", "        ", "          "};
+
+static const char* PhaseNames[ReferenceProcessor::RefPhaseMax] = {
+       "Reconsider SoftReferences",
+       "Notify Soft/WeakReferences",
+       "Notify and keep alive finalizable",
+       "Notify PhantomReferences"
+       };
+
+static const char* ReferenceTypeNames[REF_PHANTOM + 1] = {
+       "None", "Other", "SoftReference", "WeakReference", "FinalReference", "PhantomReference"
+       };
+
+STATIC_ASSERT((REF_PHANTOM + 1) == ARRAY_SIZE(ReferenceTypeNames));
+
+static const char* phase_enum_2_phase_string(ReferenceProcessor::RefProcPhases phase) {
+  assert(phase >= ReferenceProcessor::RefPhase1 && phase <= ReferenceProcessor::RefPhaseMax,
+         "Invalid reference processing phase (%d)", phase);
+  return PhaseNames[phase];
 }
 
-RefProcWorkerTimeTracker::RefProcWorkerTimeTracker(ReferenceProcessorPhaseTimes::RefProcParPhases phase,
-                                                   ReferenceProcessorPhaseTimes* phase_times,
-                                                   uint worker_id) :
-  _worker_time(NULL), _start_time(os::elapsedTime()), _worker_id(worker_id) {
-  assert (phase_times != NULL, "Invariant");
+static const char* ref_type_2_string(ReferenceType ref_type) {
+  ASSERT_REF_TYPE(ref_type);
+  return ReferenceTypeNames[ref_type];
+}
 
-  _worker_time = phase_times->worker_time_sec(phase);
+RefProcWorkerTimeTracker::RefProcWorkerTimeTracker(WorkerDataArray<double>* worker_time, uint worker_id) :
+  _worker_time(worker_time), _start_time(os::elapsedTime()), _worker_id(worker_id) {
+  assert(worker_time != NULL, "Invariant");
 }
 
 RefProcWorkerTimeTracker::~RefProcWorkerTimeTracker() {
-  _worker_time->set(_worker_id, os::elapsedTime() - _start_time);
+  double result = os::elapsedTime() - _start_time;
+  _worker_time->set(_worker_id, result);
+}
+
+RefProcSubPhasesWorkerTimeTracker::RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
+                                                                     ReferenceProcessorPhaseTimes* phase_times,
+                                                                     uint worker_id) :
+  RefProcWorkerTimeTracker(phase_times->sub_phase_worker_time_sec(phase), worker_id) {
+}
+
+RefProcSubPhasesWorkerTimeTracker::~RefProcSubPhasesWorkerTimeTracker() {
 }
 
 RefProcPhaseTimeBaseTracker::RefProcPhaseTimeBaseTracker(const char* title,
+                                                         ReferenceProcessor::RefProcPhases phase_number,
                                                          ReferenceProcessorPhaseTimes* phase_times) :
-  _title(title), _phase_times(phase_times), _start_ticks(), _end_ticks() {
+  _phase_times(phase_times), _start_ticks(), _end_ticks(), _phase_number(phase_number) {
   assert(_phase_times != NULL, "Invariant");
 
   _start_ticks.stamp();
   if (_phase_times->gc_timer() != NULL) {
-    _phase_times->gc_timer()->register_gc_phase_start(_title, _start_ticks);
+    _phase_times->gc_timer()->register_gc_phase_start(title, _start_ticks);
   }
 }
-
-static const char* phase_enum_2_phase_string(ReferenceProcessorPhaseTimes::RefProcParPhases phase) {
-  switch(phase) {
-    case ReferenceProcessorPhaseTimes::SoftRefPhase1:
-      return "Phase1";
-    case ReferenceProcessorPhaseTimes::SoftRefPhase2:
-    case ReferenceProcessorPhaseTimes::WeakRefPhase2:
-    case ReferenceProcessorPhaseTimes::FinalRefPhase2:
-    case ReferenceProcessorPhaseTimes::PhantomRefPhase2:
-      return "Phase2";
-    case ReferenceProcessorPhaseTimes::SoftRefPhase3:
-    case ReferenceProcessorPhaseTimes::WeakRefPhase3:
-    case ReferenceProcessorPhaseTimes::FinalRefPhase3:
-    case ReferenceProcessorPhaseTimes::PhantomRefPhase3:
-      return "Phase3";
-    default:
-      ShouldNotReachHere();
-      return NULL;
-  }
-}
-
-static const char* Indents[6] = {"", "  ", "    ", "      ", "        ", "          "};
 
 Ticks RefProcPhaseTimeBaseTracker::end_ticks() {
   // If ASSERT is defined, the default value of Ticks will be -2.
@@ -108,140 +143,83 @@ RefProcPhaseTimeBaseTracker::~RefProcPhaseTimeBaseTracker() {
   }
 }
 
-RefProcBalanceQueuesTimeTracker::RefProcBalanceQueuesTimeTracker(ReferenceProcessorPhaseTimes* phase_times) :
-  RefProcPhaseTimeBaseTracker("Balance queues", phase_times) {}
+RefProcBalanceQueuesTimeTracker::RefProcBalanceQueuesTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
+                                                                 ReferenceProcessorPhaseTimes* phase_times) :
+  RefProcPhaseTimeBaseTracker("Balance queues", phase_number, phase_times) {}
 
 RefProcBalanceQueuesTimeTracker::~RefProcBalanceQueuesTimeTracker() {
   double elapsed = elapsed_time();
-  phase_times()->set_balance_queues_time_ms(phase_times()->processing_ref_type(), elapsed);
+  phase_times()->set_balance_queues_time_ms(_phase_number, elapsed);
 }
 
-#define ASSERT_REF_TYPE(ref_type) assert(ref_type >= REF_SOFT && ref_type <= REF_PHANTOM, \
-                                         "Invariant (%d)", (int)ref_type)
-
-#define ASSERT_PHASE_NUMBER(phase_number) assert(phase_number >= ReferenceProcessorPhaseTimes::RefPhase1 && \
-                                                 phase_number <= ReferenceProcessorPhaseTimes::RefPhaseMax, \
-                                                 "Invariant (%d)", phase_number);
-
-static const char* phase_number_2_string(ReferenceProcessorPhaseTimes::RefProcPhaseNumbers phase_number) {
-  ASSERT_PHASE_NUMBER(phase_number);
-
-  switch(phase_number) {
-    case ReferenceProcessorPhaseTimes::RefPhase1:
-      return "Phase1";
-    case ReferenceProcessorPhaseTimes::RefPhase2:
-      return "Phase2";
-    case ReferenceProcessorPhaseTimes::RefPhase3:
-      return "Phase3";
-    default:
-      ShouldNotReachHere();
-      return NULL;
-  }
-}
-
-RefProcParPhaseTimeTracker::RefProcParPhaseTimeTracker(ReferenceProcessorPhaseTimes::RefProcPhaseNumbers phase_number,
+RefProcPhaseTimeTracker::RefProcPhaseTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
                                                        ReferenceProcessorPhaseTimes* phase_times) :
-  _phase_number(phase_number),
-  RefProcPhaseTimeBaseTracker(phase_number_2_string(phase_number), phase_times) {}
+  RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
+}
 
-RefProcParPhaseTimeTracker::~RefProcParPhaseTimeTracker() {
+RefProcPhaseTimeTracker::~RefProcPhaseTimeTracker() {
   double elapsed = elapsed_time();
-  ReferenceProcessorPhaseTimes::RefProcParPhases phase = phase_times()->par_phase(_phase_number);
-  phase_times()->set_par_phase_time_ms(phase, elapsed);
+  phase_times()->set_phase_time_ms(_phase_number, elapsed);
 }
 
-static const char* ref_type_2_string(ReferenceType ref_type) {
-  ASSERT_REF_TYPE(ref_type);
-
-  switch(ref_type) {
-    case REF_SOFT:
-      return "SoftReference";
-    case REF_WEAK:
-      return "WeakReference";
-    case REF_FINAL:
-      return "FinalReference";
-    case REF_PHANTOM:
-      return "PhantomReference";
-    default:
-      ShouldNotReachHere();
-      return NULL;
-  }
+RefProcTotalPhaseTimesTracker::RefProcTotalPhaseTimesTracker(ReferenceProcessor::RefProcPhases phase_number,
+                                                             ReferenceProcessorPhaseTimes* phase_times,
+                                                             ReferenceProcessor* rp) :
+  _rp(rp), RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
 }
 
-RefProcPhaseTimesTracker::RefProcPhaseTimesTracker(ReferenceType ref_type,
-                                                   ReferenceProcessorPhaseTimes* phase_times,
-                                                   ReferenceProcessor* rp) :
-  _rp(rp), RefProcPhaseTimeBaseTracker(ref_type_2_string(ref_type), phase_times) {
-  phase_times->set_processing_ref_type(ref_type);
-
-  size_t discovered = rp->total_reference_count(ref_type);
-  phase_times->set_ref_discovered(ref_type, discovered);
-}
-
-RefProcPhaseTimesTracker::~RefProcPhaseTimesTracker() {
+RefProcTotalPhaseTimesTracker::~RefProcTotalPhaseTimesTracker() {
   double elapsed = elapsed_time();
-  ReferenceProcessorPhaseTimes* times = phase_times();
-  ReferenceType ref_type = times->processing_ref_type();
-  times->set_ref_proc_time_ms(ref_type, elapsed);
-
-  size_t after_count = _rp->total_reference_count(ref_type);
-  size_t discovered = times->ref_discovered(ref_type);
-  times->set_ref_cleared(ref_type, discovered - after_count);
+  phase_times()->set_phase_time_ms(_phase_number, elapsed);
 }
 
 ReferenceProcessorPhaseTimes::ReferenceProcessorPhaseTimes(GCTimer* gc_timer, uint max_gc_threads) :
   _gc_timer(gc_timer), _processing_is_mt(false) {
 
-  for (int i = 0; i < RefParPhaseMax; i++) {
-    _worker_time_sec[i] = new WorkerDataArray<double>(max_gc_threads, "Process lists (ms)");
-    _par_phase_time_ms[i] = uninitialized();
+  for (uint i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
+    _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(max_gc_threads, SubPhasesParWorkTitle[i]);
   }
+  _phase2_worker_time_sec = new WorkerDataArray<double>(max_gc_threads, Phase2ParWorkTitle);
 
-  for (int i = 0; i < number_of_subclasses_of_ref; i++) {
-    _ref_proc_time_ms[i] = uninitialized();
-    _balance_queues_time_ms[i] = uninitialized();
-    _ref_cleared[i] = 0;
-    _ref_discovered[i] = 0;
-    _ref_enqueued[i] = 0;
-  }
+  reset();
 }
 
 inline int ref_type_2_index(ReferenceType ref_type) {
   return ref_type - REF_SOFT;
 }
 
-#define ASSERT_PAR_PHASE(phase) assert(phase >= ReferenceProcessorPhaseTimes::SoftRefPhase1 && \
-                                       phase < ReferenceProcessorPhaseTimes::RefParPhaseMax, \
-                                       "Invariant (%d)", (int)phase);
-
-WorkerDataArray<double>* ReferenceProcessorPhaseTimes::worker_time_sec(RefProcParPhases par_phase) const {
-  ASSERT_PAR_PHASE(par_phase);
-  return _worker_time_sec[par_phase];
+WorkerDataArray<double>* ReferenceProcessorPhaseTimes::sub_phase_worker_time_sec(ReferenceProcessor::RefProcSubPhases sub_phase) const {
+  ASSERT_SUB_PHASE(sub_phase);
+  return _sub_phases_worker_time_sec[sub_phase];
 }
 
-double ReferenceProcessorPhaseTimes::par_phase_time_ms(RefProcParPhases par_phase) const {
-  ASSERT_PAR_PHASE(par_phase);
-  return _par_phase_time_ms[par_phase];
+double ReferenceProcessorPhaseTimes::phase_time_ms(ReferenceProcessor::RefProcPhases phase) const {
+  ASSERT_PHASE(phase);
+  return _phases_time_ms[phase];
 }
 
-void ReferenceProcessorPhaseTimes::set_par_phase_time_ms(RefProcParPhases par_phase,
-                                                         double par_phase_time_ms) {
-  ASSERT_PAR_PHASE(par_phase);
-  _par_phase_time_ms[par_phase] = par_phase_time_ms;
+void ReferenceProcessorPhaseTimes::set_phase_time_ms(ReferenceProcessor::RefProcPhases phase,
+                                                     double phase_time_ms) {
+  ASSERT_PHASE(phase);
+  _phases_time_ms[phase] = phase_time_ms;
 }
 
 void ReferenceProcessorPhaseTimes::reset() {
-  for (int i = 0; i < RefParPhaseMax; i++) {
-    _worker_time_sec[i]->reset();
-    _par_phase_time_ms[i] = uninitialized();
+  for (int i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
+    _sub_phases_worker_time_sec[i]->reset();
+    _sub_phases_total_time_ms[i] = uninitialized();
   }
 
-  for (int i = 0; i < number_of_subclasses_of_ref; i++) {
-    _ref_proc_time_ms[i] = uninitialized();
+  for (int i = 0; i < ReferenceProcessor::RefPhaseMax; i++) {
+    _phases_time_ms[i] = uninitialized();
     _balance_queues_time_ms[i] = uninitialized();
+  }
+
+  _phase2_worker_time_sec->reset();
+
+  for (int i = 0; i < number_of_subclasses_of_ref; i++) {
     _ref_cleared[i] = 0;
     _ref_discovered[i] = 0;
-    _ref_enqueued[i] = 0;
   }
 
   _total_time_ms = uninitialized();
@@ -250,35 +228,26 @@ void ReferenceProcessorPhaseTimes::reset() {
 }
 
 ReferenceProcessorPhaseTimes::~ReferenceProcessorPhaseTimes() {
-  for (int i = 0; i < RefParPhaseMax; i++) {
-    delete _worker_time_sec[i];
+  for (int i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
+    delete _sub_phases_worker_time_sec[i];
   }
+  delete _phase2_worker_time_sec;
 }
 
-double ReferenceProcessorPhaseTimes::ref_proc_time_ms(ReferenceType ref_type) const {
-  ASSERT_REF_TYPE(ref_type);
-  return _ref_proc_time_ms[ref_type_2_index(ref_type)];
+double ReferenceProcessorPhaseTimes::sub_phase_total_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase) const {
+  ASSERT_SUB_PHASE(sub_phase);
+  return _sub_phases_total_time_ms[sub_phase];
 }
 
-void ReferenceProcessorPhaseTimes::set_ref_proc_time_ms(ReferenceType ref_type,
-                                                        double ref_proc_time_ms) {
-  ASSERT_REF_TYPE(ref_type);
-  _ref_proc_time_ms[ref_type_2_index(ref_type)] = ref_proc_time_ms;
+void ReferenceProcessorPhaseTimes::set_sub_phase_total_phase_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase,
+                                                                     double time_ms) {
+  ASSERT_SUB_PHASE(sub_phase);
+  _sub_phases_total_time_ms[sub_phase] = time_ms;
 }
 
-size_t ReferenceProcessorPhaseTimes::ref_cleared(ReferenceType ref_type) const {
+void ReferenceProcessorPhaseTimes::add_ref_cleared(ReferenceType ref_type, size_t count) {
   ASSERT_REF_TYPE(ref_type);
-  return _ref_cleared[ref_type_2_index(ref_type)];
-}
-
-void ReferenceProcessorPhaseTimes::set_ref_cleared(ReferenceType ref_type, size_t count) {
-  ASSERT_REF_TYPE(ref_type);
-  _ref_cleared[ref_type_2_index(ref_type)] = count;
-}
-
-size_t ReferenceProcessorPhaseTimes::ref_discovered(ReferenceType ref_type) const {
-  ASSERT_REF_TYPE(ref_type);
-  return _ref_discovered[ref_type_2_index(ref_type)];
+  Atomic::add(count, &_ref_cleared[ref_type_2_index(ref_type)]);
 }
 
 void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, size_t count) {
@@ -286,70 +255,14 @@ void ReferenceProcessorPhaseTimes::set_ref_discovered(ReferenceType ref_type, si
   _ref_discovered[ref_type_2_index(ref_type)] = count;
 }
 
-size_t ReferenceProcessorPhaseTimes::ref_enqueued(ReferenceType ref_type) const {
-  ASSERT_REF_TYPE(ref_type);
-  return _ref_enqueued[ref_type_2_index(ref_type)];
+double ReferenceProcessorPhaseTimes::balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase) const {
+  ASSERT_PHASE(phase);
+  return _balance_queues_time_ms[phase];
 }
 
-void ReferenceProcessorPhaseTimes::set_ref_enqueued(ReferenceType ref_type, size_t count) {
-  ASSERT_REF_TYPE(ref_type);
-  _ref_enqueued[ref_type_2_index(ref_type)] = count;
-}
-
-double ReferenceProcessorPhaseTimes::balance_queues_time_ms(ReferenceType ref_type) const {
-  ASSERT_REF_TYPE(ref_type);
-  return _balance_queues_time_ms[ref_type_2_index(ref_type)];
-}
-
-void ReferenceProcessorPhaseTimes::set_balance_queues_time_ms(ReferenceType ref_type, double time_ms) {
-  ASSERT_REF_TYPE(ref_type);
-  _balance_queues_time_ms[ref_type_2_index(ref_type)] = time_ms;
-}
-
-ReferenceProcessorPhaseTimes::RefProcParPhases
-ReferenceProcessorPhaseTimes::par_phase(RefProcPhaseNumbers phase_number) const {
-  ASSERT_PHASE_NUMBER(phase_number);
-  ASSERT_REF_TYPE(_processing_ref_type);
-
-  int result = SoftRefPhase1;
-
-  switch(_processing_ref_type) {
-    case REF_SOFT:
-      result = (int)SoftRefPhase1;
-      result += phase_number;
-
-      assert((RefProcParPhases)result >= SoftRefPhase1 &&
-             (RefProcParPhases)result <= SoftRefPhase3,
-             "Invariant (%d)", result);
-      break;
-    case REF_WEAK:
-      result = (int)WeakRefPhase2;
-      result += (phase_number - 1);
-      assert((RefProcParPhases)result >= WeakRefPhase2 &&
-             (RefProcParPhases)result <= WeakRefPhase3,
-             "Invariant (%d)", result);
-      break;
-    case REF_FINAL:
-      result = (int)FinalRefPhase2;
-      result += (phase_number - 1);
-      assert((RefProcParPhases)result >= FinalRefPhase2 &&
-             (RefProcParPhases)result <= FinalRefPhase3,
-             "Invariant (%d)", result);
-      break;
-    case REF_PHANTOM:
-      result = (int)PhantomRefPhase2;
-      result += (phase_number - 1);
-      assert((RefProcParPhases)result >= PhantomRefPhase2 &&
-             (RefProcParPhases)result <= PhantomRefPhase3,
-             "Invariant (%d)", result);
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-
-  ASSERT_PAR_PHASE(result);
-
-  return (RefProcParPhases)result;
+void ReferenceProcessorPhaseTimes::set_balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase, double time_ms) {
+  ASSERT_PHASE(phase);
+  _balance_queues_time_ms[phase] = time_ms;
 }
 
 #define TIME_FORMAT "%.1lfms"
@@ -366,10 +279,16 @@ void ReferenceProcessorPhaseTimes::print_all_references(uint base_indent, bool p
   }
 
   uint next_indent = base_indent + 1;
+  print_phase(ReferenceProcessor::RefPhase1, next_indent);
+  print_phase(ReferenceProcessor::RefPhase2, next_indent);
+  print_phase(ReferenceProcessor::RefPhase3, next_indent);
+  print_phase(ReferenceProcessor::RefPhase4, next_indent);
+
   print_reference(REF_SOFT, next_indent);
   print_reference(REF_WEAK, next_indent);
   print_reference(REF_FINAL, next_indent);
   print_reference(REF_PHANTOM, next_indent);
+
 }
 
 void ReferenceProcessorPhaseTimes::print_reference(ReferenceType ref_type, uint base_indent) const {
@@ -377,73 +296,95 @@ void ReferenceProcessorPhaseTimes::print_reference(ReferenceType ref_type, uint 
 
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    uint next_indent = base_indent + 1;
     ResourceMark rm;
 
-    ls.print_cr("%s%s: " TIME_FORMAT,
-                Indents[base_indent], ref_type_2_string(ref_type), ref_proc_time_ms(ref_type));
+    ls.print_cr("%s%s:", Indents[base_indent], ref_type_2_string(ref_type));
 
-    double balance_time = balance_queues_time_ms(ref_type);
-    if (balance_time != uninitialized()) {
-      ls.print_cr("%s%s " TIME_FORMAT, Indents[next_indent], "Balance queues:", balance_time);
-    }
+    uint const next_indent = base_indent + 1;
+    int const ref_type_index = ref_type_2_index(ref_type);
 
-    switch(ref_type) {
-      case REF_SOFT:
-        print_phase(SoftRefPhase1, next_indent);
-        print_phase(SoftRefPhase2, next_indent);
-        print_phase(SoftRefPhase3, next_indent);
-        break;
-
-      case REF_WEAK:
-        print_phase(WeakRefPhase2, next_indent);
-        print_phase(WeakRefPhase3, next_indent);
-        break;
-
-      case REF_FINAL:
-        print_phase(FinalRefPhase2, next_indent);
-        print_phase(FinalRefPhase3, next_indent);
-        break;
-
-      case REF_PHANTOM:
-        print_phase(PhantomRefPhase2, next_indent);
-        print_phase(PhantomRefPhase3, next_indent);
-        break;
-
-      default:
-        ShouldNotReachHere();
-    }
-
-    ls.print_cr("%s%s " SIZE_FORMAT, Indents[next_indent], "Discovered:", ref_discovered(ref_type));
-    ls.print_cr("%s%s " SIZE_FORMAT, Indents[next_indent], "Cleared:", ref_cleared(ref_type));
+    ls.print_cr("%sDiscovered: " SIZE_FORMAT, Indents[next_indent], _ref_discovered[ref_type_index]);
+    ls.print_cr("%sCleared: " SIZE_FORMAT, Indents[next_indent], _ref_cleared[ref_type_index]);
   }
 }
 
-void ReferenceProcessorPhaseTimes::print_phase(RefProcParPhases phase, uint indent) const {
-  double phase_time = par_phase_time_ms(phase);
-  if (phase_time != uninitialized()) {
-    LogTarget(Debug, gc, phases, ref) lt;
+void ReferenceProcessorPhaseTimes::print_phase(ReferenceProcessor::RefProcPhases phase, uint indent) const {
+  double phase_time = phase_time_ms(phase);
 
-    LogStream ls(lt);
+  if (phase_time == uninitialized()) {
+    return;
+  }
 
-    ls.print_cr("%s%s%s " TIME_FORMAT,
-                Indents[indent],
-                phase_enum_2_phase_string(phase),
-                indent == 0 ? "" : ":", /* 0 indent logs don't need colon. */
-                phase_time);
+  LogTarget(Debug, gc, phases, ref) lt;
+  LogStream ls(lt);
 
-    LogTarget(Trace, gc, phases, ref) lt2;
-    if (_processing_is_mt && lt2.is_enabled()) {
-      LogStream ls(lt2);
+  ls.print_cr("%s%s%s " TIME_FORMAT,
+              Indents[indent],
+              phase_enum_2_phase_string(phase),
+              indent == 0 ? "" : ":", /* 0 indent logs don't need colon. */
+              phase_time);
 
-      ls.print("%s", Indents[indent + 1]);
-      // worker_time_sec is recorded in seconds but it will be printed in milliseconds.
-      worker_time_sec(phase)->print_summary_on(&ls, true);
+  LogTarget(Debug, gc, phases, ref) lt2;
+  if (lt2.is_enabled()) {
+    LogStream ls(lt2);
+
+    if (_processing_is_mt) {
+      print_balance_time(&ls, phase, indent + 1);
     }
+
+    switch (phase) {
+      case ReferenceProcessor::RefPhase1:
+        print_sub_phase(&ls, ReferenceProcessor::SoftRefSubPhase1, indent + 1);
+        break;
+      case ReferenceProcessor::RefPhase2:
+        print_sub_phase(&ls, ReferenceProcessor::SoftRefSubPhase2, indent + 1);
+        print_sub_phase(&ls, ReferenceProcessor::WeakRefSubPhase2, indent + 1);
+        print_sub_phase(&ls, ReferenceProcessor::FinalRefSubPhase2, indent + 1);
+        break;
+      case ReferenceProcessor::RefPhase3:
+        print_sub_phase(&ls, ReferenceProcessor::FinalRefSubPhase3, indent + 1);
+        break;
+      case ReferenceProcessor::RefPhase4:
+        print_sub_phase(&ls, ReferenceProcessor::PhantomRefSubPhase4, indent + 1);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+    if (phase == ReferenceProcessor::RefPhase2) {
+      print_worker_time(&ls, _phase2_worker_time_sec, Phase2SerWorkTitle, indent + 1);
+    }
+  }
+}
+
+void ReferenceProcessorPhaseTimes::print_balance_time(LogStream* ls, ReferenceProcessor::RefProcPhases phase, uint indent) const {
+  double balance_time = balance_queues_time_ms(phase);
+  if (balance_time != uninitialized()) {
+    ls->print_cr("%s%s " TIME_FORMAT, Indents[indent], "Balance queues:", balance_time);
+  }
+}
+
+void ReferenceProcessorPhaseTimes::print_sub_phase(LogStream* ls, ReferenceProcessor::RefProcSubPhases sub_phase, uint indent) const {
+  print_worker_time(ls, _sub_phases_worker_time_sec[sub_phase], SubPhasesSerWorkTitle[sub_phase], indent);
+}
+
+void ReferenceProcessorPhaseTimes::print_worker_time(LogStream* ls, WorkerDataArray<double>* worker_time, const char* ser_title, uint indent) const {
+  ls->print("%s", Indents[indent]);
+  if (_processing_is_mt) {
+    worker_time->print_summary_on(ls, true);
+    LogTarget(Trace, gc, phases, task) lt;
+    if (lt.is_enabled()) {
+      LogStream ls2(lt);
+      ls2.print("%s", Indents[indent]);
+      worker_time->print_details_on(&ls2);
+    }
+  } else {
+    ls->print_cr("%s " TIME_FORMAT,
+                 ser_title,
+                 worker_time->get(0) * MILLIUNITS);
   }
 }
 
 #undef ASSERT_REF_TYPE
-#undef ASSERT_PHASE_NUMBER
-#undef ASSERT_PAR_PHASE
+#undef ASSERT_SUB_PHASE
+#undef ASSERT_PHASE
 #undef TIME_FORMAT
