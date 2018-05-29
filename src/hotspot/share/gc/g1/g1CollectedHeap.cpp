@@ -3843,7 +3843,7 @@ public:
 
     G1STWIsAliveClosure is_alive(_g1h);
 
-    G1ParScanThreadState*          pss = _pss->state_for_worker(worker_id);
+    G1ParScanThreadState* pss = _pss->state_for_worker(worker_id);
     pss->set_ref_discoverer(NULL);
 
     // Keep alive closure.

@@ -43,6 +43,7 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/resourceArea.hpp"
@@ -160,7 +161,7 @@ void PSRefProcTaskExecutor::execute(ProcessTask& task)
     q->enqueue(new PSRefProcTaskProxy(task, i));
   }
   ParallelTaskTerminator terminator(manager->active_workers(),
-                 (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
+                                    (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
   if (task.marks_oops_alive() && manager->active_workers() > 1) {
     for (uint j = 0; j < manager->active_workers(); j++) {
       q->enqueue(new StealTask(&terminator));

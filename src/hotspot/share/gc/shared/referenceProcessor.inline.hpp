@@ -47,6 +47,11 @@ bool DiscoveredList::is_empty() const {
  return head() == NULL;
 }
 
+void DiscoveredList::clear() {
+  set_head(NULL);
+  set_length(0);
+}
+
 DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
                                                OopClosure*        keep_alive,
                                                BoolObjectClosure* is_alive):
@@ -57,10 +62,8 @@ DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
 #ifdef ASSERT
   _first_seen(refs_list.head()),
 #endif
-#ifndef PRODUCT
   _processed(0),
   _removed(0),
-#endif
   _next_discovered(NULL),
   _keep_alive(keep_alive),
   _is_alive(is_alive) {
