@@ -241,7 +241,6 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
                                        G1GCPhaseTimes* phase_times,
                                        uint worker_i) {
   OopClosure* strong_roots = closures->strong_oops();
-  OopClosure* weak_roots = closures->weak_oops();
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::UniverseRoots, worker_i);
@@ -290,7 +289,7 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::SystemDictionaryRoots, worker_i);
     if (!_process_strong_tasks.is_task_claimed(G1RP_PS_SystemDictionary_oops_do)) {
-      SystemDictionary::roots_oops_do(strong_roots, weak_roots);
+      SystemDictionary::oops_do(strong_roots);
     }
   }
 }

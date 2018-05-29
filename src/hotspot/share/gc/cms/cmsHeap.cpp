@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,10 +222,9 @@ void CMSHeap::cms_process_roots(StrongRootsScope* scope,
                                 OopsInGenClosure* root_closure,
                                 CLDClosure* cld_closure) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, !CodeBlobToOopClosure::FixRelocations);
-  OopsInGenClosure* weak_roots = only_strong_roots ? NULL : root_closure;
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
 
-  process_roots(scope, so, root_closure, weak_roots, cld_closure, weak_cld_closure, &mark_code_closure);
+  process_roots(scope, so, root_closure, cld_closure, weak_cld_closure, &mark_code_closure);
   if (!only_strong_roots) {
     process_string_table_roots(scope, root_closure);
   }
