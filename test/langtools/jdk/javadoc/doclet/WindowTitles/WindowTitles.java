@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4530730
+ * @bug 4530730 8196202
  * @summary stddoclet: With frames off, window titles have "()" appended
  * @author dkramer
  * @library ../lib
@@ -47,6 +47,7 @@ public class WindowTitles extends JavadocTester {
         // Test for all cases except the split index page
         javadoc("-d", "out-1",
                 "-use",
+                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);
