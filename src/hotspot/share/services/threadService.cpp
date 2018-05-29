@@ -675,15 +675,15 @@ void ConcurrentLocksDump::dump_at_safepoint() {
   // dump all locked concurrent locks
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
 
-  ResourceMark rm;
-
-  GrowableArray<oop>* aos_objects = new GrowableArray<oop>(INITIAL_ARRAY_SIZE);
+  GrowableArray<oop>* aos_objects = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<oop>(INITIAL_ARRAY_SIZE, true /* C_heap */);
 
   // Find all instances of AbstractOwnableSynchronizer
   HeapInspection::find_instances_at_safepoint(SystemDictionary::abstract_ownable_synchronizer_klass(),
                                                 aos_objects);
   // Build a map of thread to its owned AQS locks
   build_map(aos_objects);
+
+  delete aos_objects;
 }
 
 
