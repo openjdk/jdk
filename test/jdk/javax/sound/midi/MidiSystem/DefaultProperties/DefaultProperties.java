@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,34 @@
  * questions.
  */
 
-import java.io.File;
+import java.nio.file.Paths;
 
 import com.sun.media.sound.JDK13Services;
 
 /**
  * @test
- * @bug 4776511
- * @build DefaultProperties
- * @run main/othervm DefaultProperties
+ * @bug 4776511 8201279
  * @summary RFE: Setting the default MixerProvider. Test the retrieving and
- *          parsing of properties.
+ *          parsing of properties. This is a part of the test for 4776511.
+ * @run main/othervm DefaultProperties
+ * @run main/othervm/policy=java.policy DefaultProperties
  * @modules java.desktop/com.sun.media.sound
  */
 public class DefaultProperties {
 
     private static final Class[] lineTypeClasses = {
-        javax.sound.sampled.SourceDataLine.class,
-        javax.sound.sampled.TargetDataLine.class,
-        javax.sound.sampled.Clip.class,
-        javax.sound.sampled.Port.class,
+        javax.sound.midi.Receiver.class,
+        javax.sound.midi.Transmitter.class,
+        javax.sound.midi.Sequencer.class,
+        javax.sound.midi.Synthesizer.class,
     };
 
     public static void main(String[] args) throws Exception {
         boolean allOk = true;
-        File file = new File(System.getProperty("test.src", "."), "testdata");
-        System.setProperty("java.home", file.getCanonicalPath());
+        String path = Paths.get(System.getProperty("test.src", "."),
+                                "testdata", "conf", "sound.properties")
+                           .toAbsolutePath().normalize().toString();
+        System.setProperty("javax.sound.config.file", path);
 
         for (int i = 0; i < lineTypeClasses.length; i++) {
             Class cls = lineTypeClasses[i];
@@ -125,13 +127,13 @@ public class DefaultProperties {
             System.setProperty(propertyName, provClassName + "#" + instanceName);
             result = JDK13Services.getDefaultProviderClassName(cls);
             if (! provClassName.equals(result)) {
-                out("type " + cls + " failed: provider class should be '" +
+                out("type " + cls + "failed: provider class should be '" +
                     provClassName + "' but is '" + result + "'!");
                 allOk = false;
             }
             result = JDK13Services.getDefaultInstanceName(cls);
             if (! instanceName.equals(result)) {
-                out("type " + cls + " failed: instance name should be '" +
+                out("type " + cls + "failed: instance name should be '" +
                     instanceName + "' but is '" + result + "'!");
                 allOk = false;
             }
@@ -146,7 +148,7 @@ public class DefaultProperties {
             }
             result = JDK13Services.getDefaultInstanceName(cls);
             if (result != null) {
-                out("type " + cls + " failed: instance name should be " +
+                out("type " + cls + "failed: instance name should be " +
                     "null but is '" + result + "'!");
                 allOk = false;
             }
@@ -162,3 +164,4 @@ public class DefaultProperties {
         System.out.println(message);
     }
 }
+

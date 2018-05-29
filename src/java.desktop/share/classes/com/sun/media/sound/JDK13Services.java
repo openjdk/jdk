@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,13 +61,6 @@ import javax.sound.sampled.spi.MixerProvider;
  * @author Matthias Pfisterer
  */
 public final class JDK13Services {
-
-    /**
-     * Filename of the properties file for default provider properties. This
-     * file is searched in the subdirectory "conf" of the JRE directory (this
-     * behaviour is hardcoded).
-     */
-    private static final String PROPERTIES_FILENAME = "sound.properties";
 
     /**
      * Properties loaded from the properties file for default provider
@@ -195,7 +188,7 @@ public final class JDK13Services {
     private static synchronized Properties getProperties() {
         if (properties == null) {
             properties = new Properties();
-            JSSecurityManager.loadProperties(properties, PROPERTIES_FILENAME);
+            JSSecurityManager.loadProperties(properties);
         }
         return properties;
     }
