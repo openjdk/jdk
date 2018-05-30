@@ -1870,6 +1870,10 @@ vmTestbase_vm_heapdump_quick = \
   vmTestbase/heapdump/JMapHeapCore/TestDescription.java \
   vmTestbase/heapdump/JMapMetaspace/TestDescription.java
 
+# Tests for attach-on-demand implementation
+vmTestbase_nsk_aod = \
+  vmTestbase/nsk/aod
+
 # JDB tests
 vmTestbase_nsk_jdb = \
   vmTestbase/nsk/jdb
