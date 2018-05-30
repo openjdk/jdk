@@ -50,3 +50,5 @@ $(NASGEN_RUN_FILE): $(BUILD_NASGEN) $($(MODULE))
 	    jdk.nashorn.internal.tools.nasgen.Main $(@D) \
 	    jdk.nashorn.internal.objects $(@D)
 	$(TOUCH) $@
+
+TARGETS += $(NASGEN_RUN_FILE)
