@@ -197,6 +197,7 @@ public class GSSContextImpl implements GSSContext {
         return (size == 0? null : bos.toByteArray());
     }
 
+    @Deprecated(since="11")
     public int initSecContext(InputStream inStream,
                               OutputStream outStream) throws GSSException {
 
@@ -305,6 +306,7 @@ public class GSSContextImpl implements GSSContext {
         return (out.length == 0) ? null : out;
     }
 
+    @Deprecated(since="11")
     public void acceptSecContext(InputStream inStream,
                                  OutputStream outStream) throws GSSException {
 
@@ -405,6 +407,7 @@ public class GSSContextImpl implements GSSContext {
                                    "No mechanism context yet!");
     }
 
+    @Deprecated(since="11")
     public void wrap(InputStream inStream, OutputStream outStream,
                      MessageProp msgProp) throws GSSException {
         if (mechCtxt != null)
@@ -423,6 +426,7 @@ public class GSSContextImpl implements GSSContext {
                                   "No mechanism context yet!");
     }
 
+    @Deprecated(since="11")
     public void unwrap(InputStream inStream, OutputStream outStream,
                        MessageProp msgProp) throws GSSException {
         if (mechCtxt != null)
@@ -441,6 +445,7 @@ public class GSSContextImpl implements GSSContext {
                                   "No mechanism context yet!");
     }
 
+    @Deprecated(since="11")
     public void getMIC(InputStream inStream, OutputStream outStream,
                        MessageProp msgProp) throws GSSException {
         if (mechCtxt != null)
@@ -461,6 +466,7 @@ public class GSSContextImpl implements GSSContext {
                                   "No mechanism context yet!");
     }
 
+    @Deprecated(since="11")
     public void verifyMIC(InputStream tokStream, InputStream msgStream,
                           MessageProp msgProp) throws GSSException {
         if (mechCtxt != null)
