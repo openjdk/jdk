@@ -130,7 +130,7 @@ bool ArrayKlass::compute_is_subtype_of(Klass* k) {
 
 objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   if (length < 0) {
-    THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
+    THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
   }
   if (length > arrayOopDesc::max_array_length(T_ARRAY)) {
     report_java_out_of_memory("Requested array size exceeds VM limit");
