@@ -116,4 +116,20 @@ public interface Predicate<T> {
                 ? Objects::isNull
                 : object -> targetRef.equals(object);
     }
+
+    /**
+     * Returns a predicate that is the negation of the supplied predicate.
+     *
+     * @param <T>     the type of arguments to the specified predicate
+     * @param target  predicate to negate
+     *
+     * @return a predicate that negates the results of the supplied
+     *         predicate
+     *
+     * @since 11
+     */
+    @SuppressWarnings("unchecked")
+    static <T> Predicate<T> not(Predicate<? super T> target) {
+        return (Predicate<T>)target.negate();
+    }
 }
