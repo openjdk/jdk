@@ -93,7 +93,7 @@ _hb_debug_msg_va (const char *what,
   fprintf (stderr, "%-10s", what ? what : "");
 
   if (obj)
-    fprintf (stderr, "(%0*lx) ", (unsigned int) (2 * sizeof (void *)), (unsigned long) obj);
+    fprintf (stderr, "(%*p) ", (unsigned int) (2 * sizeof (void *)), obj);
   else
     fprintf (stderr, " %*s  ", (unsigned int) (2 * sizeof (void *)), "");
 
@@ -220,13 +220,15 @@ template <>
 {}
 
 template <int max_level, typename ret_t>
-struct hb_auto_trace_t {
+struct hb_auto_trace_t
+{
   explicit inline hb_auto_trace_t (unsigned int *plevel_,
                                    const char *what_,
                                    const void *obj_,
                                    const char *func,
                                    const char *message,
-                                   ...) : plevel (plevel_), what (what_), obj (obj_), returned (false)
+                                   ...) HB_PRINTF_FUNC(6, 7)
+                                   : plevel (plevel_), what (what_), obj (obj_), returned (false)
   {
     if (plevel) ++*plevel;
 
@@ -267,10 +269,20 @@ struct hb_auto_trace_t {
   bool returned;
 };
 template <typename ret_t> /* Make sure we don't use hb_auto_trace_t when not tracing. */
-struct hb_auto_trace_t<0, ret_t>;
+struct hb_auto_trace_t<0, ret_t>
+{
+  explicit inline hb_auto_trace_t (unsigned int *plevel_,
+                                   const char *what_,
+                                   const void *obj_,
+                                   const char *func,
+                                   const char *message,
+                                   ...) HB_PRINTF_FUNC(6, 7) {}
+
+  inline ret_t ret (ret_t v, unsigned int line HB_UNUSED = 0) { return v; }
+};
 
 /* For disabled tracing; optimize out everything.
- * https://github.com/behdad/harfbuzz/pull/605 */
+ * https://github.com/harfbuzz/harfbuzz/pull/605 */
 template <typename ret_t>
 struct hb_no_trace_t {
   inline ret_t ret (ret_t v, unsigned int line HB_UNUSED = 0) { return v; }
@@ -343,7 +355,7 @@ struct hb_no_trace_t {
 #define TRACE_CLOSURE(this) \
         hb_auto_trace_t<HB_DEBUG_CLOSURE, hb_void_t> trace \
         (&c->debug_depth, c->get_name (), this, HB_FUNC, \
-         "")
+         " ")
 #else
 #define TRACE_CLOSURE(this) hb_no_trace_t<hb_void_t> trace HB_UNUSED
 #endif
@@ -355,7 +367,7 @@ struct hb_no_trace_t {
 #define TRACE_COLLECT_GLYPHS(this) \
         hb_auto_trace_t<HB_DEBUG_COLLECT_GLYPHS, hb_void_t> trace \
         (&c->debug_depth, c->get_name (), this, HB_FUNC, \
-         "")
+         " ")
 #else
 #define TRACE_COLLECT_GLYPHS(this) hb_no_trace_t<hb_void_t> trace HB_UNUSED
 #endif
@@ -367,7 +379,7 @@ struct hb_no_trace_t {
 #define TRACE_SANITIZE(this) \
         hb_auto_trace_t<HB_DEBUG_SANITIZE, bool> trace \
         (&c->debug_depth, c->get_name (), this, HB_FUNC, \
-         "");
+         " ");
 #else
 #define TRACE_SANITIZE(this) hb_no_trace_t<bool> trace
 #endif
@@ -379,9 +391,21 @@ struct hb_no_trace_t {
 #define TRACE_SERIALIZE(this) \
         hb_auto_trace_t<HB_DEBUG_SERIALIZE, bool> trace \
         (&c->debug_depth, "SERIALIZE", c, HB_FUNC, \
-         "");
+         " ");
 #else
 #define TRACE_SERIALIZE(this) hb_no_trace_t<bool> trace
+#endif
+
+#ifndef HB_DEBUG_SUBSET
+#define HB_DEBUG_SUBSET (HB_DEBUG+0)
+#endif
+#if HB_DEBUG_SUBSET
+#define TRACE_SUBSET(this) \
+  hb_auto_trace_t<HB_DEBUG_SUBSET, bool> trace \
+  (&c->debug_depth, c->get_name (), this, HB_FUNC, \
+   " ");
+#else
+#define TRACE_SUBSET(this) hb_no_trace_t<bool> trace
 #endif
 
 #ifndef HB_DEBUG_WOULD_APPLY
@@ -403,6 +427,7 @@ struct hb_no_trace_t {
         HB_DEBUG_COLLECT_GLYPHS + \
         HB_DEBUG_SANITIZE + \
         HB_DEBUG_SERIALIZE + \
+  HB_DEBUG_SUBSET + \
         HB_DEBUG_WOULD_APPLY + \
         0)
 #endif

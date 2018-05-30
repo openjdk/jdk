@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012  Mozilla Foundation.
+ * Copyright © 2018  Google, Inc.
  *
  *  This is part of HarfBuzz, a text shaping library.
  *
@@ -21,44 +21,42 @@
  * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  *
- * Mozilla Author(s): Jonathan Kew
+ * Google Author(s): Garret Rieger, Roderick Sheeter
  */
 
-#ifndef HB_CORETEXT_H
-#define HB_CORETEXT_H
-
-#include "hb.h"
-
-#include <TargetConditionals.h>
-#if TARGET_OS_IPHONE
-#  include <CoreText/CoreText.h>
-#  include <CoreGraphics/CoreGraphics.h>
-#else
-#  include <ApplicationServices/ApplicationServices.h>
-#endif
-
-HB_BEGIN_DECLS
+#ifndef HB_SUBSET_PRIVATE_HH
+#define HB_SUBSET_PRIVATE_HH
 
 
-#define HB_CORETEXT_TAG_MORT HB_TAG('m','o','r','t')
-#define HB_CORETEXT_TAG_MORX HB_TAG('m','o','r','x')
-#define HB_CORETEXT_TAG_KERX HB_TAG('k','e','r','x')
+#include "hb-private.hh"
 
+#include "hb-subset.h"
 
-HB_EXTERN hb_face_t *
-hb_coretext_face_create (CGFontRef cg_font);
+#include "hb-font-private.hh"
 
-HB_EXTERN hb_font_t *
-hb_coretext_font_create (CTFontRef ct_font);
+typedef struct hb_subset_face_data_t hb_subset_face_data_t;
 
+struct hb_subset_input_t {
+  hb_object_header_t header;
+  ASSERT_POD ();
 
-HB_EXTERN CGFontRef
-hb_coretext_face_get_cg_font (hb_face_t *face);
+  hb_set_t *unicodes;
+  hb_set_t *glyphs;
 
-HB_EXTERN CTFontRef
-hb_coretext_font_get_ct_font (hb_font_t *font);
+  hb_bool_t drop_hints;
+  /* TODO
+   *
+   * features
+   * lookups
+   * nameIDs
+   * ...
+   */
+};
 
+HB_INTERNAL hb_face_t *
+hb_subset_face_create (void);
 
-HB_END_DECLS
+HB_INTERNAL hb_bool_t
+hb_subset_face_add_table (hb_face_t *face, hb_tag_t tag, hb_blob_t *blob);
 
-#endif /* HB_CORETEXT_H */
+#endif /* HB_SUBSET_PRIVATE_HH */

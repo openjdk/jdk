@@ -128,6 +128,8 @@ struct hb_font_t {
   inline hb_position_t em_scale_y (int16_t v) { return em_scale (v, y_scale); }
   inline hb_position_t em_scalef_x (float v) { return em_scalef (v, this->x_scale); }
   inline hb_position_t em_scalef_y (float v) { return em_scalef (v, this->y_scale); }
+  inline float em_fscale_x (int16_t v) { return em_fscale (v, x_scale); }
+  inline float em_fscale_y (int16_t v) { return em_fscale (v, y_scale); }
   inline hb_position_t em_scale_dir (int16_t v, hb_direction_t direction)
   { return em_scale (v, dir_scale (direction)); }
 
@@ -541,7 +543,11 @@ struct hb_font_t {
   }
   inline hb_position_t em_scalef (float v, int scale)
   {
-    return (hb_position_t) (v * scale / face->get_upem ());
+    return (hb_position_t) round (v * scale / face->get_upem ());
+  }
+  inline float em_fscale (int16_t v, int scale)
+  {
+    return (float) v * scale / face->get_upem ();
   }
 };
 

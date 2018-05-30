@@ -56,10 +56,10 @@ struct postV2Tail
     return_trace (glyphNameIndex.sanitize (c));
   }
 
-  ArrayOf<USHORT>glyphNameIndex;        /* This is not an offset, but is the
+  ArrayOf<HBUINT16>glyphNameIndex;      /* This is not an offset, but is the
                                          * ordinal number of the glyph in 'post'
                                          * string tables. */
-  BYTE          namesX[VAR];            /* Glyph names with length bytes [variable]
+  HBUINT8               namesX[VAR];            /* Glyph names with length bytes [variable]
                                          * (a Pascal string). */
 
   DEFINE_SIZE_ARRAY2 (2, glyphNameIndex, namesX);
@@ -84,8 +84,12 @@ struct post
 
   struct accelerator_t
   {
-    inline void init (const post *table, unsigned int post_len)
+    inline void init (hb_face_t *face)
     {
+      blob = Sanitizer<post>().sanitize (face->reference_table (HB_OT_TAG_post));
+      const post *table = Sanitizer<post>::lock_instance (blob);
+      unsigned int table_length = hb_blob_get_length (blob);
+
       version = table->version.to_int ();
       index_to_offset.init ();
       if (version != 0x00020000)
@@ -96,7 +100,7 @@ struct post
       glyphNameIndex = &v2.glyphNameIndex;
       pool = &StructAfter<uint8_t> (v2.glyphNameIndex);
 
-      const uint8_t *end = (uint8_t *) table + post_len;
+      const uint8_t *end = (uint8_t *) table + table_length;
       for (const uint8_t *data = pool; data < end && data + *data <= end; data += 1 + *data)
       {
         uint32_t *offset = index_to_offset.push ();
@@ -227,8 +231,10 @@ struct post
       return hb_string_t ((const char *) data, name_length);
     }
 
+    private:
+    hb_blob_t *blob;
     uint32_t version;
-    const ArrayOf<USHORT> *glyphNameIndex;
+    const ArrayOf<HBUINT16> *glyphNameIndex;
     hb_prealloced_array_t<uint32_t, 1> index_to_offset;
     const uint8_t *pool;
     mutable uint16_t *gids_sorted_by_name;
@@ -255,16 +261,16 @@ struct post
                                          * from the value of this field. */
   FWORD         underlineThickness;     /* Suggested values for the underline
                                            thickness. */
-  ULONG         isFixedPitch;           /* Set to 0 if the font is proportionally
+  HBUINT32      isFixedPitch;           /* Set to 0 if the font is proportionally
                                          * spaced, non-zero if the font is not
                                          * proportionally spaced (i.e. monospaced). */
-  ULONG         minMemType42;           /* Minimum memory usage when an OpenType font
+  HBUINT32      minMemType42;           /* Minimum memory usage when an OpenType font
                                          * is downloaded. */
-  ULONG         maxMemType42;           /* Maximum memory usage when an OpenType font
+  HBUINT32      maxMemType42;           /* Maximum memory usage when an OpenType font
                                          * is downloaded. */
-  ULONG         minMemType1;            /* Minimum memory usage when an OpenType font
+  HBUINT32      minMemType1;            /* Minimum memory usage when an OpenType font
                                          * is downloaded as a Type 1 font. */
-  ULONG         maxMemType1;            /* Maximum memory usage when an OpenType font
+  HBUINT32      maxMemType1;            /* Maximum memory usage when an OpenType font
                                          * is downloaded as a Type 1 font. */
 /*postV2Tail    v2[VAR];*/
   DEFINE_SIZE_STATIC (32);
