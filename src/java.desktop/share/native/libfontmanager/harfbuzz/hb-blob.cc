@@ -26,7 +26,7 @@
 
 /* http://www.oracle.com/technetwork/articles/servers-storage-dev/standardheaderfiles-453865.html */
 #ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 199309L
+#define _POSIX_C_SOURCE 200809L
 #endif
 
 #include "hb-private.hh"
@@ -171,6 +171,31 @@ hb_blob_create_sub_blob (hb_blob_t    *parent,
 }
 
 /**
+ * hb_blob_copy_writable_or_fail:
+ * @blob: A blob.
+ *
+ * Makes a writable copy of @blob.
+ *
+ * Return value: New blob, or nullptr if allocation failed.
+ *
+ * Since: 1.8.0
+ **/
+hb_blob_t *
+hb_blob_copy_writable_or_fail (hb_blob_t *blob)
+{
+  blob = hb_blob_create (blob->data,
+                         blob->length,
+                         HB_MEMORY_MODE_DUPLICATE,
+                         nullptr,
+                         nullptr);
+
+  if (unlikely (blob == hb_blob_get_empty ()))
+    blob = nullptr;
+
+  return blob;
+}
+
+/**
  * hb_blob_get_empty:
  *
  * Returns the singleton empty blob.
@@ -222,7 +247,7 @@ hb_blob_reference (hb_blob_t *blob)
  * hb_blob_destroy: (skip)
  * @blob: a blob.
  *
- * Descreases the reference count on @blob, and if it reaches zero, destroys
+ * Decreases the reference count on @blob, and if it reaches zero, destroys
  * @blob, freeing all memory, possibly calling the destroy-callback the blob
  * was created for if it has not been called already.
  *

@@ -41,7 +41,7 @@ namespace OT {
  * Attachment List Table
  */
 
-typedef ArrayOf<USHORT> AttachPoint;    /* Array of contour point indices--in
+typedef ArrayOf<HBUINT16> AttachPoint;  /* Array of contour point indices--in
                                          * increasing numerical order */
 
 struct AttachList
@@ -62,7 +62,7 @@ struct AttachList
     const AttachPoint &points = this+attachPoint[index];
 
     if (point_count) {
-      const USHORT *array = points.sub_array (start_offset, point_count);
+      const HBUINT16 *array = points.sub_array (start_offset, point_count);
       unsigned int count = *point_count;
       for (unsigned int i = 0; i < count; i++)
         point_array[i] = array[i];
@@ -109,8 +109,8 @@ struct CaretValueFormat1
   }
 
   protected:
-  USHORT        caretValueFormat;       /* Format identifier--format = 1 */
-  SHORT         coordinate;             /* X or Y value, in design units */
+  HBUINT16      caretValueFormat;       /* Format identifier--format = 1 */
+  FWORD         coordinate;             /* X or Y value, in design units */
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -136,8 +136,8 @@ struct CaretValueFormat2
   }
 
   protected:
-  USHORT        caretValueFormat;       /* Format identifier--format = 2 */
-  USHORT        caretValuePoint;        /* Contour point index on glyph */
+  HBUINT16      caretValueFormat;       /* Format identifier--format = 2 */
+  HBUINT16      caretValuePoint;        /* Contour point index on glyph */
   public:
   DEFINE_SIZE_STATIC (4);
 };
@@ -160,8 +160,8 @@ struct CaretValueFormat3
   }
 
   protected:
-  USHORT        caretValueFormat;       /* Format identifier--format = 3 */
-  SHORT         coordinate;             /* X or Y value, in design units */
+  HBUINT16      caretValueFormat;       /* Format identifier--format = 3 */
+  FWORD         coordinate;             /* X or Y value, in design units */
   OffsetTo<Device>
                 deviceTable;            /* Offset to Device table for X or Y
                                          * value--from beginning of CaretValue
@@ -199,7 +199,7 @@ struct CaretValue
 
   protected:
   union {
-  USHORT                format;         /* Format identifier */
+  HBUINT16              format;         /* Format identifier */
   CaretValueFormat1     format1;
   CaretValueFormat2     format2;
   CaretValueFormat3     format3;
@@ -294,7 +294,7 @@ struct MarkGlyphSetsFormat1
   }
 
   protected:
-  USHORT        format;                 /* Format identifier--format = 1 */
+  HBUINT16      format;                 /* Format identifier--format = 1 */
   ArrayOf<LOffsetTo<Coverage> >
                 coverage;               /* Array of long offsets to mark set
                                          * coverage tables */
@@ -324,7 +324,7 @@ struct MarkGlyphSets
 
   protected:
   union {
-  USHORT                format;         /* Format identifier */
+  HBUINT16              format;         /* Format identifier */
   MarkGlyphSetsFormat1  format1;
   } u;
   public:

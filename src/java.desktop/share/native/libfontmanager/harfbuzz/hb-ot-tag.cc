@@ -920,7 +920,7 @@ hb_ot_tag_from_language (hb_language_t language)
     char tag[4];
     int i;
     s += 6;
-    for (i = 0; i < 4 && ISALPHA (s[i]); i++)
+    for (i = 0; i < 4 && ISALNUM (s[i]); i++)
       tag[i] = TOUPPER (s[i]);
     if (i) {
       for (; i < 4; i++)

@@ -84,28 +84,28 @@ struct hb_ot_map_t
   inline hb_mask_t get_global_mask (void) const { return global_mask; }
 
   inline hb_mask_t get_mask (hb_tag_t feature_tag, unsigned int *shift = nullptr) const {
-    const feature_map_t *map = features.bsearch (&feature_tag);
+    const feature_map_t *map = features.bsearch (feature_tag);
     if (shift) *shift = map ? map->shift : 0;
     return map ? map->mask : 0;
   }
 
   inline bool needs_fallback (hb_tag_t feature_tag) const {
-    const feature_map_t *map = features.bsearch (&feature_tag);
+    const feature_map_t *map = features.bsearch (feature_tag);
     return map ? map->needs_fallback : false;
   }
 
   inline hb_mask_t get_1_mask (hb_tag_t feature_tag) const {
-    const feature_map_t *map = features.bsearch (&feature_tag);
+    const feature_map_t *map = features.bsearch (feature_tag);
     return map ? map->_1_mask : 0;
   }
 
   inline unsigned int get_feature_index (unsigned int table_index, hb_tag_t feature_tag) const {
-    const feature_map_t *map = features.bsearch (&feature_tag);
+    const feature_map_t *map = features.bsearch (feature_tag);
     return map ? map->index[table_index] : HB_OT_LAYOUT_NO_FEATURE_INDEX;
   }
 
   inline unsigned int get_feature_stage (unsigned int table_index, hb_tag_t feature_tag) const {
-    const feature_map_t *map = features.bsearch (&feature_tag);
+    const feature_map_t *map = features.bsearch (feature_tag);
     return map ? map->stage[table_index] : (unsigned int) -1;
   }
 
@@ -198,7 +198,6 @@ struct hb_ot_map_builder_t
   private:
 
   HB_INTERNAL void add_lookups (hb_ot_map_t  &m,
-                                hb_face_t    *face,
                                 unsigned int  table_index,
                                 unsigned int  feature_index,
                                 unsigned int  variations_index,

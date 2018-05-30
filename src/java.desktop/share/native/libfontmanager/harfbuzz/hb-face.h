@@ -71,7 +71,6 @@ hb_face_set_user_data (hb_face_t          *face,
                        hb_destroy_func_t   destroy,
                        hb_bool_t           replace);
 
-
 HB_EXTERN void *
 hb_face_get_user_data (hb_face_t          *face,
                        hb_user_data_key_t *key);

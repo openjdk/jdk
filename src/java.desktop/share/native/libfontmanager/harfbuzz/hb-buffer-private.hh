@@ -35,14 +35,24 @@
 #include "hb-unicode-private.hh"
 
 
-#ifndef HB_BUFFER_MAX_EXPANSION_FACTOR
-#define HB_BUFFER_MAX_EXPANSION_FACTOR 32
+#ifndef HB_BUFFER_MAX_LEN_FACTOR
+#define HB_BUFFER_MAX_LEN_FACTOR 32
 #endif
 #ifndef HB_BUFFER_MAX_LEN_MIN
 #define HB_BUFFER_MAX_LEN_MIN 8192
 #endif
 #ifndef HB_BUFFER_MAX_LEN_DEFAULT
 #define HB_BUFFER_MAX_LEN_DEFAULT 0x3FFFFFFF /* Shaping more than a billion chars? Let us know! */
+#endif
+
+#ifndef HB_BUFFER_MAX_OPS_FACTOR
+#define HB_BUFFER_MAX_OPS_FACTOR 64
+#endif
+#ifndef HB_BUFFER_MAX_OPS_MIN
+#define HB_BUFFER_MAX_OPS_MIN 1024
+#endif
+#ifndef HB_BUFFER_MAX_OPS_DEFAULT
+#define HB_BUFFER_MAX_OPS_DEFAULT 0x1FFFFFFF /* Shaping more than a billion operations? Let us know! */
 #endif
 
 static_assert ((sizeof (hb_glyph_info_t) == 20), "");
@@ -59,6 +69,7 @@ enum hb_buffer_scratch_flags_t {
   HB_BUFFER_SCRATCH_FLAG_HAS_SPACE_FALLBACK             = 0x00000004u,
   HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT            = 0x00000008u,
   HB_BUFFER_SCRATCH_FLAG_HAS_UNSAFE_TO_BREAK            = 0x00000010u,
+  HB_BUFFER_SCRATCH_FLAG_HAS_CGJ                        = 0x00000020u,
 
   /* Reserved for complex shapers' internal use. */
   HB_BUFFER_SCRATCH_FLAG_COMPLEX0                       = 0x01000000u,
@@ -82,8 +93,9 @@ struct hb_buffer_t {
   hb_buffer_flags_t flags; /* BOT / EOT / etc. */
   hb_buffer_cluster_level_t cluster_level;
   hb_codepoint_t replacement; /* U+FFFD or something else. */
-  hb_buffer_scratch_flags_t scratch_flags; /* Have space-flallback, etc. */
+  hb_buffer_scratch_flags_t scratch_flags; /* Have space-fallback, etc. */
   unsigned int max_len; /* Maximum allowed len. */
+  int max_ops; /* Maximum allowed operations. */
 
   /* Buffer contents */
   hb_buffer_content_type_t content_type;
@@ -101,17 +113,6 @@ struct hb_buffer_t {
   hb_glyph_info_t     *info;
   hb_glyph_info_t     *out_info;
   hb_glyph_position_t *pos;
-
-  inline hb_glyph_info_t &cur (unsigned int i = 0) { return info[idx + i]; }
-  inline hb_glyph_info_t cur (unsigned int i = 0) const { return info[idx + i]; }
-
-  inline hb_glyph_position_t &cur_pos (unsigned int i = 0) { return pos[idx + i]; }
-  inline hb_glyph_position_t cur_pos (unsigned int i = 0) const { return pos[idx + i]; }
-
-  inline hb_glyph_info_t &prev (void) { return out_info[out_len ? out_len - 1 : 0]; }
-  inline hb_glyph_info_t prev (void) const { return out_info[out_len ? out_len - 1 : 0]; }
-
-  inline bool has_separate_output (void) const { return info != out_info; }
 
   unsigned int serial;
 
@@ -132,6 +133,10 @@ struct hb_buffer_t {
 #ifndef HB_NDEBUG
   uint8_t allocated_var_bits;
 #endif
+
+
+  /* Methods */
+
   inline void allocate_var (unsigned int start, unsigned int count)
   {
 #ifndef HB_NDEBUG
@@ -168,8 +173,17 @@ struct hb_buffer_t {
 #endif
   }
 
+  inline hb_glyph_info_t &cur (unsigned int i = 0) { return info[idx + i]; }
+  inline hb_glyph_info_t cur (unsigned int i = 0) const { return info[idx + i]; }
 
-  /* Methods */
+  inline hb_glyph_position_t &cur_pos (unsigned int i = 0) { return pos[idx + i]; }
+  inline hb_glyph_position_t cur_pos (unsigned int i = 0) const { return pos[idx + i]; }
+
+  inline hb_glyph_info_t &prev (void) { return out_info[out_len ? out_len - 1 : 0]; }
+  inline hb_glyph_info_t prev (void) const { return out_info[out_len ? out_len - 1 : 0]; }
+
+  inline bool has_separate_output (void) const { return info != out_info; }
+
 
   HB_INTERNAL void reset (void);
   HB_INTERNAL void clear (void);
@@ -293,45 +307,44 @@ struct hb_buffer_t {
   HB_INTERNAL bool message_impl (hb_font_t *font, const char *fmt, va_list ap) HB_PRINTF_FUNC(3, 0);
 
   static inline void
-  set_cluster (hb_glyph_info_t &info, unsigned int cluster, unsigned int mask = 0)
+  set_cluster (hb_glyph_info_t &inf, unsigned int cluster, unsigned int mask = 0)
   {
-    if (info.cluster != cluster)
+    if (inf.cluster != cluster)
     {
       if (mask & HB_GLYPH_FLAG_UNSAFE_TO_BREAK)
-        info.mask |= HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
+        inf.mask |= HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
       else
-        info.mask &= ~HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
+        inf.mask &= ~HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
     }
-    info.cluster = cluster;
+    inf.cluster = cluster;
   }
 
   inline int
-  _unsafe_to_break_find_min_cluster (const hb_glyph_info_t *info,
+  _unsafe_to_break_find_min_cluster (const hb_glyph_info_t *infos,
                                      unsigned int start, unsigned int end,
                                      unsigned int cluster) const
   {
     for (unsigned int i = start; i < end; i++)
-      cluster = MIN<unsigned int> (cluster, info[i].cluster);
+      cluster = MIN<unsigned int> (cluster, infos[i].cluster);
     return cluster;
   }
   inline void
-  _unsafe_to_break_set_mask (hb_glyph_info_t *info,
+  _unsafe_to_break_set_mask (hb_glyph_info_t *infos,
                              unsigned int start, unsigned int end,
                              unsigned int cluster)
   {
     for (unsigned int i = start; i < end; i++)
-      if (cluster != info[i].cluster)
+      if (cluster != infos[i].cluster)
       {
         scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_UNSAFE_TO_BREAK;
-        info[i].mask |= HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
+        infos[i].mask |= HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
       }
   }
 
   inline void
   unsafe_to_break_all (void)
   {
-    for (unsigned int i = 0; i < len; i++)
-      info[i].mask |= HB_GLYPH_FLAG_UNSAFE_TO_BREAK;
+    unsafe_to_break_impl (0, len);
   }
   inline void
   safe_to_break_all (void)

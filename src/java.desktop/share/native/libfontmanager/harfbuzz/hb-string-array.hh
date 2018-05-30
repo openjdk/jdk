@@ -48,7 +48,7 @@ static const union HB_STRING_ARRAY_TYPE_NAME {
 #include HB_STRING_ARRAY_LIST
 #undef _S
   } st;
-  char str[1];
+  char str[VAR];
 }
 HB_STRING_ARRAY_POOL_NAME =
 {
