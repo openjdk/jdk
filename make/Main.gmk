@@ -98,13 +98,10 @@ ALL_TARGETS += buildtools-langtools interim-langtools \
 ################################################################################
 # Special targets for certain modules
 
-unpack-sec:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UnpackSecurity.gmk)
-
 generate-exported-symbols:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildStatic.gmk)
 
-ALL_TARGETS += unpack-sec generate-exported-symbols
+ALL_TARGETS += generate-exported-symbols
 
 ################################################################################
 # Gensrc targets, generating source before java compilation can be done
@@ -699,9 +696,6 @@ else
   # For jdk.internal.vm.compiler, the gensrc step is generating a module-info.java.extra
   # file to be processed by the gensrc-moduleinfo target.
   jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-src
-
-  # Explicitly add dependencies for special targets
-  java.base-java: unpack-sec
 
   jdk.jdeps-gendata: java rmic
 
