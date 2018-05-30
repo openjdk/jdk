@@ -851,8 +851,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
     BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c
 
-    # Disable warning until JDK-8203802 is fixed
-    BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libtimers += -wd4477
 else
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libbootclssearch_agent += -lpthread
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libsystemclssearch_agent += -lpthread
