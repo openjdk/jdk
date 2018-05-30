@@ -108,6 +108,9 @@ class Exceptions {
   static volatile int _out_of_memory_error_java_heap_errors;
   static volatile int _out_of_memory_error_metaspace_errors;
   static volatile int _out_of_memory_error_class_metaspace_errors;
+
+  // Count linkage errors
+  static volatile int _linkage_errors;
  public:
   // this enum is defined to indicate whether it is safe to
   // ignore the encoding scheme of the original message string.
