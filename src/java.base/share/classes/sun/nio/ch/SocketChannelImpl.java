@@ -54,6 +54,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
+import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
 
 /**
  * An implementation of SocketChannels
@@ -280,7 +281,7 @@ class SocketChannelImpl
             // additional options required by socket adaptor
             set.add(StandardSocketOptions.IP_TOS);
             set.add(ExtendedSocketOption.SO_OOBINLINE);
-            set.addAll(ExtendedSocketOptions.getInstance().options());
+            set.addAll(ExtendedSocketOptions.options(SOCK_STREAM));
             return Collections.unmodifiableSet(set);
         }
     }

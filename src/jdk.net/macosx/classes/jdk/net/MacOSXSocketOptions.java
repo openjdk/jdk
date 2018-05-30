@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,24 +29,9 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
 
-class LinuxSocketOptions extends PlatformSocketOptions {
+class MacOSXSocketOptions extends PlatformSocketOptions {
 
-    public LinuxSocketOptions() {
-    }
-
-    @Override
-    void setQuickAck(int fd, boolean on) throws SocketException {
-        setQuickAck0(fd, on);
-    }
-
-    @Override
-    boolean getQuickAck(int fd) throws SocketException {
-        return getQuickAck0(fd);
-    }
-
-    @Override
-    public boolean quickAckSupported() {
-        return quickAckSupported0();
+    public MacOSXSocketOptions() {
     }
 
     @Override
@@ -90,10 +75,7 @@ class LinuxSocketOptions extends PlatformSocketOptions {
     private static native int getTcpkeepAliveProbes0(int fd) throws SocketException;
     private static native int getTcpKeepAliveTime0(int fd) throws SocketException;
     private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
-    private static native void setQuickAck0(int fd, boolean on) throws SocketException;
-    private static native boolean getQuickAck0(int fd) throws SocketException;
     private static native boolean keepAliveOptionsSupported0();
-    private static native boolean quickAckSupported0();
     static {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             System.loadLibrary("extnet");
