@@ -22,7 +22,8 @@
  *
  */
 #include "precompiled.hpp"
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderData.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "memory/metaspace/printCLDMetaspaceInfoClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepoint.hpp"
@@ -63,17 +64,44 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
 
     _out->print(UINTX_FORMAT_W(4) ": ", _num_loaders);
 
-    if (cld->is_anonymous()) {
-      _out->print("ClassLoaderData " PTR_FORMAT " for anonymous class", p2i(cld));
+    // Print "CLD for [<loader name>,] instance of <loader class name>"
+    // or    "CLD for <anonymous class>, loaded by [<loader name>,] instance of <loader class name>"
+
+    ResourceMark rm;
+    const char* name = NULL;
+    const char* class_name = NULL;
+
+    // Note: this should also work if unloading:
+    Klass* k = cld->class_loader_klass();
+    if (k != NULL) {
+      class_name = k->external_name();
+      Symbol* s = cld->class_loader_name();
+      if (s != NULL) {
+        name = s->as_C_string();
+      }
     } else {
-      ResourceMark rm;
-      _out->print("ClassLoaderData " PTR_FORMAT " for %s", p2i(cld), cld->loader_name());
+      name = "<bootstrap>";
     }
 
+    // Print
+    _out->print("CLD " PTR_FORMAT, p2i(cld));
     if (cld->is_unloading()) {
       _out->print(" (unloading)");
     }
+    _out->print(":");
+    if (cld->is_anonymous()) {
+      _out->print(" <anonymous class>, loaded by");
+    }
+    if (name != NULL) {
+      _out->print(" \"%s\"", name);
+    }
+    if (class_name != NULL) {
+      _out->print(" instance of %s", class_name);
+    }
 
+    _out->cr();
+
+    // Print statistics
     this_cld_stat.print_on(_out, _scale, _break_down_by_chunktype);
     _out->cr();
 
