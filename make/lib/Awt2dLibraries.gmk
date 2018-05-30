@@ -269,6 +269,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
   ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
     LIBAWT_XAWT_DIRS := \
+        $(wildcard $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS)/native/libawt_xawt) \
         $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/libawt_xawt \
         $(TOPDIR)/src/java.desktop/share/native/common/awt/debug \
         $(TOPDIR)/src/java.desktop/share/native/common/awt/utility \
@@ -329,7 +330,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
       BUILD_LIBAWT_XAWT_awt_Font.c_CFLAGS := -w
       # initializing a declared 'extern'
       BUILD_LIBAWT_XAWT_debug_mem.c_CFLAGS := -w
-   endif
+    endif
 
     $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_XAWT, \
         NAME := awt_xawt, \
