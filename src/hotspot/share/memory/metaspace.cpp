@@ -601,11 +601,12 @@ void MetaspaceUtils::print_basic_report(outputStream* out, size_t scale) {
 void MetaspaceUtils::print_report(outputStream* out, size_t scale, int flags) {
 
   const bool print_loaders = (flags & rf_show_loaders) > 0;
+  const bool print_classes = (flags & rf_show_classes) > 0;
   const bool print_by_chunktype = (flags & rf_break_down_by_chunktype) > 0;
   const bool print_by_spacetype = (flags & rf_break_down_by_spacetype) > 0;
 
   // Some report options require walking the class loader data graph.
-  PrintCLDMetaspaceInfoClosure cl(out, scale, print_loaders, print_by_chunktype);
+  PrintCLDMetaspaceInfoClosure cl(out, scale, print_loaders, print_classes, print_by_chunktype);
   if (print_loaders) {
     out->cr();
     out->print_cr("Usage per loader:");

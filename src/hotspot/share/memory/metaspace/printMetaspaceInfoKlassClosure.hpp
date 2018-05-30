@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, SAP and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +23,33 @@
  *
  */
 
-#ifndef SHARE_MEMORY_METASPACE_PRINTCLDMETASPACEINFOCLOSURE_HPP
-#define SHARE_MEMORY_METASPACE_PRINTCLDMETASPACEINFOCLOSURE_HPP
+#ifndef SHARE_MEMORY_METASPACE_PRINTMETASPACEINFOKLASSCLOSURE_HPP_
+#define SHARE_MEMORY_METASPACE_PRINTMETASPACEINFOKLASSCLOSURE_HPP_
 
 #include "memory/iterator.hpp"
-#include "memory/metaspace.hpp"
-#include "memory/metaspace/metaspaceStatistics.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
+class InstanceKlass;
 
 namespace metaspace {
 
-class PrintCLDMetaspaceInfoClosure : public CLDClosure {
+// Helper class for MetaspaceUtils::print_report()
+class PrintMetaspaceInfoKlassClosure : public KlassClosure {
 private:
   outputStream* const _out;
-  const size_t        _scale;
   const bool          _do_print;
-  const bool          _do_print_classes;
-  const bool          _break_down_by_chunktype;
 
 public:
+  uintx _num_classes;
+  uintx _num_instance_classes;
+  uintx _num_array_classes;
 
-  uintx                           _num_loaders;
-  uintx                           _num_loaders_without_metaspace;
-  uintx                           _num_loaders_unloading;
-  ClassLoaderMetaspaceStatistics  _stats_total;
+  PrintMetaspaceInfoKlassClosure(outputStream* out, bool do_print);
+  void do_klass(Klass* k);
 
-  uintx                           _num_loaders_by_spacetype [Metaspace::MetaspaceTypeCount];
-  ClassLoaderMetaspaceStatistics  _stats_by_spacetype [Metaspace::MetaspaceTypeCount];
-
-  PrintCLDMetaspaceInfoClosure(outputStream* out, size_t scale, bool do_print,
-      bool do_print_classes, bool break_down_by_chunktype);
-  void do_cld(ClassLoaderData* cld);
-
-};
+}; // end: PrintKlassInfoClosure
 
 } // namespace metaspace
 
-#endif /* SHARE_MEMORY_METASPACE_PRINTCLDMETASPACEINFOCLOSURE_HPP */
-
+#endif /* SHARE_MEMORY_METASPACE_PRINTMETASPACEINFOKLASSCLOSURE_HPP_ */
