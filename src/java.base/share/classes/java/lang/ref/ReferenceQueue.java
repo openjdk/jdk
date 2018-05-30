@@ -43,17 +43,17 @@ public class ReferenceQueue<T> {
      */
     public ReferenceQueue() { }
 
-    private static class Null<S> extends ReferenceQueue<S> {
-        boolean enqueue(Reference<? extends S> r) {
+    private static class Null extends ReferenceQueue<Object> {
+        boolean enqueue(Reference<?> r) {
             return false;
         }
     }
 
-    static ReferenceQueue<Object> NULL = new Null<>();
-    static ReferenceQueue<Object> ENQUEUED = new Null<>();
+    static final ReferenceQueue<Object> NULL = new Null();
+    static final ReferenceQueue<Object> ENQUEUED = new Null();
 
     private static class Lock { };
-    private Lock lock = new Lock();
+    private final Lock lock = new Lock();
     private volatile Reference<? extends T> head;
     private long queueLength = 0;
 
