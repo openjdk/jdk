@@ -22,45 +22,39 @@
  * questions.
  *
  */
+#include "precompiled.hpp"
 
-#ifndef SHARE_MEMORY_METASPACE_METASPACEDCMD_HPP
-#define SHARE_MEMORY_METASPACE_METASPACEDCMD_HPP
+#include "classfile/systemDictionary.hpp"
+#include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/constantPool.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klass.hpp"
+#include "utilities/constantTag.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
-#include "services/diagnosticCommand.hpp"
-
-class outputStream;
 
 namespace metaspace {
 
-class MetaspaceDCmd : public DCmdWithParser {
-  DCmdArgument<bool> _basic;
-  DCmdArgument<bool> _show_loaders;
-  DCmdArgument<bool> _by_spacetype;
-  DCmdArgument<bool> _by_chunktype;
-  DCmdArgument<bool> _show_vslist;
-  DCmdArgument<bool> _show_vsmap;
-  DCmdArgument<char*> _scale;
-  DCmdArgument<bool> _show_classes;
-public:
-  MetaspaceDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "VM.metaspace";
+PrintMetaspaceInfoKlassClosure::PrintMetaspaceInfoKlassClosure(outputStream* out, bool do_print)
+: _out(out), _do_print(do_print)
+, _num_classes(0), _num_instance_classes(0), _num_array_classes(0) {
+}
+
+void PrintMetaspaceInfoKlassClosure::do_klass(Klass* k) {
+  _num_classes ++;
+  if (k->is_instance_klass()) {
+    _num_instance_classes ++;
+  } else if (k->is_array_klass()) {
+    _num_array_classes ++;
   }
-  static const char* description() {
-    return "Prints the statistics for the metaspace";
+  if (_do_print) {
+    _out->cr_indent();
+    _out->print(UINTX_FORMAT_W(4) ": ", _num_classes);
+    ResourceMark rm;
+    _out->print("%s", k->external_name());
   }
-  static const char* impact() {
-      return "Medium: Depends on number of classes loaded.";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
-    return p;
-  }
-  static int num_arguments();
-  virtual void execute(DCmdSource source, TRAPS);
-};
+}
 
 } // namespace metaspace
-
-#endif /* SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP */
