@@ -341,6 +341,10 @@ jdk.jartool_ADD_JAVAC_FLAGS += -XDstringConcat=inline
 
 ################################################################################
 
+jdk.scripting.nashorn_COPY := .properties .js
+
+################################################################################
+
 jdk.scripting.nashorn.shell_COPY += .js .properties
 
 ################################################################################
@@ -638,6 +642,12 @@ ifneq ($(wildcard $(IMPORT_MODULES_CLASSES)/$(MODULE)), )
   # Add this dependency to avoid a race between compiling module-info.java and
   # importing the classes.
   $($(MODULE)_COMPILE_TARGET): $(JDK_OUTPUTDIR)/modules/$(MODULE)/_imported.marker
+endif
+
+################################################################################
+
+ifeq ($(MODULE), jdk.scripting.nashorn)
+  include CompileJavaModulesNashorn.gmk
 endif
 
 ################################################################################

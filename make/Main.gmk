@@ -186,7 +186,7 @@ $(foreach m, $(IMPORT_COPY_MODULES), $(eval $(call DeclareImportCopyRecipe,$m)))
 ALL_TARGETS += $(ALL_COPY_TARGETS)
 
 ################################################################################
-# Targets for compiling all java modules. Nashorn is treated separately.
+# Targets for compiling all java modules.
 JAVA_MODULES := $(ALL_MODULES)
 JAVA_TARGETS := $(addsuffix -java, $(JAVA_MODULES))
 
@@ -196,14 +196,7 @@ define DeclareCompileJavaRecipe
 	    -f CompileJavaModules.gmk MODULE=$1)
 endef
 
-$(foreach m, $(filter-out jdk.scripting.nashorn, $(JAVA_MODULES)), \
-    $(eval $(call DeclareCompileJavaRecipe,$m)))
-
-# Build nashorn. Needs to be compiled separately from the rest of the modules
-# due to nasgen.
-jdk.scripting.nashorn-java:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
-	    -f BuildNashorn.gmk compile)
+$(foreach m, $(JAVA_MODULES), $(eval $(call DeclareCompileJavaRecipe,$m)))
 
 ALL_TARGETS += $(JAVA_TARGETS)
 
