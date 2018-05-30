@@ -1609,6 +1609,7 @@ void CodeCache::print() {
 }
 
 void CodeCache::print_summary(outputStream* st, bool detailed) {
+  int full_count = 0;
   FOR_ALL_HEAPS(heap_iterator) {
     CodeHeap* heap = (*heap_iterator);
     size_t total = (heap->high_boundary() - heap->low_boundary());
@@ -1627,6 +1628,8 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
                    p2i(heap->low_boundary()),
                    p2i(heap->high()),
                    p2i(heap->high_boundary()));
+
+      full_count += get_codemem_full_count(heap->code_blob_type());
     }
   }
 
@@ -1638,6 +1641,10 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
                  "enabled" : Arguments::mode() == Arguments::_int ?
                  "disabled (interpreter mode)" :
                  "disabled (not enough contiguous free space left)");
+    st->print_cr("              stopped_count=%d, restarted_count=%d",
+                 CompileBroker::get_total_compiler_stopped_count(),
+                 CompileBroker::get_total_compiler_restarted_count());
+    st->print_cr(" full_count=%d", full_count);
   }
 }
 
