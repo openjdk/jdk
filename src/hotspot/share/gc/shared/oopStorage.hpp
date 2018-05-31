@@ -204,6 +204,19 @@ NOT_AIX( private: )
     void unlink(const Block& block);
   };
 
+  // RCU-inspired protection of access to _active_array.
+  class ProtectActive {
+    volatile uint _enter;
+    volatile uint _exit[2];
+
+  public:
+    ProtectActive();
+
+    uint read_enter();
+    void read_exit(uint enter_value);
+    void write_synchronize();
+  };
+
 private:
   const char* _name;
   ActiveArray* _active_array;
@@ -215,6 +228,9 @@ private:
 
   // Volatile for racy unlocked accesses.
   volatile size_t _allocation_count;
+
+  // Protection for _active_array.
+  mutable ProtectActive _protect_active;
 
   // mutable because this gets set even for const iteration.
   mutable bool _concurrent_iteration_active;
