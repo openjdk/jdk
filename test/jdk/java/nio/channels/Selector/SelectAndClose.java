@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,63 +22,68 @@
  */
 
 /* @test
- * @bug 5004077
+ * @bug 5004077 8203765
  * @summary Check blocking of select and close
  */
 
-import java.nio.channels.*;
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MonitorInfo;
+import java.lang.management.ThreadInfo;
+import java.nio.channels.Selector;
 
 public class SelectAndClose {
     static Selector selector;
     static volatile boolean awakened = false;
-    static volatile boolean closed = false;
+
+    private static boolean mightHoldLock(Thread t, Object lock) {
+        long tid = t.getId();
+        int hash = System.identityHashCode(lock);
+        ThreadInfo ti = ManagementFactory.getThreadMXBean().
+            getThreadInfo(new long[]{ tid} , true, false, 100)[0];
+        if (ti != null) {
+            for (MonitorInfo mi : ti.getLockedMonitors()) {
+                if (mi.getIdentityHashCode() == hash)
+                    return true;
+            }
+        }
+        return false;
+    }
 
     public static void main(String[] args) throws Exception {
         selector = Selector.open();
 
         // Create and start a selector in a separate thread.
-        final CountDownLatch selectLatch = new CountDownLatch(1);
-        new Thread(new Runnable() {
+        Thread selectThread = new Thread(new Runnable() {
                 public void run() {
                     try {
-                        selectLatch.countDown();
                         selector.select();
                         awakened = true;
                     } catch (IOException e) {
-                        System.err.println(e);
-                    }
-                }
-            }).start();
-
-        // Wait for above thread to get to select() before we call close.
-        selectLatch.await();
-        Thread.sleep(2000);
-
-        // Try to close. This should wakeup select.
-        Thread closeThread = new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        selector.close();
-                        closed = true;
-                    } catch (IOException e) {
-                        System.err.println(e);
+                        e.printStackTrace();
                     }
                 }
             });
-        closeThread.start();
+        selectThread.start();
 
-        // Wait for select() to be awakened, which should be done by close.
-        closeThread.join();
+        // Spin until the monitor of the selected-key set is likely held
+        // as selected operations are specified to synchronize on the
+        // selected-key set.
+        while (!mightHoldLock(selectThread, selector.selectedKeys())) {
+            Thread.sleep(50);
+        }
+
+        // Close the selector.
+        selector.close();
 
         if (!awakened)
             selector.wakeup();
 
-        // Correct result is true and true
-        if (!awakened)
-            throw new RuntimeException("Select did not wake up");
-        if (!closed)
-            throw new RuntimeException("Selector did not close");
+        // Wait for select() thread to finish.
+        selectThread.join();
+
+        if (!awakened) {
+            throw new RuntimeException("Select did not awaken!");
+        }
     }
 }
