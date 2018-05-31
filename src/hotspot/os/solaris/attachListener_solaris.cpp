@@ -213,16 +213,12 @@ static int check_credentials() {
     return -1; // unable to get them, deny
   }
 
-  // get our euid/eguid (probably could cache these)
-  uid_t euid = geteuid();
-  gid_t egid = getegid();
-
   // get euid/egid from ucred_free
   uid_t ucred_euid = ucred_geteuid(cred_info);
   gid_t ucred_egid = ucred_getegid(cred_info);
 
   // check that the effective uid/gid matches
-  if (ucred_euid == euid && ucred_egid == egid) {
+  if (os::Posix::matches_effective_uid_and_gid_or_root(ucred_euid, ucred_egid)) {
     ret =  0;  // allow
   }
 
@@ -664,8 +660,8 @@ bool AttachListener::is_init_trigger() {
   }
   if (ret == 0) {
     // simple check to avoid starting the attach mechanism when
-    // a bogus user creates the file
-    if (st.st_uid == geteuid()) {
+    // a bogus non-root user creates the file
+    if (os::Posix::matches_effective_uid_or_root(st.st_uid)) {
       init();
       log_trace(attach)("Attach triggered by %s", fn);
       return true;
