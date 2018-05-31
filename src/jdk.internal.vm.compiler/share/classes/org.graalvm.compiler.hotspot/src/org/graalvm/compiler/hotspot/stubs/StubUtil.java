@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 package org.graalvm.compiler.hotspot.stubs;
 
 import static jdk.vm.ci.meta.DeoptimizationReason.RuntimeConstraint;
-import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.clearPendingException;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.getAndClearObjectResult;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.loadHubIntrinsic;
@@ -271,5 +271,60 @@ public class StubUtil {
     @Fold
     static int hubOffset(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.hubOffset;
+    }
+
+    /**
+     * Print {@code number} as decimal string to {@code buffer}.
+     *
+     * @param buffer
+     * @param number
+     * @return A pointer pointing one byte right after the last printed digit in {@code buffer}.
+     */
+    public static Word printNumber(Word buffer, long number) {
+        long tmpNumber = number;
+        int offset;
+        if (tmpNumber <= 0) {
+            tmpNumber = -tmpNumber;
+            offset = 1;
+        } else {
+            offset = 0;
+        }
+        while (tmpNumber > 0) {
+            tmpNumber /= 10;
+            offset++;
+        }
+        tmpNumber = number < 0 ? -number : number;
+        Word ptr = buffer.add(offset);
+        do {
+            long digit = tmpNumber % 10;
+            tmpNumber /= 10;
+            ptr = ptr.subtract(1);
+            ptr.writeByte(0, (byte) ('0' + digit));
+        } while (tmpNumber > 0);
+
+        if (number < 0) {
+            ptr = ptr.subtract(1);
+            ptr.writeByte(0, (byte) '-');
+        }
+        return buffer.add(offset);
+    }
+
+    /**
+     * Copy {@code javaString} bytes to the memory location {@code ptr}.
+     *
+     * @param buffer
+     * @param javaString
+     * @return A pointer pointing one byte right after the last byte copied from {@code javaString}
+     *         to {@code ptr}
+     */
+    public static Word printString(Word buffer, String javaString) {
+        Word string = cstring(javaString);
+        int i = 0;
+        byte b;
+        while ((b = string.readByte(i)) != 0) {
+            buffer.writeByte(i, b);
+            i++;
+        }
+        return buffer.add(i);
     }
 }

@@ -65,6 +65,7 @@ import org.graalvm.compiler.nodes.BeginNode;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
+import org.graalvm.compiler.nodes.DeoptimizingGuard;
 import org.graalvm.compiler.nodes.EndNode;
 import org.graalvm.compiler.nodes.FixedGuardNode;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -520,6 +521,7 @@ public class InliningUtil extends ValueMergeUtil {
         return listener.getNodes();
     }
 
+    @SuppressWarnings("try")
     private static ValueNode finishInlining(Invoke invoke, StructuredGraph graph, FixedNode firstNode, List<ReturnNode> returnNodes, UnwindNode unwindNode, Assumptions inlinedAssumptions,
                     StructuredGraph inlineGraph) {
         FixedNode invokeNode = invoke.asNode();
@@ -548,15 +550,19 @@ public class InliningUtil extends ValueMergeUtil {
             // get rid of memory kill
             AbstractBeginNode begin = invokeWithException.next();
             if (begin instanceof KillingBeginNode) {
-                AbstractBeginNode newBegin = new BeginNode();
-                graph.addAfterFixed(begin, graph.add(newBegin));
-                begin.replaceAtUsages(newBegin);
-                graph.removeFixed(begin);
+                try (DebugCloseable position = begin.withNodeSourcePosition()) {
+                    AbstractBeginNode newBegin = new BeginNode();
+                    graph.addAfterFixed(begin, graph.add(newBegin));
+                    begin.replaceAtUsages(newBegin);
+                    graph.removeFixed(begin);
+                }
             }
         } else {
             if (unwindNode != null && unwindNode.isAlive()) {
-                DeoptimizeNode deoptimizeNode = addDeoptimizeNode(graph, DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler);
-                unwindNode.replaceAndDelete(deoptimizeNode);
+                try (DebugCloseable position = unwindNode.withNodeSourcePosition()) {
+                    DeoptimizeNode deoptimizeNode = addDeoptimizeNode(graph, DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler);
+                    unwindNode.replaceAndDelete(deoptimizeNode);
+                }
             }
         }
 
@@ -710,6 +716,10 @@ public class InliningUtil extends ValueMergeUtil {
                         posMap.put(pos, callerPos);
                     }
                     value.setNodeSourcePosition(callerPos);
+
+                    if (value instanceof DeoptimizingGuard) {
+                        ((DeoptimizingGuard) value).addCallerToNoDeoptSuccessorPosition(callerPos.getCaller());
+                    }
                 } else {
                     if (isSubstitution) {
                         /*
@@ -721,7 +731,7 @@ public class InliningUtil extends ValueMergeUtil {
                 }
             }
         }
-        assert invokeGraph.verifySourcePositions();
+        assert invokeGraph.verifySourcePositions(false);
     }
 
     public static void processMonitorId(FrameState stateAfter, MonitorIdNode monitorIdNode) {
@@ -871,6 +881,7 @@ public class InliningUtil extends ValueMergeUtil {
         return frameState.bci == BytecodeFrame.AFTER_EXCEPTION_BCI || (frameState.bci == BytecodeFrame.UNWIND_BCI && !frameState.getMethod().isSynchronized());
     }
 
+    @SuppressWarnings("try")
     public static FrameState handleMissingAfterExceptionFrameState(FrameState nonReplaceableFrameState, Invoke invoke, EconomicMap<Node, Node> replacements, boolean alwaysDuplicateStateAfter) {
         StructuredGraph graph = nonReplaceableFrameState.graph();
         NodeWorkList workList = graph.createNodeWorkList();
@@ -890,9 +901,11 @@ public class InliningUtil extends ValueMergeUtil {
                         AbstractMergeNode merge = (AbstractMergeNode) fixedStateSplit;
                         while (merge.isAlive()) {
                             AbstractEndNode end = merge.forwardEnds().first();
-                            DeoptimizeNode deoptimizeNode = addDeoptimizeNode(graph, DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler);
-                            end.replaceAtPredecessor(deoptimizeNode);
-                            GraphUtil.killCFG(end);
+                            try (DebugCloseable position = end.withNodeSourcePosition()) {
+                                DeoptimizeNode deoptimizeNode = addDeoptimizeNode(graph, DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler);
+                                end.replaceAtPredecessor(deoptimizeNode);
+                                GraphUtil.killCFG(end);
+                            }
                         }
                     } else if (fixedStateSplit instanceof ExceptionObjectNode) {
                         // The target invoke does not have an exception edge. This means that the
@@ -909,12 +922,14 @@ public class InliningUtil extends ValueMergeUtil {
                         }
                         handleAfterBciFrameState(newInvoke.stateAfter(), invoke, alwaysDuplicateStateAfter);
                     } else {
-                        FixedNode deoptimizeNode = addDeoptimizeNode(graph, DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler);
-                        if (fixedStateSplit instanceof AbstractBeginNode) {
-                            deoptimizeNode = BeginNode.begin(deoptimizeNode);
+                        try (DebugCloseable position = fixedStateSplit.withNodeSourcePosition()) {
+                            FixedNode deoptimizeNode = addDeoptimizeNode(graph, DeoptimizationAction.InvalidateRecompile, DeoptimizationReason.NotCompiledExceptionHandler);
+                            if (fixedStateSplit instanceof AbstractBeginNode) {
+                                deoptimizeNode = BeginNode.begin(deoptimizeNode);
+                            }
+                            fixedStateSplit.replaceAtPredecessor(deoptimizeNode);
+                            GraphUtil.killCFG(fixedStateSplit);
                         }
-                        fixedStateSplit.replaceAtPredecessor(deoptimizeNode);
-                        GraphUtil.killCFG(fixedStateSplit);
                     }
                 }
             }

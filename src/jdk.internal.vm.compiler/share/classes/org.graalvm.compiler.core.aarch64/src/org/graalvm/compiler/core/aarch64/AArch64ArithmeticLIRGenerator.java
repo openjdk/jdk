@@ -32,9 +32,9 @@ import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManip
 import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode.CLZ;
 import static org.graalvm.compiler.lir.aarch64.AArch64BitManipulationOp.BitManipulationOpCode.CTZ;
 
-import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.core.common.calc.FloatConvert;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.lir.ConstantValue;
@@ -491,4 +491,23 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         throw GraalError.unimplemented();
     }
 
+    @Override
+    public Value emitRound(Value value, RoundingMode mode) {
+        AArch64ArithmeticOp op;
+        switch (mode) {
+            case NEAREST:
+                op = AArch64ArithmeticOp.FRINTN;
+                break;
+            case UP:
+                op = AArch64ArithmeticOp.FRINTP;
+                break;
+            case DOWN:
+                op = AArch64ArithmeticOp.FRINTM;
+                break;
+            default:
+                throw GraalError.shouldNotReachHere();
+        }
+
+        return emitUnary(op, value);
+    }
 }

@@ -162,7 +162,12 @@ public class AArch64Move {
         @Override
         public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
             Register dst = asRegister(result);
-            masm.loadAddress(dst, (AArch64Address) crb.recordDataReferenceInCode(data), data.getAlignment());
+            if (crb.compilationResult.isImmutablePIC()) {
+                crb.recordDataReferenceInCode(data);
+                masm.addressOf(dst);
+            } else {
+                masm.loadAddress(dst, (AArch64Address) crb.recordDataReferenceInCode(data), data.getAlignment());
+            }
         }
     }
 
@@ -192,6 +197,7 @@ public class AArch64Move {
     public static class MembarOp extends AArch64LIRInstruction {
         public static final LIRInstructionClass<MembarOp> TYPE = LIRInstructionClass.create(MembarOp.class);
 
+        // For future use.
         @SuppressWarnings("unused") private final int barriers;
 
         public MembarOp(int barriers) {
@@ -200,14 +206,15 @@ public class AArch64Move {
         }
 
         @Override
-        public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
+        // The odd-looking @SuppressWarnings("all") is here because of
+        // a compiler bug which warns that crb is unused, and also
+        // warns that @SuppressWarnings("unused") is unnecessary.
+        public void emitCode(@SuppressWarnings("all") CompilationResultBuilder crb, AArch64MacroAssembler masm) {
             // As I understand it load acquire/store release have the same semantics as on IA64
             // and allow us to handle LoadStore, LoadLoad and StoreStore without an explicit
             // barrier.
             // But Graal support to figure out if a load/store is volatile is non-existant so for
-            // now
-            // just use
-            // memory barriers everywhere.
+            // now just use memory barriers everywhere.
             // if ((barrier & MemoryBarriers.STORE_LOAD) != 0) {
             masm.dmb(AArch64MacroAssembler.BarrierKind.ANY_ANY);
             // }
@@ -408,7 +415,7 @@ public class AArch64Move {
         }
     }
 
-    private static void reg2stack(CompilationResultBuilder crb, AArch64MacroAssembler masm, AllocatableValue result, AllocatableValue input) {
+    static void reg2stack(CompilationResultBuilder crb, AArch64MacroAssembler masm, AllocatableValue result, AllocatableValue input) {
         AArch64Address dest = loadStackSlotAddress(crb, masm, asStackSlot(result), Value.ILLEGAL);
         Register src = asRegister(input);
         // use the slot kind to define the operand size
@@ -421,7 +428,7 @@ public class AArch64Move {
         }
     }
 
-    private static void stack2reg(CompilationResultBuilder crb, AArch64MacroAssembler masm, AllocatableValue result, AllocatableValue input) {
+    static void stack2reg(CompilationResultBuilder crb, AArch64MacroAssembler masm, AllocatableValue result, AllocatableValue input) {
         AArch64Kind kind = (AArch64Kind) input.getPlatformKind();
         // use the slot kind to define the operand size
         final int size = kind.getSizeInBytes() * Byte.SIZE;
@@ -466,6 +473,12 @@ public class AArch64Move {
             case Float:
                 if (AArch64MacroAssembler.isFloatImmediate(input.asFloat())) {
                     masm.fmov(32, dst, input.asFloat());
+                } else if (crb.compilationResult.isImmutablePIC()) {
+                    try (ScratchRegister scr = masm.getScratchRegister()) {
+                        Register scratch = scr.getRegister();
+                        masm.mov(scratch, Float.floatToRawIntBits(input.asFloat()));
+                        masm.fmov(32, dst, scratch);
+                    }
                 } else {
                     masm.fldr(32, dst, (AArch64Address) crb.asFloatConstRef(input));
                 }
@@ -473,6 +486,12 @@ public class AArch64Move {
             case Double:
                 if (AArch64MacroAssembler.isDoubleImmediate(input.asDouble())) {
                     masm.fmov(64, dst, input.asDouble());
+                } else if (crb.compilationResult.isImmutablePIC()) {
+                    try (ScratchRegister scr = masm.getScratchRegister()) {
+                        Register scratch = scr.getRegister();
+                        masm.mov(scratch, Double.doubleToRawLongBits(input.asDouble()));
+                        masm.fmov(64, dst, scratch);
+                    }
                 } else {
                     masm.fldr(64, dst, (AArch64Address) crb.asDoubleConstRef(input));
                 }

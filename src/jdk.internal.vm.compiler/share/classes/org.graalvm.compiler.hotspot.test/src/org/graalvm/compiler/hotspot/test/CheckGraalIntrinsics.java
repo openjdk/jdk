@@ -422,6 +422,12 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "jdk/internal/util/ArraysSupport.vectorizedMismatch(Ljava/lang/Object;JLjava/lang/Object;JII)I");
         }
 
+        if (isJDK11OrHigher()) {
+            // Relevant for Java flight recorder
+            add(TO_BE_INVESTIGATED,
+                            "jdk/jfr/internal/JVM.getEventWriter()Ljava/lang/Object;");
+        }
+
         if (!getHostArchitectureName().equals("amd64")) {
             // Can we implement these on non-AMD64 platforms? C2 seems to.
             add(TO_BE_INVESTIGATED,
@@ -547,6 +553,10 @@ public class CheckGraalIntrinsics extends GraalTest {
 
     private static boolean isJDK10OrHigher() {
         return GraalServices.JAVA_SPECIFICATION_VERSION >= 10;
+    }
+
+    private static boolean isJDK11OrHigher() {
+        return GraalServices.JAVA_SPECIFICATION_VERSION >= 11;
     }
 
     private static String getHostArchitectureName() {

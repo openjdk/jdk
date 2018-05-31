@@ -26,6 +26,8 @@ import static org.graalvm.compiler.nodeinfo.InputType.Anchor;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
+import java.util.Objects;
+
 import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -49,8 +51,6 @@ import org.graalvm.compiler.nodes.type.StampTool;
 
 import jdk.vm.ci.meta.JavaTypeProfile;
 import jdk.vm.ci.meta.TriState;
-
-import java.util.Objects;
 
 /**
  * The {@code InstanceOfNode} represents an instanceof test.
@@ -218,5 +218,26 @@ public class InstanceOfNode extends UnaryOpLogicNode implements Lowerable, Virtu
     public void strengthenCheckedStamp(ObjectStamp newCheckedStamp) {
         assert this.checkedStamp.join(newCheckedStamp).equals(newCheckedStamp) : "stamp can only improve";
         this.checkedStamp = newCheckedStamp;
+    }
+
+    @Override
+    public TriState implies(boolean thisNegated, LogicNode other) {
+        if (other instanceof InstanceOfNode) {
+            InstanceOfNode instanceOfNode = (InstanceOfNode) other;
+            if (instanceOfNode.getValue() == getValue()) {
+                if (thisNegated) {
+                    // !X => Y
+                    if (this.getCheckedStamp().meet(instanceOfNode.getCheckedStamp()).equals(this.getCheckedStamp())) {
+                        return TriState.get(false);
+                    }
+                } else {
+                    // X => Y
+                    if (instanceOfNode.getCheckedStamp().meet(this.getCheckedStamp()).equals(instanceOfNode.getCheckedStamp())) {
+                        return TriState.get(true);
+                    }
+                }
+            }
+        }
+        return super.implies(thisNegated, other);
     }
 }

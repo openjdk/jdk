@@ -106,6 +106,7 @@ public class GraalCompiler {
         public final LIRSuites lirSuites;
         public final T compilationResult;
         public final CompilationResultBuilderFactory factory;
+        public final boolean verifySourcePositions;
 
         /**
          * @param graph the graph to be compiled
@@ -122,7 +123,8 @@ public class GraalCompiler {
          * @param factory
          */
         public Request(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Providers providers, Backend backend, PhaseSuite<HighTierContext> graphBuilderSuite,
-                        OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, Suites suites, LIRSuites lirSuites, T compilationResult, CompilationResultBuilderFactory factory) {
+                        OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, Suites suites, LIRSuites lirSuites, T compilationResult, CompilationResultBuilderFactory factory,
+                        boolean verifySourcePositions) {
             this.graph = graph;
             this.installedCodeOwner = installedCodeOwner;
             this.providers = providers;
@@ -134,6 +136,7 @@ public class GraalCompiler {
             this.lirSuites = lirSuites;
             this.compilationResult = compilationResult;
             this.factory = factory;
+            this.verifySourcePositions = verifySourcePositions;
         }
 
         /**
@@ -156,8 +159,9 @@ public class GraalCompiler {
      */
     public static <T extends CompilationResult> T compileGraph(StructuredGraph graph, ResolvedJavaMethod installedCodeOwner, Providers providers, Backend backend,
                     PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ProfilingInfo profilingInfo, Suites suites, LIRSuites lirSuites, T compilationResult,
-                    CompilationResultBuilderFactory factory) {
-        return compile(new Request<>(graph, installedCodeOwner, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, compilationResult, factory));
+                    CompilationResultBuilderFactory factory, boolean verifySourcePositions) {
+        return compile(new Request<>(graph, installedCodeOwner, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, compilationResult, factory,
+                        verifySourcePositions));
     }
 
     /**
@@ -173,6 +177,9 @@ public class GraalCompiler {
             try (DebugContext.Scope s0 = debug.scope("GraalCompiler", r.graph, r.providers.getCodeCache()); DebugCloseable a = CompilerTimer.start(debug)) {
                 emitFrontEnd(r.providers, r.backend, r.graph, r.graphBuilderSuite, r.optimisticOpts, r.profilingInfo, r.suites);
                 emitBackEnd(r.graph, null, r.installedCodeOwner, r.backend, r.compilationResult, r.factory, null, r.lirSuites);
+                if (r.verifySourcePositions) {
+                    assert r.graph.verifySourcePositions(true);
+                }
             } catch (Throwable e) {
                 throw debug.handle(e);
             }

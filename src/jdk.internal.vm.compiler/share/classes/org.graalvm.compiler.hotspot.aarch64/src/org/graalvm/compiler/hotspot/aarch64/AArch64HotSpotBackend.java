@@ -29,6 +29,7 @@ import static jdk.vm.ci.aarch64.AArch64.sp;
 import static jdk.vm.ci.aarch64.AArch64.zr;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.hotspot.aarch64.AArch64HotSpotRegisterConfig.fp;
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.ZapStackOnMethodEntry;
 
 import jdk.internal.vm.compiler.collections.EconomicSet;
@@ -41,6 +42,7 @@ import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler.ScratchRegister;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.aarch64.AArch64NodeMatchRules;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
+import org.graalvm.compiler.core.common.LIRKind;
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;
 import org.graalvm.compiler.core.common.spi.ForeignCallLinkage;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -48,6 +50,7 @@ import org.graalvm.compiler.hotspot.HotSpotDataBuilder;
 import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.HotSpotHostBackend;
 import org.graalvm.compiler.hotspot.HotSpotLIRGenerationResult;
+import org.graalvm.compiler.hotspot.meta.HotSpotConstantLoadAction;
 import org.graalvm.compiler.hotspot.meta.HotSpotForeignCallsProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.stubs.Stub;
@@ -66,12 +69,15 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
+import jdk.vm.ci.aarch64.AArch64Kind;
 import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
+import jdk.vm.ci.hotspot.HotSpotSentinelConstant;
 import jdk.vm.ci.hotspot.aarch64.AArch64HotSpotRegisterConfig;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
@@ -269,7 +275,7 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend {
             Register klass = r10;
             if (config.useCompressedClassPointers) {
                 masm.ldr(32, klass, klassAddress);
-                AArch64HotSpotMove.decodeKlassPointer(masm, klass, klass, providers.getRegisters().getHeapBaseRegister(), config.getKlassEncoding());
+                AArch64HotSpotMove.decodeKlassPointer(crb, masm, klass, klass, config.getKlassEncoding(), config);
             } else {
                 masm.ldr(64, klass, klassAddress);
             }
@@ -285,6 +291,23 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend {
         crb.recordMark(config.MARKID_OSR_ENTRY);
         masm.bind(verifiedStub);
         crb.recordMark(config.MARKID_VERIFIED_ENTRY);
+
+        if (GeneratePIC.getValue(crb.getOptions())) {
+            // Check for method state
+            HotSpotFrameContext frameContext = (HotSpotFrameContext) crb.frameContext;
+            if (!frameContext.isStub) {
+                crb.recordInlineDataInCodeWithNote(new HotSpotSentinelConstant(LIRKind.value(AArch64Kind.QWORD), JavaKind.Long), HotSpotConstantLoadAction.MAKE_NOT_ENTRANT);
+                try (ScratchRegister sc = masm.getScratchRegister()) {
+                    Register scratch = sc.getRegister();
+                    masm.addressOf(scratch);
+                    masm.ldr(64, scratch, AArch64Address.createBaseRegisterOnlyAddress(scratch));
+                    Label noCall = new Label();
+                    masm.cbz(64, scratch, noCall);
+                    AArch64Call.directJmp(crb, masm, getForeignCalls().lookupForeignCall(WRONG_METHOD_HANDLER));
+                    masm.bind(noCall);
+                }
+            }
+        }
     }
 
     private static void emitCodeBody(CompilationResultBuilder crb, LIR lir, AArch64MacroAssembler masm) {
@@ -299,8 +322,10 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend {
      * @see "http://mail.openjdk.java.net/pipermail/aarch64-port-dev/2013-September/000273.html"
      */
     public static void emitInvalidatePlaceholder(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
-        crb.blockComment("[nop for method invalidation]");
-        masm.nop();
+        if (!GeneratePIC.getValue(crb.getOptions())) {
+            crb.blockComment("[nop for method invalidation]");
+            masm.nop();
+        }
     }
 
     private void emitCodeSuffix(CompilationResultBuilder crb, AArch64MacroAssembler masm, FrameMap frameMap) {

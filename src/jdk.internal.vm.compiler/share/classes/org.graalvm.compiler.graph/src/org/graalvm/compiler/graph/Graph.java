@@ -1199,7 +1199,7 @@ public class Graph {
         return true;
     }
 
-    public boolean verifySourcePositions() {
+    public boolean verifySourcePositions(boolean performConsistencyCheck) {
         if (trackNodeSourcePosition()) {
             ResolvedJavaMethod root = null;
             for (Node node : getNodes()) {
@@ -1210,6 +1210,11 @@ public class Graph {
                     } else {
                         assert pos.verifyRootMethod(root) : node;
                     }
+                }
+
+                // More strict node-type-specific check
+                if (performConsistencyCheck) {
+                    node.verifySourcePosition();
                 }
             }
         }

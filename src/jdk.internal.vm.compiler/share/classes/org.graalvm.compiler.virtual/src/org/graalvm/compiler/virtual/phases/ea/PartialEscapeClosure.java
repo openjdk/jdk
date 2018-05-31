@@ -650,7 +650,9 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
             if (needsCaching) {
                 return getValueObjectVirtualCached(phi, virtual);
             } else {
-                return virtual.duplicate();
+                VirtualObjectNode duplicate = virtual.duplicate();
+                duplicate.setNodeSourcePosition(virtual.getNodeSourcePosition());
+                return duplicate;
             }
         }
 
@@ -661,6 +663,7 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
             VirtualObjectNode result = valueObjectVirtuals.get(phi);
             if (result == null) {
                 result = virtual.duplicate();
+                result.setNodeSourcePosition(virtual.getNodeSourcePosition());
                 valueObjectVirtuals.put(phi, result);
             }
             return result;

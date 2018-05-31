@@ -225,9 +225,11 @@ public class InliningLog {
         while (replacementEntries.advance()) {
             Invokable replacementInvoke = replacementEntries.getKey();
             Callsite replacementSite = replacementEntries.getValue();
-            Invokable invoke = (Invokable) replacements.get((Node) replacementInvoke);
-            Callsite site = mapping.get(replacementSite);
-            leaves.put(invoke, site);
+            if (replacementInvoke.isAlive()) {
+                Invokable invoke = (Invokable) replacements.get((Node) replacementInvoke);
+                Callsite site = mapping.get(replacementSite);
+                leaves.put(invoke, site);
+            }
         }
     }
 

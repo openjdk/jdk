@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +37,6 @@ import static jdk.vm.ci.aarch64.AArch64.r9;
 import static jdk.vm.ci.aarch64.AArch64.sp;
 import static jdk.vm.ci.aarch64.AArch64.zr;
 
-import org.graalvm.compiler.asm.AbstractAddress;
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.core.common.NumUtil;
 import org.graalvm.compiler.debug.GraalError;
@@ -307,9 +305,10 @@ public class AArch64MacroAssembler extends AArch64Assembler {
             case EXTENDED_REGISTER_OFFSET:
                 add(64, dst, address.getBase(), address.getOffset(), address.getExtendType(), address.isScaled() ? shiftAmt : 0);
                 break;
-            case PC_LITERAL:
-                super.adr(dst, address.getImmediateRaw());
+            case PC_LITERAL: {
+                addressOf(dst);
                 break;
+            }
             case BASE_REGISTER_ONLY:
                 movx(dst, address.getBase());
                 break;
@@ -1561,7 +1560,7 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     @Override
-    public AbstractAddress getPlaceholder(int instructionStartPosition) {
+    public AArch64Address getPlaceholder(int instructionStartPosition) {
         return AArch64Address.PLACEHOLDER;
     }
 

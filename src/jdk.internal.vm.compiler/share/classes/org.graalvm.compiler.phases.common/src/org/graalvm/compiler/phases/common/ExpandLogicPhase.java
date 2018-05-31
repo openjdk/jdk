@@ -107,64 +107,66 @@ public class ExpandLogicPhase extends Phase {
         binary.safeDelete();
     }
 
-    @SuppressWarnings("try")
     private static void processIf(LogicNode x, boolean xNegated, LogicNode y, boolean yNegated, IfNode ifNode, double shortCircuitProbability) {
-        try (DebugCloseable context = ifNode.withNodeSourcePosition()) {
+        /*
+         * this method splits an IfNode, which has a ShortCircuitOrNode as its condition, into two
+         * separate IfNodes: if(X) and if(Y)
+         *
+         * for computing the probabilities P(X) and P(Y), we use two different approaches. The first
+         * one assumes that the shortCircuitProbability and the probability on the IfNode were
+         * created with each other in mind. If this assumption does not hold, we fall back to
+         * another mechanism for computing the probabilities.
+         */
+        AbstractBeginNode trueTarget = ifNode.trueSuccessor();
+        AbstractBeginNode falseTarget = ifNode.falseSuccessor();
+
+        // 1st approach
+        // assumption: P(originalIf.trueSuccessor) == P(X) + ((1 - P(X)) * P(Y))
+        double firstIfTrueProbability = shortCircuitProbability;
+        double secondIfTrueProbability = sanitizeProbability((ifNode.getTrueSuccessorProbability() - shortCircuitProbability) / (1 - shortCircuitProbability));
+        double expectedOriginalIfTrueProbability = firstIfTrueProbability + (1 - firstIfTrueProbability) * secondIfTrueProbability;
+
+        if (!doubleEquals(ifNode.getTrueSuccessorProbability(), expectedOriginalIfTrueProbability)) {
             /*
-             * this method splits an IfNode, which has a ShortCircuitOrNode as its condition, into
-             * two separate IfNodes: if(X) and if(Y)
+             * 2nd approach
              *
-             * for computing the probabilities P(X) and P(Y), we use two different approaches. The
-             * first one assumes that the shortCircuitProbability and the probability on the IfNode
-             * were created with each other in mind. If this assumption does not hold, we fall back
-             * to another mechanism for computing the probabilities.
+             * the assumption above did not hold, so we either used an artificial probability as
+             * shortCircuitProbability or the ShortCircuitOrNode was moved to some other IfNode.
+             *
+             * so, we distribute the if's trueSuccessorProbability between the newly generated if
+             * nodes according to the shortCircuitProbability. the following invariant is always
+             * true in this case: P(originalIf.trueSuccessor) == P(X) + ((1 - P(X)) * P(Y))
              */
-            AbstractBeginNode trueTarget = ifNode.trueSuccessor();
-            AbstractBeginNode falseTarget = ifNode.falseSuccessor();
-
-            // 1st approach
-            // assumption: P(originalIf.trueSuccessor) == P(X) + ((1 - P(X)) * P(Y))
-            double firstIfTrueProbability = shortCircuitProbability;
-            double secondIfTrueProbability = sanitizeProbability((ifNode.getTrueSuccessorProbability() - shortCircuitProbability) / (1 - shortCircuitProbability));
-            double expectedOriginalIfTrueProbability = firstIfTrueProbability + (1 - firstIfTrueProbability) * secondIfTrueProbability;
-
-            if (!doubleEquals(ifNode.getTrueSuccessorProbability(), expectedOriginalIfTrueProbability)) {
-                /*
-                 * 2nd approach
-                 *
-                 * the assumption above did not hold, so we either used an artificial probability as
-                 * shortCircuitProbability or the ShortCircuitOrNode was moved to some other IfNode.
-                 *
-                 * so, we distribute the if's trueSuccessorProbability between the newly generated
-                 * if nodes according to the shortCircuitProbability. the following invariant is
-                 * always true in this case: P(originalIf.trueSuccessor) == P(X) + ((1 - P(X)) *
-                 * P(Y))
-                 */
-                firstIfTrueProbability = ifNode.getTrueSuccessorProbability() * shortCircuitProbability;
-                secondIfTrueProbability = sanitizeProbability(1 - (ifNode.probability(falseTarget) / (1 - firstIfTrueProbability)));
-            }
-
-            ifNode.clearSuccessors();
-            Graph graph = ifNode.graph();
-            AbstractMergeNode trueTargetMerge = graph.add(new MergeNode());
-            trueTargetMerge.setNext(trueTarget);
-            EndNode firstTrueEnd = graph.add(new EndNode());
-            EndNode secondTrueEnd = graph.add(new EndNode());
-            trueTargetMerge.addForwardEnd(firstTrueEnd);
-            trueTargetMerge.addForwardEnd(secondTrueEnd);
-            AbstractBeginNode firstTrueTarget = BeginNode.begin(firstTrueEnd);
-            AbstractBeginNode secondTrueTarget = BeginNode.begin(secondTrueEnd);
-            if (yNegated) {
-                secondIfTrueProbability = 1.0 - secondIfTrueProbability;
-            }
-            if (xNegated) {
-                firstIfTrueProbability = 1.0 - firstIfTrueProbability;
-            }
-            AbstractBeginNode secondIf = BeginNode.begin(graph.add(new IfNode(y, yNegated ? falseTarget : secondTrueTarget, yNegated ? secondTrueTarget : falseTarget, secondIfTrueProbability)));
-            IfNode firstIf = graph.add(new IfNode(x, xNegated ? secondIf : firstTrueTarget, xNegated ? firstTrueTarget : secondIf, firstIfTrueProbability));
-            ifNode.replaceAtPredecessor(firstIf);
-            ifNode.safeDelete();
+            firstIfTrueProbability = ifNode.getTrueSuccessorProbability() * shortCircuitProbability;
+            secondIfTrueProbability = sanitizeProbability(1 - (ifNode.probability(falseTarget) / (1 - firstIfTrueProbability)));
         }
+
+        ifNode.clearSuccessors();
+        Graph graph = ifNode.graph();
+        AbstractMergeNode trueTargetMerge = graph.add(new MergeNode());
+        trueTargetMerge.setNext(trueTarget);
+        EndNode firstTrueEnd = graph.add(new EndNode());
+        EndNode secondTrueEnd = graph.add(new EndNode());
+        trueTargetMerge.addForwardEnd(firstTrueEnd);
+        trueTargetMerge.addForwardEnd(secondTrueEnd);
+        AbstractBeginNode firstTrueTarget = BeginNode.begin(firstTrueEnd);
+        firstTrueTarget.setNodeSourcePosition(trueTarget.getNodeSourcePosition());
+        AbstractBeginNode secondTrueTarget = BeginNode.begin(secondTrueEnd);
+        secondTrueTarget.setNodeSourcePosition(trueTarget.getNodeSourcePosition());
+        if (yNegated) {
+            secondIfTrueProbability = 1.0 - secondIfTrueProbability;
+        }
+        if (xNegated) {
+            firstIfTrueProbability = 1.0 - firstIfTrueProbability;
+        }
+        IfNode secondIf = new IfNode(y, yNegated ? falseTarget : secondTrueTarget, yNegated ? secondTrueTarget : falseTarget, secondIfTrueProbability);
+        secondIf.setNodeSourcePosition(ifNode.getNodeSourcePosition());
+        AbstractBeginNode secondIfBegin = BeginNode.begin(graph.add(secondIf));
+        secondIfBegin.setNodeSourcePosition(falseTarget.getNodeSourcePosition());
+        IfNode firstIf = graph.add(new IfNode(x, xNegated ? secondIfBegin : firstTrueTarget, xNegated ? firstTrueTarget : secondIfBegin, firstIfTrueProbability));
+        firstIf.setNodeSourcePosition(ifNode.getNodeSourcePosition());
+        ifNode.replaceAtPredecessor(firstIf);
+        ifNode.safeDelete();
     }
 
     private static boolean doubleEquals(double a, double b) {

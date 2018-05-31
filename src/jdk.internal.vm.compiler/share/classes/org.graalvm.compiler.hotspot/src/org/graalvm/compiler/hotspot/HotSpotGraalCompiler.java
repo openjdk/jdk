@@ -185,7 +185,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
         result.setEntryBCI(entryBCI);
         boolean shouldDebugNonSafepoints = providers.getCodeCache().shouldDebugNonSafepoints();
         PhaseSuite<HighTierContext> graphBuilderSuite = configGraphBuilderSuite(providers.getSuites().getDefaultGraphBuilderSuite(), shouldDebugNonSafepoints, isOSR);
-        GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, result, crbf);
+        GraalCompiler.compileGraph(graph, method, providers, backend, graphBuilderSuite, optimisticOpts, profilingInfo, suites, lirSuites, result, crbf, true);
 
         if (!isOSR && useProfilingInfo) {
             ProfilingInfo profile = profilingInfo;

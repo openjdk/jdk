@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.replacements;
 
+import java.net.URI;
 import static org.graalvm.compiler.debug.GraalError.unimplemented;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_IGNORED;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_IGNORED;
@@ -34,6 +35,7 @@ import java.util.Map;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.Equivalence;
+import org.graalvm.compiler.api.replacements.Fold;
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.bytecode.BytecodeProvider;
 import org.graalvm.compiler.core.common.PermanentBailoutException;
@@ -46,6 +48,7 @@ import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.graph.SourceLanguagePosition;
@@ -78,6 +81,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.cfg.ControlFlowGraph;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.IntegerSwitchNode;
+import org.graalvm.compiler.nodes.graphbuilderconf.GeneratedInvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin.InlineInfo;
@@ -157,7 +161,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         protected final int inliningDepth;
 
         protected final ValueNode[] arguments;
-        private final SourceLanguagePosition sourceLanguagePosition;
+        private SourceLanguagePosition sourceLanguagePosition = UnresolvedSourceLanguagePosition.INSTANCE;
 
         protected FrameState outerState;
         protected FrameState exceptionState;
@@ -173,13 +177,6 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
             this.invokeData = invokeData;
             this.inliningDepth = inliningDepth;
             this.arguments = arguments;
-            SourceLanguagePosition position = null;
-            if (arguments != null && method.hasReceiver() && arguments.length > 0 && arguments[0].isJavaConstant()) {
-                JavaConstant constantArgument = arguments[0].asJavaConstant();
-                position = sourceLanguagePositionProvider.getPosition(constantArgument);
-            }
-            this.sourceLanguagePosition = position;
-
         }
 
         @Override
@@ -201,12 +198,60 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
                 callerBytecodePosition = invokePosition;
             }
             if (position != null) {
-                return position.addCaller(caller.sourceLanguagePosition, callerBytecodePosition);
+                return position.addCaller(caller.resolveSourceLanguagePosition(), callerBytecodePosition);
             }
-            if (caller.sourceLanguagePosition != null && callerBytecodePosition != null) {
-                return new NodeSourcePosition(caller.sourceLanguagePosition, callerBytecodePosition.getCaller(), callerBytecodePosition.getMethod(), callerBytecodePosition.getBCI());
+            final SourceLanguagePosition pos = caller.resolveSourceLanguagePosition();
+            if (pos != null && callerBytecodePosition != null) {
+                return new NodeSourcePosition(pos, callerBytecodePosition.getCaller(), callerBytecodePosition.getMethod(), callerBytecodePosition.getBCI());
             }
             return callerBytecodePosition;
+        }
+
+        private SourceLanguagePosition resolveSourceLanguagePosition() {
+            SourceLanguagePosition res = sourceLanguagePosition;
+            if (res == UnresolvedSourceLanguagePosition.INSTANCE) {
+                res = null;
+                if (arguments != null && method.hasReceiver() && arguments.length > 0 && arguments[0].isJavaConstant()) {
+                    JavaConstant constantArgument = arguments[0].asJavaConstant();
+                    res = sourceLanguagePositionProvider.getPosition(constantArgument);
+                }
+                sourceLanguagePosition = res;
+            }
+            return res;
+        }
+    }
+
+    private static final class UnresolvedSourceLanguagePosition implements SourceLanguagePosition {
+        static final SourceLanguagePosition INSTANCE = new UnresolvedSourceLanguagePosition();
+
+        @Override
+        public String toShortString() {
+            throw new IllegalStateException(getClass().getSimpleName() + " should not be reachable.");
+        }
+
+        @Override
+        public int getOffsetEnd() {
+            throw new IllegalStateException(getClass().getSimpleName() + " should not be reachable.");
+        }
+
+        @Override
+        public int getOffsetStart() {
+            throw new IllegalStateException(getClass().getSimpleName() + " should not be reachable.");
+        }
+
+        @Override
+        public int getLineNumber() {
+            throw new IllegalStateException(getClass().getSimpleName() + " should not be reachable.");
+        }
+
+        @Override
+        public URI getURI() {
+            throw new IllegalStateException(getClass().getSimpleName() + " should not be reachable.");
+        }
+
+        @Override
+        public String getLanguage() {
+            throw new IllegalStateException(getClass().getSimpleName() + " should not be reachable.");
         }
     }
 
@@ -235,6 +280,21 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         public PENonAppendGraphBuilderContext(PEMethodScope methodScope, Invoke invoke) {
             this.methodScope = methodScope;
             this.invoke = invoke;
+        }
+
+        /**
+         * {@link Fold} and {@link NodeIntrinsic} can be deferred during parsing/decoding. Only by
+         * the end of {@linkplain SnippetTemplate#instantiate Snippet instantiation} do they need to
+         * have been processed.
+         *
+         * This is how SVM handles snippets. They are parsed with plugins disabled and then encoded
+         * and stored in the image. When the snippet is needed at runtime the graph is decoded and
+         * the plugins are run during the decoding process. If they aren't handled at this point
+         * then they will never be handled.
+         */
+        @Override
+        public boolean canDeferPlugin(GeneratedInvocationPlugin plugin) {
+            return plugin.getSource().equals(Fold.class) || plugin.getSource().equals(Node.NodeIntrinsic.class);
         }
 
         @Override
@@ -1056,7 +1116,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
                 ValueNode array = loadIndexedNode.array();
                 ValueNode index = loadIndexedNode.index();
                 for (NodePlugin nodePlugin : nodePlugins) {
-                    if (nodePlugin.handleLoadIndexed(graphBuilderContext, array, index, loadIndexedNode.elementKind())) {
+                    if (nodePlugin.handleLoadIndexed(graphBuilderContext, array, index, loadIndexedNode.getBoundsCheck(), loadIndexedNode.elementKind())) {
                         replacedNode = graphBuilderContext.pushedNode;
                         break;
                     }
@@ -1068,7 +1128,7 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
                 ValueNode index = storeIndexedNode.index();
                 ValueNode value = storeIndexedNode.value();
                 for (NodePlugin nodePlugin : nodePlugins) {
-                    if (nodePlugin.handleStoreIndexed(graphBuilderContext, array, index, storeIndexedNode.elementKind(), value)) {
+                    if (nodePlugin.handleStoreIndexed(graphBuilderContext, array, index, storeIndexedNode.getBoundsCheck(), storeIndexedNode.getStoreCheck(), storeIndexedNode.elementKind(), value)) {
                         replacedNode = graphBuilderContext.pushedNode;
                         break;
                     }

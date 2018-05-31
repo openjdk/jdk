@@ -27,6 +27,7 @@ import static org.graalvm.compiler.core.common.GraalOptions.ImmutableCode;
 import org.graalvm.compiler.core.common.type.StampPair;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderTool;
 import org.graalvm.compiler.nodes.graphbuilderconf.InlineInvokePlugin;
@@ -147,16 +148,16 @@ public final class HotSpotNodePlugin implements NodePlugin, TypePlugin {
     }
 
     @Override
-    public boolean handleLoadIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, JavaKind elementKind) {
-        if (b.parsingIntrinsic() && wordOperationPlugin.handleLoadIndexed(b, array, index, elementKind)) {
+    public boolean handleLoadIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, GuardingNode boundsCheck, JavaKind elementKind) {
+        if (b.parsingIntrinsic() && wordOperationPlugin.handleLoadIndexed(b, array, index, boundsCheck, elementKind)) {
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean handleStoreIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, JavaKind elementKind, ValueNode value) {
-        if (b.parsingIntrinsic() && wordOperationPlugin.handleStoreIndexed(b, array, index, elementKind, value)) {
+    public boolean handleStoreIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, GuardingNode boundsCheck, GuardingNode storeCheck, JavaKind elementKind, ValueNode value) {
+        if (b.parsingIntrinsic() && wordOperationPlugin.handleStoreIndexed(b, array, index, boundsCheck, storeCheck, elementKind, value)) {
             return true;
         }
         return false;

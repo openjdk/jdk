@@ -30,6 +30,7 @@ import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
@@ -40,17 +41,17 @@ public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
 
     public static final NodeClass<SignedRemNode> TYPE = NodeClass.create(SignedRemNode.class);
 
-    protected SignedRemNode(ValueNode x, ValueNode y) {
-        this(TYPE, x, y);
+    protected SignedRemNode(ValueNode x, ValueNode y, GuardingNode zeroCheck) {
+        this(TYPE, x, y, zeroCheck);
     }
 
-    protected SignedRemNode(NodeClass<? extends SignedRemNode> c, ValueNode x, ValueNode y) {
-        super(c, IntegerStamp.OPS.getRem().foldStamp(x.stamp(NodeView.DEFAULT), y.stamp(NodeView.DEFAULT)), Op.REM, Type.SIGNED, x, y);
+    protected SignedRemNode(NodeClass<? extends SignedRemNode> c, ValueNode x, ValueNode y, GuardingNode zeroCheck) {
+        super(c, IntegerStamp.OPS.getRem().foldStamp(x.stamp(NodeView.DEFAULT), y.stamp(NodeView.DEFAULT)), Op.REM, Type.SIGNED, x, y, zeroCheck);
     }
 
-    public static ValueNode create(ValueNode x, ValueNode y, NodeView view) {
+    public static ValueNode create(ValueNode x, ValueNode y, GuardingNode zeroCheck, NodeView view) {
         Stamp stamp = IntegerStamp.OPS.getRem().foldStamp(x.stamp(view), y.stamp(view));
-        return canonical(null, x, y, stamp, view);
+        return canonical(null, x, y, zeroCheck, stamp, view);
     }
 
     @Override
@@ -61,15 +62,15 @@ public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forX, ValueNode forY) {
         NodeView view = NodeView.from(tool);
-        return canonical(this, forX, forY, stamp(view), view);
+        return canonical(this, forX, forY, getZeroCheck(), stamp(view), view);
     }
 
-    private static ValueNode canonical(SignedRemNode self, ValueNode forX, ValueNode forY, Stamp stamp, NodeView view) {
+    private static ValueNode canonical(SignedRemNode self, ValueNode forX, ValueNode forY, GuardingNode zeroCheck, Stamp stamp, NodeView view) {
         if (forX.isConstant() && forY.isConstant()) {
             long y = forY.asJavaConstant().asLong();
             if (y == 0) {
-                return self != null ? self : new SignedRemNode(forX, forY); // this will trap, can
-                                                                            // not canonicalize
+                /* This will trap, cannot canonicalize. */
+                return self != null ? self : new SignedRemNode(forX, forY, zeroCheck);
             }
             return ConstantNode.forIntegerStamp(stamp, forX.asJavaConstant().asLong() % y);
         } else if (forY.isConstant() && forX.stamp(view) instanceof IntegerStamp && forY.stamp(view) instanceof IntegerStamp) {
@@ -78,7 +79,7 @@ public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
             IntegerStamp yStamp = (IntegerStamp) forY.stamp(view);
             if (constY < 0 && constY != CodeUtil.minValue(yStamp.getBits())) {
                 Stamp newStamp = IntegerStamp.OPS.getRem().foldStamp(forX.stamp(view), forY.stamp(view));
-                return canonical(null, forX, ConstantNode.forIntegerStamp(yStamp, -constY), newStamp, view);
+                return canonical(null, forX, ConstantNode.forIntegerStamp(yStamp, -constY), zeroCheck, newStamp, view);
             }
 
             if (constY == 1) {
@@ -96,7 +97,7 @@ public class SignedRemNode extends IntegerDivRemNode implements LIRLowerable {
                 }
             }
         }
-        return self != null ? self : new SignedRemNode(forX, forY);
+        return self != null ? self : new SignedRemNode(forX, forY, zeroCheck);
     }
 
     @Override
