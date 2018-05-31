@@ -87,6 +87,9 @@ public class ReflectionFactory {
     private static boolean noInflation        = false;
     private static int     inflationThreshold = 15;
 
+    // true if deserialization constructor checking is disabled
+    private static boolean disableSerialConstructorChecks = false;
+
     private ReflectionFactory() {
     }
 
@@ -424,10 +427,64 @@ public class ReflectionFactory {
         return generateConstructor(cl, constructorToCall);
     }
 
+    /**
+     * Given a class, determines whether its superclass has
+     * any constructors that are accessible from the class.
+     * This is a special purpose method intended to do access
+     * checking for a serializable class and its superclasses
+     * up to, but not including, the first non-serializable
+     * superclass. This also implies that the superclass is
+     * always non-null, because a serializable class must be a
+     * class (not an interface) and Object is not serializable.
+     *
+     * @param cl the class from which access is checked
+     * @return whether the superclass has a constructor accessible from cl
+     */
+    private boolean superHasAccessibleConstructor(Class<?> cl) {
+        Class<?> superCl = cl.getSuperclass();
+        assert Serializable.class.isAssignableFrom(cl);
+        assert superCl != null;
+        if (packageEquals(cl, superCl)) {
+            // accessible if any non-private constructor is found
+            for (Constructor<?> ctor : superCl.getDeclaredConstructors()) {
+                if ((ctor.getModifiers() & Modifier.PRIVATE) == 0) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            // accessible if the parent is public and any constructor
+            // is protected or public
+            if ((superCl.getModifiers() & Modifier.PUBLIC) == 0) {
+                return false;
+            }
+            for (Constructor<?> ctor : superCl.getDeclaredConstructors()) {
+                if ((ctor.getModifiers() & (Modifier.PROTECTED | Modifier.PUBLIC)) != 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Returns a constructor that allocates an instance of cl and that then initializes
+     * the instance by calling the no-arg constructor of its first non-serializable
+     * superclass. This is specified in the Serialization Specification, section 3.1,
+     * in step 11 of the deserialization process. If cl is not serializable, returns
+     * cl's no-arg constructor. If no accessible constructor is found, or if the
+     * class hierarchy is somehow malformed (e.g., a serializable class has no
+     * superclass), null is returned.
+     *
+     * @param cl the class for which a constructor is to be found
+     * @return the generated constructor, or null if none is available
+     */
     public final Constructor<?> newConstructorForSerialization(Class<?> cl) {
         Class<?> initCl = cl;
         while (Serializable.class.isAssignableFrom(initCl)) {
-            if ((initCl = initCl.getSuperclass()) == null) {
+            Class<?> prev = initCl;
+            if ((initCl = initCl.getSuperclass()) == null ||
+                (!disableSerialConstructorChecks && !superHasAccessibleConstructor(prev))) {
                 return null;
             }
         }
@@ -652,6 +709,9 @@ public class ReflectionFactory {
                 throw new RuntimeException("Unable to parse property sun.reflect.inflationThreshold", e);
             }
         }
+
+        disableSerialConstructorChecks =
+            "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
         initted = true;
     }
