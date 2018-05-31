@@ -5,7 +5,7 @@
   <title>AWT Threading Issues</title>
 </head>
 <!--
- Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 -->
 
 <body>
-
+<main role="main">
 <h1>AWT Threading Issues</h1>
 
 <a id="ListenersThreads"></a>
@@ -121,7 +121,7 @@ Implementation-dependent behavior.
 Prior to 1.4, the helper threads were never terminated.
 <p>
 Starting with 1.4, the behavior has changed as a result of the fix for
-<a href="http://bugs.sun.com/view_bug.do?bug_id=4030718">
+<a href="https://bugs.java.com/view_bug.do?bug_id=4030718">
 4030718</a>. With the current implementation, AWT terminates all its
 helper threads allowing the application to exit cleanly when the
 following three conditions are true:
@@ -154,11 +154,11 @@ will exit cleanly in all cases. Two examples:
 <ul>
   <li> Other packages can create displayable components for internal
        needs and never make them undisplayable. See
-<a href="http://bugs.sun.com/view_bug.do?bug_id=4515058">
+<a href="https://bugs.java.com/view_bug.do?bug_id=4515058">
 4515058</a>,
-<a href="http://bugs.sun.com/view_bug.do?bug_id=4671025">
+<a href="https://bugs.java.com/view_bug.do?bug_id=4671025">
 4671025</a>, and
-<a href="http://bugs.sun.com/view_bug.do?bug_id=4465537">
+<a href="https://bugs.java.com/view_bug.do?bug_id=4465537">
 4465537</a>.
   <li> Both Microsoft Windows and X11 allow an application to send native
        events to windows that belong to another application. With this
@@ -192,5 +192,6 @@ non-daemon thread that blocks forever.
 <cite>The Java&trade; Virtual Machine Specification</cite>
  guarantees
 that the JVM doesn't exit until this thread terminates.
+</main>
 </body>
 </html>

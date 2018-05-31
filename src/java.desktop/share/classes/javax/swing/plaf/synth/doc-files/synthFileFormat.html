@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <title>Synth File Format</title>
 <!--
- Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ div.example {
   </head>
 
   <body>
-    <h2><a id="file">File Format</a></h2>
+  <main role="main">
+    <h1><a id="file">File Format</a></h1>
     <p>
       Synth's file format (<a href="synth.dtd">dtd</a>)
       allows for specifying all the pieces
@@ -98,7 +99,7 @@ div.example {
       Parsing will fail only if a necessary attribute is not
       specified, or of the wrong type.
 
-    <h3>The synth element</h3>
+    <h2>The synth element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.synth">synth</a> ((<a href="#ee.beansPersistance">%beansPersistance;</a>) | <a href="#e.style">style</a> | <a href="#e.bind">bind</a> | <a href="#e.font">font</a> | <a href="#e.color">color</a> |
@@ -118,7 +119,7 @@ div.example {
     </p>
 
 
-    <h3>The style element</h3>
+    <h2>The style element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.style">style</a> (<a href="#e.property">property</a> | <a href="#e.defaultsProperty">defaultsProperty</a> | <a href="#e.state">state</a> | <a href="#e.font">font</a> | <a href="#e.graphicsUtils">graphicsUtils</a> |
@@ -172,7 +173,7 @@ div.example {
       </pre>
     </div>
 
-    <h3>The state element</h3>
+    <h2>The state element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.state">state</a> (<a href="#e.color">color</a> | <a href="#e.font">font</a> | <a href="#e.painter">painter</a> | <a href="#e.imagePainter">imagePainter</a> | (<a href="#ee.beansPersistance">%beansPersistance;</a>) |
@@ -248,7 +249,7 @@ div.example {
       chosen, otherwise if the state is SELECTED, but not does not
       contain PRESSED, state <code>two</code> will be used.
 
-    <h3>The font element</h3>
+    <h2>The font element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.font">font</a> EMPTY>
@@ -317,7 +318,7 @@ div.example {
     </p>
 
 
-    <h3>The color element</h3>
+    <h2>The color element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.color">color</a> EMPTY>
@@ -394,7 +395,7 @@ div.example {
     </pre>
 </div>
 
-    <h3>The property element</h3>
+    <h2>The property element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.property">property</a> EMPTY>
@@ -516,7 +517,7 @@ div.example {
       <code>UIManager.get("Table.focusCellForeground")</code>.
     </p>
 
-    <h3>The graphicsUtils element</h3>
+    <h2>The graphicsUtils element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.graphicsUtils">graphicsUtils</a> EMPTY>
@@ -548,7 +549,7 @@ div.example {
     </pre>
 </div>
 
-    <h3>The insets element</h3>
+    <h2>The insets element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.insets">insets</a> EMPTY>
@@ -592,7 +593,7 @@ div.example {
     </pre>
 </div>
 
-    <h3>The bind element</h3>
+    <h2>The bind element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.bind">bind</a> EMPTY>
@@ -701,7 +702,7 @@ div.example {
     </pre>
 </div>
 
-    <h3>The painter element</h3>
+    <h2>The painter element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.painter">painter</a> EMPTY>
@@ -815,7 +816,7 @@ div.example {
 	  handle it.
 	</p>
 
-    <h3>The imagePainter element</h3>
+    <h2>The imagePainter element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.imagePainter">imagePainter</a> EMPTY>
@@ -911,7 +912,7 @@ div.example {
       understand how identical painters are handled.
 
 
-    <h3>The imageIcon element</h3>
+    <h2>The imageIcon element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.imageIcon">imageIcon</a> EMPTY>
@@ -945,7 +946,7 @@ div.example {
     </pre>
 </div>
 
-   <h3>The opaque element</h3>
+   <h2>The opaque element</h2>
 <div class="dtd-fragment">
 <pre class="dtd-fragment">
 &lt;!ELEMENT <a id="e.opaque">opaque</a> EMPTY>
@@ -976,7 +977,7 @@ div.example {
     </pre>
 </div>
 
-    <h3><a id="ee.beansPersistance">The beansPersistance entity</a></h3>
+    <h2><a id="ee.beansPersistance">The beansPersistance entity</a></h2>
     <p>
       Beans persistance can be used to embed any Object. This is
       typically used for embedding your own Painters, but can be used
@@ -986,7 +987,7 @@ div.example {
       for details on beans persistance.
 
 
-    <h3>Backing Style</h3>
+    <h2>Backing Style</h2>
     <p>
       In creating a Synth file it's good practice to create a backing
       style that is used by all components.  This will make sure that
@@ -1008,6 +1009,6 @@ div.example {
 &lt;/synth>
       </pre>
     </div>
-
+  </main>
   </body>
 </html>

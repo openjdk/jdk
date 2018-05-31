@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import sun.swing.SwingUtilities2.Section;
 import static sun.swing.SwingUtilities2.Section.*;
 
 /**
- * <a id="jtree_description"></a>
  * A control that displays a set of hierarchical data as an outline.
  * You can find task-oriented documentation and examples of using trees in
  * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>,
@@ -3778,7 +3777,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
       * <code>TreeModel</code> changes.
       * <p>
       * For more information on what expanded state means, see the
-      * <a href=#jtree_description>JTree description</a> above.
+      * {@link JTree JTree description} above.
       *
       * @return the instance of {@code TreeModelHandler}
       */
