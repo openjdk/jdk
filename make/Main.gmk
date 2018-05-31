@@ -98,13 +98,10 @@ ALL_TARGETS += buildtools-langtools interim-langtools \
 ################################################################################
 # Special targets for certain modules
 
-unpack-sec:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UnpackSecurity.gmk)
-
 generate-exported-symbols:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildStatic.gmk)
 
-ALL_TARGETS += unpack-sec generate-exported-symbols
+ALL_TARGETS += generate-exported-symbols
 
 ################################################################################
 # Gensrc targets, generating source before java compilation can be done
@@ -189,7 +186,7 @@ $(foreach m, $(IMPORT_COPY_MODULES), $(eval $(call DeclareImportCopyRecipe,$m)))
 ALL_TARGETS += $(ALL_COPY_TARGETS)
 
 ################################################################################
-# Targets for compiling all java modules. Nashorn is treated separately.
+# Targets for compiling all java modules.
 JAVA_MODULES := $(ALL_MODULES)
 JAVA_TARGETS := $(addsuffix -java, $(JAVA_MODULES))
 
@@ -199,14 +196,7 @@ define DeclareCompileJavaRecipe
 	    -f CompileJavaModules.gmk MODULE=$1)
 endef
 
-$(foreach m, $(filter-out jdk.scripting.nashorn, $(JAVA_MODULES)), \
-    $(eval $(call DeclareCompileJavaRecipe,$m)))
-
-# Build nashorn. Needs to be compiled separately from the rest of the modules
-# due to nasgen.
-jdk.scripting.nashorn-java:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
-	    -f BuildNashorn.gmk compile)
+$(foreach m, $(JAVA_MODULES), $(eval $(call DeclareCompileJavaRecipe,$m)))
 
 ALL_TARGETS += $(JAVA_TARGETS)
 
@@ -699,9 +689,6 @@ else
   # For jdk.internal.vm.compiler, the gensrc step is generating a module-info.java.extra
   # file to be processed by the gensrc-moduleinfo target.
   jdk.internal.vm.compiler-gensrc-moduleinfo: jdk.internal.vm.compiler-gensrc-src
-
-  # Explicitly add dependencies for special targets
-  java.base-java: unpack-sec
 
   jdk.jdeps-gendata: java rmic
 

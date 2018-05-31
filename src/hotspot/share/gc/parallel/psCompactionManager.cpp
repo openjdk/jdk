@@ -200,16 +200,9 @@ static void oop_pc_follow_contents_specialized(InstanceRefKlass* klass, oop obj,
       cm->mark_and_push(referent_addr);
     }
   }
-  T* next_addr = (T*)java_lang_ref_Reference::next_addr_raw(obj);
-  // Treat discovered as normal oop, if ref is not "active",
-  // i.e. if next is non-NULL.
-  T  next_oop = RawAccess<>::oop_load(next_addr);
-  if (!CompressedOops::is_null(next_oop)) { // i.e. ref is not "active"
-    T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr_raw(obj);
-    log_develop_trace(gc, ref)("   Process discovered as normal " PTR_FORMAT, p2i(discovered_addr));
-    cm->mark_and_push(discovered_addr);
-  }
-  cm->mark_and_push(next_addr);
+  // Treat discovered as normal oop.
+  T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr_raw(obj);
+  cm->mark_and_push(discovered_addr);
   klass->InstanceKlass::oop_pc_follow_contents(obj, cm);
 }
 

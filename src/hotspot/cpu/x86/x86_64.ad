@@ -2980,6 +2980,16 @@ operand immI8()
   interface(CONST_INTER);
 %}
 
+operand immU8()
+%{
+  predicate((0 <= n->get_int()) && (n->get_int() <= 255));
+  match(ConI);
+
+  op_cost(5);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immI16()
 %{
   predicate((-32768 <= n->get_int()) && (n->get_int() <= 32767));
@@ -11595,6 +11605,46 @@ instruct testUL_reg(rFlagsRegU cr, rRegL src, immL0 zero)
   opcode(0x85);
   ins_encode(REX_reg_reg_wide(src, src), OpcP, reg_reg(src, src));
   ins_pipe(ialu_cr_reg_imm);
+%}
+
+instruct compUB_mem_imm(rFlagsReg cr, memory mem, immU8 imm)
+%{
+  match(Set cr (CmpI (LoadUB mem) imm));
+
+  ins_cost(125);
+  format %{ "cmpb    $mem, $imm" %}
+  ins_encode %{ __ cmpb($mem$$Address, $imm$$constant); %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct compB_mem_imm(rFlagsReg cr, memory mem, immI8 imm)
+%{
+  match(Set cr (CmpI (LoadB mem) imm));
+
+  ins_cost(125);
+  format %{ "cmpb    $mem, $imm" %}
+  ins_encode %{ __ cmpb($mem$$Address, $imm$$constant); %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct testUB_mem_imm(rFlagsReg cr, memory mem, immU8 imm, immI0 zero)
+%{
+  match(Set cr (CmpI (AndI (LoadUB mem) imm) zero));
+
+  ins_cost(125);
+  format %{ "testb   $mem, $imm" %}
+  ins_encode %{ __ testb($mem$$Address, $imm$$constant); %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
+instruct testB_mem_imm(rFlagsReg cr, memory mem, immI8 imm, immI0 zero)
+%{
+  match(Set cr (CmpI (AndI (LoadB mem) imm) zero));
+
+  ins_cost(125);
+  format %{ "testb   $mem, $imm" %}
+  ins_encode %{ __ testb($mem$$Address, $imm$$constant); %}
+  ins_pipe(ialu_cr_reg_mem);
 %}
 
 //----------Max and Min--------------------------------------------------------

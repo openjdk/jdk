@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8039410 8042601 8042829 8049393 8050031 8155061 8155995 8167967 8169813 8182765
+ * @bug 8039410 8042601 8042829 8049393 8050031 8155061 8155995 8167967 8169813 8182765 8196202
  * @summary test to determine if members are ordered correctly
  * @library ../lib/
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -129,6 +129,7 @@ public class TestOrdering extends JavadocTester {
             tester.javadoc("-d", "out-1",
                     "-sourcepath", tester.testSrc,
                     "-use",
+                    "--frames",
                     "pkg1");
             tester.checkExit(Exit.OK);
 
@@ -383,6 +384,7 @@ public class TestOrdering extends JavadocTester {
             List<String> cmdArgs = new ArrayList();
             cmdArgs.add("-d");
             cmdArgs.add("out-2");
+            cmdArgs.add("--frames");
             cmdArgs.add("-sourcepath");
             cmdArgs.add("src");
             cmdArgs.add("-package");

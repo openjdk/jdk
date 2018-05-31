@@ -42,6 +42,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.lang.invoke.MethodType.methodType;
+
 import static org.junit.Assert.*;
 
 public class MethodHandlesInsertArgumentsTest extends MethodHandlesTest {
@@ -87,5 +89,44 @@ public class MethodHandlesInsertArgumentsTest extends MethodHandlesTest {
         if (verbosity >= 3)
             System.out.println("result: "+res2List);
         assertEquals(resList, res2List);
+    }
+
+    private static MethodHandle methodHandle = null;
+    static {
+        try {
+            methodHandle = MethodHandles.lookup().findVirtual(
+                                               MethodHandlesInsertArgumentsTest.class,
+                                               "testMethod",
+                                               methodType(void.class, String.class, String.class));
+        } catch(ReflectiveOperationException ex) {
+            throw new InternalError(ex);
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInsertArgumentsInvalidPos() {
+        countTest();
+        MethodHandles.insertArguments(methodHandle, -1, "First", "Second");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInsertArgumentsTooManyParams() {
+        countTest();
+        MethodHandles.insertArguments(methodHandle, 1, "First", "Second", "Third");
+    }
+
+    @Test(expected = ClassCastException.class)
+    public void testInsertArgumentsPosZero() {
+        countTest();
+        MethodHandles.insertArguments(methodHandle, 0, "First");
+    }
+
+    @Test(expected = ClassCastException.class)
+    public void testInsertArgumentsIncorrectParam() {
+        countTest();
+        MethodHandles.insertArguments(methodHandle, 1, "First", new Object());
+    }
+
+    void testMethod(String a, String b) {
     }
 }

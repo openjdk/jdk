@@ -396,7 +396,6 @@ public:
   void process_roots(StrongRootsScope* scope,
                      ScanningOption so,
                      OopClosure* strong_roots,
-                     OopClosure* weak_roots,
                      CLDClosure* strong_cld_closure,
                      CLDClosure* weak_cld_closure,
                      CodeBlobToOopClosure* code_roots);

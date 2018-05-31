@@ -837,4 +837,27 @@ public class Bytecodes {
 
         assert !isConditionalBranch(opcode) || isBranch(opcode) : "a conditional branch must also be a branch";
     }
+
+    public static boolean isIfBytecode(int bytecode) {
+        switch (bytecode) {
+            case IFEQ:
+            case IFNE:
+            case IFLT:
+            case IFGE:
+            case IFGT:
+            case IFLE:
+            case IF_ICMPEQ:
+            case IF_ICMPNE:
+            case IF_ICMPLT:
+            case IF_ICMPGE:
+            case IF_ICMPGT:
+            case IF_ICMPLE:
+            case IF_ACMPEQ:
+            case IF_ACMPNE:
+            case IFNULL:
+            case IFNONNULL:
+                return true;
+        }
+        return false;
+    }
 }

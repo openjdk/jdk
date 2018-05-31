@@ -357,14 +357,9 @@ public:
 
   // Garbage collection support
 
-  // This method applies "blk->do_oop" to all the pointers to "system"
-  // classes and loaders.
-  static void always_strong_oops_do(OopClosure* blk);
-
   // Unload (that is, break root links to) all unmarked classes and
   // loaders.  Returns "true" iff something was unloaded.
-  static bool do_unloading(BoolObjectClosure* is_alive,
-                           GCTimer* gc_timer,
+  static bool do_unloading(GCTimer* gc_timer,
                            bool do_cleaning = true);
 
   // Used by DumpSharedSpaces only to remove classes that failed verification
@@ -374,7 +369,6 @@ public:
 
   // Applies "f->do_oop" to all root oops in the system dictionary.
   static void oops_do(OopClosure* f);
-  static void roots_oops_do(OopClosure* strong, OopClosure* weak);
 
   // System loader lock
   static oop system_loader_lock()           { return _system_loader_lock_obj; }

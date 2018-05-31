@@ -1817,21 +1817,10 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k, TRAPS) {
 // ----------------------------------------------------------------------------
 // GC support
 
-void SystemDictionary::always_strong_oops_do(OopClosure* blk) {
-  roots_oops_do(blk, NULL);
-}
-
-
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
 // Note: anonymous classes are not in the SD.
-bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive,
-                                    GCTimer* gc_timer,
+bool SystemDictionary::do_unloading(GCTimer* gc_timer,
                                     bool do_cleaning) {
-
-  {
-    GCTraceTime(Debug, gc, phases) t("SystemDictionary WeakHandle cleaning", gc_timer);
-    vm_weak_oop_storage()->weak_oops_do(is_alive, &do_nothing_cl);
-  }
 
   bool unloading_occurred;
   {
@@ -1863,27 +1852,6 @@ bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive,
   return unloading_occurred;
 }
 
-void SystemDictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
-  strong->do_oop(&_java_system_loader);
-  strong->do_oop(&_java_platform_loader);
-  strong->do_oop(&_system_loader_lock_obj);
-  CDS_ONLY(SystemDictionaryShared::roots_oops_do(strong);)
-
-  // Do strong roots marking if the closures are the same.
-  if (strong == weak || !ClassUnloading) {
-    // Only the protection domain oops contain references into the heap. Iterate
-    // over all of them.
-    vm_weak_oop_storage()->oops_do(strong);
-  } else {
-   if (weak != NULL) {
-     vm_weak_oop_storage()->oops_do(weak);
-   }
-  }
-
-  // Visit extra methods
-  invoke_method_table()->oops_do(strong);
-}
-
 void SystemDictionary::oops_do(OopClosure* f) {
   f->do_oop(&_java_system_loader);
   f->do_oop(&_java_platform_loader);
@@ -1892,8 +1860,6 @@ void SystemDictionary::oops_do(OopClosure* f) {
 
   // Visit extra methods
   invoke_method_table()->oops_do(f);
-
-  vm_weak_oop_storage()->oops_do(f);
 }
 
 // CDS: scan and relocate all classes in the system dictionary.

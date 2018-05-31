@@ -121,6 +121,8 @@ public class WriteBarrierAdditionPhase extends Phase {
                 boolean precise = barrierType == BarrierType.PRECISE;
                 if (config.useG1GC) {
                     if (!node.getLocationIdentity().isInit()) {
+                        // The pre barrier does nothing if the value being read is null, so it can
+                        // be explicitly skipped when this is an initializing store.
                         addG1PreWriteBarrier(node, node.getAddress(), null, true, node.getNullCheck(), graph);
                     }
                     addG1PostWriteBarrier(node, node.getAddress(), node.value(), precise, graph);
@@ -178,6 +180,8 @@ public class WriteBarrierAdditionPhase extends Phase {
     private void addArrayRangeBarriers(ArrayRangeWrite write, StructuredGraph graph) {
         if (config.useG1GC) {
             if (!write.isInitialization()) {
+                // The pre barrier does nothing if the value being read is null, so it can
+                // be explicitly skipped when this is an initializing store.
                 G1ArrayRangePreWriteBarrier g1ArrayRangePreWriteBarrier = graph.add(new G1ArrayRangePreWriteBarrier(write.getAddress(), write.getLength(), write.getElementStride()));
                 graph.addBeforeFixed(write.asNode(), g1ArrayRangePreWriteBarrier);
             }

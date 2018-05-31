@@ -389,7 +389,9 @@ public:
     // Print details about the underlying virtual spaces.
     rf_show_vslist                  = (1 << 3),
     // Print metaspace map.
-    rf_show_vsmap                   = (1 << 4)
+    rf_show_vsmap                   = (1 << 4),
+    // If show_loaders: show loaded classes for each loader.
+    rf_show_classes                 = (1 << 5)
   };
 
   // This will print out a basic metaspace usage report but

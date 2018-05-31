@@ -1229,7 +1229,7 @@ public class JavacTrees extends DocTrees {
         jcCompilationUnit.lineMap = jcCompilationUnit.getLineMap();
         jcCompilationUnit.modle = psym.modle;
         jcCompilationUnit.sourcefile = jfo;
-        jcCompilationUnit.namedImportScope = new NamedImportScope(psym, jcCompilationUnit.toplevelScope);
+        jcCompilationUnit.namedImportScope = new NamedImportScope(psym);
         jcCompilationUnit.packge = psym;
         jcCompilationUnit.starImportScope = new StarImportScope(psym);
         jcCompilationUnit.toplevelScope = WriteableScope.create(psym);

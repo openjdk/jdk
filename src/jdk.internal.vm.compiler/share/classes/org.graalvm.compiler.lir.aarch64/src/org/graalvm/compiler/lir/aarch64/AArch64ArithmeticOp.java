@@ -74,6 +74,9 @@ public enum AArch64ArithmeticOp {
     FREM,
     FNEG,
     FABS,
+    FRINTM,
+    FRINTN,
+    FRINTP,
     SQRT;
 
     /**
@@ -132,6 +135,15 @@ public enum AArch64ArithmeticOp {
                     break;
                 case FABS:
                     masm.fabs(size, dst, src);
+                    break;
+                case FRINTM:
+                    masm.frintm(size, dst, src);
+                    break;
+                case FRINTN:
+                    masm.frintn(size, dst, src);
+                    break;
+                case FRINTP:
+                    masm.frintp(size, dst, src);
                     break;
                 case SQRT:
                     masm.fsqrt(size, dst, src);

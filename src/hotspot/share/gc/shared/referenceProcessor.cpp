@@ -303,9 +303,6 @@ void DiscoveredListIterator::clear_referent() {
 }
 
 void DiscoveredListIterator::enqueue() {
-  // Self-loop next, so as to make Ref not active.
-  java_lang_ref_Reference::set_next_raw(_current_discovered, _current_discovered);
-
   HeapAccess<AS_NO_KEEPALIVE>::oop_store_at(_current_discovered,
                                             java_lang_ref_Reference::discovered_offset,
                                             _next_discovered);
@@ -364,38 +361,35 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
                              iter.removed(), iter.processed(), p2i(&refs_list));
 }
 
+inline void log_dropped_ref(const DiscoveredListIterator& iter, const char* reason) {
+  log_develop_trace(gc, ref)("Dropping %s reference " PTR_FORMAT ": %s",
+                             reason, p2i(iter.obj()),
+                             iter.obj()->klass()->internal_name());
+}
+
+// Traverse the list and remove any Refs whose referents are alive,
+// or NULL if discovery is not atomic.
 void ReferenceProcessor::process_phase2(DiscoveredList&    refs_list,
                                         BoolObjectClosure* is_alive,
                                         OopClosure*        keep_alive,
                                         VoidClosure*       complete_gc) {
-  if (discovery_is_atomic()) {
-    // complete_gc is ignored in this case for this phase
-    pp2_work(refs_list, is_alive, keep_alive);
-  } else {
-    assert(complete_gc != NULL, "Error");
-    pp2_work_concurrent_discovery(refs_list, is_alive,
-                                  keep_alive, complete_gc);
-  }
-}
-// Traverse the list and remove any Refs that are not active, or
-// whose referents are either alive or NULL.
-void
-ReferenceProcessor::pp2_work(DiscoveredList&    refs_list,
-                             BoolObjectClosure* is_alive,
-                             OopClosure*        keep_alive) {
-  assert(discovery_is_atomic(), "Error");
+  // complete_gc is unused.
   DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
   while (iter.has_next()) {
-    iter.load_ptrs(DEBUG_ONLY(false /* allow_null_referent */));
-    DEBUG_ONLY(oop next = java_lang_ref_Reference::next(iter.obj());)
-    assert(next == NULL, "Should not discover inactive Reference");
-    if (iter.is_referent_alive()) {
-      log_develop_trace(gc, ref)("Dropping strongly reachable reference (" INTPTR_FORMAT ": %s)",
-                                 p2i(iter.obj()), iter.obj()->klass()->internal_name());
-      // The referent is reachable after all.
-      // Remove Reference object from list.
+    iter.load_ptrs(DEBUG_ONLY(!discovery_is_atomic() /* allow_null_referent */));
+    if (iter.referent() == NULL) {
+      // Reference has been cleared since discovery; only possible if
+      // discovery is not atomic (checked by load_ptrs).  Remove
+      // reference from list.
+      log_dropped_ref(iter, "cleared");
       iter.remove();
-      // Update the referent pointer as necessary: Note that this
+      iter.move_to_next();
+    } else if (iter.is_referent_alive()) {
+      // The referent is reachable after all.
+      // Remove reference from list.
+      log_dropped_ref(iter, "reachable");
+      iter.remove();
+      // Update the referent pointer as necessary.  Note that this
       // should not entail any recursive marking because the
       // referent must already have been traversed.
       iter.make_referent_alive();
@@ -404,45 +398,6 @@ ReferenceProcessor::pp2_work(DiscoveredList&    refs_list,
       iter.next();
     }
   }
-  NOT_PRODUCT(
-    if (iter.processed() > 0) {
-      log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
-        " Refs in discovered list " INTPTR_FORMAT,
-        iter.removed(), iter.processed(), p2i(&refs_list));
-    }
-  )
-}
-
-void
-ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
-                                                  BoolObjectClosure* is_alive,
-                                                  OopClosure*        keep_alive,
-                                                  VoidClosure*       complete_gc) {
-  assert(!discovery_is_atomic(), "Error");
-  DiscoveredListIterator iter(refs_list, keep_alive, is_alive);
-  while (iter.has_next()) {
-    iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
-    HeapWord* next_addr = java_lang_ref_Reference::next_addr_raw(iter.obj());
-    oop next = java_lang_ref_Reference::next(iter.obj());
-    if ((iter.referent() == NULL || iter.is_referent_alive() ||
-         next != NULL)) {
-      assert(oopDesc::is_oop_or_null(next), "Expected an oop or NULL for next field at " PTR_FORMAT, p2i(next));
-      // Remove Reference object from list
-      iter.remove();
-      // Trace the cohorts
-      iter.make_referent_alive();
-      if (UseCompressedOops) {
-        keep_alive->do_oop((narrowOop*)next_addr);
-      } else {
-        keep_alive->do_oop((oop*)next_addr);
-      }
-      iter.move_to_next();
-    } else {
-      iter.next();
-    }
-  }
-  // Now close the newly reachable set
-  complete_gc->do_void();
   NOT_PRODUCT(
     if (iter.processed() > 0) {
       log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
@@ -465,8 +420,12 @@ void ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
       // NULL out referent pointer
       iter.clear_referent();
     } else {
-      // keep the referent around
+      // Current reference is a FinalReference; that's the only kind we
+      // don't clear the referent, instead keeping it for calling finalize.
       iter.make_referent_alive();
+      // Self-loop next, to mark it not active.
+      assert(java_lang_ref_Reference::next(iter.obj()) == NULL, "enqueued FinalReference");
+      java_lang_ref_Reference::set_next_raw(iter.obj(), iter.obj());
     }
     iter.enqueue();
     log_develop_trace(gc, ref)("Adding %sreference (" INTPTR_FORMAT ": %s) as pending",
@@ -913,9 +872,9 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   if (!_discovering_refs || !RegisterReferences) {
     return false;
   }
-  // We only discover active references.
-  oop next = java_lang_ref_Reference::next(obj);
-  if (next != NULL) {   // Ref is no longer active
+
+  if ((rt == REF_FINAL) && (java_lang_ref_Reference::next(obj) != NULL)) {
+    // Don't rediscover non-active FinalReferences.
     return false;
   }
 
@@ -1121,24 +1080,15 @@ bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_lis
       return true;
     }
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
-    oop obj = iter.obj();
-    oop next = java_lang_ref_Reference::next(obj);
-    if (iter.referent() == NULL || iter.is_referent_alive() || next != NULL) {
-      // The referent has been cleared, or is alive, or the Reference is not
-      // active; we need to trace and mark its cohort.
+    if (iter.referent() == NULL || iter.is_referent_alive()) {
+      // The referent has been cleared, or is alive; we need to trace
+      // and mark its cohort.
       log_develop_trace(gc, ref)("Precleaning Reference (" INTPTR_FORMAT ": %s)",
                                  p2i(iter.obj()), iter.obj()->klass()->internal_name());
       // Remove Reference object from list
       iter.remove();
       // Keep alive its cohort.
       iter.make_referent_alive();
-      if (UseCompressedOops) {
-        narrowOop* next_addr = (narrowOop*)java_lang_ref_Reference::next_addr_raw(obj);
-        keep_alive->do_oop(next_addr);
-      } else {
-        oop* next_addr = (oop*)java_lang_ref_Reference::next_addr_raw(obj);
-        keep_alive->do_oop(next_addr);
-      }
       iter.move_to_next();
     } else {
       iter.next();

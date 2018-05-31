@@ -41,8 +41,8 @@ import jdk.internal.vm.compiler.word.LocationIdentity;
 import jdk.vm.ci.meta.JavaKind;
 
 /**
- * Represents an atomic compare-and-swap operation The result is a boolean that contains whether the
- * value matched the expected value.
+ * Represents an atomic compare-and-swap operation. The result is a boolean that contains whether
+ * the value matched the expected value.
  */
 @NodeInfo(allowedUsageTypes = {Value, Memory}, cycles = CYCLES_8, size = SIZE_8)
 public final class UnsafeCompareAndSwapNode extends AbstractMemoryCheckpoint implements Lowerable, MemoryCheckpoint.Single {

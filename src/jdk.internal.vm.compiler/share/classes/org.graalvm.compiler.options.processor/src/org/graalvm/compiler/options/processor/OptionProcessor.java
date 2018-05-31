@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,11 +34,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
@@ -50,21 +49,16 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionDescriptor;
-import org.graalvm.compiler.options.OptionDescriptors;
-import org.graalvm.compiler.options.OptionKey;
-import org.graalvm.compiler.options.OptionType;
+import org.graalvm.compiler.processor.AbstractProcessor;
 
 /**
- * Processes static fields annotated with {@link Option}. An {@link OptionDescriptors}
+ * Processes static fields annotated with {@code Option}. An {@code OptionDescriptors}
  * implementation is generated for each top level class containing at least one such field. The name
  * of the generated class for top level class {@code com.foo.Bar} is
  * {@code com.foo.Bar_OptionDescriptors}.
@@ -72,12 +66,21 @@ import org.graalvm.compiler.options.OptionType;
 @SupportedAnnotationTypes({"org.graalvm.compiler.options.Option"})
 public class OptionProcessor extends AbstractProcessor {
 
+    private static final String OPTION_CLASS_NAME = "org.graalvm.compiler.options.Option";
+    private static final String OPTION_KEY_CLASS_NAME = "org.graalvm.compiler.options.OptionKey";
+    private static final String OPTION_TYPE_CLASS_NAME = "org.graalvm.compiler.options.OptionType";
+    private static final String OPTION_DESCRIPTOR_CLASS_NAME = "org.graalvm.compiler.options.OptionDescriptor";
+    private static final String OPTION_DESCRIPTORS_CLASS_NAME = "org.graalvm.compiler.options.OptionDescriptors";
+
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
     }
 
     private final Set<Element> processed = new HashSet<>();
+
+    private TypeMirror optionTypeMirror;
+    private TypeMirror optionKeyTypeMirror;
 
     private void processElement(Element element, OptionsInfo info) {
 
@@ -90,26 +93,24 @@ public class OptionProcessor extends AbstractProcessor {
             return;
         }
 
-        Option annotation = element.getAnnotation(Option.class);
+        AnnotationMirror annotation = getAnnotation(element, optionTypeMirror);
         assert annotation != null;
         assert element instanceof VariableElement;
         assert element.getKind() == ElementKind.FIELD;
         VariableElement field = (VariableElement) element;
         String fieldName = field.getSimpleName().toString();
 
-        Elements elements = processingEnv.getElementUtils();
         Types types = processingEnv.getTypeUtils();
 
         TypeMirror fieldType = field.asType();
         if (fieldType.getKind() != TypeKind.DECLARED) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, "Option field must be of type " + OptionKey.class.getName(), element);
+            processingEnv.getMessager().printMessage(Kind.ERROR, "Option field must be of type " + OPTION_KEY_CLASS_NAME, element);
             return;
         }
         DeclaredType declaredFieldType = (DeclaredType) fieldType;
 
-        TypeMirror optionKeyType = elements.getTypeElement(OptionKey.class.getName()).asType();
-        if (!types.isSubtype(fieldType, types.erasure(optionKeyType))) {
-            String msg = String.format("Option field type %s is not a subclass of %s", fieldType, optionKeyType);
+        if (!types.isSubtype(fieldType, types.erasure(optionKeyTypeMirror))) {
+            String msg = String.format("Option field type %s is not a subclass of %s", fieldType, optionKeyTypeMirror);
             processingEnv.getMessager().printMessage(Kind.ERROR, msg, element);
             return;
         }
@@ -123,7 +124,7 @@ public class OptionProcessor extends AbstractProcessor {
             return;
         }
 
-        String optionName = annotation.name();
+        String optionName = getAnnotationValue(annotation, "name", String.class);
         if (optionName.equals("")) {
             optionName = fieldName;
         }
@@ -134,7 +135,7 @@ public class OptionProcessor extends AbstractProcessor {
         }
 
         DeclaredType declaredOptionKeyType = declaredFieldType;
-        while (!types.isSameType(types.erasure(declaredOptionKeyType), types.erasure(optionKeyType))) {
+        while (!types.isSameType(types.erasure(declaredOptionKeyType), types.erasure(optionKeyTypeMirror))) {
             List<? extends TypeMirror> directSupertypes = types.directSupertypes(declaredFieldType);
             assert !directSupertypes.isEmpty();
             declaredOptionKeyType = (DeclaredType) directSupertypes.get(0);
@@ -171,12 +172,12 @@ public class OptionProcessor extends AbstractProcessor {
             processingEnv.getMessager().printMessage(Kind.ERROR, "Option field cannot be declared in the unnamed package", element);
             return;
         }
-        String[] helpValue = annotation.help();
+        List<String> helpValue = getAnnotationValueList(annotation, "help", String.class);
         String help = "";
-        String[] extraHelp = {};
+        List<String> extraHelp = new ArrayList<>();
 
-        if (helpValue.length == 1) {
-            help = helpValue[0];
+        if (helpValue.size() == 1) {
+            help = helpValue.get(0);
             if (help.startsWith("file:")) {
                 String path = help.substring("file:".length());
                 Filer filer = processingEnv.getFiler();
@@ -194,12 +195,10 @@ public class OptionProcessor extends AbstractProcessor {
                             help = "";
                         }
                         String line = br.readLine();
-                        List<String> lines = new ArrayList<>();
                         while (line != null) {
-                            lines.add(line);
+                            extraHelp.add(line);
                             line = br.readLine();
                         }
-                        extraHelp = lines.toArray(new String[lines.size()]);
                     }
                 } catch (IOException e) {
                     String msg = String.format("Error reading %s containing the help text for option field: %s", path, e);
@@ -207,9 +206,9 @@ public class OptionProcessor extends AbstractProcessor {
                     return;
                 }
             }
-        } else if (helpValue.length > 1) {
-            help = helpValue[0];
-            extraHelp = Arrays.copyOfRange(helpValue, 1, helpValue.length);
+        } else if (helpValue.size() > 1) {
+            help = helpValue.get(0);
+            extraHelp = helpValue.subList(1, helpValue.size());
         }
         if (help.length() != 0) {
             char firstChar = help.charAt(0);
@@ -219,7 +218,8 @@ public class OptionProcessor extends AbstractProcessor {
             }
         }
 
-        info.options.add(new OptionInfo(optionName, annotation.type(), help, extraHelp, optionType, declaringClass, field));
+        String optionTypeName = getAnnotationValue(annotation, "type", VariableElement.class).getSimpleName().toString();
+        info.options.add(new OptionInfo(optionName, optionTypeName, help, extraHelp, optionType, declaringClass, field));
     }
 
     private void createFiles(OptionsInfo info) {
@@ -231,7 +231,7 @@ public class OptionProcessor extends AbstractProcessor {
     }
 
     private void createOptionsDescriptorsFile(OptionsInfo info, String pkg, Name topDeclaringClass, Element[] originatingElements) {
-        String optionsClassName = topDeclaringClass + "_" + OptionDescriptors.class.getSimpleName();
+        String optionsClassName = topDeclaringClass + "_" + getSimpleName(OPTION_DESCRIPTORS_CLASS_NAME);
 
         Filer filer = processingEnv.getFiler();
         try (PrintWriter out = createSourceFile(pkg, optionsClassName, filer, originatingElements)) {
@@ -243,12 +243,12 @@ public class OptionProcessor extends AbstractProcessor {
             out.println("package " + pkg + ";");
             out.println("");
             out.println("import java.util.*;");
-            out.println("import " + OptionDescriptors.class.getPackage().getName() + ".*;");
-            out.println("import " + OptionType.class.getName() + ";");
+            out.println("import " + getPackageName(OPTION_DESCRIPTORS_CLASS_NAME) + ".*;");
+            out.println("import " + OPTION_TYPE_CLASS_NAME + ";");
             out.println("");
-            out.println("public class " + optionsClassName + " implements " + OptionDescriptors.class.getSimpleName() + " {");
+            out.println("public class " + optionsClassName + " implements " + getSimpleName(OPTION_DESCRIPTORS_CLASS_NAME) + " {");
 
-            String desc = OptionDescriptor.class.getSimpleName();
+            String desc = getSimpleName(OPTION_DESCRIPTOR_CLASS_NAME);
 
             Collections.sort(info.options);
 
@@ -265,18 +265,18 @@ public class OptionProcessor extends AbstractProcessor {
                     optionField = option.declaringClass + "." + option.field.getSimpleName();
                 }
                 out.println("        case \"" + name + "\": {");
-                OptionType optionType = option.optionType;
+                String optionType = option.optionType;
                 String type = option.type;
                 String help = option.help;
-                String[] extraHelp = option.extraHelp;
+                List<String> extraHelp = option.extraHelp;
                 String declaringClass = option.declaringClass;
                 Name fieldName = option.field.getSimpleName();
                 out.printf("            return " + desc + ".create(\n");
                 out.printf("                /*name*/ \"%s\",\n", name);
-                out.printf("                /*optionType*/ %s.%s,\n", optionType.getDeclaringClass().getSimpleName(), optionType.name());
+                out.printf("                /*optionType*/ %s.%s,\n", getSimpleName(OPTION_TYPE_CLASS_NAME), optionType);
                 out.printf("                /*optionValueType*/ %s.class,\n", type);
                 out.printf("                /*help*/ \"%s\",\n", help);
-                if (extraHelp.length != 0) {
+                if (extraHelp.size() != 0) {
                     out.printf("                /*extraHelp*/ new String[] {\n");
                     for (String line : extraHelp) {
                         out.printf("                         \"%s\",\n", line.replace("\\", "\\\\").replace("\"", "\\\""));
@@ -336,14 +336,14 @@ public class OptionProcessor extends AbstractProcessor {
     static class OptionInfo implements Comparable<OptionInfo> {
 
         final String name;
-        final OptionType optionType;
+        final String optionType;
         final String help;
-        final String[] extraHelp;
+        final List<String> extraHelp;
         final String type;
         final String declaringClass;
         final VariableElement field;
 
-        OptionInfo(String name, OptionType optionType, String help, String[] extraHelp, String type, String declaringClass, VariableElement field) {
+        OptionInfo(String name, String optionType, String help, List<String> extraHelp, String type, String declaringClass, VariableElement field) {
             this.name = name;
             this.optionType = optionType;
             this.help = help;
@@ -390,8 +390,13 @@ public class OptionProcessor extends AbstractProcessor {
             return true;
         }
 
+        TypeElement optionTypeElement = getTypeElement(OPTION_CLASS_NAME);
+
+        optionTypeMirror = optionTypeElement.asType();
+        optionKeyTypeMirror = getTypeElement(OPTION_KEY_CLASS_NAME).asType();
+
         Map<Element, OptionsInfo> map = new HashMap<>();
-        for (Element element : roundEnv.getElementsAnnotatedWith(Option.class)) {
+        for (Element element : roundEnv.getElementsAnnotatedWith(optionTypeElement)) {
             if (!processed.contains(element)) {
                 processed.add(element);
                 Element topDeclaringType = topDeclaringType(element);

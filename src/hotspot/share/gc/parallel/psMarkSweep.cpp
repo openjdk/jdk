@@ -521,7 +521,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     ObjectSynchronizer::oops_do(mark_and_push_closure());
     Management::oops_do(mark_and_push_closure());
     JvmtiExport::oops_do(mark_and_push_closure());
-    SystemDictionary::always_strong_oops_do(mark_and_push_closure());
+    SystemDictionary::oops_do(mark_and_push_closure());
     ClassLoaderDataGraph::always_strong_cld_do(follow_cld_closure());
     // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
     //CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
@@ -556,7 +556,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     GCTraceTime(Debug, gc, phases) t("Class Unloading", _gc_timer);
 
     // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(is_alive_closure(), _gc_timer);
+    bool purged_class = SystemDictionary::do_unloading(_gc_timer);
 
     // Unload nmethods.
     CodeCache::do_unloading(is_alive_closure(), purged_class);

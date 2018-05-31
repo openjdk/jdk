@@ -783,7 +783,6 @@ static AssertNonScavengableClosure assert_is_non_scavengable_closure;
 void GenCollectedHeap::process_roots(StrongRootsScope* scope,
                                      ScanningOption so,
                                      OopClosure* strong_roots,
-                                     OopClosure* weak_roots,
                                      CLDClosure* strong_cld_closure,
                                      CLDClosure* weak_cld_closure,
                                      CodeBlobToOopClosure* code_roots) {
@@ -827,7 +826,7 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   }
 
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_SystemDictionary_oops_do)) {
-    SystemDictionary::roots_oops_do(strong_roots, weak_roots);
+    SystemDictionary::oops_do(strong_roots);
   }
 
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_CodeCache_oops_do)) {
@@ -869,7 +868,7 @@ void GenCollectedHeap::young_process_roots(StrongRootsScope* scope,
                                            CLDClosure* cld_closure) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations);
 
-  process_roots(scope, SO_ScavengeCodeCache, root_closure, root_closure,
+  process_roots(scope, SO_ScavengeCodeCache, root_closure,
                 cld_closure, cld_closure, &mark_code_closure);
   process_string_table_roots(scope, root_closure);
 
@@ -893,10 +892,9 @@ void GenCollectedHeap::full_process_roots(StrongRootsScope* scope,
                                           OopsInGenClosure* root_closure,
                                           CLDClosure* cld_closure) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, is_adjust_phase);
-  OopsInGenClosure* weak_roots = only_strong_roots ? NULL : root_closure;
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
 
-  process_roots(scope, so, root_closure, weak_roots, cld_closure, weak_cld_closure, &mark_code_closure);
+  process_roots(scope, so, root_closure, cld_closure, weak_cld_closure, &mark_code_closure);
   if (is_adjust_phase) {
     // We never treat the string table as roots during marking
     // for the full gc, so we only need to process it during

@@ -1504,3 +1504,12 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
   FREE_C_HEAP_ARRAY(JVMFlag*, array);
 }
 
+void JVMFlag::printError(bool verbose, const char* msg, ...) {
+  if (verbose) {
+    va_list listPointer;
+    va_start(listPointer, msg);
+    jio_vfprintf(defaultStream::error_stream(), msg, listPointer);
+    va_end(listPointer);
+  }
+}
+

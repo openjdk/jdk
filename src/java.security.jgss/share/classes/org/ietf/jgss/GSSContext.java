@@ -99,6 +99,25 @@ import java.io.OutputStream;
  * mechanism provider. The application will need to ensure that it has the
  * appropriate permissions if such checks are made in the mechanism layer.<p>
  *
+ * The stream-based methods of {@code GSSContext} have been deprecated in
+ * Java SE 11. These methods have also been removed from
+ * <a href="http://tools.ietf.org/html/rfc8353">
+ * RFC 8353: Generic Security Service API Version 2: Java Bindings Update</a>
+ * for the following reasons (see section 11): "The overloaded methods of
+ * GSSContext that use input and output streams as the means to convey
+ * authentication and per-message GSS-API tokens as described in Section 5.15
+ * of RFC 5653 are removed in this update as the wire protocol
+ * should be defined by an application and not a library. It's also impossible
+ * to implement these methods correctly when the token has no self-framing
+ * (where the end cannot be determined), or the library has no knowledge of
+ * the token format (for example, as a bridge talking to another GSS library)".
+ * These methods include {@link #initSecContext(InputStream, OutputStream)},
+ * {@link #acceptSecContext(InputStream, OutputStream)},
+ * {@link #wrap(InputStream, OutputStream, MessageProp)},
+ * {@link #unwrap(InputStream, OutputStream, MessageProp)},
+ * {@link #getMIC(InputStream, OutputStream, MessageProp)},
+ * and {@link #verifyMIC(InputStream, InputStream, MessageProp)}.<p>
+ *
  * The example code presented below demonstrates the usage of the
  * <code>GSSContext</code> interface for the initiating peer.  Different
  * operations on the <code>GSSContext</code> object are presented,
@@ -316,7 +335,10 @@ public interface GSSContext {
      *   {@link GSSException#BAD_NAMETYPE GSSException.BAD_NAMETYPE},
      *   {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
+     * @deprecated The stream-based methods have been removed from RFC 8353.
+     * Use {@link #initSecContext(byte[], int, int)} instead.
      */
+    @Deprecated(since="11")
     public int initSecContext(InputStream inStream,
                               OutputStream outStream) throws GSSException;
 
@@ -459,6 +481,9 @@ public interface GSSContext {
      *   {@link GSSException#DUPLICATE_TOKEN GSSException.DUPLICATE_TOKEN},
      *   {@link GSSException#BAD_MECH GSSException.BAD_MECH},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
+     *
+     * @deprecated The stream-based methods have been removed from RFC 8353.
+     * Use {@link #acceptSecContext(byte[], int, int)} instead.
      */
     /* Missing return value in RFC. int should have been returned.
      * -----------------------------------------------------------
@@ -472,6 +497,7 @@ public interface GSSContext {
      * 0 indicates that no token  needs to be
      * sent.</strong>
      */
+    @Deprecated(since="11")
     public void acceptSecContext(InputStream inStream,
                                  OutputStream outStream) throws GSSException;
 
@@ -613,7 +639,11 @@ public interface GSSContext {
      *   {@link GSSException#CONTEXT_EXPIRED GSSException.CONTEXT_EXPIRED},
      *   {@link GSSException#BAD_QOP GSSException.BAD_QOP},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
+     *
+     * @deprecated The stream-based methods have been removed from RFC 8353.
+     * Use {@link #wrap(byte[], int, int, MessageProp)} instead.
      */
+    @Deprecated(since="11")
     public void wrap(InputStream inStream, OutputStream outStream,
                      MessageProp msgProp) throws GSSException;
 
@@ -696,7 +726,11 @@ public interface GSSContext {
      *   {@link GSSException#BAD_MIC GSSException.BAD_MIC},
      *   {@link GSSException#CONTEXT_EXPIRED GSSException.CONTEXT_EXPIRED},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
+     *
+     * @deprecated The stream-based methods have been removed from RFC 8353.
+     * Use {@link #unwrap(byte[], int, int, MessageProp)} instead.
      */
+    @Deprecated(since="11")
     public void unwrap(InputStream inStream, OutputStream outStream,
                        MessageProp msgProp) throws GSSException;
 
@@ -761,7 +795,11 @@ public interface GSSContext {
      *   {@link GSSException#CONTEXT_EXPIRED GSSException.CONTEXT_EXPIRED},
      *   {@link GSSException#BAD_QOP GSSException.BAD_QOP},
      *   {@link GSSException#FAILURE GSSException.FAILURE}
+     *
+     * @deprecated The stream-based methods have been removed from RFC 8353.
+     * Use {@link #getMIC(byte[], int, int, MessageProp)} instead.
      */
+    @Deprecated(since="11")
     public void getMIC(InputStream inStream, OutputStream outStream,
                        MessageProp msgProp) throws GSSException;
 
@@ -844,7 +882,12 @@ public interface GSSContext {
      *   {@link GSSException#BAD_MIC GSSException.BAD_MIC}
      *   {@link GSSException#CONTEXT_EXPIRED GSSException.CONTEXT_EXPIRED}
      *   {@link GSSException#FAILURE GSSException.FAILURE}
+     *
+     * @deprecated The stream-based methods have been removed from RFC 8353.
+     * Use {@link #verifyMIC(byte[], int, int, byte[], int, int, MessageProp)}
+     * instead.
      */
+    @Deprecated(since="11")
     public void verifyMIC(InputStream tokStream, InputStream msgStream,
                           MessageProp msgProp) throws GSSException;
 

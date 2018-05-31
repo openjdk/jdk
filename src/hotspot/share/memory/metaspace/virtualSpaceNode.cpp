@@ -521,16 +521,6 @@ bool VirtualSpaceNode::initialize() {
         "Checking that the pre-committed memory was registered by the VirtualSpace");
 
     set_top((MetaWord*)virtual_space()->low());
-    set_reserved(MemRegion((HeapWord*)_rs.base(),
-        (HeapWord*)(_rs.base() + _rs.size())));
-
-    assert(reserved()->start() == (HeapWord*) _rs.base(),
-        "Reserved start was not set properly " PTR_FORMAT
-        " != " PTR_FORMAT, p2i(reserved()->start()), p2i(_rs.base()));
-    assert(reserved()->word_size() == _rs.size() / BytesPerWord,
-        "Reserved size was not set properly " SIZE_FORMAT
-        " != " SIZE_FORMAT, reserved()->word_size(),
-        _rs.size() / BytesPerWord);
   }
 
   // Initialize Occupancy Map.

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
- *
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +21,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 @@END_COPYRIGHT@@
@@ -111,6 +109,7 @@ class UnixConstants {
     static final int PREFIX_ENOTEMPTY = ENOTEMPTY;
     static final int PREFIX_ENOSPC = ENOSPC;
     static final int PREFIX_EAGAIN = EAGAIN;
+    static final int PREFIX_EWOULDBLOCK = EWOULDBLOCK;
     static final int PREFIX_ENOSYS = ENOSYS;
     static final int PREFIX_ELOOP = ELOOP;
     static final int PREFIX_EROFS = EROFS;

@@ -26,7 +26,7 @@
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
-        8164407 8192007 8182765 8196200 8196201
+        8164407 8192007 8182765 8196200 8196201 8196202
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -51,6 +51,7 @@ public class TestModules extends JavadocTester {
                 "-use",
                 "-Xdoclint:none",
                 "-overview", testSrc("overview.html"),
+                "--frames",
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
                 "testpkgmdlA", "testpkgmdlB");
@@ -76,6 +77,7 @@ public class TestModules extends JavadocTester {
                 "-use",
                 "-Xdoclint:none",
                 "-overview", testSrc("overview.html"),
+                "--frames",
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
                 "testpkgmdlA", "testpkgmdlB");
@@ -102,6 +104,7 @@ public class TestModules extends JavadocTester {
                 "-nocomment",
                 "-use",
                 "-Xdoclint:none",
+                "--frames",
                 "-overview", testSrc("overview.html"),
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
@@ -123,6 +126,7 @@ public class TestModules extends JavadocTester {
                 "-nocomment",
                 "-use",
                 "-Xdoclint:none",
+                "--frames",
                 "-overview", testSrc("overview.html"),
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
@@ -143,6 +147,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-nomodule",
                 "-html4",
                 "-use",
+                "--frames",
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "testpkgnomodule", "testpkgnomodule1");
@@ -161,6 +166,7 @@ public class TestModules extends JavadocTester {
     void testHtml5UnnamedModule() {
         javadoc("-d", "out-html5-nomodule",
                 "-use",
+                "--frames",
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "testpkgnomodule", "testpkgnomodule1");
@@ -264,6 +270,7 @@ public class TestModules extends JavadocTester {
     void testModuleFilesAndLinks() {
         javadoc("-d", "out-modulelinks",
                 "-Xdoclint:none",
+                "--frames",
                 "--module-source-path", testSrc,
                 "--module", "moduleA,moduleB",
                 "testpkgmdlA", "testpkgmdlB");
@@ -328,6 +335,7 @@ public class TestModules extends JavadocTester {
                 "-author",
                 "-version",
                 "-Xdoclint:none",
+                "--frames",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -352,6 +360,7 @@ public class TestModules extends JavadocTester {
                 "-author",
                 "-version",
                 "-Xdoclint:none",
+                "--frames",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -377,6 +386,7 @@ public class TestModules extends JavadocTester {
                 "-author",
                 "-version",
                 "-Xdoclint:none",
+                "--frames",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -453,6 +463,7 @@ public class TestModules extends JavadocTester {
     @Test
     void testSingleModuleSinglePkg() {
         javadoc("-d", "out-singlemod",
+                "--frames",
                 "--module-source-path", testSrc,
                 "--module", "moduleC",
                 "testpkgmdlC");
@@ -468,6 +479,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-singlemodmultiplepkg",
                 "--show-module-contents=all",
                 "-Xdoclint:none",
+                "--frames",
                 "--module-source-path", testSrc,
                 "--module", "moduleB",
                 "testpkg2mdlB", "testpkgmdlB");
@@ -483,6 +495,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-group",
                 "--show-module-contents=all",
                 "-Xdoclint:none",
+                "--frames",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -505,6 +518,7 @@ public class TestModules extends JavadocTester {
                 "-html4",
                 "--show-module-contents=all",
                 "-Xdoclint:none",
+                "--frames",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -528,6 +542,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-groupOrder",
                 "--show-module-contents=all",
                 "-Xdoclint:none",
+                "--frames",
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "moduletag:s:Module Tag:",
                 "--module-source-path", testSrc,
@@ -550,6 +565,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-groupnomodule",
                 "-use",
                 "-Xdoclint:none",
+                "--frames",
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "-group", "Package Group 0", "testpkgnomodule",
@@ -568,6 +584,7 @@ public class TestModules extends JavadocTester {
                 "-html4",
                 "-use",
                 "-Xdoclint:none",
+                "--frames",
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "-group", "Package Group 0", "testpkgnomodule",
@@ -587,6 +604,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-groupPkgOrder",
                 "-use",
                 "-Xdoclint:none",
+                "--frames",
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "-group", "Z Group", "testpkgnomodule",
@@ -604,6 +622,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-groupsinglemodule",
                 "-use",
                 "-Xdoclint:none",
+                "--frames",
                 "--module-source-path", testSrc,
                 "-group", "Module Group B", "moduleB*",
                 "--module", "moduleB",
@@ -621,6 +640,7 @@ public class TestModules extends JavadocTester {
                 "-html4",
                 "-use",
                 "-Xdoclint:none",
+                "--frames",
                 "--module-source-path", testSrc,
                 "-group", "Module Group B", "moduleB*",
                 "--module", "moduleB",
@@ -637,6 +657,7 @@ public class TestModules extends JavadocTester {
         javadoc("-d", "out-modulename",
                 "-use",
                 "-Xdoclint:none",
+                "--frames",
                 "--module-source-path", testSrc,
                 "--module", "moduleB,test.moduleFullName",
                 "testpkg2mdlB", "testpkgmdlB", "testpkgmdlfullname");

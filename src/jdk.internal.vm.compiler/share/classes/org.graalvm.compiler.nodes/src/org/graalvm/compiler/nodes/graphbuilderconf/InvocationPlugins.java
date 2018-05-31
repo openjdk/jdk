@@ -679,7 +679,9 @@ public class InvocationPlugins {
                     }
                 }
                 if (res != null) {
-                    if (canBeIntrinsified(declaringClass)) {
+                    // A decorator plugin is trusted since it does not replace
+                    // the method it intrinsifies.
+                    if (res.isDecorator() || canBeIntrinsified(declaringClass)) {
                         return res;
                     }
                 }

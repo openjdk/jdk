@@ -139,7 +139,7 @@ final class AOTBackend {
             CompilationResult compilationResult = new CompilationResult(id, isImmutablePIC);
 
             return GraalCompiler.compileGraph(graph, resolvedMethod, providers, backend, graphBuilderSuite, OptimisticOptimizations.ALL, profilingInfo, getSuites(), getLirSuites(),
-                            compilationResult, CompilationResultBuilderFactory.Default);
+                            compilationResult, CompilationResultBuilderFactory.Default, true);
 
         } catch (Throwable e) {
             main.handleError(resolvedMethod, e, " (compiling graph)");

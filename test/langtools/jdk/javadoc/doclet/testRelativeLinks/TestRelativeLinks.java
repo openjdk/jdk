@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4460354 8014636 8043186 8195805 8182765
+ * @bug      4460354 8014636 8043186 8195805 8182765 8196202
  * @summary  Test to make sure that relative paths are redirected in the
  *           output so that they are not broken.
  * @author   jamieh
@@ -44,6 +44,7 @@ public class TestRelativeLinks extends JavadocTester {
     void test() {
         javadoc("-d", "out",
                 "-use",
+                "--frames",
                 "-sourcepath", testSrc,
                 "pkg", "pkg2");
         checkExit(Exit.ERROR);

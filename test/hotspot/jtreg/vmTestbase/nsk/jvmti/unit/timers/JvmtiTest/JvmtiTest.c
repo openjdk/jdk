@@ -364,10 +364,10 @@ Java_nsk_jvmti_unit_timers_JvmtiTest_Analyze(JNIEnv * env, jclass cls) {
           }
 #endif
           if (passed) {
-            debug_printf("Pass: currThreadTime(%ld) >= %2.0f%% of threadTime(%ld)\n",
+            debug_printf("Pass: currThreadTime(" JLONG_FORMAT ") >= %2.0f%% of threadTime(" JLONG_FORMAT ")\n",
                          ctt, 100.0 - VARIANCE_PERCENT, tt);
           } else {
-            printf("FAIL: currThreadTime(%ld) < %2.0f%% of threadTime(%ld)\n",
+            printf("FAIL: currThreadTime(" JLONG_FORMAT ") < %2.0f%% of threadTime(" JLONG_FORMAT ")\n",
                    ctt, 100.0 - VARIANCE_PERCENT, tt);
             iGlobalStatus = 2;
           }

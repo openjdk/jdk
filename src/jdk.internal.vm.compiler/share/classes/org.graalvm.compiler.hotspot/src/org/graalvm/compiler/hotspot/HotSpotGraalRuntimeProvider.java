@@ -94,4 +94,10 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
      * Gets the map used to count compilation problems at each {@link ExceptionAction} level.
      */
     Map<ExceptionAction, Integer> getCompilationProblemsPerAction();
+
+    /**
+     * Returns the unique compiler configuration name that is in use. Useful for users to find out
+     * which configuration is in use.
+     */
+    String getCompilerConfigurationName();
 }

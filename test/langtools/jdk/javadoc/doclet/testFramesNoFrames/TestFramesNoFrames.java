@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8162353 8164747 8173707
+ * @bug 8162353 8164747 8173707 8196202
  * @summary javadoc should provide a way to disable use of frames
  * @library /tools/lib ../lib
  * @modules
@@ -226,6 +226,11 @@ public class TestFramesNoFrames extends JavadocTester {
 
         private boolean frames;
         private boolean overview;
+        private static final String framesWarning
+                = "javadoc: warning - You have specified to generate frames, by using the --frames option.\n"
+                + "The default is currently to not generate frames and the support for \n"
+                + "frames will be removed in a future release.\n"
+                + "To suppress this warning, remove the --frames option and avoid the use of frames.";
 
         Checker(FrameKind fKind, OverviewKind oKind, HtmlKind hKind) {
             this.fKind = fKind;
@@ -240,11 +245,11 @@ public class TestFramesNoFrames extends JavadocTester {
 
         void check() throws IOException {
             switch (fKind) {
-                case DEFAULT:
                 case FRAMES:
                     frames = true;
                     break;
 
+                case DEFAULT:
                 case NO_FRAMES:
                     frames = false;
                     break;
@@ -271,6 +276,8 @@ public class TestFramesNoFrames extends JavadocTester {
             checkIndex();
             checkNavBar();
             checkHelpDoc();
+
+            checkWarning();
 
         }
 
@@ -377,6 +384,10 @@ public class TestFramesNoFrames extends JavadocTester {
             // in frames mode and (overview requested or multiple packages)
             checkFiles(frames && overview,
                     "overview-summary.html");
+        }
+
+        private void checkWarning() {
+            checkOutput(Output.OUT, frames, framesWarning);
         }
 
         private long getPackageCount() {
