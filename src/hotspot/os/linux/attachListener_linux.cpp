@@ -357,11 +357,10 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
       ::close(s);
       continue;
     }
-    uid_t euid = geteuid();
-    gid_t egid = getegid();
 
-    if (cred_info.uid != euid || cred_info.gid != egid) {
-      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)", cred_info.uid, cred_info.gid, euid, egid);
+    if (!os::Posix::matches_effective_uid_and_gid_or_root(cred_info.uid, cred_info.gid)) {
+      log_debug(attach)("euid/egid check failed (%d/%d vs %d/%d)",
+              cred_info.uid, cred_info.gid, geteuid(), getegid());
       ::close(s);
       continue;
     }
@@ -518,8 +517,8 @@ bool AttachListener::is_init_trigger() {
   }
   if (ret == 0) {
     // simple check to avoid starting the attach mechanism when
-    // a bogus user creates the file
-    if (st.st_uid == geteuid()) {
+    // a bogus non-root user creates the file
+    if (os::Posix::matches_effective_uid_or_root(st.st_uid)) {
       init();
       log_trace(attach)("Attach triggered by %s", fn);
       return true;

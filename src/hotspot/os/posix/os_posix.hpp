@@ -106,6 +106,16 @@ public:
   // On error, it will return NULL and set errno. The content of 'outbuf' is undefined.
   // On truncation error ('outbuf' too small), it will return NULL and set errno to ENAMETOOLONG.
   static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
+
+  // Returns true if given uid is root.
+  static bool is_root(uid_t uid);
+
+  // Returns true if given uid is effective or root uid.
+  static bool matches_effective_uid_or_root(uid_t uid);
+
+  // Returns true if either given uid is effective uid and given gid is
+  // effective gid, or if given uid is root.
+  static bool matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid);
 };
 
 // On POSIX platforms the signal handler is global so we just do the write.
