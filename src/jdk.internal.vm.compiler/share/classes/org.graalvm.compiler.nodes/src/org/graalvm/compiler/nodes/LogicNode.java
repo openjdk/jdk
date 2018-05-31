@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes;
 import static org.graalvm.compiler.nodeinfo.InputType.Condition;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
+import jdk.vm.ci.meta.TriState;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.Node.IndirectCanonicalization;
 import org.graalvm.compiler.graph.NodeClass;
@@ -74,5 +75,20 @@ public abstract class LogicNode extends FloatingNode implements IndirectCanonica
         }
 
         return false;
+    }
+
+    /**
+     * Determines what this condition implies about the other.
+     *
+     * <ul>
+     * <li>If negate(this, thisNegated) => other, returns {@link TriState#TRUE}</li>
+     * <li>If negate(this, thisNegated) => !other, returns {@link TriState#FALSE}</li>
+     * </ul>
+     *
+     * @param thisNegated whether this condition should be considered as false.
+     * @param other the other condition.
+     */
+    public TriState implies(boolean thisNegated, LogicNode other) {
+        return TriState.UNKNOWN;
     }
 }

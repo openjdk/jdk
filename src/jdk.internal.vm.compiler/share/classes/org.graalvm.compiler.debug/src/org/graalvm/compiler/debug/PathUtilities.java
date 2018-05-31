@@ -72,9 +72,10 @@ public class PathUtilities {
 
     /**
      * A maximum file name length supported by most file systems. There is no platform independent
-     * way to get this in Java.
+     * way to get this in Java. Normally it is 255. But for AUFS it is 242. Refer AUFS_MAX_NAMELEN
+     * in http://aufs.sourceforge.net/aufs3/man.html.
      */
-    private static final int MAX_FILE_NAME_LENGTH = 255;
+    private static final int MAX_FILE_NAME_LENGTH = 242;
 
     private static final String ELLIPSIS = "...";
 

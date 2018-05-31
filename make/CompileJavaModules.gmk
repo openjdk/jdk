@@ -444,11 +444,13 @@ jdk.internal.vm.compiler_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
 
 jdk.internal.vm.compiler_EXCLUDES += \
     jdk.internal.vm.compiler.collections.test \
+    org.graalvm.compiler.processor \
     org.graalvm.compiler.core.match.processor \
     org.graalvm.compiler.nodeinfo.processor \
     org.graalvm.compiler.options.processor \
     org.graalvm.compiler.serviceprovider.processor \
-    org.graalvm.compiler.replacements.verifier \
+    org.graalvm.compiler.replacements.processor \
+    org.graalvm.compiler.replacements.jdk9.test \
     org.graalvm.compiler.api.directives.test \
     org.graalvm.compiler.api.test \
     org.graalvm.compiler.asm.aarch64.test \

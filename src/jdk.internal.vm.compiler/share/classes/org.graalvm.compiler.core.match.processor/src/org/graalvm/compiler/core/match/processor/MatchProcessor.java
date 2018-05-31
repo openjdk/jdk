@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,20 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -48,9 +49,7 @@ import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.AbstractAnnotationValueVisitor7;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
@@ -58,24 +57,10 @@ import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import jdk.internal.vm.compiler.collections.EconomicMap;
-import jdk.internal.vm.compiler.collections.EconomicSet;
-import jdk.internal.vm.compiler.collections.Equivalence;
-import org.graalvm.compiler.core.gen.NodeMatchRules;
-import org.graalvm.compiler.core.match.ComplexMatchResult;
-import org.graalvm.compiler.core.match.MatchRule;
-import org.graalvm.compiler.core.match.MatchRules;
-import org.graalvm.compiler.core.match.MatchStatement;
-import org.graalvm.compiler.core.match.MatchStatementSet;
-import org.graalvm.compiler.core.match.MatchableNode;
-import org.graalvm.compiler.core.match.MatchableNodes;
-import org.graalvm.compiler.debug.GraalError;
-import org.graalvm.compiler.graph.Position;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.serviceprovider.ServiceProvider;
+import org.graalvm.compiler.processor.AbstractProcessor;
 
 /**
- * Processes classes annotated with {@link MatchRule}. A {@link MatchStatementSet} service is
+ * Processes classes annotated with {@code MatchRule}. A {@code MatchStatementSet} service is
  * generated for each top level class containing at least one such field. These service objects can
  * be retrieved as follows:
  *
@@ -90,6 +75,13 @@ import org.graalvm.compiler.serviceprovider.ServiceProvider;
                 "org.graalvm.compiler.core.match.MatchableNodes"})
 public class MatchProcessor extends AbstractProcessor {
 
+    private static final String VALUE_NODE_CLASS_NAME = "org.graalvm.compiler.nodes.ValueNode";
+    private static final String COMPLEX_MATCH_RESULT_CLASS_NAME = "org.graalvm.compiler.core.match.ComplexMatchResult";
+    private static final String MATCHABLE_NODES_CLASS_NAME = "org.graalvm.compiler.core.match.MatchableNodes";
+    private static final String MATCHABLE_NODE_CLASS_NAME = "org.graalvm.compiler.core.match.MatchableNode";
+    private static final String MATCH_RULE_CLASS_NAME = "org.graalvm.compiler.core.match.MatchRule";
+    private static final String MATCH_RULES_CLASS_NAME = "org.graalvm.compiler.core.match.MatchRules";
+
     public MatchProcessor() {
     }
 
@@ -98,8 +90,8 @@ public class MatchProcessor extends AbstractProcessor {
         return SourceVersion.latest();
     }
 
-    private final Set<Element> processedMatchRule = new HashSet<>();
-    private final Set<Element> processedMatchableNode = new HashSet<>();
+    private final Set<Element> processedMatchRules = new HashSet<>();
+    private final Set<Element> processedMatchableNodes = new HashSet<>();
 
     private static class RuleParseError extends RuntimeException {
         private static final long serialVersionUID = 6456128283609257490L;
@@ -170,14 +162,14 @@ public class MatchProcessor extends AbstractProcessor {
             if (peek("(").equals("(")) {
                 next();
                 MatchDescriptor descriptor = parseType(true);
-                for (int n = 0; n < descriptor.nodeType.inputs.length; n++) {
+                for (int n = 0; n < descriptor.nodeType.inputs.size(); n++) {
                     if (peek("(").equals("(")) {
                         descriptor.inputs[n] = parseExpression();
                     } else {
                         descriptor.inputs[n] = parseType(false);
                     }
                 }
-                for (int n = 0; n < descriptor.nodeType.inputs.length; n++) {
+                for (int n = 0; n < descriptor.nodeType.inputs.size(); n++) {
                     if (descriptor.inputs[n] == null) {
                         throw new RuleParseError("not enough inputs for " + descriptor.name);
                     }
@@ -233,7 +225,7 @@ public class MatchProcessor extends AbstractProcessor {
         /**
          * Recursively accumulate any required Position declarations.
          */
-        void generatePositionDeclarations(EconomicSet<String> declarations) {
+        void generatePositionDeclarations(Set<String> declarations) {
             matchDescriptor.generatePositionDeclarations(declarations);
         }
 
@@ -251,9 +243,8 @@ public class MatchProcessor extends AbstractProcessor {
     }
 
     /**
-     * Set to true to enable logging to a local file during annotation processing. There's no normal
-     * channel for any debug messages and debugging annotation processors requires some special
-     * setup.
+     * Set to true to enable logging during annotation processing. There's no normal channel for any
+     * debug messages and debugging annotation processors requires some special setup.
      */
     private static final boolean DEBUG = false;
 
@@ -265,14 +256,21 @@ public class MatchProcessor extends AbstractProcessor {
 
     private PrintWriter getLog() {
         if (log == null) {
-            try {
-                // Create the log file within the generated source directory so it's easy to find.
-                // /tmp isn't platform independent and java.io.tmpdir can map anywhere, particularly
-                // on the mac.
-                FileObject file = processingEnv.getFiler().createResource(StandardLocation.SOURCE_OUTPUT, "", getClass().getSimpleName() + "log");
-                log = new PrintWriter(new FileWriter(file.toUri().getPath(), true));
-            } catch (IOException e) {
-                // Do nothing
+            if (processingEnv.getClass().getName().contains(".javac.")) {
+                // For javac, just log to System.err
+                log = new PrintWriter(System.err);
+            } else {
+                try {
+                    // Create the log file within the generated source directory so it's easy to
+                    // find.
+                    // /tmp isn't platform independent and java.io.tmpdir can map anywhere,
+                    // particularly
+                    // on the mac.
+                    FileObject file = processingEnv.getFiler().createResource(StandardLocation.SOURCE_OUTPUT, "", getClass().getSimpleName() + "log");
+                    log = new PrintWriter(new FileWriter(file.toUri().getPath(), true));
+                } catch (IOException e) {
+                    // Do nothing
+                }
             }
         }
         return log;
@@ -309,7 +307,7 @@ public class MatchProcessor extends AbstractProcessor {
             logMessage("throw for %s:\n", element);
         }
         logException(t);
-        errorMessage(element, "Exception throw during processing: %s %s", t, Arrays.toString(Arrays.copyOf(t.getStackTrace(), 4)));
+        printError(element, "Exception throw during processing: %s %s", t, Arrays.toString(Arrays.copyOf(t.getStackTrace(), 4)));
     }
 
     static class TypeDescriptor {
@@ -321,19 +319,19 @@ public class MatchProcessor extends AbstractProcessor {
         final String shortName;
 
         /**
-         * The simple name of the {@link ValueNode} class represented by this type.
+         * The simple name of the {@code ValueNode} class represented by this type.
          */
         final String nodeClass;
 
         /**
-         * The package of {@link ValueNode} class represented by this type.
+         * The package of {@code ValueNode} class represented by this type.
          */
         final String nodePackage;
 
         /**
          * The matchable inputs of the node.
          */
-        final String[] inputs;
+        final List<String> inputs;
 
         /**
          * Should swapped variants of this match be generated. The user of the match is expected to
@@ -350,7 +348,7 @@ public class MatchProcessor extends AbstractProcessor {
 
         final Set<Element> originatingElements = new HashSet<>();
 
-        TypeDescriptor(TypeMirror mirror, String shortName, String nodeClass, String nodePackage, String[] inputs, boolean commutative, boolean shareable) {
+        TypeDescriptor(TypeMirror mirror, String shortName, String nodeClass, String nodePackage, List<String> inputs, boolean commutative, boolean shareable) {
             this.mirror = mirror;
             this.shortName = shortName;
             this.nodeClass = nodeClass;
@@ -358,26 +356,18 @@ public class MatchProcessor extends AbstractProcessor {
             this.inputs = inputs;
             this.commutative = commutative;
             this.shareable = shareable;
-            assert !commutative || inputs.length == 2;
+            assert !commutative || inputs.size() == 2;
         }
     }
 
     /**
      * The types which are know for purpose of parsing MatchRule expressions.
      */
-    EconomicMap<String, TypeDescriptor> knownTypes = EconomicMap.create(Equivalence.DEFAULT);
+    Map<String, TypeDescriptor> knownTypes = new HashMap<>();
 
     private TypeDescriptor valueType;
 
-    private TypeMirror matchRulesTypeMirror;
-
-    private TypeMirror matchRuleTypeMirror;
-
-    private TypeMirror matchableNodeTypeMirror;
-
-    private TypeMirror matchableNodesTypeMirror;
-
-    private void declareType(TypeMirror mirror, String shortName, String nodeClass, String nodePackage, String[] inputs, boolean commutative, boolean shareable, Element element) {
+    private void declareType(TypeMirror mirror, String shortName, String nodeClass, String nodePackage, List<String> inputs, boolean commutative, boolean shareable, Element element) {
         TypeDescriptor descriptor = new TypeDescriptor(mirror, shortName, nodeClass, nodePackage, inputs, commutative, shareable);
         descriptor.originatingElements.add(element);
         knownTypes.put(shortName, descriptor);
@@ -388,7 +378,7 @@ public class MatchProcessor extends AbstractProcessor {
         if (p != null) {
             return p.getQualifiedName().toString();
         }
-        throw new GraalError("can't find package for %s", type);
+        throw new InternalError("Can't find package for " + type);
     }
 
     class MatchDescriptor {
@@ -400,13 +390,13 @@ public class MatchProcessor extends AbstractProcessor {
             this.nodeType = nodeType;
             this.name = name;
             if (forExpression) {
-                this.inputs = new MatchDescriptor[nodeType.inputs.length];
+                this.inputs = new MatchDescriptor[nodeType.inputs.size()];
             } else {
                 this.inputs = new MatchDescriptor[0];
             }
         }
 
-        public void generatePositionDeclarations(EconomicSet<String> declarations) {
+        public void generatePositionDeclarations(Set<String> declarations) {
             if (inputs.length == 0) {
                 return;
             }
@@ -469,10 +459,10 @@ public class MatchProcessor extends AbstractProcessor {
 
         private String formatSuffix() {
             if (nodeType != null) {
-                if (inputs.length != nodeType.inputs.length) {
+                if (inputs.length != nodeType.inputs.size()) {
                     return ", true)";
                 } else {
-                    if (nodeType.inputs.length > 0) {
+                    if (nodeType.inputs.size() > 0) {
                         return ", " + nodeType.nodeClass + "_positions, " + !nodeType.shareable + ")";
                     }
                     if (nodeType.shareable) {
@@ -502,7 +492,7 @@ public class MatchProcessor extends AbstractProcessor {
         String pkg = ((PackageElement) info.topDeclaringType.getEnclosingElement()).getQualifiedName().toString();
         Name topDeclaringClass = info.topDeclaringType.getSimpleName();
 
-        String matchStatementClassName = topDeclaringClass + "_" + MatchStatementSet.class.getSimpleName();
+        String matchStatementClassName = topDeclaringClass + "_MatchStatementSet";
         Element[] originatingElements = info.originatingElements.toArray(new Element[info.originatingElements.size()]);
 
         Types typeUtils = typeUtils();
@@ -516,22 +506,20 @@ public class MatchProcessor extends AbstractProcessor {
             out.println("package " + pkg + ";");
             out.println("");
             out.println("import java.util.*;");
-            out.println("import " + MatchStatementSet.class.getPackage().getName() + ".*;");
-            out.println("import " + NodeMatchRules.class.getName() + ";");
-            out.println("import " + Position.class.getName() + ";");
-            out.println("import " + ServiceProvider.class.getName() + ";");
+            out.println("import org.graalvm.compiler.core.match.*;");
+            out.println("import org.graalvm.compiler.core.gen.NodeMatchRules;");
+            out.println("import org.graalvm.compiler.graph.Position;");
             for (String p : info.requiredPackages) {
                 out.println("import " + p + ".*;");
             }
             out.println("");
 
-            out.println("@" + ServiceProvider.class.getSimpleName() + "(" + MatchStatementSet.class.getSimpleName() + ".class)");
-            out.println("public class " + matchStatementClassName + " implements " + MatchStatementSet.class.getSimpleName() + " {");
+            out.println("public class " + matchStatementClassName + " implements MatchStatementSet {");
 
             out.println();
 
             // Generate declarations for the wrapper class to invoke the code generation methods.
-            for (MethodInvokerItem invoker : info.invokers.getValues()) {
+            for (MethodInvokerItem invoker : info.invokers.values()) {
                 StringBuilder args = new StringBuilder();
                 StringBuilder types = new StringBuilder();
                 int count = invoker.fields.size();
@@ -562,7 +550,7 @@ public class MatchProcessor extends AbstractProcessor {
 
             }
 
-            String desc = MatchStatement.class.getSimpleName();
+            String desc = "MatchStatement";
 
             out.println("    @Override");
             out.println("    public Class<? extends NodeMatchRules> forClass() {");
@@ -595,6 +583,7 @@ public class MatchProcessor extends AbstractProcessor {
 
             out.println("}");
         }
+        this.createProviderFile(pkg + "." + matchStatementClassName, "org.graalvm.compiler.core.match.MatchStatementSet", originatingElements);
     }
 
     protected PrintWriter createSourceFile(String pkg, String relativeName, Filer filer, Element... originatingElements) {
@@ -662,17 +651,17 @@ public class MatchProcessor extends AbstractProcessor {
 
         final TypeElement topDeclaringType;
         final List<MatchRuleItem> matchRules = new ArrayList<>();
-        private final EconomicSet<Element> originatingElements = EconomicSet.create(Equivalence.DEFAULT);
-        public EconomicSet<String> positionDeclarations = EconomicSet.create(Equivalence.DEFAULT);
+        private final Set<Element> originatingElements = new HashSet<>();
+        public Set<String> positionDeclarations = new HashSet<>();
 
         /**
          * The mapping between elements with MatchRules and the wrapper class used invoke the code
          * generation after the match.
          */
-        EconomicMap<String, MethodInvokerItem> invokers = EconomicMap.create(Equivalence.DEFAULT);
+        Map<String, MethodInvokerItem> invokers = new HashMap<>();
 
         /**
-         * The set of packages which must be imported to refer the classes mention in matchRules.
+         * The set of packages which must be imported to refer the classes mentioned in matchRules.
          */
         Set<String> requiredPackages = new HashSet<>();
 
@@ -690,14 +679,15 @@ public class MatchProcessor extends AbstractProcessor {
         return topDeclaringType(enclosing);
     }
 
-    private AnnotationMirror findAnnotationMirror(Element element, TypeMirror typeMirror) {
-        for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
-            if (typeUtils().isSameType(mirror.getAnnotationType(), typeMirror)) {
-                return mirror;
-            }
-        }
-        return null;
-    }
+    /**
+     * The element currently being processed.
+     */
+    private Element currentElement;
+
+    /**
+     * The current processing round.
+     */
+    private RoundEnvironment currentRound;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -706,45 +696,58 @@ public class MatchProcessor extends AbstractProcessor {
         }
 
         logMessage("Starting round %s\n", roundEnv);
-        matchRulesTypeMirror = processingEnv.getElementUtils().getTypeElement(MatchRules.class.getCanonicalName()).asType();
-        matchRuleTypeMirror = processingEnv.getElementUtils().getTypeElement(MatchRule.class.getCanonicalName()).asType();
 
-        matchableNodeTypeMirror = processingEnv.getElementUtils().getTypeElement(MatchableNode.class.getCanonicalName()).asType();
-        matchableNodesTypeMirror = processingEnv.getElementUtils().getTypeElement(MatchableNodes.class.getCanonicalName()).asType();
+        TypeElement matchRulesTypeElement = getTypeElement(MATCH_RULES_CLASS_NAME);
+        TypeElement matchRuleTypeElement = getTypeElement(MATCH_RULE_CLASS_NAME);
 
-        Element currentElement = null;
+        TypeMirror matchRulesTypeMirror = matchRulesTypeElement.asType();
+        TypeMirror matchRuleTypeMirror = matchRuleTypeElement.asType();
+
+        TypeElement matchableNodeTypeElement = getTypeElement(MATCHABLE_NODE_CLASS_NAME);
+        TypeElement matchableNodesTypeElement = getTypeElement(MATCHABLE_NODES_CLASS_NAME);
+
+        currentRound = roundEnv;
         try {
-            for (Element element : roundEnv.getElementsAnnotatedWith(MatchableNode.class)) {
+            for (Element element : roundEnv.getElementsAnnotatedWith(matchableNodeTypeElement)) {
+                currentElement = element;
                 logMessage("%s\n", element);
-                processMatchableNode(element);
+                processMatchableNodes(element);
             }
-            for (Element element : roundEnv.getElementsAnnotatedWith(MatchableNodes.class)) {
+            for (Element element : roundEnv.getElementsAnnotatedWith(matchableNodesTypeElement)) {
+                currentElement = element;
                 logMessage("%s\n", element);
-                processMatchableNode(element);
+                processMatchableNodes(element);
             }
             // Define a TypeDescriptor for the generic node but don't enter it into the nodeTypes
             // table since it shouldn't be mentioned in match rules.
-            TypeMirror valueTypeMirror = processingEnv.getElementUtils().getTypeElement(ValueNode.class.getName()).asType();
-            valueType = new TypeDescriptor(valueTypeMirror, "Value", ValueNode.class.getSimpleName(), ValueNode.class.getPackage().getName(), new String[0], false, false);
+            TypeMirror valueTypeMirror = getTypeElement(VALUE_NODE_CLASS_NAME).asType();
+            valueType = new TypeDescriptor(valueTypeMirror, "Value", "ValueNode", "org.graalvm.compiler.nodes", Collections.emptyList(), false, false);
 
-            EconomicMap<TypeElement, MatchRuleDescriptor> map = EconomicMap.create(Equivalence.DEFAULT);
+            Map<TypeElement, MatchRuleDescriptor> map = new HashMap<>();
 
-            for (Element element : roundEnv.getElementsAnnotatedWith(MatchRule.class)) {
+            for (Element element : roundEnv.getElementsAnnotatedWith(matchRuleTypeElement)) {
                 currentElement = element;
-                processMatchRule(map, element, findAnnotationMirror(element, matchRuleTypeMirror));
+                AnnotationMirror matchRule = getAnnotation(element, matchRuleTypeMirror);
+                List<AnnotationMirror> matchRuleAnnotations = Collections.singletonList(matchRule);
+                processMatchRules(map, element, matchRuleAnnotations);
             }
-            for (Element element : roundEnv.getElementsAnnotatedWith(MatchRules.class)) {
+            for (Element element : roundEnv.getElementsAnnotatedWith(matchRulesTypeElement)) {
                 currentElement = element;
-                processMatchRule(map, element, findAnnotationMirror(element, matchRulesTypeMirror));
+                AnnotationMirror matchRules = getAnnotation(element, matchRulesTypeMirror);
+                List<AnnotationMirror> matchRuleAnnotations = getAnnotationValueList(matchRules, "value", AnnotationMirror.class);
+                processMatchRules(map, element, matchRuleAnnotations);
             }
 
             currentElement = null;
-            for (MatchRuleDescriptor info : map.getValues()) {
+            for (MatchRuleDescriptor info : map.values()) {
                 createFiles(info);
             }
 
         } catch (Throwable t) {
             reportExceptionThrow(currentElement, t);
+        } finally {
+            currentElement = null;
+            currentRound = null;
         }
 
         return true;
@@ -753,27 +756,27 @@ public class MatchProcessor extends AbstractProcessor {
     /**
      * Build up the type table to be used during parsing of the MatchRule.
      */
-    private void processMatchableNode(Element element) {
-        if (!processedMatchableNode.contains(element)) {
+    private void processMatchableNodes(Element element) {
+        if (!processedMatchableNodes.contains(element)) {
             try {
-                processedMatchableNode.add(element);
+                processedMatchableNodes.add(element);
 
-                AnnotationMirror mirror = findAnnotationMirror(element, matchableNodesTypeMirror);
-                if (mirror == null) {
-                    mirror = findAnnotationMirror(element, matchableNodeTypeMirror);
+                List<AnnotationMirror> matchableNodeAnnotations;
+                AnnotationMirror mirror = getAnnotation(element, getType(MATCHABLE_NODES_CLASS_NAME));
+                if (mirror != null) {
+                    matchableNodeAnnotations = getAnnotationValueList(mirror, "value", AnnotationMirror.class);
+                } else {
+                    mirror = getAnnotation(element, getType(MATCHABLE_NODES_CLASS_NAME));
+                    if (mirror != null) {
+                        matchableNodeAnnotations = Collections.singletonList(mirror);
+                    } else {
+                        return;
+                    }
                 }
-                if (mirror == null) {
-                    return;
-                }
+
                 TypeElement topDeclaringType = topDeclaringType(element);
-                List<AnnotationMirror> mirrors = null;
-                if (typeUtils().isSameType(mirror.getAnnotationType(), matchableNodesTypeMirror)) {
-                    // Unpack the mirrors for a repeatable annotation
-                    mirrors = getAnnotationValueList(AnnotationMirror.class, mirror, "value");
-                }
-                int i = 0;
-                for (MatchableNode matchableNode : element.getAnnotationsByType(MatchableNode.class)) {
-                    processMatchableNode(element, topDeclaringType, matchableNode, mirrors != null ? mirrors.get(i++) : mirror);
+                for (AnnotationMirror matchableNode : matchableNodeAnnotations) {
+                    processMatchableNode(element, topDeclaringType, matchableNode);
                 }
             } catch (Throwable t) {
                 reportExceptionThrow(element, t);
@@ -781,27 +784,22 @@ public class MatchProcessor extends AbstractProcessor {
         }
     }
 
-    private void processMatchableNode(Element element, TypeElement topDeclaringType, MatchableNode matchable, AnnotationMirror mirror) throws GraalError {
+    private void processMatchableNode(Element element, TypeElement topDeclaringType, AnnotationMirror matchable) {
         logMessage("processMatchableNode %s %s %s\n", topDeclaringType, element, matchable);
         String nodeClass;
         String nodePackage;
-        TypeMirror nodeClassMirror = null;
-        try {
-            matchable.nodeClass();
-        } catch (MirroredTypeException e) {
-            nodeClassMirror = e.getTypeMirror();
-        }
+        TypeMirror nodeClassMirror = getAnnotationValue(matchable, "nodeClass", TypeMirror.class);
         if (nodeClassMirror == null) {
-            throw new GraalError("Can't get mirror for node class %s", element);
+            throw new InternalError("Can't get mirror for node class " + element);
         }
-        if (nodeClassMirror.toString().equals(MatchableNode.class.getName())) {
+        if (nodeClassMirror.toString().equals(MATCHABLE_NODE_CLASS_NAME)) {
             nodeClass = topDeclaringType.getQualifiedName().toString();
         } else {
             nodeClass = nodeClassMirror.toString();
         }
         TypeElement typeElement = processingEnv.getElementUtils().getTypeElement(nodeClass);
         if (typeElement == null) {
-            errorMessage(element, mirror, "Class \"%s\" cannot be resolved to a type", nodeClass);
+            printError(element, matchable, "Class \"%s\" cannot be resolved to a type", nodeClass);
             return;
         }
         nodePackage = findPackage(typeElement);
@@ -812,7 +810,8 @@ public class MatchProcessor extends AbstractProcessor {
 
         Types typeUtils = processingEnv.getTypeUtils();
         TypeElement nodeClassElement = (TypeElement) typeUtils.asElement(nodeClassMirror);
-        for (String input : matchable.inputs()) {
+        List<String> inputs = getAnnotationValueList(matchable, "inputs", String.class);
+        for (String input : inputs) {
             boolean ok = false;
             TypeElement current = nodeClassElement;
             while (!ok && current != null) {
@@ -826,17 +825,19 @@ public class MatchProcessor extends AbstractProcessor {
                 current = (TypeElement) typeUtils.asElement(theSuper);
             }
             if (!ok) {
-                errorMessage(element, mirror, "Input named \"%s\" doesn't exist in %s", input, nodeClassElement.getSimpleName());
+                printError(element, matchable, "Input named \"%s\" doesn't exist in %s", input, nodeClassElement.getSimpleName());
             }
         }
 
-        declareType(nodeClassMirror, shortName, nodeClass, nodePackage, matchable.inputs(), matchable.commutative(), matchable.shareable(), element);
+        boolean commutative = getAnnotationValue(matchable, "commutative", Boolean.class);
+        boolean shareable = getAnnotationValue(matchable, "shareable", Boolean.class);
+        declareType(nodeClassMirror, shortName, nodeClass, nodePackage, inputs, commutative, shareable, element);
     }
 
-    private void processMatchRule(EconomicMap<TypeElement, MatchRuleDescriptor> map, Element element, AnnotationMirror mirror) {
-        if (!processedMatchRule.contains(element)) {
+    private void processMatchRules(Map<TypeElement, MatchRuleDescriptor> map, Element element, List<AnnotationMirror> matchRules) {
+        if (!processedMatchRules.contains(element)) {
             try {
-                processedMatchRule.add(element);
+                processedMatchRules.add(element);
 
                 // The annotation element type should ensure this is true.
                 assert element instanceof ExecutableElement;
@@ -849,14 +850,8 @@ public class MatchProcessor extends AbstractProcessor {
                     info = new MatchRuleDescriptor(topDeclaringType);
                     map.put(topDeclaringType, info);
                 }
-                List<AnnotationMirror> mirrors = null;
-                if (typeUtils().isSameType(mirror.getAnnotationType(), matchRulesTypeMirror)) {
-                    // Unpack the mirrors for a repeatable annotation
-                    mirrors = getAnnotationValueList(AnnotationMirror.class, mirror, "value");
-                }
-                int i = 0;
-                for (MatchRule matchRule : element.getAnnotationsByType(MatchRule.class)) {
-                    processMethodMatchRule((ExecutableElement) element, info, matchRule, mirrors != null ? mirrors.get(i++) : mirror);
+                for (AnnotationMirror matchRule : matchRules) {
+                    processMatchRule((ExecutableElement) element, info, matchRule);
                 }
             } catch (Throwable t) {
                 reportExceptionThrow(element, t);
@@ -871,16 +866,16 @@ public class MatchProcessor extends AbstractProcessor {
      * @param element
      */
     private void findMatchableNodes(Element element) {
-        processMatchableNode(element);
+        processMatchableNodes(element);
         Element enclosing = element.getEnclosingElement();
         while (enclosing != null) {
             if (enclosing.getKind() == ElementKind.CLASS || enclosing.getKind() == ElementKind.INTERFACE) {
                 TypeElement current = (TypeElement) enclosing;
                 while (current != null) {
-                    processMatchableNode(current);
+                    processMatchableNodes(current);
                     for (TypeMirror intf : current.getInterfaces()) {
                         Element interfaceElement = typeUtils().asElement(intf);
-                        processMatchableNode(interfaceElement);
+                        processMatchableNodes(interfaceElement);
                         // Recurse
                         findMatchableNodes(interfaceElement);
                     }
@@ -896,34 +891,34 @@ public class MatchProcessor extends AbstractProcessor {
         return processingEnv.getTypeUtils();
     }
 
-    private void processMethodMatchRule(ExecutableElement method, MatchRuleDescriptor info, MatchRule matchRule, AnnotationMirror mirror) {
-        logMessage("processMethodMatchRule %s %s\n", method, mirror);
+    private void processMatchRule(ExecutableElement method, MatchRuleDescriptor info, AnnotationMirror matchRule) {
+        logMessage("processMatchRule %s\n", method);
 
         Types typeUtils = typeUtils();
 
         if (!method.getModifiers().contains(Modifier.PUBLIC)) {
-            errorMessage(method, "MatchRule method %s must be public", method.getSimpleName());
+            printError(method, "MatchRule method %s must be public", method.getSimpleName());
             return;
         }
         if (method.getModifiers().contains(Modifier.STATIC)) {
-            errorMessage(method, "MatchRule method %s must be non-static", method.getSimpleName());
+            printError(method, "MatchRule method %s must be non-static", method.getSimpleName());
             return;
         }
 
         try {
             TypeMirror returnType = method.getReturnType();
-            if (!typeUtils.isSameType(returnType, processingEnv.getElementUtils().getTypeElement(ComplexMatchResult.class.getName()).asType())) {
-                errorMessage(method, "MatchRule method return type must be %s", ComplexMatchResult.class.getName());
+            if (!typeUtils.isSameType(returnType, processingEnv.getElementUtils().getTypeElement(COMPLEX_MATCH_RESULT_CLASS_NAME).asType())) {
+                printError(method, "MatchRule method return type must be %s", COMPLEX_MATCH_RESULT_CLASS_NAME);
                 return;
             }
 
-            String rule = matchRule.value();
+            String rule = getAnnotationValue(matchRule, "value", String.class);
             RuleParser parser = new RuleParser(rule);
             ArrayList<TypeDescriptor> expectedTypes = parser.capturedTypes();
             ArrayList<String> expectedNames = parser.capturedNames();
             List<? extends VariableElement> actualParameters = method.getParameters();
             if (expectedTypes.size() + 1 < actualParameters.size()) {
-                errorMessage(method, "Too many arguments for match method %s != %s", expectedTypes.size() + 1, actualParameters.size());
+                printError(method, "Too many arguments for match method %s != %s", expectedTypes.size() + 1, actualParameters.size());
                 return;
             }
 
@@ -934,12 +929,12 @@ public class MatchProcessor extends AbstractProcessor {
                 String name = parameter.getSimpleName().toString();
                 int nameIndex = expectedNames.indexOf(name);
                 if (nameIndex == -1) {
-                    errorMessage(method, "Argument \"%s\" isn't captured in the match rule", name);
+                    printError(method, "Argument \"%s\" isn't captured in the match rule", name);
                     return;
                 }
                 TypeMirror type = parameter.asType();
                 if (!typeUtils.isAssignable(expectedTypes.get(nameIndex).mirror, type)) {
-                    errorMessage(method, "Captured value \"%s\" of type %s is not assignable to argument of type %s", name, expectedTypes.get(nameIndex).mirror, type);
+                    printError(method, "Captured value \"%s\" of type %s is not assignable to argument of type %s", name, expectedTypes.get(nameIndex).mirror, type);
                     return;
                 }
             }
@@ -952,7 +947,7 @@ public class MatchProcessor extends AbstractProcessor {
             } else if (invoker.method != method) {
                 // This could be supported but it's easier if they are unique since the names
                 // are used in log output and snippet counters.
-                errorMessage(method, "Use unique method names for match methods: %s.%s != %s.%s", method.getReceiverType(), method.getSimpleName(), invoker.method.getReceiverType(),
+                printError(method, "Use unique method names for match methods: %s.%s != %s.%s", method.getReceiverType(), method.getSimpleName(), invoker.method.getReceiverType(),
                                 invoker.method.getSimpleName());
                 return;
             }
@@ -960,12 +955,12 @@ public class MatchProcessor extends AbstractProcessor {
             Element enclosing = method.getEnclosingElement();
             String declaringClass = "";
             String separator = "";
-            EconomicSet<Element> originatingElementsList = info.originatingElements;
+            Set<Element> originatingElementsList = info.originatingElements;
             originatingElementsList.add(method);
             while (enclosing != null) {
                 if (enclosing.getKind() == ElementKind.CLASS || enclosing.getKind() == ElementKind.INTERFACE) {
                     if (enclosing.getModifiers().contains(Modifier.PRIVATE)) {
-                        errorMessage(method, "MatchRule cannot be declared in a private %s %s", enclosing.getKind().name().toLowerCase(), enclosing);
+                        printError(method, "MatchRule cannot be declared in a private %s %s", enclosing.getKind().name().toLowerCase(), enclosing);
                         return;
                     }
                     originatingElementsList.add(enclosing);
@@ -988,144 +983,26 @@ public class MatchProcessor extends AbstractProcessor {
                 info.matchRules.add(new MatchRuleItem(match, invoker));
             }
         } catch (RuleParseError e) {
-            errorMessage(method, mirror, e.getMessage());
+            printError(method, matchRule, e.getMessage());
         }
     }
 
-    private void errorMessage(Element element, String format, Object... args) {
-        processingEnv.getMessager().printMessage(Kind.ERROR, String.format(format, args), element);
+    private Element elementForMessage(Element e) {
+        if (currentRound != null && !currentRound.getRootElements().contains(e) && currentElement != null) {
+            return currentElement;
+        }
+        return e;
     }
 
-    private void errorMessage(Element element, AnnotationMirror mirror, String format, Object... args) {
-        processingEnv.getMessager().printMessage(Kind.ERROR, String.format(format, args), element, mirror);
+    private void printError(Element annotatedElement, String format, Object... args) {
+        Element e = elementForMessage(annotatedElement);
+        String prefix = e == annotatedElement ? "" : annotatedElement + ": ";
+        processingEnv.getMessager().printMessage(Kind.ERROR, prefix + String.format(format, args), e);
     }
 
-    // TODO borrowed from com.oracle.truffle.dsl.processor.Utils
-    @SuppressWarnings("unchecked")
-    private static <T> List<T> getAnnotationValueList(Class<T> expectedListType, AnnotationMirror mirror, String name) {
-        List<? extends AnnotationValue> values = getAnnotationValue(List.class, mirror, name);
-        List<T> result = new ArrayList<>();
-
-        if (values != null) {
-            for (AnnotationValue value : values) {
-                T annotationValue = resolveAnnotationValue(expectedListType, value);
-                if (annotationValue != null) {
-                    result.add(annotationValue);
-                }
-            }
-        }
-        return result;
-    }
-
-    private static <T> T getAnnotationValue(Class<T> expectedType, AnnotationMirror mirror, String name) {
-        return resolveAnnotationValue(expectedType, getAnnotationValue(mirror, name));
-    }
-
-    @SuppressWarnings({"unchecked"})
-    private static <T> T resolveAnnotationValue(Class<T> expectedType, AnnotationValue value) {
-        if (value == null) {
-            return null;
-        }
-
-        Object unboxedValue = value.accept(new AnnotationValueVisitorImpl(), null);
-        if (unboxedValue != null) {
-            if (expectedType == TypeMirror.class && unboxedValue instanceof String) {
-                return null;
-            }
-            if (!expectedType.isAssignableFrom(unboxedValue.getClass())) {
-                throw new ClassCastException(unboxedValue.getClass().getName() + " not assignable from " + expectedType.getName());
-            }
-        }
-        return (T) unboxedValue;
-    }
-
-    private static AnnotationValue getAnnotationValue(AnnotationMirror mirror, String name) {
-        ExecutableElement valueMethod = null;
-        for (ExecutableElement method : ElementFilter.methodsIn(mirror.getAnnotationType().asElement().getEnclosedElements())) {
-            if (method.getSimpleName().toString().equals(name)) {
-                valueMethod = method;
-                break;
-            }
-        }
-
-        if (valueMethod == null) {
-            return null;
-        }
-
-        AnnotationValue value = mirror.getElementValues().get(valueMethod);
-        if (value == null) {
-            value = valueMethod.getDefaultValue();
-        }
-
-        return value;
-    }
-
-    private static class AnnotationValueVisitorImpl extends AbstractAnnotationValueVisitor7<Object, Void> {
-
-        @Override
-        public Object visitBoolean(boolean b, Void p) {
-            return Boolean.valueOf(b);
-        }
-
-        @Override
-        public Object visitByte(byte b, Void p) {
-            return Byte.valueOf(b);
-        }
-
-        @Override
-        public Object visitChar(char c, Void p) {
-            return c;
-        }
-
-        @Override
-        public Object visitDouble(double d, Void p) {
-            return d;
-        }
-
-        @Override
-        public Object visitFloat(float f, Void p) {
-            return f;
-        }
-
-        @Override
-        public Object visitInt(int i, Void p) {
-            return i;
-        }
-
-        @Override
-        public Object visitLong(long i, Void p) {
-            return i;
-        }
-
-        @Override
-        public Object visitShort(short s, Void p) {
-            return s;
-        }
-
-        @Override
-        public Object visitString(String s, Void p) {
-            return s;
-        }
-
-        @Override
-        public Object visitType(TypeMirror t, Void p) {
-            return t;
-        }
-
-        @Override
-        public Object visitEnumConstant(VariableElement c, Void p) {
-            return c;
-        }
-
-        @Override
-        public Object visitAnnotation(AnnotationMirror a, Void p) {
-            return a;
-        }
-
-        @Override
-        public Object visitArray(List<? extends AnnotationValue> vals, Void p) {
-            return vals;
-        }
-
+    private void printError(Element annotatedElement, AnnotationMirror annotation, String format, Object... args) {
+        Element e = elementForMessage(annotatedElement);
+        String prefix = e == annotatedElement ? "" : annotation + " on " + annotatedElement + ": ";
+        processingEnv.getMessager().printMessage(Kind.ERROR, prefix + String.format(format, args), e, annotation);
     }
 }

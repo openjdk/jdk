@@ -51,6 +51,7 @@ import org.graalvm.compiler.debug.CounterKey;
 import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.debug.TimerKey;
 import org.graalvm.compiler.graph.Edges.Type;
 import org.graalvm.compiler.graph.Graph.DuplicationReplacement;
@@ -125,11 +126,33 @@ public final class NodeClass<T> extends FieldIntrospection<T> {
     }
 
     public static <T> NodeClass<T> get(Class<T> clazz) {
-        NodeClass<T> result = getUnchecked(clazz);
-        if (result == null && clazz != NODE_CLASS) {
-            throw GraalError.shouldNotReachHere("TYPE field not initialized for class " + clazz.getTypeName());
+        int numTries = 0;
+        while (true) {
+            boolean shouldBeInitializedBefore = UnsafeAccess.UNSAFE.shouldBeInitialized(clazz);
+
+            NodeClass<T> result = getUnchecked(clazz);
+            if (result != null || clazz == NODE_CLASS) {
+                return result;
+            }
+
+            /*
+             * GR-9537: We observed a transient problem with TYPE fields being null. Retry a couple
+             * of times and print something to the log so that we can gather more diagnostic
+             * information without failing gates.
+             */
+            numTries++;
+            boolean shouldBeInitializedAfter = UnsafeAccess.UNSAFE.shouldBeInitialized(clazz);
+            String msg = "GR-9537 Reflective field access of TYPE field returned null. This is probably a bug in HotSpot class initialization. " +
+                            " clazz: " + clazz.getTypeName() + ", numTries: " + numTries +
+                            ", shouldBeInitializedBefore: " + shouldBeInitializedBefore + ", shouldBeInitializedAfter: " + shouldBeInitializedAfter;
+            if (numTries <= 100) {
+                TTY.println(msg);
+                UnsafeAccess.UNSAFE.ensureClassInitialized(clazz);
+            } else {
+                throw GraalError.shouldNotReachHere(msg);
+            }
+            return result;
         }
-        return result;
     }
 
     private static final Class<?> NODE_CLASS = Node.class;

@@ -263,7 +263,7 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
     static class NodeCreationStackTrace extends NodeStackTrace {
     }
 
-    static class NodeInsertionStackTrace extends NodeStackTrace {
+    public static class NodeInsertionStackTrace extends NodeStackTrace {
     }
 
     public Node(NodeClass<? extends Node> c) {
@@ -1060,6 +1060,10 @@ public abstract class Node implements Cloneable, Formattable, NodeInterface {
         if (Options.VerifyGraalGraphEdges.getValue(getOptions())) {
             verifyEdges();
         }
+        return true;
+    }
+
+    public boolean verifySourcePosition() {
         return true;
     }
 

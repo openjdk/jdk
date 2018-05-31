@@ -38,31 +38,35 @@ public final class ScopeImpl implements DebugContext.Scope {
         final String indent;
         final IndentImpl parentIndent;
 
+        boolean isEmitted() {
+            return emitted;
+        }
+
+        private boolean emitted;
+
         IndentImpl(IndentImpl parentIndent) {
             this.parentIndent = parentIndent;
             this.indent = (parentIndent == null ? "" : parentIndent.indent + INDENTATION_INCREMENT);
         }
 
-        private boolean logScopeName() {
-            return logScopeName;
-        }
-
         private void printScopeName(StringBuilder str, boolean isCurrent) {
-            if (logScopeName) {
-                boolean parentPrinted = false;
+            if (!emitted) {
+                boolean mustPrint = true;
                 if (parentIndent != null) {
-                    parentPrinted = parentIndent.logScopeName();
-                    parentIndent.printScopeName(str, false);
+                    if (!parentIndent.isEmitted()) {
+                        parentIndent.printScopeName(str, false);
+                        mustPrint = false;
+                    }
                 }
                 /*
-                 * Always print the current scope, scopes with context and the any scope whose
-                 * parent didn't print. This ensure the first new scope always shows up.
+                 * Always print the current scope, scopes with context and any scope whose parent
+                 * didn't print. This ensure the first new scope always shows up.
                  */
-                if (isCurrent || printContext(null) != 0 || !parentPrinted) {
+                if (isCurrent || printContext(null) != 0 || mustPrint) {
                     str.append(indent).append("[thread:").append(Thread.currentThread().getId()).append("] scope: ").append(getQualifiedName()).append(System.lineSeparator());
                 }
                 printContext(str);
-                logScopeName = false;
+                emitted = true;
             }
         }
 
@@ -116,7 +120,12 @@ public final class ScopeImpl implements DebugContext.Scope {
     private final ScopeImpl parent;
     private final boolean sandbox;
     private IndentImpl lastUsedIndent;
-    private boolean logScopeName;
+
+    private boolean isEmptyScope() {
+        return emptyScope;
+    }
+
+    private final boolean emptyScope;
 
     private final Object[] context;
 
@@ -136,23 +145,24 @@ public final class ScopeImpl implements DebugContext.Scope {
     private PrintStream output;
     private boolean interceptDisabled;
 
-    static final Object[] EMPTY_CONTEXT = new Object[0];
-
     ScopeImpl(DebugContext owner, Thread thread) {
         this(owner, thread.getName(), null, false);
     }
 
-    ScopeImpl(DebugContext owner, String unqualifiedName, ScopeImpl parent, boolean sandbox, Object... context) {
+    private ScopeImpl(DebugContext owner, String unqualifiedName, ScopeImpl parent, boolean sandbox, Object... context) {
         this.owner = owner;
         this.parent = parent;
         this.sandbox = sandbox;
         this.context = context;
         this.unqualifiedName = unqualifiedName;
         if (parent != null) {
-            logScopeName = !unqualifiedName.equals("");
+            emptyScope = unqualifiedName.equals("");
             this.interceptDisabled = parent.interceptDisabled;
         } else {
-            logScopeName = true;
+            if (unqualifiedName.isEmpty()) {
+                throw new IllegalArgumentException("root scope name must be non-empty");
+            }
+            emptyScope = false;
         }
 
         this.output = TTY.out;
@@ -169,29 +179,29 @@ public final class ScopeImpl implements DebugContext.Scope {
         return parent == null;
     }
 
-    public boolean isDumpEnabled(int dumpLevel) {
+    boolean isDumpEnabled(int dumpLevel) {
         assert dumpLevel >= 0;
         return currentDumpLevel >= dumpLevel;
     }
 
-    public boolean isVerifyEnabled() {
+    boolean isVerifyEnabled() {
         return verifyEnabled;
     }
 
-    public boolean isLogEnabled(int logLevel) {
+    boolean isLogEnabled(int logLevel) {
         assert logLevel > 0;
         return currentLogLevel >= logLevel;
     }
 
-    public boolean isCountEnabled() {
+    boolean isCountEnabled() {
         return countEnabled;
     }
 
-    public boolean isTimeEnabled() {
+    boolean isTimeEnabled() {
         return timeEnabled;
     }
 
-    public boolean isMemUseTrackingEnabled() {
+    boolean isMemUseTrackingEnabled() {
         return memUseTrackingEnabled;
     }
 
@@ -307,7 +317,7 @@ public final class ScopeImpl implements DebugContext.Scope {
         throw silenceException(RuntimeException.class, e);
     }
 
-    void updateFlags(DebugConfig config) {
+    void updateFlags(DebugConfigImpl config) {
         if (config == null) {
             countEnabled = false;
             memUseTrackingEnabled = false;
@@ -317,6 +327,14 @@ public final class ScopeImpl implements DebugContext.Scope {
             // Be pragmatic: provide a default log stream to prevent a crash if the stream is not
             // set while logging
             output = TTY.out;
+        } else if (isEmptyScope()) {
+            countEnabled = parent.countEnabled;
+            memUseTrackingEnabled = parent.memUseTrackingEnabled;
+            timeEnabled = parent.timeEnabled;
+            verifyEnabled = parent.verifyEnabled;
+            output = parent.output;
+            currentDumpLevel = parent.currentDumpLevel;
+            currentLogLevel = parent.currentLogLevel;
         } else {
             countEnabled = config.isCountEnabled(this);
             memUseTrackingEnabled = config.isMemUseTrackingEnabled(this);
@@ -404,18 +422,21 @@ public final class ScopeImpl implements DebugContext.Scope {
             if (parent == null) {
                 qualifiedName = unqualifiedName;
             } else {
-                qualifiedName = parent.getQualifiedName() + SCOPE_SEP + unqualifiedName;
+                qualifiedName = parent.getQualifiedName();
+                if (!isEmptyScope()) {
+                    qualifiedName += SCOPE_SEP + unqualifiedName;
+                }
             }
         }
         return qualifiedName;
     }
 
-    public Indent pushIndentLogger() {
+    Indent pushIndentLogger() {
         lastUsedIndent = getLastUsedIndent().indent();
         return lastUsedIndent;
     }
 
-    public IndentImpl getLastUsedIndent() {
+    private IndentImpl getLastUsedIndent() {
         if (lastUsedIndent == null) {
             if (parent != null) {
                 lastUsedIndent = new IndentImpl(parent.getLastUsedIndent());
