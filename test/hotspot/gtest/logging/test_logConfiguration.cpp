@@ -239,6 +239,7 @@ TEST_VM_F(LogConfigurationTest, invalid_configure_options) {
   EXPECT_FALSE(LogConfiguration::parse_command_line_arguments("all=invalid_level"));
   EXPECT_FALSE(LogConfiguration::parse_command_line_arguments("what=invalid"));
   EXPECT_FALSE(LogConfiguration::parse_command_line_arguments("all::invalid_decorator"));
+  EXPECT_FALSE(LogConfiguration::parse_command_line_arguments("*"));
 }
 
 // Test empty configuration options
