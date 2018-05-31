@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3137,11 +3137,11 @@ bool AwtToolkit::IsTouchKeyboardAutoShowSystemEnabled() {
 void AwtToolkit::ShowTouchKeyboard() {
     if (m_isWin8OrLater && m_touchKbrdAutoShowIsEnabled &&
         (m_touchKbrdExeFilePath != NULL)) {
-        HINSTANCE retVal = ::ShellExecute(NULL, _T("open"),
-            m_touchKbrdExeFilePath, NULL, NULL, SW_SHOW);
-        if ((int)((intptr_t)retVal) <= 32) {
+        int retVal = (int)((intptr_t)::ShellExecute(NULL, _T("open"),
+            m_touchKbrdExeFilePath, NULL, NULL, SW_SHOW));
+        if (retVal <= 32) {
             DTRACE_PRINTLN1("AwtToolkit::ShowTouchKeyboard: Failed"
-                ", retVal='%d'", (int)retVal);
+                ", retVal='%d'", retVal);
         }
     }
 }
