@@ -80,6 +80,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.graal.enabled", isGraalEnabled());
         map.put("docker.support", dockerSupport());
         vmGC(map); // vm.gc.X = true/false
+        vmOptFinalFlags(map);
 
         VMProps.dump(map);
         return map;
@@ -233,6 +234,25 @@ public class VMProps implements Callable<Map<String, String>> {
             boolean isAcceptable = gc.isSupported() && (gc.isSelected() || GC.isSelectedErgonomically());
             map.put("vm.gc." + gc.name(), "" + isAcceptable);
         }
+    }
+
+    /**
+     * Selected final flag.
+     * @param map - property-value pairs
+     * @param flagName - flag name
+     */
+    private void vmOptFinalFlag(Map<String, String> map, String flagName) {
+        String value = WB.getBooleanVMFlag(flagName) ? "true" : "false";
+        map.put("vm.opt.final." + flagName, value);
+    }
+
+    /**
+     * Selected sets of final flags.
+     * @param map -property-value pairs
+     */
+    protected void vmOptFinalFlags(Map<String, String> map) {
+        vmOptFinalFlag(map, "ClassUnloading");
+        vmOptFinalFlag(map, "UseCompressedOops");
     }
 
     /**

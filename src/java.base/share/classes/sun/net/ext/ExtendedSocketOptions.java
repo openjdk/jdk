@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.net.SocketException;
 import java.net.SocketOption;
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Defines the infrastructure to support extended socket options, beyond those
@@ -40,6 +41,9 @@ import java.util.Set;
  */
 public abstract class ExtendedSocketOptions {
 
+    public static final short SOCK_STREAM = 1;
+    public static final short SOCK_DGRAM = 2;
+
     private final Set<SocketOption<?>> options;
 
     /** Tells whether or not the option is supported. */
@@ -49,6 +53,30 @@ public abstract class ExtendedSocketOptions {
 
     /** Return the, possibly empty, set of extended socket options available. */
     public final Set<SocketOption<?>> options() { return options; }
+
+    public static final Set<SocketOption<?>> options(short type) {
+        return getInstance().options0(type);
+    }
+
+    private Set<SocketOption<?>> options0(short type) {
+        Set<SocketOption<?>> extOptions = null;
+        switch (type) {
+            case SOCK_DGRAM:
+                extOptions = options.stream()
+                        .filter((option) -> !option.name().startsWith("TCP_"))
+                        .collect(Collectors.toUnmodifiableSet());
+                break;
+            case SOCK_STREAM:
+                extOptions = options.stream()
+                        .filter((option) -> !option.name().startsWith("UDP_"))
+                        .collect(Collectors.toUnmodifiableSet());
+                break;
+            default:
+                //this will never happen
+                throw new IllegalArgumentException("Invalid socket option type");
+        }
+        return extOptions;
+    }
 
     /** Sets the value of a socket option, for the given socket. */
     public abstract void setOption(FileDescriptor fd, SocketOption<?> option, Object value)

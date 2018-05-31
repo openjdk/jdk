@@ -30,17 +30,16 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
 #include "memory/universe.hpp"
-#include "runtime/flags/jvmFlagRangeList.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 static JVMFlag::Error ParallelGCThreadsAndCMSWorkQueueDrainThreshold(uint threads, uintx threshold, bool verbose) {
   // CMSWorkQueueDrainThreshold is verified to be less than max_juint
   if (UseConcMarkSweepGC && (threads > (uint)(max_jint / (uint)threshold))) {
-    CommandLineError::print(verbose,
-                            "ParallelGCThreads (" UINT32_FORMAT ") or CMSWorkQueueDrainThreshold ("
-                            UINTX_FORMAT ") is too large\n",
-                            threads, threshold);
+    JVMFlag::printError(verbose,
+                        "ParallelGCThreads (" UINT32_FORMAT ") or CMSWorkQueueDrainThreshold ("
+                        UINTX_FORMAT ") is too large\n",
+                        threads, threshold);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
@@ -49,20 +48,20 @@ static JVMFlag::Error ParallelGCThreadsAndCMSWorkQueueDrainThreshold(uint thread
 JVMFlag::Error ParallelGCThreadsConstraintFuncCMS(uint value, bool verbose) {
   // To avoid overflow at ParScanClosure::do_oop_work.
   if (UseConcMarkSweepGC && (value > (max_jint / 10))) {
-    CommandLineError::print(verbose,
-                            "ParallelGCThreads (" UINT32_FORMAT ") must be "
-                            "less than or equal to " UINT32_FORMAT " for CMS GC\n",
-                            value, (max_jint / 10));
+    JVMFlag::printError(verbose,
+                        "ParallelGCThreads (" UINT32_FORMAT ") must be "
+                        "less than or equal to " UINT32_FORMAT " for CMS GC\n",
+                        value, (max_jint / 10));
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return ParallelGCThreadsAndCMSWorkQueueDrainThreshold(value, CMSWorkQueueDrainThreshold, verbose);
 }
 JVMFlag::Error ParGCStridesPerThreadConstraintFunc(uintx value, bool verbose) {
   if (UseConcMarkSweepGC && (value > ((uintx)max_jint / (uintx)ParallelGCThreads))) {
-    CommandLineError::print(verbose,
-                            "ParGCStridesPerThread (" UINTX_FORMAT ") must be "
-                            "less than or equal to ergonomic maximum (" UINTX_FORMAT ")\n",
-                            value, ((uintx)max_jint / (uintx)ParallelGCThreads));
+    JVMFlag::printError(verbose,
+                        "ParGCStridesPerThread (" UINTX_FORMAT ") must be "
+                        "less than or equal to ergonomic maximum (" UINTX_FORMAT ")\n",
+                        value, ((uintx)max_jint / (uintx)ParallelGCThreads));
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
@@ -76,10 +75,10 @@ JVMFlag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose) 
     size_t card_table_size = ct->cards_required(heap_size) - 1; // Valid card table size
 
     if ((size_t)value > card_table_size) {
-      CommandLineError::print(verbose,
-                              "ParGCCardsPerStrideChunk (" INTX_FORMAT ") is too large for the heap size and "
-                              "must be less than or equal to card table size (" SIZE_FORMAT ")\n",
-                              value, card_table_size);
+      JVMFlag::printError(verbose,
+                          "ParGCCardsPerStrideChunk (" INTX_FORMAT ") is too large for the heap size and "
+                          "must be less than or equal to card table size (" SIZE_FORMAT ")\n",
+                          value, card_table_size);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
 
@@ -89,10 +88,10 @@ JVMFlag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose) 
     uintx n_strides = ParallelGCThreads * ParGCStridesPerThread;
     uintx ergo_max = max_uintx / n_strides;
     if ((uintx)value > ergo_max) {
-      CommandLineError::print(verbose,
-                              "ParGCCardsPerStrideChunk (" INTX_FORMAT ") must be "
-                              "less than or equal to ergonomic maximum (" UINTX_FORMAT ")\n",
-                              value, ergo_max);
+      JVMFlag::printError(verbose,
+                          "ParGCCardsPerStrideChunk (" INTX_FORMAT ") must be "
+                          "less than or equal to ergonomic maximum (" UINTX_FORMAT ")\n",
+                          value, ergo_max);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
   }
@@ -104,10 +103,10 @@ JVMFlag::Error CMSOldPLABMinConstraintFunc(size_t value, bool verbose) {
 
   if (UseConcMarkSweepGC) {
     if (value > CMSOldPLABMax) {
-      CommandLineError::print(verbose,
-                              "CMSOldPLABMin (" SIZE_FORMAT ") must be "
-                              "less than or equal to CMSOldPLABMax (" SIZE_FORMAT ")\n",
-                              value, CMSOldPLABMax);
+      JVMFlag::printError(verbose,
+                          "CMSOldPLABMin (" SIZE_FORMAT ") must be "
+                          "less than or equal to CMSOldPLABMax (" SIZE_FORMAT ")\n",
+                          value, CMSOldPLABMax);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
     status = MaxPLABSizeBounds("CMSOldPLABMin", value, verbose);
@@ -129,11 +128,11 @@ static JVMFlag::Error CMSReservedAreaConstraintFunc(const char* name, size_t val
     ConcurrentMarkSweepGeneration* cms = CMSHeap::heap()->old_gen();
     const size_t ergo_max = cms->cmsSpace()->max_flag_size_for_task_size();
     if (value > ergo_max) {
-      CommandLineError::print(verbose,
-                              "%s (" SIZE_FORMAT ") must be "
-                              "less than or equal to ergonomic maximum (" SIZE_FORMAT ") "
-                              "which is based on the maximum size of the old generation of the Java heap\n",
-                              name, value, ergo_max);
+      JVMFlag::printError(verbose,
+                          "%s (" SIZE_FORMAT ") must be "
+                          "less than or equal to ergonomic maximum (" SIZE_FORMAT ") "
+                          "which is based on the maximum size of the old generation of the Java heap\n",
+                          name, value, ergo_max);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
   }
@@ -150,10 +149,10 @@ JVMFlag::Error CMSRescanMultipleConstraintFunc(size_t value, bool verbose) {
     // Note that rescan_task_size() will be aligned if CMSRescanMultiple is a multiple of 'HeapWordSize'
     // because rescan_task_size() is CardTable::card_size / HeapWordSize * BitsPerWord.
     if (value % HeapWordSize != 0) {
-      CommandLineError::print(verbose,
-                              "CMSRescanMultiple (" SIZE_FORMAT ") must be "
-                              "a multiple of " SIZE_FORMAT "\n",
-                              value, HeapWordSize);
+      JVMFlag::printError(verbose,
+                          "CMSRescanMultiple (" SIZE_FORMAT ") must be "
+                          "a multiple of " SIZE_FORMAT "\n",
+                          value, HeapWordSize);
       status = JVMFlag::VIOLATES_CONSTRAINT;
     }
   }
@@ -167,10 +166,10 @@ JVMFlag::Error CMSConcMarkMultipleConstraintFunc(size_t value, bool verbose) {
 
 JVMFlag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose) {
   if (UseConcMarkSweepGC && (value <= CMSPrecleanNumerator)) {
-    CommandLineError::print(verbose,
-                            "CMSPrecleanDenominator (" UINTX_FORMAT ") must be "
-                            "strickly greater than CMSPrecleanNumerator (" UINTX_FORMAT ")\n",
-                            value, CMSPrecleanNumerator);
+    JVMFlag::printError(verbose,
+                        "CMSPrecleanDenominator (" UINTX_FORMAT ") must be "
+                        "strickly greater than CMSPrecleanNumerator (" UINTX_FORMAT ")\n",
+                        value, CMSPrecleanNumerator);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
@@ -178,10 +177,10 @@ JVMFlag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose) {
 
 JVMFlag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose) {
   if (UseConcMarkSweepGC && (value >= CMSPrecleanDenominator)) {
-    CommandLineError::print(verbose,
-                            "CMSPrecleanNumerator (" UINTX_FORMAT ") must be "
-                            "less than CMSPrecleanDenominator (" UINTX_FORMAT ")\n",
-                            value, CMSPrecleanDenominator);
+    JVMFlag::printError(verbose,
+                        "CMSPrecleanNumerator (" UINTX_FORMAT ") must be "
+                        "less than CMSPrecleanDenominator (" UINTX_FORMAT ")\n",
+                        value, CMSPrecleanDenominator);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
@@ -191,10 +190,10 @@ JVMFlag::Error CMSSamplingGrainConstraintFunc(uintx value, bool verbose) {
   if (UseConcMarkSweepGC) {
     size_t max_capacity = CMSHeap::heap()->young_gen()->max_capacity();
     if (value > max_uintx - max_capacity) {
-    CommandLineError::print(verbose,
-                            "CMSSamplingGrain (" UINTX_FORMAT ") must be "
-                            "less than or equal to ergonomic maximum (" SIZE_FORMAT ")\n",
-                            value, max_uintx - max_capacity);
+    JVMFlag::printError(verbose,
+                        "CMSSamplingGrain (" UINTX_FORMAT ") must be "
+                        "less than or equal to ergonomic maximum (" SIZE_FORMAT ")\n",
+                        value, max_uintx - max_capacity);
     return JVMFlag::VIOLATES_CONSTRAINT;
     }
   }
@@ -216,11 +215,11 @@ JVMFlag::Error CMSBitMapYieldQuantumConstraintFunc(size_t value, bool verbose) {
     size_t bitmap_size = cms->collector()->markBitMap()->sizeInWords();
 
     if (value > bitmap_size) {
-      CommandLineError::print(verbose,
-                              "CMSBitMapYieldQuantum (" SIZE_FORMAT ") must "
-                              "be less than or equal to bitmap size (" SIZE_FORMAT ") "
-                              "whose size corresponds to the size of old generation of the Java heap\n",
-                              value, bitmap_size);
+      JVMFlag::printError(verbose,
+                          "CMSBitMapYieldQuantum (" SIZE_FORMAT ") must "
+                          "be less than or equal to bitmap size (" SIZE_FORMAT ") "
+                          "whose size corresponds to the size of old generation of the Java heap\n",
+                          value, bitmap_size);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
   }
@@ -229,9 +228,9 @@ JVMFlag::Error CMSBitMapYieldQuantumConstraintFunc(size_t value, bool verbose) {
 
 JVMFlag::Error OldPLABSizeConstraintFuncCMS(size_t value, bool verbose) {
   if (value == 0) {
-    CommandLineError::print(verbose,
-                            "OldPLABSize (" SIZE_FORMAT ") must be greater than 0",
-                            value);
+    JVMFlag::printError(verbose,
+                        "OldPLABSize (" SIZE_FORMAT ") must be greater than 0",
+                        value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   // For CMS, OldPLABSize is the number of free blocks of a given size that are used when

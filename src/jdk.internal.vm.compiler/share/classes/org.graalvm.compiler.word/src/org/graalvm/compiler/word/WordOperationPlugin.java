@@ -51,6 +51,7 @@ import org.graalvm.compiler.nodes.calc.NarrowNode;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.calc.XorNode;
 import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
@@ -160,7 +161,7 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
     }
 
     @Override
-    public boolean handleLoadIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, JavaKind elementKind) {
+    public boolean handleLoadIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, GuardingNode boundsCheck, JavaKind elementKind) {
         ResolvedJavaType arrayType = StampTool.typeOrNull(array);
         /*
          * There are cases where the array does not have a known type yet, i.e., the type is null.
@@ -168,14 +169,14 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
          */
         if (arrayType != null && wordTypes.isWord(arrayType.getComponentType())) {
             assert elementKind == JavaKind.Object;
-            b.addPush(elementKind, createLoadIndexedNode(array, index));
+            b.addPush(elementKind, createLoadIndexedNode(array, index, boundsCheck));
             return true;
         }
         return false;
     }
 
-    protected LoadIndexedNode createLoadIndexedNode(ValueNode array, ValueNode index) {
-        return new LoadIndexedNode(null, array, index, wordKind);
+    protected LoadIndexedNode createLoadIndexedNode(ValueNode array, ValueNode index, GuardingNode boundsCheck) {
+        return new LoadIndexedNode(null, array, index, boundsCheck, wordKind);
     }
 
     @Override
@@ -201,14 +202,15 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
     }
 
     @Override
-    public boolean handleStoreIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, JavaKind elementKind, ValueNode value) {
+    public boolean handleStoreIndexed(GraphBuilderContext b, ValueNode array, ValueNode index, GuardingNode boundsCheck, GuardingNode storeCheck, JavaKind elementKind, ValueNode value) {
         ResolvedJavaType arrayType = StampTool.typeOrNull(array);
         if (arrayType != null && wordTypes.isWord(arrayType.getComponentType())) {
             assert elementKind == JavaKind.Object;
             if (value.getStackKind() != wordKind) {
                 throw bailout(b, "Cannot store a non-word value into a word array: " + arrayType.toJavaName(true));
             }
-            b.add(createStoreIndexedNode(array, index, value));
+            GraalError.guarantee(storeCheck == null, "Word array stores are primitive stores and therefore do not require a store check");
+            b.add(createStoreIndexedNode(array, index, boundsCheck, value));
             return true;
         }
         if (elementKind == JavaKind.Object && value.getStackKind() == wordKind) {
@@ -217,8 +219,8 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
         return false;
     }
 
-    protected StoreIndexedNode createStoreIndexedNode(ValueNode array, ValueNode index, ValueNode value) {
-        return new StoreIndexedNode(array, index, wordKind, value);
+    protected StoreIndexedNode createStoreIndexedNode(ValueNode array, ValueNode index, GuardingNode boundsCheck, ValueNode value) {
+        return new StoreIndexedNode(array, index, boundsCheck, null, wordKind, value);
     }
 
     @Override
@@ -275,11 +277,12 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
         }
         switch (operation.opcode()) {
             case NODE_CLASS:
+            case NODE_CLASS_WITH_GUARD:
                 assert args.length == 2;
                 ValueNode left = args[0];
                 ValueNode right = operation.rightOperandIsInt() ? toUnsigned(b, args[1], JavaKind.Int) : fromSigned(b, args[1]);
 
-                b.addPush(returnKind, createBinaryNodeInstance(operation.node(), left, right));
+                b.addPush(returnKind, createBinaryNodeInstance(operation.node(), left, right, operation.opcode() == Opcode.NODE_CLASS_WITH_GUARD));
                 break;
 
             case COMPARISON:
@@ -399,10 +402,12 @@ public class WordOperationPlugin implements NodePlugin, TypePlugin, InlineInvoke
      * method is called for all {@link Word} operations which are annotated with @Operation(node =
      * ...) and encapsulates the reflective allocation of the node.
      */
-    private static ValueNode createBinaryNodeInstance(Class<? extends ValueNode> nodeClass, ValueNode left, ValueNode right) {
+    private static ValueNode createBinaryNodeInstance(Class<? extends ValueNode> nodeClass, ValueNode left, ValueNode right, boolean withGuardingNode) {
         try {
-            Constructor<?> cons = nodeClass.getDeclaredConstructor(ValueNode.class, ValueNode.class);
-            return (ValueNode) cons.newInstance(left, right);
+            Class<?>[] parameterTypes = withGuardingNode ? new Class<?>[]{ValueNode.class, ValueNode.class, GuardingNode.class} : new Class<?>[]{ValueNode.class, ValueNode.class};
+            Constructor<?> cons = nodeClass.getDeclaredConstructor(parameterTypes);
+            Object[] initargs = withGuardingNode ? new Object[]{left, right, null} : new Object[]{left, right};
+            return (ValueNode) cons.newInstance(initargs);
         } catch (Throwable ex) {
             throw new GraalError(ex).addContext(nodeClass.getName());
         }

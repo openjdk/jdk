@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344 8025633 8026567 8162363
- *           8175200 8186332 8182765
+ *           8175200 8186332 8182765 8196202
  * @summary  Run Javadoc on a set of source files that demonstrate new
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
@@ -47,6 +47,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
         javadoc("-Xdoclint:none",
                 "-d", "out",
                 "-use",
+                "--frames",
                 "-sourcepath", testSrc,
                 "pkg", "pkg1", "pkg2");
         checkExit(Exit.OK);

@@ -100,7 +100,7 @@ void RootSetClosure::process_roots(OopClosure* closure) {
   Universe::oops_do(closure);
   JNIHandles::oops_do(closure);
   JvmtiExport::oops_do(closure);
-  SystemDictionary::always_strong_oops_do(closure);
+  SystemDictionary::oops_do(closure);
   Management::oops_do(closure);
   StringTable::oops_do(closure);
   AOTLoader::oops_do(closure);

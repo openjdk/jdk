@@ -27,8 +27,16 @@
 /*************************************************************/
 
 #include <stdarg.h>
+#include <inttypes.h>
 
 /*************************************************************/
+
+#if defined(_LP64) && defined(__APPLE__)
+#define JLONG_FORMAT "%ld"
+#else  // _LP64 && __APPLE__
+#define JLONG_FORMAT "%" PRId64
+#endif // _LP64 && __APPLE__
+
 
 /**
  * Use examples:

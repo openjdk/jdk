@@ -38,8 +38,12 @@ public abstract class AbstractNewArrayNode extends AbstractNewObjectNode impleme
     public static final NodeClass<AbstractNewArrayNode> TYPE = NodeClass.create(AbstractNewArrayNode.class);
     @Input protected ValueNode length;
 
-    @Override
     public ValueNode length() {
+        return length;
+    }
+
+    @Override
+    public ValueNode findLength(ArrayLengthProvider.FindLengthMode mode) {
         return length;
     }
 

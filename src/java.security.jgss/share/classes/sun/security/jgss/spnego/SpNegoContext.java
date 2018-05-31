@@ -281,6 +281,7 @@ public class SpNegoContext implements GSSContextSpi {
      * to its peer for processing.
      * @exception GSSException
      */
+    @Deprecated(since="11")
     public final byte[] initSecContext(InputStream is, int mechTokenSize)
         throws GSSException {
 
@@ -475,6 +476,7 @@ public class SpNegoContext implements GSSContextSpi {
      * to its peer for processing.
      * @exception GSSException
      */
+    @Deprecated(since="11")
     public final byte[] acceptSecContext(InputStream is, int mechTokenSize)
         throws GSSException {
 
@@ -1128,6 +1130,7 @@ public class SpNegoContext implements GSSContextSpi {
         }
     }
 
+    @Deprecated(since="11")
     public final void wrap(InputStream is, OutputStream os,
                             MessageProp msgProp) throws GSSException {
         if (mechContext != null) {
@@ -1149,6 +1152,7 @@ public class SpNegoContext implements GSSContextSpi {
         }
     }
 
+    @Deprecated(since="11")
     public final void unwrap(InputStream is, OutputStream os,
                              MessageProp msgProp) throws GSSException {
         if (mechContext != null) {
@@ -1170,6 +1174,7 @@ public class SpNegoContext implements GSSContextSpi {
         }
     }
 
+    @Deprecated(since="11")
     public final void getMIC(InputStream is, OutputStream os,
                               MessageProp msgProp) throws GSSException {
         if (mechContext != null) {
@@ -1193,6 +1198,7 @@ public class SpNegoContext implements GSSContextSpi {
         }
     }
 
+    @Deprecated(since="11")
     public final void verifyMIC(InputStream is, InputStream msgStr,
                                  MessageProp msgProp) throws GSSException {
         if (mechContext != null) {

@@ -22,6 +22,7 @@
  */
 package org.graalvm.compiler.nodes;
 
+import org.graalvm.compiler.graph.NodeSourcePosition;
 import org.graalvm.compiler.nodes.extended.GuardingNode;
 
 /**
@@ -35,4 +36,16 @@ public interface DeoptimizingGuard extends GuardingNode, StaticDeoptimizingNode 
     void setCondition(LogicNode x, boolean negated);
 
     boolean isNegated();
+
+    NodeSourcePosition getNoDeoptSuccessorPosition();
+
+    void setNoDeoptSuccessorPosition(NodeSourcePosition noDeoptSuccessorPosition);
+
+    default void addCallerToNoDeoptSuccessorPosition(NodeSourcePosition caller) {
+        NodeSourcePosition noDeoptSuccessorPosition = getNoDeoptSuccessorPosition();
+        if (noDeoptSuccessorPosition == null) {
+            return;
+        }
+        setNoDeoptSuccessorPosition(new NodeSourcePosition(caller, noDeoptSuccessorPosition.getMethod(), noDeoptSuccessorPosition.getBCI()));
+    }
 }

@@ -29,16 +29,14 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeInputList;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
-import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.type.StampTool;
-import org.graalvm.compiler.nodes.util.GraphUtil;
 import org.graalvm.util.CollectionsUtil;
 
 /**
  * Value {@link PhiNode}s merge data flow values at control flow merges.
  */
 @NodeInfo(nameTemplate = "Phi({i#values}, {p#valueDescription})")
-public class ValuePhiNode extends PhiNode implements ArrayLengthProvider {
+public class ValuePhiNode extends PhiNode {
 
     public static final NodeClass<ValuePhiNode> TYPE = NodeClass.create(ValuePhiNode.class);
     @Input protected NodeInputList<ValueNode> values;
@@ -77,26 +75,6 @@ public class ValuePhiNode extends PhiNode implements ArrayLengthProvider {
             valuesStamp = stamp.join(valuesStamp);
         }
         return updateStamp(valuesStamp);
-    }
-
-    @Override
-    public ValueNode length() {
-        if (merge() instanceof LoopBeginNode) {
-            return null;
-        }
-        ValueNode length = null;
-        for (ValueNode input : values()) {
-            ValueNode l = GraphUtil.arrayLength(input);
-            if (l == null) {
-                return null;
-            }
-            if (length == null) {
-                length = l;
-            } else if (length != l) {
-                return null;
-            }
-        }
-        return length;
     }
 
     @Override

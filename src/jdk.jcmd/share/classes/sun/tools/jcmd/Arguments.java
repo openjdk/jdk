@@ -88,7 +88,9 @@ class Arguments {
         }
 
         if (listCounters != true && sb.length() == 0) {
-            throw new IllegalArgumentException("No command specified");
+            // Omitting the command shall cause the target VM to print out a list
+            // of available commands.
+            sb.append("help");
         }
 
         command = sb.toString().trim();

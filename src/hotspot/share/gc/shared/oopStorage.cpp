@@ -907,7 +907,8 @@ size_t OopStorage::total_memory_usage() const {
 // Parallel iteration support
 
 uint OopStorage::BasicParState::default_estimated_thread_count(bool concurrent) {
-  return concurrent ? ConcGCThreads : ParallelGCThreads;
+  uint configured = concurrent ? ConcGCThreads : ParallelGCThreads;
+  return MAX2(1u, configured);  // Never estimate zero threads.
 }
 
 OopStorage::BasicParState::BasicParState(const OopStorage* storage,

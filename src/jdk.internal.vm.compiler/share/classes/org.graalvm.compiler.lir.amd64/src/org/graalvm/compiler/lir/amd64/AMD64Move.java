@@ -431,6 +431,12 @@ public class AMD64Move {
                 masm.lock();
             }
             switch (accessKind) {
+                case BYTE:
+                    masm.cmpxchgb(asRegister(newValue), address.toAddress());
+                    break;
+                case WORD:
+                    masm.cmpxchgw(asRegister(newValue), address.toAddress());
+                    break;
                 case DWORD:
                     masm.cmpxchgl(asRegister(newValue), address.toAddress());
                     break;
@@ -468,6 +474,12 @@ public class AMD64Move {
                 masm.lock();
             }
             switch (accessKind) {
+                case BYTE:
+                    masm.xaddb(address.toAddress(), asRegister(result));
+                    break;
+                case WORD:
+                    masm.xaddw(address.toAddress(), asRegister(result));
+                    break;
                 case DWORD:
                     masm.xaddl(address.toAddress(), asRegister(result));
                     break;
@@ -502,6 +514,12 @@ public class AMD64Move {
         public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             move(accessKind, crb, masm, result, newValue);
             switch (accessKind) {
+                case BYTE:
+                    masm.xchgb(asRegister(result), address.toAddress());
+                    break;
+                case WORD:
+                    masm.xchgw(asRegister(result), address.toAddress());
+                    break;
                 case DWORD:
                     masm.xchgl(asRegister(result), address.toAddress());
                     break;

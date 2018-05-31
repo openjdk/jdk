@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.net.SocketOption;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.SharedSecrets;
@@ -92,6 +93,74 @@ public final class ExtendedSocketOptions {
     public static final SocketOption<Boolean> TCP_QUICKACK =
             new ExtSocketOption<Boolean>("TCP_QUICKACK", Boolean.class);
 
+    /**
+     * Keep-Alive idle time.
+     *
+     * <p>
+     * The value of this socket option is an {@code Integer} that is the number
+     * of seconds of idle time before keep-alive initiates a probe. The socket
+     * option is specific to stream-oriented sockets using the TCP/IP protocol.
+     * The exact semantics of this socket option are system dependent.
+     *
+     * <p>
+     * When the {@link java.net.StandardSocketOptions#SO_KEEPALIVE
+     * SO_KEEPALIVE} option is enabled, TCP probes a connection that has been
+     * idle for some amount of time. The default value for this idle period is
+     * system dependent, but is typically 2 hours. The {@code TCP_KEEPIDLE}
+     * option can be used to affect this value for a given socket.
+     *
+     * @since 11
+     */
+    public static final SocketOption<Integer> TCP_KEEPIDLE
+            = new ExtSocketOption<Integer>("TCP_KEEPIDLE", Integer.class);
+
+    /**
+     * Keep-Alive retransmission interval time.
+     *
+     * <p>
+     * The value of this socket option is an {@code Integer} that is the number
+     * of seconds to wait before retransmitting a keep-alive probe. The socket
+     * option is specific to stream-oriented sockets using the TCP/IP protocol.
+     * The exact semantics of this socket option are system dependent.
+     *
+     * <p>
+     * When the {@link java.net.StandardSocketOptions#SO_KEEPALIVE
+     * SO_KEEPALIVE} option is enabled, TCP probes a connection that has been
+     * idle for some amount of time. If the remote system does not respond to a
+     * keep-alive probe, TCP retransmits the probe after some amount of time.
+     * The default value for this retransmission interval is system dependent,
+     * but is typically 75 seconds. The {@code TCP_KEEPINTERVAL} option can be
+     * used to affect this value for a given socket.
+     *
+     * @since 11
+     */
+    public static final SocketOption<Integer> TCP_KEEPINTERVAL
+            = new ExtSocketOption<Integer>("TCP_KEEPINTERVAL", Integer.class);
+
+    /**
+     * Keep-Alive retransmission maximum limit.
+     *
+     * <p>
+     * The value of this socket option is an {@code Integer} that is the maximum
+     * number of keep-alive probes to be sent. The socket option is specific to
+     * stream-oriented sockets using the TCP/IP protocol. The exact semantics of
+     * this socket option are system dependent.
+     *
+     * <p>
+     * When the {@link java.net.StandardSocketOptions#SO_KEEPALIVE
+     * SO_KEEPALIVE} option is enabled, TCP probes a connection that has been
+     * idle for some amount of time. If the remote system does not respond to a
+     * keep-alive probe, TCP retransmits the probe a certain number of times
+     * before a connection is considered to be broken. The default value for
+     * this keep-alive probe retransmit limit is system dependent, but is
+     * typically 8. The {@code TCP_KEEPCOUNT} option can be used to affect this
+     * value for a given socket.
+     *
+     * @since 11
+     */
+    public static final SocketOption<Integer> TCP_KEEPCOUNT
+            = new ExtSocketOption<Integer>("TCP_KEEPCOUNT", Integer.class);
+
     private static final PlatformSocketOptions platformSocketOptions =
             PlatformSocketOptions.get();
 
@@ -99,21 +168,22 @@ public final class ExtendedSocketOptions {
             platformSocketOptions.flowSupported();
     private static final boolean quickAckSupported =
             platformSocketOptions.quickAckSupported();
-
+    private static final boolean keepAliveOptSupported =
+            platformSocketOptions.keepAliveOptionsSupported();
     private static final Set<SocketOption<?>> extendedOptions = options();
 
     static Set<SocketOption<?>> options() {
+        Set<SocketOption<?>> options = new HashSet<>();
         if (flowSupported) {
-            if (quickAckSupported) {
-                return Set.of(SO_FLOW_SLA, TCP_QUICKACK);
-            } else {
-                return Set.of(SO_FLOW_SLA);
-            }
-        } else if (quickAckSupported) {
-            return Set.of(TCP_QUICKACK);
-        } else {
-            return Collections.<SocketOption<?>>emptySet();
+            options.add(SO_FLOW_SLA);
         }
+        if (quickAckSupported) {
+            options.add(TCP_QUICKACK);
+        }
+        if (keepAliveOptSupported) {
+            options.addAll(Set.of(TCP_KEEPCOUNT, TCP_KEEPIDLE, TCP_KEEPINTERVAL));
+        }
+        return Collections.unmodifiableSet(options);
     }
 
     static {
@@ -140,6 +210,12 @@ public final class ExtendedSocketOptions {
                     setFlowOption(fd, flow);
                 } else if (option == TCP_QUICKACK) {
                     setQuickAckOption(fd, (boolean) value);
+                } else if (option == TCP_KEEPCOUNT) {
+                    setTcpkeepAliveProbes(fd, (Integer) value);
+                } else if (option == TCP_KEEPIDLE) {
+                    setTcpKeepAliveTime(fd, (Integer) value);
+                } else if (option == TCP_KEEPINTERVAL) {
+                    setTcpKeepAliveIntvl(fd, (Integer) value);
                 } else {
                     throw new InternalError("Unexpected option " + option);
                 }
@@ -164,6 +240,12 @@ public final class ExtendedSocketOptions {
                     return flow;
                 } else if (option == TCP_QUICKACK) {
                     return getQuickAckOption(fd);
+                } else if (option == TCP_KEEPCOUNT) {
+                    return getTcpkeepAliveProbes(fd);
+                } else if (option == TCP_KEEPIDLE) {
+                    return getTcpKeepAliveTime(fd);
+                } else if (option == TCP_KEEPINTERVAL) {
+                    return getTcpKeepAliveIntvl(fd);
                 } else {
                     throw new InternalError("Unexpected option " + option);
                 }
@@ -208,6 +290,33 @@ public final class ExtendedSocketOptions {
         return platformSocketOptions.getQuickAck(fdAccess.get(fd));
     }
 
+    private static void setTcpkeepAliveProbes(FileDescriptor fd, int value)
+            throws SocketException {
+        platformSocketOptions.setTcpkeepAliveProbes(fdAccess.get(fd), value);
+    }
+
+    private static void setTcpKeepAliveTime(FileDescriptor fd, int value)
+            throws SocketException {
+        platformSocketOptions.setTcpKeepAliveTime(fdAccess.get(fd), value);
+    }
+
+    private static void setTcpKeepAliveIntvl(FileDescriptor fd, int value)
+            throws SocketException {
+        platformSocketOptions.setTcpKeepAliveIntvl(fdAccess.get(fd), value);
+    }
+
+    private static int getTcpkeepAliveProbes(FileDescriptor fd) throws SocketException {
+        return platformSocketOptions.getTcpkeepAliveProbes(fdAccess.get(fd));
+    }
+
+    private static int getTcpKeepAliveTime(FileDescriptor fd) throws SocketException {
+        return platformSocketOptions.getTcpKeepAliveTime(fdAccess.get(fd));
+    }
+
+    private static int getTcpKeepAliveIntvl(FileDescriptor fd) throws SocketException {
+        return platformSocketOptions.getTcpKeepAliveIntvl(fdAccess.get(fd));
+    }
+
     static class PlatformSocketOptions {
 
         protected PlatformSocketOptions() {}
@@ -234,6 +343,8 @@ public final class ExtendedSocketOptions {
                 return newInstance("jdk.net.SolarisSocketOptions");
             } else if ("Linux".equals(osname)) {
                 return newInstance("jdk.net.LinuxSocketOptions");
+            } else if (osname.startsWith("Mac")) {
+                return newInstance("jdk.net.MacOSXSocketOptions");
             } else {
                 return new PlatformSocketOptions();
             }
@@ -269,6 +380,34 @@ public final class ExtendedSocketOptions {
 
         boolean quickAckSupported() {
             return false;
+        }
+
+        boolean keepAliveOptionsSupported() {
+            return false;
+        }
+
+        void setTcpkeepAliveProbes(int fd, final int value) throws SocketException {
+            throw new UnsupportedOperationException("unsupported TCP_KEEPCNT option");
+        }
+
+        void setTcpKeepAliveTime(int fd, final int value) throws SocketException {
+            throw new UnsupportedOperationException("unsupported TCP_KEEPIDLE option");
+        }
+
+        void setTcpKeepAliveIntvl(int fd, final int value) throws SocketException {
+            throw new UnsupportedOperationException("unsupported TCP_KEEPINTVL option");
+        }
+
+        int getTcpkeepAliveProbes(int fd) throws SocketException {
+            throw new UnsupportedOperationException("unsupported TCP_KEEPCNT option");
+        }
+
+        int getTcpKeepAliveTime(int fd) throws SocketException {
+            throw new UnsupportedOperationException("unsupported TCP_KEEPIDLE option");
+        }
+
+        int getTcpKeepAliveIntvl(int fd) throws SocketException {
+            throw new UnsupportedOperationException("unsupported TCP_KEEPINTVL option");
         }
     }
 }

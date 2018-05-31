@@ -181,7 +181,7 @@ objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
       THROW_OOP_0(Universe::out_of_memory_error_array_size());
     }
   } else {
-    THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
+    THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
   }
 }
 
@@ -209,7 +209,7 @@ oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
       for (int i = 0; i < rank - 1; ++i) {
         sizes += 1;
         if (*sizes < 0) {
-          THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
+          THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", *sizes));
         }
       }
     }

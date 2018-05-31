@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,7 +439,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
 
     do {
         if ((rv = recvmsg(fd, msg, flags)) < 0) {
-            if (errno == EWOULDBLOCK) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 return IOS_UNAVAILABLE;
             } else if (errno == EINTR) {
                 return IOS_INTERRUPTED;
@@ -582,7 +582,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
     setControlData(msg, cdata);
 
     if ((rv = sendmsg(fd, msg, 0)) < 0) {
-        if (errno == EWOULDBLOCK) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return IOS_UNAVAILABLE;
         } else if (errno == EINTR) {
             return IOS_INTERRUPTED;

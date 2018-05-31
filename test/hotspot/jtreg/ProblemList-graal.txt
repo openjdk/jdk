@@ -58,6 +58,7 @@ compiler/whitebox/MakeMethodNotCompilableTest.java              8181831   generi
 
 gc/arguments/TestNewSizeFlags.java                              8196611   generic-all
 gc/g1/TestConcurrentSystemGC.java                               8196611   generic-all
+vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java     8196611   macosx-all
 
 gc/g1/ihop/TestIHOPErgo.java                                    8191048   generic-all
 gc/g1/plab/TestPLABEvacuationFailure.java                       8191048   generic-all
@@ -74,6 +75,8 @@ compiler/compilercontrol/directives/LogTest.java                8181753   generi
 
 gc/g1/ihop/TestIHOPStatic.java                                  8199486   generic-all
 
+gc/parallel/TestPrintGCDetailsVerbose.java                      8200186   macosx-all
+
 compiler/jvmci/compilerToVM/ReprofileTest.java                  8201333   generic-all
 
 compiler/tiered/TieredLevelsTest.java                           8202124   generic-all
@@ -85,8 +88,12 @@ compiler/jvmci/jdk.vm.ci.hotspot.test/src/jdk/vm/ci/hotspot/test/HotSpotConstant
 compiler/jvmci/jdk.vm.ci.hotspot.test/src/jdk/vm/ci/hotspot/test/MemoryAccessProviderTest.java                CODETOOLS-7902162   generic-all
 compiler/jvmci/events/JvmciShutdownEventTest.java               CODETOOLS-7902162   generic-all
 
-vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn009/forceEarlyReturn009.java   8191047   generic-all
+vmTestbase/nsk/stress/strace/strace001.java                     8191047   generic-all
+vmTestbase/nsk/stress/strace/strace002.java                     8191047   generic-all
+vmTestbase/nsk/stress/strace/strace005.java                     8191047   generic-all
+vmTestbase/nsk/stress/strace/strace006.java                     8191047   generic-all
 vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java                         8191047   generic-all
+vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn009/forceEarlyReturn009.java   8191047   generic-all
 
 vmTestbase/nsk/jdi/ClassType/invokeMethod/invokemethod012/TestDescription.java                     8195600   generic-all
 vmTestbase/nsk/jdi/ClassType/setValue/setvalue006/TestDescription.java                             8195600   generic-all
@@ -163,6 +170,7 @@ vmTestbase/nsk/jdb/wherei/wherei001/wherei001.java                              
 vmTestbase/vm/mlvm/anonloader/stress/oome/heap/Test.java         8186299   generic-all
 vmTestbase/vm/mlvm/anonloader/stress/oome/metaspace/Test.java    8186299   generic-all
 
+# jvmti tests
 vmTestbase/nsk/jvmti/IterateThroughHeap/filter-tagged/TestDescription.java         8193577   generic-all
 vmTestbase/nsk/jvmti/IterateThroughHeap/filter-class-tagged/TestDescription.java   8193577   generic-all
 
@@ -170,5 +178,9 @@ vmTestbase/nsk/jvmti/unit/ForceEarlyReturn/earlyretbase/TestDescription.java    
 
 vmTestbase/nsk/jvmti/PopFrame/popframe009/TestDescription.java                     8195639   generic-all
 
+vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn001/TestDescription.java     8195674   generic-all
 vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn002/TestDescription.java     8195674   generic-all
 
+vmTestbase/nsk/jvmti/AttachOnDemand/attach024/TestDescription.java                 8195630   generic-all
+
+vmTestbase/nsk/jvmti/unit/FollowReferences/followref003/TestDescription.java       8202342   generic-all

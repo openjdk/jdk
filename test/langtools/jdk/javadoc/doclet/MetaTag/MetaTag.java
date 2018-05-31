@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4034096 4764726 6235799 8182765
+ * @bug      4034096 4764726 6235799 8182765 8196202
  * @summary  Add support for HTML keywords via META tag for
  *           class and member names to improve API search
  * @author   dkramer
@@ -53,6 +53,7 @@ public class MetaTag extends JavadocTester {
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "-keywords",
+                "--frames",
                 "-doctitle", "Sample Packages",
                 "p1", "p2");
 
@@ -66,6 +67,7 @@ public class MetaTag extends JavadocTester {
         javadoc("-d", "out-2",
                 "-sourcepath", testSrc,
                 "-notimestamp",
+                "--frames",
                 "-doctitle", "Sample Packages",
                 "p1", "p2");
         checkExit(Exit.OK);
@@ -80,6 +82,7 @@ public class MetaTag extends JavadocTester {
                 "-html4",
                 "-sourcepath", testSrc,
                 "-keywords",
+                "--frames",
                 "-doctitle", "Sample Packages",
                 "p1", "p2");
 
@@ -94,6 +97,7 @@ public class MetaTag extends JavadocTester {
                 "-html4",
                 "-sourcepath", testSrc,
                 "-notimestamp",
+                "--frames",
                 "-doctitle", "Sample Packages",
                 "p1", "p2");
         checkExit(Exit.OK);

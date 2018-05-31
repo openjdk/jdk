@@ -116,7 +116,7 @@ typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
       THROW_OOP_0(Universe::out_of_memory_error_array_size());
     }
   } else {
-    THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
+    THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
   }
 }
 

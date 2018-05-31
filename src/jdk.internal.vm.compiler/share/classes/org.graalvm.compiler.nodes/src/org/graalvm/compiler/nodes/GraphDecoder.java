@@ -1022,7 +1022,11 @@ public class GraphDecoder {
             }
         }
         if (graph.trackNodeSourcePosition() && position != null) {
-            node.setNodeSourcePosition(methodScope.getCallerBytecodePosition(position));
+            NodeSourcePosition callerBytecodePosition = methodScope.getCallerBytecodePosition(position);
+            node.setNodeSourcePosition(callerBytecodePosition);
+            if (node instanceof DeoptimizingGuard) {
+                ((DeoptimizingGuard) node).addCallerToNoDeoptSuccessorPosition(callerBytecodePosition.getCaller());
+            }
         }
     }
 

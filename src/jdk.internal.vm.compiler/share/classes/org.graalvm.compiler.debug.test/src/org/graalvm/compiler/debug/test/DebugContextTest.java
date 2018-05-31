@@ -167,6 +167,32 @@ public class DebugContextTest {
     }
 
     @Test
+    public void testContextScope() {
+        OptionValues options = new OptionValues(EconomicMap.create());
+        options = new OptionValues(options, DebugOptions.Log, ":5");
+        DebugContextSetup setup = new DebugContextSetup();
+        try (DebugContext debug = setup.openDebugContext(options)) {
+            try (DebugContext.Scope s0 = debug.scope("TestLogging")) {
+                try (DebugContext.Scope s1 = debug.withContext("A")) {
+                    for (Object o : debug.context()) {
+                        Assert.assertEquals(o, "A");
+                    }
+                } catch (Throwable t) {
+                    throw debug.handle(t);
+                }
+                try (DebugContext.Scope s1 = debug.withContext("B")) {
+                    for (Object o : debug.context()) {
+                        Assert.assertEquals(o, "B");
+                    }
+                } catch (Throwable t) {
+                    throw debug.handle(t);
+                }
+            }
+        }
+
+    }
+
+    @Test
     public void testEnabledSandbox() {
         EconomicMap<OptionKey<?>, Object> map = EconomicMap.create();
         // Configure with an option that enables scopes

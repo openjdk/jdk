@@ -49,7 +49,6 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   const bool _is_class;
 
   // total in the VirtualSpace
-  MemRegion _reserved;
   ReservedSpace _rs;
   VirtualSpace _virtual_space;
   MetaWord* _top;
@@ -102,11 +101,9 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   VirtualSpaceNode* next() { return _next; }
   void set_next(VirtualSpaceNode* v) { _next = v; }
 
-  void set_reserved(MemRegion const v) { _reserved = v; }
   void set_top(MetaWord* v) { _top = v; }
 
   // Accessors
-  MemRegion* reserved() { return &_reserved; }
   VirtualSpace* virtual_space() const { return (VirtualSpace*) &_virtual_space; }
 
   // Returns true if "word_size" is available in the VirtualSpace
@@ -135,8 +132,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
   // Allocate a chunk from the virtual space and return it.
   Metachunk* get_chunk_vs(size_t chunk_word_size);
 
-  // Expands/shrinks the committed space in a virtual space.  Delegates
-  // to Virtualspace
+  // Expands the committed space by at least min_words words.
   bool expand_by(size_t min_words, size_t preferred_words);
 
   // In preparation for deleting this node, remove all the chunks

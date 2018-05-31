@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8073100 8182765
+ * @bug 8073100 8182765 8196202
  * @summary ensure the hidden tag works as intended
  * @library ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -44,6 +44,7 @@ public class TestHiddenTag extends JavadocTester {
     @Test
     public void test1() {
         javadoc("-d", "out1",
+                "--frames",
                 "-sourcepath", testSrc,
                 "-package",
                 "pkg1");

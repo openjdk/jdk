@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8196027
+ * @bug 8196027 8196202
  * @summary test navigation links
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -74,6 +74,7 @@ public class TestModuleNavigation extends JavadocTester {
 
         javadoc("-d", base.resolve("out").toString(), "-use",
                 "-quiet",
+                "--frames",
                 "--module-source-path", src.toString(),
                 "--module", "m,m2");
         checkExit(Exit.OK);

@@ -262,15 +262,6 @@ class ReferenceProcessor : public ReferenceDiscoverer {
                       BoolObjectClosure* is_alive,
                       OopClosure*        keep_alive,
                       VoidClosure*       complete_gc);
-  // Work methods in support of process_phase2
-  void pp2_work(DiscoveredList&    refs_list,
-                BoolObjectClosure* is_alive,
-                OopClosure*        keep_alive);
-  void pp2_work_concurrent_discovery(
-                DiscoveredList&    refs_list,
-                BoolObjectClosure* is_alive,
-                OopClosure*        keep_alive,
-                VoidClosure*       complete_gc);
   // Phase3: process the referents by either clearing them
   // or keeping them alive (and their closure), and enqueuing them.
   void process_phase3(DiscoveredList&    refs_list,
