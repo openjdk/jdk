@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -38,8 +38,29 @@ public class FileHistory
 {
     private final File file;
 
+    /**
+     * Load a history file into memory, truncating to default max size.
+     */
     public FileHistory(final File file) throws IOException {
-        this.file = checkNotNull(file);
+        this(file, true);
+    }
+
+    /**
+     * Create a FileHistory, but only initialize if doInit is true. This allows
+     * setting maxSize or other settings; call load() before using if doInit is
+     * false.
+     */
+    public FileHistory(final File file, final boolean doInit) throws IOException {
+        this.file = checkNotNull(file).getAbsoluteFile();
+        if (doInit) {
+            load();
+        }
+    }
+
+    /**
+     * Load history from file, e.g. if using delayed init.
+     */
+    public void load() throws IOException {
         load(file);
     }
 
@@ -51,7 +72,15 @@ public class FileHistory
         checkNotNull(file);
         if (file.exists()) {
             Log.trace("Loading history from: ", file);
-            load(new FileReader(file));
+            FileReader reader = null;
+            try{
+                reader = new FileReader(file);
+                load(reader);
+            } finally{
+                if(reader != null){
+                    reader.close();
+                }
+            }
         }
     }
 

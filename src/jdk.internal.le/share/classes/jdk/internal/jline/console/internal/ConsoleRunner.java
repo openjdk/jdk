@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -12,6 +12,7 @@ import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.completer.ArgumentCompleter;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.history.FileHistory;
+import jdk.internal.jline.console.history.PersistentHistory;
 import jdk.internal.jline.internal.Configuration;
 
 import java.io.File;
@@ -75,11 +76,15 @@ public class ConsoleRunner
         try {
             Class<?> type = Class.forName(mainClass);
             Method method = type.getMethod("main", String[].class);
-            method.invoke(null);
+            String[] mainArgs = argList.toArray(new String[argList.size()]);
+            method.invoke(null, (Object) mainArgs);
         }
         finally {
             // just in case this main method is called from another program
             ConsoleReaderInputStream.restoreIn();
+            if (reader.getHistory() instanceof PersistentHistory) {
+                ((PersistentHistory) reader.getHistory()).flush();
+            }
         }
     }
 

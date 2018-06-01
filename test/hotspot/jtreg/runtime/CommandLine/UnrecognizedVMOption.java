@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8006298
+ * @bug 8006298 8204055
  * @summary Using an unrecognized VM option should print the name of the option
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -35,11 +35,19 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class UnrecognizedVMOption {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:bogus_option", "-version");
+    // Note: -XX by itself is an unrecognized launcher option, the :
+    // must be present for it to be passed through as a VM option.
+    String[] badOptions = {
+      "",  // empty option
+      "bogus_option",
+    };
+    for (String option : badOptions) {
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+          "-XX:" + option, "-version");
 
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Unrecognized VM option 'bogus_option'");
-    output.shouldHaveExitValue(1);
+      OutputAnalyzer output = new OutputAnalyzer(pb.start());
+      output.shouldContain("Unrecognized VM option '" + option + "'");
+      output.shouldHaveExitValue(1);
+    }
   }
 }

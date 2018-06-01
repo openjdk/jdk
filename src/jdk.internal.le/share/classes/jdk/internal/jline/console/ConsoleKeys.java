@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -32,11 +32,14 @@ public class ConsoleKeys {
 
     public ConsoleKeys(String appName, URL inputrcUrl) {
         keyMaps = KeyMap.keyMaps();
+        setVar("editing-mode", "emacs");
         loadKeys(appName, inputrcUrl);
-    }
-
-    protected boolean isViEditMode() {
-        return keys.isViKeyMap();
+        String editingMode = variables.get("editing-mode");
+        if ("vi".equalsIgnoreCase(editingMode)) {
+            keys = keyMaps.get(KeyMap.VI_INSERT);
+        } else if ("emacs".equalsIgnoreCase(editingMode)) {
+            keys = keyMaps.get(KeyMap.EMACS);
+        }
     }
 
     protected boolean setKeyMap (String name) {
@@ -58,10 +61,6 @@ public class ConsoleKeys {
 
     protected void setKeys(KeyMap keys) {
         this.keys = keys;
-    }
-
-    protected boolean getViEditMode() {
-        return keys.isViKeyMap ();
     }
 
     protected void loadKeys(String appName, URL inputrcUrl) {
@@ -127,13 +126,8 @@ public class ConsoleKeys {
                         if (args.startsWith("term=")) {
                             // TODO
                         } else if (args.startsWith("mode=")) {
-                            if (args.equalsIgnoreCase("mode=vi")) {
-                                parsing = isViEditMode();
-                            } else if (args.equals("mode=emacs")) {
-                                parsing = !isViEditMode();
-                            } else {
-                                parsing = false;
-                            }
+                            String mode = variables.get("editing-mode");
+                            parsing = args.substring("mode=".length()).equalsIgnoreCase(mode);
                         } else {
                             parsing = args.equalsIgnoreCase(appName);
                         }
@@ -185,7 +179,7 @@ public class ConsoleKeys {
                         && line.charAt(i) != ' ' && line.charAt(i) != '\t'
                         ; i++);
                 keySeq = line.substring(0, i);
-                equivalency = (i + 1 < line.length() && line.charAt(i) == ':' && line.charAt(i + 1) == '=');
+                equivalency = i + 1 < line.length() && line.charAt(i) == ':' && line.charAt(i + 1) == '=';
                 i++;
                 if (equivalency) {
                     i++;
@@ -256,7 +250,7 @@ public class ConsoleKeys {
         }
     }
 
-    private String translateQuoted(String keySeq) {
+    private static String translateQuoted(String keySeq) {
         int i;
         String str = keySeq.substring( 1, keySeq.length() - 1 );
         keySeq = "";
@@ -342,7 +336,7 @@ public class ConsoleKeys {
         return keySeq;
     }
 
-    private char getKeyFromName(String name) {
+    private static char getKeyFromName(String name) {
         if ("DEL".equalsIgnoreCase(name) || "Rubout".equalsIgnoreCase(name)) {
             return 0x7f;
         } else if ("ESC".equalsIgnoreCase(name) || "Escape".equalsIgnoreCase(name)) {
@@ -364,12 +358,6 @@ public class ConsoleKeys {
         if ("keymap".equalsIgnoreCase(key)) {
             if (keyMaps.containsKey(val)) {
                 keys = keyMaps.get(val);
-            }
-        } else if ("editing-mode".equals(key)) {
-            if ("vi".equalsIgnoreCase(val)) {
-                keys = keyMaps.get(KeyMap.VI_INSERT);
-            } else if ("emacs".equalsIgnoreCase(key)) {
-                keys = keyMaps.get(KeyMap.EMACS);
             }
         } else if ("blink-matching-paren".equals(key)) {
             if ("on".equalsIgnoreCase(val)) {

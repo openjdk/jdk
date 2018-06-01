@@ -33,9 +33,11 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.process.OutputAnalyzer;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.FutureTask;
+import java.util.stream.Collectors;
 
 /*
  * @test
@@ -99,6 +101,14 @@ public class TestBiasedLockRevocationEvents {
         validateStackTrace(stackTrace, "touch");
     }
 
+    // Retrieve all biased lock revocation events related to the provided lock class, sorted by start time
+    static List<RecordedEvent> getRevocationEvents(Recording recording, String fieldName, Class<?> lockClass) throws Throwable {
+        return Events.fromRecording(recording).stream()
+                .filter(e -> ((RecordedClass)e.getValue(fieldName)).getName().equals(lockClass.getName()))
+                .sorted(Comparator.comparing(RecordedEvent::getStartTime))
+                .collect(Collectors.toList());
+    }
+
     static void testSingleRevocation() throws Throwable {
         class MyLock {};
 
@@ -110,11 +120,8 @@ public class TestBiasedLockRevocationEvents {
         Thread biasBreaker = triggerRevocation(1, MyLock.class);
 
         recording.stop();
-
-        List<RecordedEvent> events = Events.fromRecording(recording);
-
-        // We may or may not catch a second revocation from the biasBreaker thread exiting
-        Asserts.assertGreaterThanOrEqual(events.size(), 1);
+        List<RecordedEvent> events = getRevocationEvents(recording, "lockClass", MyLock.class);
+        Asserts.assertEQ(events.size(), 1);
 
         RecordedEvent event = events.get(0);
         Events.assertEventThread(event, biasBreaker);
@@ -137,7 +144,7 @@ public class TestBiasedLockRevocationEvents {
         Thread biasBreaker = triggerRevocation(BULK_REVOKE_THRESHOLD, MyLock.class);
 
         recording.stop();
-        List<RecordedEvent> events = Events.fromRecording(recording);
+        List<RecordedEvent> events = getRevocationEvents(recording, "revokedClass", MyLock.class);
         Asserts.assertEQ(events.size(), 1);
 
         RecordedEvent event = events.get(0);
@@ -163,8 +170,7 @@ public class TestBiasedLockRevocationEvents {
         Thread.holdsLock(l);
 
         recording.stop();
-
-        List<RecordedEvent> events = Events.fromRecording(recording);
+        List<RecordedEvent> events = getRevocationEvents(recording, "lockClass", MyLock.class);
         Asserts.assertEQ(events.size(), 1);
 
         RecordedEvent event = events.get(0);
@@ -206,25 +212,18 @@ public class TestBiasedLockRevocationEvents {
         touch(l);
 
         recording.stop();
-        List<RecordedEvent> events = Events.fromRecording(recording);
-        Events.hasEvents(events);
+        List<RecordedEvent> events = getRevocationEvents(recording, "lockClass", MyLock.class);
+        Asserts.assertEQ(events.size(), 1);
 
-        // Joining the locker thread can cause revocations as well, search for the interesting one
-        for (RecordedEvent event : events) {
-            RecordedClass lockClass = event.getValue("lockClass");
-            if (lockClass.getName().equals(MyLock.class.getName())) {
-                Events.assertEventThread(event, Thread.currentThread());
-                // Previous owner will usually be null, but can also be a thread that
-                // was created after the BiasLocker thread exited due to address reuse.
-                RecordedThread prevOwner = event.getValue("previousOwner");
-                if (prevOwner != null) {
-                    Asserts.assertNE(prevOwner.getJavaName(), "BiasLocker");
-                }
-                validateStackTrace(event.getStackTrace());
-                return;
-            }
+        RecordedEvent event = events.get(0);
+        Events.assertEventThread(event, Thread.currentThread());
+        // Previous owner will usually be null, but can also be a thread that
+        // was created after the BiasLocker thread exited due to address reuse.
+        RecordedThread prevOwner = event.getValue("previousOwner");
+        if (prevOwner != null) {
+            Asserts.assertNE(prevOwner.getJavaName(), "BiasLocker");
         }
-        Asserts.fail("Did not find any revocation event for MyLock");
+        validateStackTrace(event.getStackTrace());
     }
 
     static void testBulkRevocationNoRebias() throws Throwable {
@@ -239,12 +238,12 @@ public class TestBiasedLockRevocationEvents {
         Thread biasBreaker1 = triggerRevocation(BULK_REVOKE_THRESHOLD, MyLock.class);
 
         recording.stop();
-        List<RecordedEvent> events = Events.fromRecording(recording);
+        List<RecordedEvent> events = getRevocationEvents(recording, "revokedClass", MyLock.class);
         Asserts.assertEQ(events.size(), 2);
 
         // The rebias event should occur before the noRebias one
-        RecordedEvent eventRebias = events.get(0).getStartTime().isBefore(events.get(1).getStartTime()) ? events.get(0) : events.get(1);
-        RecordedEvent eventNoRebias = events.get(0).getStartTime().isBefore(events.get(1).getStartTime()) ? events.get(1) : events.get(0);
+        RecordedEvent eventRebias = events.get(0);
+        RecordedEvent eventNoRebias = events.get(1);
 
         Events.assertEventThread(eventRebias, biasBreaker0);
         Events.assertField(eventRebias, "disableBiasing").equal(false);

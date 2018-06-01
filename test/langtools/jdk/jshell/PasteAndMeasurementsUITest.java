@@ -49,7 +49,6 @@ import org.testng.annotations.Test;
 public class PasteAndMeasurementsUITest extends UITesting {
 
     public void testPrevNextSnippet() throws Exception {
-        System.setProperty(ANSI_SUPPORTED_PROPERTY, "true");
         Field cons = System.class.getDeclaredField("cons");
         cons.setAccessible(true);
         Constructor console = Console.class.getDeclaredConstructor();
@@ -69,6 +68,5 @@ public class PasteAndMeasurementsUITest extends UITesting {
                             PROMPT + "\u001b\\[6n");
         });
     }
-        private static final String ANSI_SUPPORTED_PROPERTY = "test.terminal.ansi.supported";
         private static final String LOC = "\033[12;1R";
 }

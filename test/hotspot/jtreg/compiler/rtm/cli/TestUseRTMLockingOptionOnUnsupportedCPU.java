@@ -48,28 +48,49 @@ public class TestUseRTMLockingOptionOnUnsupportedCPU {
     private static final String DEFAULT_VALUE = "false";
 
     public void runTestCases() throws Throwable {
-        String unrecongnizedOption
+        String unrecognizedOption
                 = CommandLineOptionTest.getUnrecognizedOptionErrorMessage(
                 "UseRTMLocking");
         String errorMessage = RTMGenericCommandLineOptionTest.RTM_INSTR_ERROR;
 
         if (Platform.isX86() || Platform.isX64() || Platform.isPPC()) {
-            String shouldFailMessage = "JVM startup should fail with option "
-                    + "-XX:+UseRTMLocking on unsupported CPU";
-            // verify that we get an error when use +UseRTMLocking
-            // on unsupported CPU
-            CommandLineOptionTest.verifySameJVMStartup(
-                    new String[] { errorMessage },
-                    new String[] { unrecongnizedOption }, shouldFailMessage,
-                    shouldFailMessage + ". Error message should be shown",
-                    ExitCode.FAIL, "-XX:+UseRTMLocking");
+            String shouldFailMessage = "JVM startup should fail with option " +
+                                       "-XX:+UseRTMLocking on unsupported CPU";
+
+            try {
+                // verify that we get an error when use +UseRTMLocking
+                // on unsupported CPU
+                CommandLineOptionTest.verifySameJVMStartup(
+                        new String[] { errorMessage },
+                        new String[] { unrecognizedOption }, shouldFailMessage,
+                        shouldFailMessage + ". Error message should be shown.",
+                        ExitCode.FAIL, "-XX:+UseRTMLocking");
+            } catch (Throwable e) {
+                // verify that we get an error when use +UseRTMLocking
+                // on unsupported OS. It might be the case that although CPU
+                // supports RTM the OS version does not support RTM
+                if (Platform.isPPC()) {
+                    String errorMessage2 = RTMGenericCommandLineOptionTest.RTM_OS_ERROR;
+                    String shouldFailMessage2 = "JVM startup should fail with option " +
+                                                "-XX:+UseRTMLocking on unsupported CPU or " +
+                                                "OS version";
+
+                    CommandLineOptionTest.verifySameJVMStartup(
+                            new String[] { errorMessage2 },
+                            new String[] { unrecognizedOption}, shouldFailMessage2,
+                            shouldFailMessage2 + ". Error message should be shown.",
+                            ExitCode.FAIL, "-XX:+UseRTMLocking");
+                } else {
+                    throw e; // checking unsupported OS error is not necessary
+                }
+            }
 
             String shouldPassMessage = "JVM startup should pass with option "
                     + "-XX:-UseRTMLocking even on unsupported CPU";
             // verify that we can pass -UseRTMLocking without
             // getting any error messages
             CommandLineOptionTest.verifySameJVMStartup(null, new String[] {
-                    errorMessage, unrecongnizedOption }, shouldPassMessage,
+                    errorMessage, unrecognizedOption }, shouldPassMessage,
                     shouldPassMessage + " without any warnings", ExitCode.OK,
                     "-XX:-UseRTMLocking");
 
@@ -84,12 +105,12 @@ public class TestUseRTMLockingOptionOnUnsupportedCPU {
                     + "Error message should be shown";
             // verify that on non-x86 CPUs RTMLocking could not be used
             CommandLineOptionTest.verifySameJVMStartup(
-                    new String[] { unrecongnizedOption },
+                    new String[] { unrecognizedOption },
                     null, shouldFailMessage, shouldFailMessage,
                     ExitCode.FAIL, "-XX:+UseRTMLocking");
 
             CommandLineOptionTest.verifySameJVMStartup(
-                    new String[] { unrecongnizedOption },
+                    new String[] { unrecognizedOption },
                     null, shouldFailMessage, shouldFailMessage,
                     ExitCode.FAIL, "-XX:-UseRTMLocking");
         }

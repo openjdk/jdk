@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8189131 8198240 8191844 8189949
+ * @bug 8189131 8198240 8191844 8189949 8191031
  * @requires java.runtime.name ~= "OpenJDK.*"
  * @summary Check root CA entries in cacerts file
  */
@@ -42,7 +42,7 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 78;
+    private static final int COUNT = 70;
 
     // map of cert alias to SHA-256 fingerprint
     private static final Map<String, String> FINGERPRINT_MAP
@@ -106,12 +106,6 @@ public class VerifyCACerts {
                     "7E:37:CB:8B:4C:47:09:0C:AB:36:55:1B:A6:F4:5D:B8:40:68:0F:BA:16:6A:95:2D:B1:00:71:7F:43:05:3F:C2");
             put("digicerthighassuranceevrootca [jdk]",
                     "74:31:E5:F4:C3:C1:CE:46:90:77:4F:0B:61:E0:54:40:88:3B:A9:A0:1E:D0:0B:A6:AB:D7:80:6E:D3:B1:18:CF");
-            put("equifaxsecureca [jdk]",
-                    "08:29:7A:40:47:DB:A2:36:80:C7:31:DB:6E:31:76:53:CA:78:48:E1:BE:BD:3A:0B:01:79:A7:07:F9:2C:F1:78");
-            put("equifaxsecureebusinessca1 [jdk]",
-                    "2E:3A:2B:B5:11:25:05:83:6C:A8:96:8B:E2:CB:37:27:CE:9B:56:84:5C:6E:E9:8E:91:85:10:4A:FB:9A:F5:96");
-            put("equifaxsecureglobalebusinessca1 [jdk]",
-                    "86:AB:5A:65:71:D3:32:9A:BC:D2:E4:E6:37:66:8B:A8:9C:73:1E:C2:93:B6:CB:A6:0F:71:63:40:A0:91:CE:AE");
             put("geotrustglobalca [jdk]",
                     "FF:85:6A:2D:25:1D:CD:88:D3:66:56:F4:50:12:67:98:CF:AB:AA:DE:40:79:9C:72:2D:E4:D2:B5:DB:36:A7:3A");
             put("geotrustprimaryca [jdk]",
@@ -134,16 +128,6 @@ public class VerifyCACerts {
                     "3F:9F:27:D5:83:20:4B:9E:09:C8:A3:D2:06:6C:4B:57:D3:A2:47:9C:36:93:65:08:80:50:56:98:10:5D:BC:E9");
             put("verisigntsaca [jdk]",
                     "CB:6B:05:D9:E8:E5:7C:D8:82:B1:0B:4D:B7:0D:E4:BB:1D:E4:2B:A4:8A:7B:D0:31:8B:63:5B:F6:E7:78:1A:9D");
-            put("verisignclass1ca [jdk]",
-                    "51:84:7C:8C:BD:2E:9A:72:C9:1E:29:2D:2A:E2:47:D7:DE:1E:3F:D2:70:54:7A:20:EF:7D:61:0F:38:B8:84:2C");
-            put("verisignclass1g2ca [jdk]",
-                    "34:1D:E9:8B:13:92:AB:F7:F4:AB:90:A9:60:CF:25:D4:BD:6E:C6:5B:9A:51:CE:6E:D0:67:D0:0E:C7:CE:9B:7F");
-            put("verisignclass1g3ca [jdk]",
-                    "CB:B5:AF:18:5E:94:2A:24:02:F9:EA:CB:C0:ED:5B:B8:76:EE:A3:C1:22:36:23:D0:04:47:E4:F3:BA:55:4B:65");
-            put("verisignclass2g2ca [jdk]",
-                    "3A:43:E2:20:FE:7F:3E:A9:65:3D:1E:21:74:2E:AC:2B:75:C2:0F:D8:98:03:05:BC:50:2C:AF:8C:2D:9B:41:A1");
-            put("verisignclass2g3ca [jdk]",
-                    "92:A9:D9:83:3F:E1:94:4D:B3:66:E8:BF:AE:7A:95:B6:48:0C:2D:6C:6C:2A:1B:E6:5D:42:36:B6:08:FC:A1:BB");
             put("verisignclass3ca [jdk]",
                     "A4:B6:B3:99:6F:C2:F3:06:B3:FD:86:81:BD:63:41:3D:8C:50:09:CC:4F:A3:29:C2:CC:F0:E2:FA:1B:14:03:05");
             put("verisignclass3g2ca [jdk]",
@@ -210,8 +194,7 @@ public class VerifyCACerts {
     // Exception list to 90 days expiry policy
     private static final HashSet<String> EXPIRY_EXC_ENTRIES
             = new HashSet<String>(Arrays.asList(
-                    "gtecybertrustglobalca [jdk]",
-                    "equifaxsecureca [jdk]"
+                    "gtecybertrustglobalca [jdk]"
             ));
 
     // Ninety days in milliseconds

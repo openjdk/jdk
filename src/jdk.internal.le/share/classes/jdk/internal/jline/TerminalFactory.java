@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -11,11 +11,9 @@ package jdk.internal.jline;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 import jdk.internal.jline.internal.Configuration;
 import jdk.internal.jline.internal.Log;
-import jdk.internal.jline.internal.Preconditions;
 import static jdk.internal.jline.internal.Preconditions.checkNotNull;
 
 /**
@@ -32,9 +30,13 @@ public class TerminalFactory
 
     public static final String UNIX = "unix";
 
+    public static final String OSV = "osv";
+
     public static final String WIN = "win";
 
     public static final String WINDOWS = "windows";
+
+    public static final String FREEBSD = "freebsd";
 
     public static final String NONE = "none";
 
@@ -45,16 +47,17 @@ public class TerminalFactory
     private static Terminal term = null;
 
     public static synchronized Terminal create() {
+        return create(null);
+    }
+
+    public static synchronized Terminal create(String ttyDevice) {
         if (Log.TRACE) {
             //noinspection ThrowableInstanceNeverThrown
             Log.trace(new Throwable("CREATE MARKER"));
         }
 
-        String type = Configuration.getString(JLINE_TERMINAL, AUTO);
-        if ("dumb".equals(System.getenv("TERM"))) {
-            type = "none";
-            Log.debug("$TERM=dumb; setting type=", type);
-        }
+        String defaultType = "dumb".equals(System.getenv("TERM")) ? NONE : AUTO;
+        String type  = Configuration.getString(JLINE_TERMINAL, defaultType);
 
         Log.debug("Creating terminal; type=", type);
 
@@ -65,11 +68,20 @@ public class TerminalFactory
             if (tmp.equals(UNIX)) {
                 t = getFlavor(Flavor.UNIX);
             }
-            else if (tmp.equals(WIN) | tmp.equals(WINDOWS)) {
+            else if (tmp.equals(OSV)) {
+                t = getFlavor(Flavor.OSV);
+            }
+            else if (tmp.equals(WIN) || tmp.equals(WINDOWS)) {
                 t = getFlavor(Flavor.WINDOWS);
             }
             else if (tmp.equals(NONE) || tmp.equals(OFF) || tmp.equals(FALSE)) {
-                t = new UnsupportedTerminal();
+                if (System.getenv("INSIDE_EMACS") != null) {
+                    // emacs requires ansi on and echo off
+                    t = new UnsupportedTerminal(true, false);
+                } else  {
+                    // others the other way round
+                    t = new UnsupportedTerminal(false, true);
+                }
             }
             else {
                 if (tmp.equals(AUTO)) {
@@ -77,8 +89,10 @@ public class TerminalFactory
                     Flavor flavor = Flavor.UNIX;
                     if (os.contains(WINDOWS)) {
                         flavor = Flavor.WINDOWS;
+                    } else if (System.getenv("OSV_CPUS") != null) {
+                        flavor = Flavor.OSV;
                     }
-                    t = getFlavor(flavor);
+                    t = getFlavor(flavor, ttyDevice);
                 }
                 else {
                     try {
@@ -125,6 +139,7 @@ public class TerminalFactory
         AUTO,
         WINDOWS,
         UNIX,
+        OSV,
         NONE
     }
 
@@ -145,31 +160,52 @@ public class TerminalFactory
     public static enum Flavor
     {
         WINDOWS,
-        UNIX
+        UNIX,
+        OSV
     }
 
-    private static final Map<Flavor, Callable<? extends Terminal>> FLAVORS = new HashMap<>();
+    private static final Map<Flavor, TerminalConstructor> FLAVORS = new HashMap<>();
 
     static {
-//        registerFlavor(Flavor.WINDOWS, AnsiWindowsTerminal.class);
-//        registerFlavor(Flavor.UNIX, UnixTerminal.class);
-        registerFlavor(Flavor.WINDOWS, WindowsTerminal :: new);
-        registerFlavor(Flavor.UNIX, UnixTerminal :: new);
+        registerFlavor(Flavor.WINDOWS, ttyDevice -> new WindowsTerminal());
+        registerFlavor(Flavor.UNIX, ttyDevice -> new UnixTerminal(ttyDevice));
+        registerFlavor(Flavor.OSV, ttyDevice -> new OSvTerminal());
     }
 
-    public static synchronized Terminal get() {
+    public static synchronized Terminal get(String ttyDevice) {
+        // The code is assuming we've got only one terminal per process.
+        // Continuing this assumption, if this terminal is already initialized,
+        // we don't check if it's using the same tty line either. Both assumptions
+        // are a bit crude. TODO: check single terminal assumption.
         if (term == null) {
-            term = create();
+            term = create(ttyDevice);
         }
         return term;
     }
 
+    public static synchronized Terminal get() {
+        return get(null);
+    }
+
     public static Terminal getFlavor(final Flavor flavor) throws Exception {
-        return FLAVORS.getOrDefault(flavor, () -> {throw new InternalError();}).call();
+        return getFlavor(flavor, null);
     }
 
-    public static void registerFlavor(final Flavor flavor, final Callable<? extends Terminal> sup) {
-        FLAVORS.put(flavor, sup);
+    @SuppressWarnings("deprecation")
+    public static Terminal getFlavor(final Flavor flavor, String ttyDevice) throws Exception {
+        TerminalConstructor factory = FLAVORS.get(flavor);
+        if (factory != null) {
+            return factory.createTerminal(ttyDevice);
+        } else {
+            throw new InternalError();
+        }
     }
 
+    public static void registerFlavor(final Flavor flavor, final TerminalConstructor factory) {
+        FLAVORS.put(flavor, factory);
+    }
+
+    public interface TerminalConstructor {
+        public Terminal createTerminal(String str) throws Exception;
+    }
 }
