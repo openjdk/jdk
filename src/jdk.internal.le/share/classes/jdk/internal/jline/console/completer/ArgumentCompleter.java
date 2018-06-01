@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -144,7 +144,7 @@ public class ArgumentCompleter
                 return -1;
             }
 
-            if (subCandidates.size() == 0) {
+            if (!subCandidates.contains(arg)) {
                 return -1;
             }
         }
@@ -326,10 +326,6 @@ public class ArgumentCompleter
 
         /**
          * Check if this character is a valid escape char (i.e. one that has not been escaped)
-         *
-         * @param buffer
-         * @param pos
-         * @return
          */
         public boolean isEscapeChar(final CharSequence buffer, final int pos) {
             if (pos < 0) {

@@ -11,8 +11,11 @@ package jdk.internal.jline.console.completer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import jdk.internal.jline.internal.Ansi;
 
 import static jdk.internal.jline.internal.Preconditions.checkNotNull;
 
@@ -22,42 +25,45 @@ import static jdk.internal.jline.internal.Preconditions.checkNotNull;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
  */
-public class StringsCompleter
+public class AnsiStringsCompleter
     implements Completer
 {
-    private final SortedSet<String> strings = new TreeSet<String>();
+    private final SortedMap<String, String> strings = new TreeMap<String, String>();
 
-    public StringsCompleter() {
+    public AnsiStringsCompleter() {
         // empty
     }
 
-    public StringsCompleter(final Collection<String> strings) {
+    public AnsiStringsCompleter(final Collection<String> strings) {
         checkNotNull(strings);
-        getStrings().addAll(strings);
+        for (String str : strings) {
+            this.strings.put(Ansi.stripAnsi(str), str);
+        }
     }
 
-    public StringsCompleter(final String... strings) {
+    public AnsiStringsCompleter(final String... strings) {
         this(Arrays.asList(strings));
     }
 
     public Collection<String> getStrings() {
-        return strings;
+        return strings.values();
     }
 
-    public int complete(final String buffer, final int cursor, final List<CharSequence> candidates) {
+    public int complete(String buffer, final int cursor, final List<CharSequence> candidates) {
         // buffer could be null
         checkNotNull(candidates);
 
         if (buffer == null) {
-            candidates.addAll(strings);
+            candidates.addAll(strings.values());
         }
         else {
-            for (String match : strings.tailSet(buffer)) {
-                if (!match.startsWith(buffer)) {
+            buffer = Ansi.stripAnsi(buffer);
+            for (Map.Entry<String, String> match : strings.tailMap(buffer).entrySet()) {
+                if (!match.getKey().startsWith(buffer)) {
                     break;
                 }
 
-                candidates.add(match);
+                candidates.add(match.getValue());
             }
         }
 

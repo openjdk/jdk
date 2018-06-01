@@ -83,7 +83,7 @@ public class ToolTabSnippetTest extends UITesting {
                             resource("jshell.console.see.documentation") +
                             REDRAW_PROMPT + "new JShellTest");
             inputSink.write(TAB);
-            waitOutput(out, "jshelltest.JShellTest\n" +
+            waitOutput(out, "\\u001B\\[1mjshelltest.JShellTest\\u001B\\[0m\n" +
                             "JShellTest 0" +
                             REDRAW_PROMPT + "new JShellTest");
             inputSink.write(TAB);
@@ -105,7 +105,7 @@ public class ToolTabSnippetTest extends UITesting {
                             resource("jshell.console.see.documentation") +
                             REDRAW_PROMPT + "new JShellTest\\(");
             inputSink.write(TAB);
-            waitOutput(out, "JShellTest\\(String str\\)\n" +
+            waitOutput(out, "\\u001B\\[1mJShellTest\\(String str\\)\\u001B\\[0m\n" +
                             "JShellTest 1\n" +
                             "1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n" +
                             "\n" +
@@ -117,7 +117,7 @@ public class ToolTabSnippetTest extends UITesting {
                             resource("jshell.console.see.next.javadoc") +
                             REDRAW_PROMPT + "new JShellTest\\(");
             inputSink.write(TAB);
-            waitOutput(out, "JShellTest\\(String str, int i\\)\n" +
+            waitOutput(out, "\\u001B\\[1mJShellTest\\(String str, int i\\)\\u001B\\[0m\n" +
                             "JShellTest 2\n" +
                             "\n" +
                             getMessage("jshell.console.completion.all.completions.number", "[0-9]+") +
@@ -140,7 +140,7 @@ public class ToolTabSnippetTest extends UITesting {
                             resource("jshell.console.see.documentation") +
                             REDRAW_PROMPT + "new JShellTest\\(");
             inputSink.write(TAB);
-            waitOutput(out, "JShellTest\\(String str\\)\n" +
+            waitOutput(out, "\\u001B\\[1mJShellTest\\(String str\\)\\u001B\\[0m\n" +
                             "JShellTest 1\n" +
                             "1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n1\n" +
                             "\n" +
@@ -152,7 +152,7 @@ public class ToolTabSnippetTest extends UITesting {
                             resource("jshell.console.see.next.javadoc") +
                             REDRAW_PROMPT + "new JShellTest\\(");
             inputSink.write(TAB);
-            waitOutput(out, "JShellTest\\(String str, int i\\)\n" +
+            waitOutput(out, "\\u001B\\[1mJShellTest\\(String str, int i\\)\\u001B\\[0m\n" +
                             "JShellTest 2\n" +
                             "\n" +
                             getMessage("jshell.console.completion.all.completions.number", "[0-9]+") +

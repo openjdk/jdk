@@ -24,16 +24,11 @@
 /**
  * @test
  * @bug 8080679 8131913
- * @modules jdk.internal.le/jdk.internal.jline
- *          jdk.internal.le/jdk.internal.jline.console:+open
+ * @modules jdk.internal.le/jdk.internal.jline.internal
  * @summary Verify ConsoleReader.stripAnsi strips escape sequences from its input correctly.
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Method;
-import jdk.internal.jline.UnsupportedTerminal;
-import jdk.internal.jline.console.ConsoleReader;
+import jdk.internal.jline.internal.Ansi;
 
 public class StripAnsiTest {
     public static void main(String... args) throws Exception {
@@ -41,16 +36,10 @@ public class StripAnsiTest {
     }
 
     void run() throws Exception {
-        ByteArrayInputStream in = new ByteArrayInputStream(new byte[0]);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ConsoleReader reader = new ConsoleReader(in, out, new UnsupportedTerminal());
-
         String withAnsi = "0\033[s1\033[2J2\033[37;4m3";
         String expected = "0123";
 
-        Method stripAnsi = ConsoleReader.class.getDeclaredMethod("stripAnsi", String.class);
-        stripAnsi.setAccessible(true);
-        String actual = (String) stripAnsi.invoke(reader, withAnsi);
+        String actual = Ansi.stripAnsi(withAnsi);
 
         if (!expected.equals(actual)) {
             throw new IllegalStateException("Did not correctly strip escape sequences: " + actual);

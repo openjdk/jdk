@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -81,6 +81,7 @@ public enum Operation {
     POSSIBLE_COMPLETIONS,
     PREVIOUS_HISTORY,
     QUOTED_INSERT,
+    QUIT,
     RE_READ_INIT_FILE,
     REDRAW_CURRENT_LINE,
     REVERSE_SEARCH_HISTORY,
@@ -156,5 +157,5 @@ public enum Operation {
     VI_NEXT_HISTORY,
     VI_PREVIOUS_HISTORY,
     VI_INSERT_COMMENT,
-    VI_BEGNNING_OF_LINE_OR_ARG_DIGIT,
+    VI_BEGINNING_OF_LINE_OR_ARG_DIGIT,
 }

@@ -1,10 +1,12 @@
-## JLine v2.12.1
+## JLine v2.14.6
 
 ### JLine License
 <pre>
 
-Copyright (c) 2002-2006, Marc Prud'hommeaux <mwp1@cornell.edu>
+Copyright (c) 2002-2016, the original author or authors.
 All rights reserved.
+
+http://www.opensource.org/licenses/bsd-license.php
 
 Redistribution and use in source and binary forms, with or
 without modification, are permitted provided that the following
