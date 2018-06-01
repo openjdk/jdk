@@ -192,7 +192,7 @@ public class UITesting {
     }
 
     protected String clearOut(String what) {
-        return backspace(what.length()) + space(what.length()) + backspace(what.length());
+        return backspace(what.length()) + "\\u001B\\[K";
     }
 
     protected String backspace(int n) {
@@ -222,7 +222,7 @@ public class UITesting {
     }
 
     protected String resource(String key) {
-        return Pattern.quote(getResource(key).replaceAll("\t", "    "));
+        return Pattern.quote(getResource(key));
     }
 
     protected String getMessage(String key, Object... args) {

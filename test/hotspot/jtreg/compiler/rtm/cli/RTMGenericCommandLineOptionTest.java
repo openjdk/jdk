@@ -36,6 +36,8 @@ public abstract class RTMGenericCommandLineOptionTest {
 
     protected static final String RTM_INSTR_ERROR
             = "RTM instructions are not available on this CPU";
+    protected static final String RTM_OS_ERROR
+            = "RTM is not supported on this OS version";
     protected static final String RTM_UNSUPPORTED_VM_ERROR
             = "RTM locking optimization is not supported in this VM";
     protected static final String RTM_FOR_STACK_LOCKS_WARNING

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -12,7 +12,11 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
+import jdk.internal.jline.extra.AnsiInterpretingOutputStream;
+import jdk.internal.jline.extra.AnsiInterpretingOutputStream.BufferState;
+import jdk.internal.jline.extra.AnsiInterpretingOutputStream.Performer;
 import jdk.internal.jline.internal.Configuration;
 import jdk.internal.jline.internal.Log;
 //import org.fusesource.jansi.internal.WindowsSupport;
@@ -71,7 +75,7 @@ public class WindowsTerminal
         super.init();
 
 //        setAnsiSupported(Configuration.getBoolean(ANSI, true));
-        setAnsiSupported(false);
+        setAnsiSupported(true);
 
         //
         // FIXME: Need a way to disable direct console and sysin detection muck
@@ -115,17 +119,25 @@ public class WindowsTerminal
             setConsoleMode(getConsoleMode() |
                 ENABLE_ECHO_INPUT.code |
                 ENABLE_LINE_INPUT.code |
-                ENABLE_PROCESSED_INPUT.code |
                 ENABLE_WINDOW_INPUT.code);
         }
         else {
             setConsoleMode(getConsoleMode() &
                 ~(ENABLE_LINE_INPUT.code |
                     ENABLE_ECHO_INPUT.code |
-                    ENABLE_PROCESSED_INPUT.code |
                     ENABLE_WINDOW_INPUT.code));
         }
         super.setEchoEnabled(enabled);
+    }
+
+    public void disableInterruptCharacter() {
+        setConsoleMode(getConsoleMode() &
+            ~(ENABLE_PROCESSED_INPUT.code));
+    }
+
+    public void enableInterruptCharacter() {
+        setConsoleMode(getConsoleMode() |
+            ENABLE_PROCESSED_INPUT.code);
     }
 
     /**
@@ -179,6 +191,22 @@ public class WindowsTerminal
         }
 
         return false;
+    }
+
+    @Override
+    public OutputStream wrapOutIfNeeded(OutputStream out) {
+        return new AnsiInterpretingOutputStream(getOutputEncoding(), out, new Performer() {
+            @Override
+            public BufferState getBufferState() throws IOException {
+                out.flush();
+                return WindowsTerminal.this.getBufferState();
+            }
+            @Override
+            public void setCursorPosition(int cursorX, int cursorY) throws IOException {
+                out.flush();
+                WindowsTerminal.this.setCursorPosition(cursorX, cursorY);
+            }
+        });
     }
 
     @Override
@@ -510,6 +538,10 @@ public class WindowsTerminal
     private native int getWindowsTerminalWidth();
 
     private native int getWindowsTerminalHeight();
+
+    private native BufferState getBufferState();
+
+    private native void setCursorPosition(int x, int y);
 
     /**
      * Console mode

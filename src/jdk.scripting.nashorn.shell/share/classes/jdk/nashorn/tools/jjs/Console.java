@@ -40,6 +40,7 @@ import jdk.internal.jline.TerminalFactory.Flavor;
 import jdk.internal.jline.WindowsTerminal;
 import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.KeyMap;
+import jdk.internal.jline.console.completer.CandidateListCompletionHandler;
 import jdk.internal.jline.extra.EditingHistory;
 import jdk.internal.misc.Signal;
 import jdk.internal.misc.Signal.Handler;
@@ -53,13 +54,14 @@ class Console implements AutoCloseable {
             final NashornCompleter completer, final Function<String, String> docHelper) throws IOException {
         this.historyFile = historyFile;
 
-        TerminalFactory.registerFlavor(Flavor.WINDOWS, isCygwin()? JJSUnixTerminal::new : JJSWindowsTerminal::new);
-        TerminalFactory.registerFlavor(Flavor.UNIX, JJSUnixTerminal::new);
+        TerminalFactory.registerFlavor(Flavor.WINDOWS, ttyDevice -> isCygwin() ? new JJSUnixTerminal() : new JJSWindowsTerminal());
+        TerminalFactory.registerFlavor(Flavor.UNIX, ttyDevice -> new JJSUnixTerminal());
         in = new ConsoleReader(cmdin, cmdout);
         in.setExpandEvents(false);
         in.setHandleUserInterrupt(true);
         in.setBellEnabled(true);
         in.setCopyPasteDetection(true);
+        ((CandidateListCompletionHandler) in.getCompletionHandler()).setPrintSpaceAfterFullCompletion(false);
         final Iterable<String> existingHistory = historyFile.exists() ? Files.readAllLines(historyFile.toPath()) : null;
         in.setHistory(new EditingHistory(in, existingHistory) {
             @Override protected boolean isComplete(CharSequence input) {

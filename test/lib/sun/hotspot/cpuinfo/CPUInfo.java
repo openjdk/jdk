@@ -36,7 +36,7 @@ import sun.hotspot.WhiteBox;
  *
  * CPUInfo uses WhiteBox to gather information,
  * so WhiteBox class should be added to bootclasspath
- * and option -XX:+WhiteBoxAPI should expclicetly
+ * and option -XX:+WhiteBoxAPI should be explicitly
  * specified on command line.
  */
 public class CPUInfo {

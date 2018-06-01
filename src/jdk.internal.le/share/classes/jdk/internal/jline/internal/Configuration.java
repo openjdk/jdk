@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -12,8 +12,10 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileNotFoundException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.util.Map;
 import java.util.Properties;
 
@@ -48,9 +50,12 @@ public class Configuration
         try {
             loadProperties(url, props);
         }
+        catch (FileNotFoundException e) {
+            // debug here and no stack trace, as this can happen normally if default jline.rc file is missing
+            Log.debug("Unable to read configuration: ", e.toString());
+        }
         catch (IOException e) {
-            // debug here instead of warn, as this can happen normally if default jline.rc file is missing
-            Log.debug("Unable to read configuration from: ", url, e);
+            Log.warn("Unable to read configuration from: ", url, e);
         }
         return props;
     }
@@ -138,6 +143,10 @@ public class Configuration
         return getString(name, null);
     }
 
+    public static boolean getBoolean(final String name) {
+        return getBoolean(name, false);
+    }
+
     public static boolean getBoolean(final String name, final boolean defaultValue) {
         String value = getString(name);
         if (value == null) {
@@ -197,25 +206,38 @@ public class Configuration
         return getOsName().startsWith("windows");
     }
 
-    // FIXME: Sort out use of property access of file.encoding in InputStreamReader, consolidate should configuration access here
+    public static boolean isHpux() {
+        return getOsName().startsWith("hp");
+    }
+
+    // FIXME: Sort out use of property access of file.encoding in InputStreamReader, should consolidate configuration access here
 
     public static String getFileEncoding() {
         return System.getProperty("file.encoding");
     }
 
     /**
-     * Get the default encoding.  Will first look at the LC_CTYPE environment variable, then the input.encoding
+     * Get the default encoding.  Will first look at the LC_ALL, LC_CTYPE, and LANG environment variables, then the input.encoding
      * system property, then the default charset according to the JVM.
      *
      * @return The default encoding to use when none is specified.
      */
     public static String getEncoding() {
-        // LC_CTYPE is usually in the form en_US.UTF-8
-        String envEncoding = extractEncodingFromCtype(System.getenv("LC_CTYPE"));
-        if (envEncoding != null) {
-            return envEncoding;
+        // Check for standard locale environment variables, in order of precedence, first.
+        // See http://www.gnu.org/s/libc/manual/html_node/Locale-Categories.html
+        for (String envOption : new String[]{"LC_ALL", "LC_CTYPE", "LANG"}) {
+            String envEncoding = extractEncodingFromCtype(System.getenv(envOption));
+            if (envEncoding != null) {
+                try {
+                    if (Charset.isSupported(envEncoding)) {
+                        return envEncoding;
+                    }
+                } catch (IllegalCharsetNameException e) {
+                    continue;
+                }
+            }
         }
-        return System.getProperty("input.encoding", Charset.defaultCharset().name());
+        return getString("input.encoding", Charset.defaultCharset().name());
     }
 
     /**
