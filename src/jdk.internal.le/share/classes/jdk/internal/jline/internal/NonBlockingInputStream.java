@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -111,7 +111,6 @@ public class NonBlockingInputStream
      * @param timeout The amount of time to wait, 0 == forever
      * @return -1 on eof, -2 if the timeout expired with no available input
      *   or the character that was read (without consuming it).
-     * @throws IOException
      */
     public int peek(long timeout) throws IOException {
         if (!nonBlockingEnabled || isShutdown) {
@@ -127,7 +126,6 @@ public class NonBlockingInputStream
      * @param timeout The amount of time to wait for the character
      * @return The character read, -1 if EOF is reached, or -2 if the
      *   read timed out.
-     * @throws IOException
      */
     public int read(long timeout) throws IOException {
         if (!nonBlockingEnabled || isShutdown) {
@@ -143,7 +141,6 @@ public class NonBlockingInputStream
      * @param timeout The amount of time to wait for the character
      * @return The character read, -1 if EOF is reached, or -2 if the
      *   read timed out.
-     * @throws IOException
      */
     private synchronized int read(long timeout, boolean isPeek) throws IOException {
         /*
@@ -177,7 +174,7 @@ public class NonBlockingInputStream
                 notify();
             }
 
-            boolean isInfinite = (timeout <= 0L);
+            boolean isInfinite = timeout <= 0L;
 
             /*
              * So the thread is currently doing the reading for us. So

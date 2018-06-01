@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2012, the original author or authors.
+ * Copyright (c) 2002-2016, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -49,8 +49,6 @@ public class InputStreamReader extends Reader {
 
     private boolean endOfInput = false;
 
-    String encoding;
-
     CharsetDecoder decoder;
 
     ByteBuffer bytes = ByteBuffer.allocate(BUFFER_SIZE);
@@ -67,9 +65,7 @@ public class InputStreamReader extends Reader {
     public InputStreamReader(InputStream in) {
         super(in);
         this.in = in;
-        // FIXME: This should probably use Configuration.getFileEncoding()
-        encoding = System.getProperty("file.encoding", "ISO8859_1"); //$NON-NLS-1$//$NON-NLS-2$
-        decoder = Charset.forName(encoding).newDecoder().onMalformedInput(
+        decoder = Charset.defaultCharset().newDecoder().onMalformedInput(
                 CodingErrorAction.REPLACE).onUnmappableCharacter(
                 CodingErrorAction.REPLACE);
         bytes.limit(0);
@@ -172,7 +168,7 @@ public class InputStreamReader extends Reader {
         if (!isOpen()) {
             return null;
         }
-        return encoding;
+        return decoder.charset().name();
     }
 
     /**

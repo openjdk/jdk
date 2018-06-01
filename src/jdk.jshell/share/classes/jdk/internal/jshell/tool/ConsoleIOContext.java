@@ -173,7 +173,7 @@ class ConsoleIOContext extends IOContext {
             }
         }
         repl.prefs.flush();
-        in.shutdown();
+        in.close();
         try {
             in.getTerminal().restore();
         } catch (Exception ex) {
@@ -1179,7 +1179,7 @@ class ConsoleIOContext extends IOContext {
 
         public TestTerminal(StopDetectingInputStream input) throws Exception {
             super(true);
-            setAnsiSupported(Boolean.getBoolean("test.terminal.ansi.supported"));
+            setAnsiSupported(true);
             setEchoEnabled(false);
             this.input = input;
             int h = DEFAULT_HEIGHT;
@@ -1218,7 +1218,7 @@ class ConsoleIOContext extends IOContext {
         private final CompletionState completionState;
 
         public CheckCompletionKeyMap(KeyMap del, CompletionState completionState) {
-            super(del.getName(), del.isViKeyMap());
+            super(del.getName());
             this.del = del;
             this.completionState = completionState;
         }
