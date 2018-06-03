@@ -60,7 +60,7 @@ public class TestRTMSpinLoopCount {
     private static final boolean INFLATE_MONITOR = true;
     private static final long MAX_ABORTS = RTM_RETRY_COUNT + 1L;
     private static final int[] SPIN_LOOP_COUNTS
-            = new int[] { 0, 100, 1_000, 1_000_000, 10_000_000 };
+            = new int[] { 0, 100, 1_000, 10_000, 100_000 };
 
     protected void runTestCases() throws Throwable {
         long[] aborts = new long[TestRTMSpinLoopCount.SPIN_LOOP_COUNTS.length];
