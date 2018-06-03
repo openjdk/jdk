@@ -215,7 +215,9 @@ public class ClassUseMapper {
             mapAnnotations(classToPackageAnnotations, pkg, pkg);
             mapTypeParameters(classToClassTypeParam, aClass, aClass);
             mapAnnotations(classToClassAnnotations, aClass, aClass);
-            List<VariableElement> fields = utils.getFields(aClass);
+            VisibleMemberTable vmt = configuration.getVisibleMemberTable(aClass);
+
+            List<VariableElement> fields = ElementFilter.fieldsIn(vmt.getVisibleMembers(FIELDS));
             for (VariableElement fd : fields) {
                 mapTypeParameters(classToFieldTypeParam, fd, fd);
                 mapAnnotations(annotationToField, fd, fd);
@@ -238,13 +240,12 @@ public class ClassUseMapper {
                 stv.visit(fd.asType(), fd);
             }
 
-            List<ExecutableElement> ctors = utils.getConstructors(aClass);
+            List<ExecutableElement> ctors = ElementFilter.constructorsIn(vmt.getMembers(CONSTRUCTORS));
             for (ExecutableElement ctor : ctors) {
                 mapAnnotations(classToConstructorAnnotations, ctor, ctor);
                 mapExecutable(ctor);
             }
 
-            VisibleMemberTable vmt = configuration.getVisibleMemberTable(aClass);
             List<ExecutableElement> methods = ElementFilter.methodsIn(vmt.getMembers(METHODS));
 
             for (ExecutableElement method : methods) {

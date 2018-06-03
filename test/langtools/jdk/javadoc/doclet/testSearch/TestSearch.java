@@ -241,7 +241,6 @@ public class TestSearch extends JavadocTester {
 
     @Test
     void test7() {
-        setAutomaticCheckLinks(false); // @ignore JDK-8202627
         javadoc("-d", "out-7",
                 "-nodeprecated",
                 "-Xdoclint:none",
@@ -249,7 +248,7 @@ public class TestSearch extends JavadocTester {
                 "-use",
                 "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
-        setAutomaticCheckLinks(true); // @ignore JDK-8202627
+
         checkExit(Exit.OK);
         checkSearchOutput(true);
         checkIndexNoDeprecated();
