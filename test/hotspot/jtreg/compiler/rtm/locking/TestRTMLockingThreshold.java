@@ -151,7 +151,7 @@ public class TestRTMLockingThreshold {
         public void lock(boolean abort) {
             synchronized(monitor) {
                 if (abort) {
-                    Test.field += Test.UNSAFE.addressSize();
+                    Test.field += Test.UNSAFE.pageSize();
                 }
             }
         }
