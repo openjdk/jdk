@@ -76,9 +76,6 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#if INCLUDE_G1GC
-#include "gc/g1/g1ThreadLocalData.hpp"
-#endif // INCLUDE_G1GC
 
 // Shared stub locations
 RuntimeStub*        SharedRuntime::_wrong_method_blob;
@@ -207,26 +204,6 @@ void SharedRuntime::print_ic_miss_histogram() {
   }
 }
 #endif // PRODUCT
-
-#if INCLUDE_G1GC
-
-// G1 write-barrier pre: executed before a pointer store.
-JRT_LEAF(void, SharedRuntime::g1_wb_pre(oopDesc* orig, JavaThread *thread))
-  if (orig == NULL) {
-    assert(false, "should be optimized out");
-    return;
-  }
-  assert(oopDesc::is_oop(orig, true /* ignore mark word */), "Error");
-  // store the original value that was in the field reference
-  G1ThreadLocalData::satb_mark_queue(thread).enqueue(orig);
-JRT_END
-
-// G1 write-barrier post: executed after a pointer store.
-JRT_LEAF(void, SharedRuntime::g1_wb_post(void* card_addr, JavaThread* thread))
-  G1ThreadLocalData::dirty_card_queue(thread).enqueue(card_addr);
-JRT_END
-
-#endif // INCLUDE_G1GC
 
 
 JRT_LEAF(jlong, SharedRuntime::lmul(jlong y, jlong x))

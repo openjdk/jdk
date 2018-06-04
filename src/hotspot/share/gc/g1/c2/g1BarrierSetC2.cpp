@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/c2/g1BarrierSetC2.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -33,10 +34,9 @@
 #include "opto/idealKit.hpp"
 #include "opto/macro.hpp"
 #include "opto/type.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 
-const TypeFunc *G1BarrierSetC2::g1_wb_pre_Type() {
+const TypeFunc *G1BarrierSetC2::write_ref_field_pre_entry_Type() {
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
   fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL; // thread
@@ -49,7 +49,7 @@ const TypeFunc *G1BarrierSetC2::g1_wb_pre_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *G1BarrierSetC2::g1_wb_post_Type() {
+const TypeFunc *G1BarrierSetC2::write_ref_field_post_entry_Type() {
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL;  // Card addr
   fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL;  // thread
@@ -264,8 +264,8 @@ void G1BarrierSetC2::pre_barrier(GraphKit* kit,
       } __ else_(); {
 
         // logging buffer is full, call the runtime
-        const TypeFunc *tf = g1_wb_pre_Type();
-        __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), "g1_wb_pre", pre_val, tls);
+        const TypeFunc *tf = write_ref_field_pre_entry_Type();
+        __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), "write_ref_field_pre_entry", pre_val, tls);
       } __ end_if();  // (!index)
     } __ end_if();  // (pre_val != NULL)
   } __ end_if();  // (!marking)
@@ -364,7 +364,7 @@ void G1BarrierSetC2::g1_mark_card(GraphKit* kit,
     __ store(__ ctrl(), index_adr, next_index, TypeX_X->basic_type(), Compile::AliasIdxRaw, MemNode::unordered);
 
   } __ else_(); {
-    __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), "g1_wb_post", card_adr, __ thread());
+    __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), "write_ref_field_post_entry", card_adr, __ thread());
   } __ end_if();
 
 }
@@ -419,7 +419,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
   Node* dirty_card = __ ConI((jint)G1CardTable::dirty_card_val());
   Node* zeroX = __ ConX(0);
 
-  const TypeFunc *tf = g1_wb_post_Type();
+  const TypeFunc *tf = write_ref_field_post_entry_Type();
 
   // Offsets into the thread
   const int index_offset  = in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset());
@@ -652,7 +652,7 @@ bool G1BarrierSetC2::is_gc_barrier_node(Node* node) const {
     return false;
   }
 
-  return strcmp(call->_name, "g1_wb_pre") == 0 || strcmp(call->_name, "g1_wb_post") == 0;
+  return strcmp(call->_name, "write_ref_field_pre_entry") == 0 || strcmp(call->_name, "write_ref_field_post_entry") == 0;
 }
 
 void G1BarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
@@ -747,7 +747,7 @@ Node* G1BarrierSetC2::step_over_gc_barrier(Node* c) const {
           if (r->in(j) != NULL && r->in(j)->is_Proj() &&
               r->in(j)->in(0) != NULL &&
               r->in(j)->in(0)->Opcode() == Op_CallLeaf &&
-              r->in(j)->in(0)->as_Call()->entry_point() == CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post)) {
+              r->in(j)->in(0)->as_Call()->entry_point() == CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry)) {
             Node* call = r->in(j)->in(0);
             c = c->in(i == 1 ? 2 : 1);
             if (c != NULL) {
