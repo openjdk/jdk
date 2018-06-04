@@ -852,7 +852,8 @@
 
         curY = ADD_INT32( curY, cf2_stack_popFixed( opStack ) );
 
-        cf2_glyphpath_moveTo( &glyphPath, curX, curY );
+        if ( !decoder->flex_state )
+          cf2_glyphpath_moveTo( &glyphPath, curX, curY );
 
         break;
 
@@ -2674,7 +2675,8 @@
 
         curX = ADD_INT32( curX, cf2_stack_popFixed( opStack ) );
 
-        cf2_glyphpath_moveTo( &glyphPath, curX, curY );
+        if ( !decoder->flex_state )
+          cf2_glyphpath_moveTo( &glyphPath, curX, curY );
 
         break;
 

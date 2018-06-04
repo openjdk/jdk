@@ -147,7 +147,7 @@
   {
 
 #define TRICK_NAMES_MAX_CHARACTERS  19
-#define TRICK_NAMES_COUNT           23
+#define TRICK_NAMES_COUNT           26
 
     static const char trick_names[TRICK_NAMES_COUNT]
                                  [TRICK_NAMES_MAX_CHARACTERS + 1] =
@@ -167,12 +167,15 @@
       "DFGirl-W6-WIN-BF",   /* dftt-h6.ttf; version 1.00, 1993 */
       "DFGothic-EB",        /* DynaLab Inc. 1992-1995 */
       "DFGyoSho-Lt",        /* DynaLab Inc. 1992-1995 */
+      "DFHei-Md-HK-BF",     /* maybe DynaLab Inc. */
       "DFHSGothic-W5",      /* DynaLab Inc. 1992-1995 */
       "DFHSMincho-W3",      /* DynaLab Inc. 1992-1995 */
       "DFHSMincho-W7",      /* DynaLab Inc. 1992-1995 */
       "DFKaiSho-SB",        /* dfkaisb.ttf */
       "DFKaiShu",
+      "DFKaiShu-Md-HK-BF",  /* maybe DynaLab Inc. */
       "DFKai-SB",           /* kaiu.ttf; version 3.00, 1998 [DFKaiShu-SB-Estd-BF] */
+      "DFMing-Bd-HK-BF",    /* maybe DynaLab Inc. */
       "DLC",                /* dftt-m7.ttf; version 1.00, 1993 [DLCMingBold] */
                             /* dftt-f5.ttf; version 1.00, 1993 [DLCFongSung] */
       "DLCHayMedium",       /* dftt-b5.ttf; version 1.00, 1993 */
@@ -270,7 +273,7 @@
   tt_check_trickyness_sfnt_ids( TT_Face  face )
   {
 #define TRICK_SFNT_IDS_PER_FACE   3
-#define TRICK_SFNT_IDS_NUM_FACES  26
+#define TRICK_SFNT_IDS_NUM_FACES  29
 
     static const tt_sfnt_id_rec sfnt_id[TRICK_SFNT_IDS_NUM_FACES]
                                        [TRICK_SFNT_IDS_PER_FACE] = {
@@ -299,6 +302,11 @@
         { 0xCE5956E9UL, 0x0000BC85UL }, /* fpgm */
         { 0x8272F416UL, 0x00000045UL }  /* prep */
       },
+      { /* DFHei-Md-HK-BF */
+        { 0x1257EB46UL, 0x00000350UL }, /* cvt  */
+        { 0xF699D160UL, 0x0000715FUL }, /* fpgm */
+        { 0xD222F568UL, 0x000003BCUL }  /* prep */
+      },
       { /* DFHSGothic-W5 */
         { 0x1262EB4EUL, 0x00000350UL }, /* cvt  */
         { 0xE86A5D64UL, 0x00007940UL }, /* fpgm */
@@ -323,6 +331,16 @@
         { 0x11E5EAD4UL, 0x00000350UL }, /* cvt  */
         { 0xA6E78C01UL, 0x00008998UL }, /* fpgm */
         { 0x13A42602UL, 0x0000007EUL }  /* prep */
+      },
+      { /* DFKaiShu-Md-HK-BF */
+        { 0x11E5EAD4UL, 0x00000360UL }, /* cvt  */
+        { 0x9DB282B2UL, 0x0000C06EUL }, /* fpgm */
+        { 0x53E6D7CAUL, 0x00000082UL }  /* prep */
+      },
+      { /* DFMing-Bd-HK-BF */
+        { 0x1243EB18UL, 0x00000350UL }, /* cvt  */
+        { 0xBA0A8C30UL, 0x000074ADUL }, /* fpgm */
+        { 0xF3D83409UL, 0x0000037BUL }  /* prep */
       },
       { /* DLCLiShu */
         { 0x07DCF546UL, 0x00000308UL }, /* cvt  */

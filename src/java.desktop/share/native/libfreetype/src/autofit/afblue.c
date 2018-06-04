@@ -166,6 +166,10 @@
     '\0',
     '\xE2', '\xB4', '\x84', ' ', '\xE2', '\xB4', '\x85', ' ', '\xE2', '\xB4', '\x94', ' ', '\xE2', '\xB4', '\x95', ' ', '\xE2', '\xB4', '\x81', ' ', '\xE2', '\xB4', '\x82', ' ', '\xE2', '\xB4', '\x98', ' ', '\xE2', '\xB4', '\x9D',  /* ⴄ ⴅ ⴔ ⴕ ⴁ ⴂ ⴘ ⴝ */
     '\0',
+    '\xE1', '\xB2', '\x9C', ' ', '\xE1', '\xB2', '\x9F', ' ', '\xE1', '\xB2', '\xB3', ' ', '\xE1', '\xB2', '\xB8', ' ', '\xE1', '\xB2', '\x92', ' ', '\xE1', '\xB2', '\x94', ' ', '\xE1', '\xB2', '\x9D', ' ', '\xE1', '\xB2', '\xB4',  /* Ნ Ჟ Ჳ Ჸ Გ Ე Ო Ჴ */
+    '\0',
+    '\xE1', '\xB2', '\x98', ' ', '\xE1', '\xB2', '\xB2', ' ', '\xE1', '\xB2', '\x9D', ' ', '\xE1', '\xB2', '\xA9', ' ', '\xE1', '\xB2', '\x9B', ' ', '\xE1', '\xB2', '\xA8', ' ', '\xE1', '\xB2', '\xAF', ' ', '\xE1', '\xB2', '\xBD',  /* Ი Ჲ Ო Ჩ Მ Შ Ჯ Ჽ */
+    '\0',
     '\xE2', '\xB0', '\x85', ' ', '\xE2', '\xB0', '\x94', ' ', '\xE2', '\xB0', '\xAA', ' ', '\xE2', '\xB0', '\x84', ' ', '\xE2', '\xB0', '\x82', ' ', '\xE2', '\xB0', '\x8A', ' ', '\xE2', '\xB0', '\xAB', ' ', '\xE2', '\xB0', '\x8B',  /* Ⰵ Ⱄ Ⱚ Ⰴ Ⰲ Ⰺ Ⱛ Ⰻ */
     '\0',
     '\xE2', '\xB0', '\x85', ' ', '\xE2', '\xB0', '\x84', ' ', '\xE2', '\xB0', '\x82', ' ', '\xE2', '\xB0', '\xAA', ' ', '\xE2', '\xB0', '\x9E', ' ', '\xE2', '\xB0', '\xA1', ' ', '\xE2', '\xB0', '\x8A', ' ', '\xE2', '\xB0', '\x94',  /* Ⰵ Ⰴ Ⰲ Ⱚ Ⱎ Ⱑ Ⰺ Ⱄ */
@@ -539,6 +543,8 @@
     { AF_BLUE_STRING_GEORGIAN_MKHEDRULI_BOTTOM,    0                                 },
     { AF_BLUE_STRING_GEORGIAN_MKHEDRULI_ASCENDER,  AF_BLUE_PROPERTY_LATIN_TOP        },
     { AF_BLUE_STRING_GEORGIAN_MKHEDRULI_DESCENDER, 0                                 },
+    { AF_BLUE_STRING_GEORGIAN_MTAVRULI_TOP,        AF_BLUE_PROPERTY_LATIN_TOP        },
+    { AF_BLUE_STRING_GEORGIAN_MTAVRULI_BOTTOM,     0                                 },
     { AF_BLUE_STRING_MAX,                          0                                 },
     { AF_BLUE_STRING_GEORGIAN_ASOMTAVRULI_TOP,    AF_BLUE_PROPERTY_LATIN_TOP        },
     { AF_BLUE_STRING_GEORGIAN_ASOMTAVRULI_BOTTOM, 0                                 },

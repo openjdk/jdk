@@ -12,6 +12,8 @@ Import just what is needed.
 Before attempting compilation be sure to diff the JDK copy and the freetype copy
 of src/java.desktop/share/native/libfreetype/include/freetype/config/ftoption.h
 and re-apply the same edits made for the JDK option file.
+Also modules the JDK does not include must be commented out in
+src/java.desktop/share/native/libfreetype/include/freetype/config/ftmodule.h.
 Notably JDK is not using GZIP or LZW or BDF support which are on by default
 for the freetype distribution.
 If you don't make the edits the build will fail due to not copying the relevant
