@@ -213,8 +213,12 @@ public:
     }
 
     template <typename T>
-    static void arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
-      Raw::arraycopy(src_obj, dst_obj, src, dst, length);
+    static void arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                  arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                  size_t length) {
+      Raw::arraycopy(src_obj, src_offset_in_bytes, src_raw,
+                     dst_obj, dst_offset_in_bytes, dst_raw,
+                     length);
     }
 
     // Heap oop accesses. These accessors get resolved when
@@ -257,8 +261,12 @@ public:
     }
 
     template <typename T>
-    static bool oop_arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
-      return Raw::oop_arraycopy(src_obj, dst_obj, src, dst, length);
+    static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                      arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                      size_t length) {
+      return Raw::oop_arraycopy(src_obj, src_offset_in_bytes, src_raw,
+                                dst_obj, dst_offset_in_bytes, dst_raw,
+                                length);
     }
 
     // Off-heap oop accesses. These accessors get resolved when

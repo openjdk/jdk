@@ -55,7 +55,7 @@
 // * atomic_cmpxchg_at: Atomically compare-and-swap a new value at an internal pointer address if previous value matched the compared value.
 // * atomic_xchg: Atomically swap a new value at an address if previous value matched the compared value.
 // * atomic_xchg_at: Atomically swap a new value at an internal pointer address if previous value matched the compared value.
-// * arraycopy: Copy data from one heap array to another heap array.
+// * arraycopy: Copy data from one heap array to another heap array. The ArrayAccess class has convenience functions for this.
 // * clone: Clone the contents of an object to a newly allocated object.
 // * resolve: Resolve a stable to-space invariant oop that is guaranteed not to relocate its payload until a subsequent thread transition.
 // * equals: Object equality, e.g. when different copies of the same objects are in use (from-space vs. to-space)
@@ -130,6 +130,29 @@ class Access: public AllStatic {
   static const DecoratorSet atomic_xchg_mo_decorators = MO_SEQ_CST;
   static const DecoratorSet atomic_cmpxchg_mo_decorators = MO_RELAXED | MO_SEQ_CST;
 
+protected:
+  template <typename T>
+  static inline bool oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
+                                   arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                   size_t length) {
+    verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP |  IN_HEAP_ARRAY |
+                      AS_DECORATOR_MASK>();
+    return AccessInternal::arraycopy<decorators | INTERNAL_VALUE_IS_OOP>(src_obj, src_offset_in_bytes, src_raw,
+                                                                         dst_obj, dst_offset_in_bytes, dst_raw,
+                                                                         length);
+  }
+
+  template <typename T>
+  static inline void arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
+                               arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                               size_t length) {
+    verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP | IN_HEAP_ARRAY |
+                      AS_DECORATOR_MASK>();
+    AccessInternal::arraycopy<decorators>(src_obj, src_offset_in_bytes, src_raw,
+                                          dst_obj, dst_offset_in_bytes, dst_raw,
+                                          length);
+  }
+
 public:
   // Primitive heap accesses
   static inline AccessInternal::LoadAtProxy<decorators> load_at(oop base, ptrdiff_t offset) {
@@ -153,13 +176,6 @@ public:
   static inline T atomic_xchg_at(T new_value, oop base, ptrdiff_t offset) {
     verify_primitive_decorators<atomic_xchg_mo_decorators>();
     return AccessInternal::atomic_xchg_at<decorators>(new_value, base, offset);
-  }
-
-  template <typename T>
-  static inline void arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T *dst, size_t length) {
-    verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP |
-                      AS_DECORATOR_MASK>();
-    AccessInternal::arraycopy<decorators>(src_obj, dst_obj, src, dst, length);
   }
 
   // Oop heap accesses
@@ -191,12 +207,6 @@ public:
     typedef typename AccessInternal::OopOrNarrowOop<T>::type OopType;
     OopType new_oop_value = new_value;
     return AccessInternal::atomic_xchg_at<decorators | INTERNAL_VALUE_IS_OOP>(new_oop_value, base, offset);
-  }
-
-  template <typename T>
-  static inline bool oop_arraycopy(arrayOop src_obj, arrayOop dst_obj, T *src, T *dst, size_t length) {
-    verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP | AS_DECORATOR_MASK>();
-    return AccessInternal::arraycopy<decorators | INTERNAL_VALUE_IS_OOP>(src_obj, dst_obj, src, dst, length);
   }
 
   // Clone an object from src to dst
@@ -287,6 +297,55 @@ class HeapAccess: public Access<IN_HEAP | decorators> {};
 // may resolve an accessor on a GC barrier set
 template <DecoratorSet decorators = INTERNAL_EMPTY>
 class RootAccess: public Access<IN_ROOT | decorators> {};
+
+// Helper for array access.
+template <DecoratorSet decorators = INTERNAL_EMPTY>
+class ArrayAccess: public HeapAccess<IN_HEAP_ARRAY | decorators> {
+  typedef HeapAccess<IN_HEAP_ARRAY | decorators> AccessT;
+public:
+  template <typename T>
+  static inline void arraycopy(arrayOop src_obj, size_t src_offset_in_bytes,
+                               arrayOop dst_obj, size_t dst_offset_in_bytes,
+                               size_t length) {
+    AccessT::arraycopy(src_obj, src_offset_in_bytes, reinterpret_cast<const T*>(NULL),
+                       dst_obj, dst_offset_in_bytes, reinterpret_cast<T*>(NULL),
+                       length);
+  }
+
+  template <typename T>
+  static inline void arraycopy_to_native(arrayOop src_obj, size_t src_offset_in_bytes,
+                                         T* dst,
+                                         size_t length) {
+    AccessT::arraycopy(src_obj, src_offset_in_bytes, reinterpret_cast<const T*>(NULL),
+                       NULL, 0, dst,
+                       length);
+  }
+
+  template <typename T>
+  static inline void arraycopy_from_native(const T* src,
+                                           arrayOop dst_obj, size_t dst_offset_in_bytes,
+                                           size_t length) {
+    AccessT::arraycopy(NULL, 0, src,
+                       dst_obj, dst_offset_in_bytes, reinterpret_cast<T*>(NULL),
+                       length);
+  }
+
+  static inline bool oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes,
+                                   arrayOop dst_obj, size_t dst_offset_in_bytes,
+                                   size_t length) {
+    return AccessT::oop_arraycopy(src_obj, src_offset_in_bytes, reinterpret_cast<const HeapWord*>(NULL),
+                                  dst_obj, dst_offset_in_bytes, reinterpret_cast<HeapWord*>(NULL),
+                                  length);
+  }
+
+  template <typename T>
+  static inline bool oop_arraycopy_raw(T* src, T* dst, size_t length) {
+    return AccessT::oop_arraycopy(NULL, 0, src,
+                                  NULL, 0, dst,
+                                  length);
+  }
+
+};
 
 template <DecoratorSet decorators>
 template <DecoratorSet expected_decorators>
