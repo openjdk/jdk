@@ -87,8 +87,8 @@ Handle SystemDictionaryShared::get_shared_jar_manifest(int shared_path_index, TR
     assert(src != NULL, "No Manifest data");
     typeArrayOop buf = oopFactory::new_byteArray(size, CHECK_NH);
     typeArrayHandle bufhandle(THREAD, buf);
-    char* dst = (char*)(buf->byte_at_addr(0));
-    memcpy(dst, src, (size_t)size);
+    ArrayAccess<>::arraycopy_from_native(reinterpret_cast<const jbyte*>(src),
+                                         buf, typeArrayOopDesc::element_offset<jbyte>(0), size);
 
     Handle bais = JavaCalls::construct_new_instance(SystemDictionary::ByteArrayInputStream_klass(),
                       vmSymbols::byte_array_void_signature(),

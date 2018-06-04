@@ -175,10 +175,9 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 
   // This is an attempt to make the copy_array fast.
   int l2es = log2_element_size();
-  int ihs = array_header_in_bytes() / wordSize;
-  void* src = (char*) (s->base(element_type())) + ((size_t)src_pos << l2es);
-  void* dst = (char*) (d->base(element_type())) + ((size_t)dst_pos << l2es);
-  HeapAccess<ARRAYCOPY_ATOMIC>::arraycopy(s, d, src, dst, (size_t)length << l2es);
+  size_t src_offset = arrayOopDesc::base_offset_in_bytes(element_type()) + ((size_t)src_pos << l2es);
+  size_t dst_offset = arrayOopDesc::base_offset_in_bytes(element_type()) + ((size_t)dst_pos << l2es);
+  ArrayAccess<ARRAYCOPY_ATOMIC>::arraycopy<void>(s, src_offset, d, dst_offset, (size_t)length << l2es);
 }
 
 // create a klass of array holding typeArrays

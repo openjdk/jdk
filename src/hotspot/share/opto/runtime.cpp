@@ -393,9 +393,9 @@ JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* d
   ResourceMark rm;
   jint len = dims->length();
   assert(len > 0, "Dimensions array should contain data");
-  jint *j_dims = typeArrayOop(dims)->int_at_addr(0);
   jint *c_dims = NEW_RESOURCE_ARRAY(jint, len);
-  Copy::conjoint_jints_atomic(j_dims, c_dims, len);
+  ArrayAccess<>::arraycopy_to_native<>(dims, typeArrayOopDesc::element_offset<jint>(0),
+                                       c_dims, len);
 
   Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(len, c_dims, THREAD);
