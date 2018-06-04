@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,13 +89,17 @@ public class DisassembleCodeBlobTest {
             throw new Error(testCase + " : method is not compiled");
         }
         InstalledCode installedCode = testCase.toInstalledCode();
-        String str = CompilerToVMHelper.disassembleCodeBlob(installedCode);
-        if (str != null) {
-            Asserts.assertGT(str.length(), 0,
+        String str1 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
+        if (str1 != null) {
+            Asserts.assertGT(str1.length(), 0,
                    testCase +  " : returned string has to be non-zero length");
         }
+        // The very first call to the disassembler contains a string specifying the
+        // architecture: [Disassembling for mach='i386:x86-64']
+        // Therefore compare strings 2 and 3.
         String str2 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
-        Asserts.assertEQ(str, str2,
-                testCase + " : 2nd invocation returned different value");
+        String str3 = CompilerToVMHelper.disassembleCodeBlob(installedCode);
+        Asserts.assertEQ(str2, str3,
+                testCase + " : 3nd invocation returned different value from 2nd");
     }
 }
