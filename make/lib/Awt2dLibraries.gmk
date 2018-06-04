@@ -224,7 +224,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
         format-nonliteral parentheses, \
     DISABLED_WARNINGS_clang := logical-op-parentheses extern-initializer, \
     DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE, \
-    DISABLED_WARNINGS_microsoft := 4297 4244 4267 4996, \
+    DISABLED_WARNINGS_microsoft := 4244 4267 4996, \
     ASFLAGS := $(LIBAWT_ASFLAGS), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
