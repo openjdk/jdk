@@ -29,6 +29,7 @@
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -66,9 +67,9 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     RegisterSaver::save_live_registers(masm, RegisterSaver::arg_registers); // Creates frame.
 
     if (UseCompressedOops) {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_pre_narrow_oop_entry), addr, count);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry), addr, count);
     } else {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_pre_oop_entry), addr, count);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_oop_entry), addr, count);
     }
 
     RegisterSaver::restore_live_registers(masm, RegisterSaver::arg_registers);
@@ -79,7 +80,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 
 void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                              Register addr, Register count, bool do_return) {
-  address entry_point = CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_post_entry);
+  address entry_point = CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_post_entry);
   if (!do_return) {
     assert_different_registers(addr,  Z_R0_scratch);  // would be destroyed by push_frame()
     assert_different_registers(count, Z_R0_scratch);  // would be destroyed by push_frame()
@@ -234,7 +235,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
   __ push_frame_abi160(0); // Will use Z_R0 as tmp.
 
   // Rpre_val may be destroyed by push_frame().
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), Rpre_save, Z_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), Rpre_save, Z_thread);
 
   __ pop_frame();
   __ restore_return_pc();
@@ -359,7 +360,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   }
 
   // Save the live input values.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), Rcard_addr, Z_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), Rcard_addr, Z_thread);
 
   if (needs_frame) {
     __ pop_frame();
