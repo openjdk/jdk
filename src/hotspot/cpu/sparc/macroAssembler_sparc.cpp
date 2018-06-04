@@ -3338,6 +3338,12 @@ SkipIfEqual::~SkipIfEqual() {
   _masm->bind(_label);
 }
 
+void MacroAssembler::bang_stack_with_offset(int offset) {
+  // stack grows down, caller passes positive offset
+  assert(offset > 0, "must bang with negative offset");
+  set((-offset)+STACK_BIAS, G3_scratch);
+  st(G0, SP, G3_scratch);
+}
 
 // Writes to stack successive pages until offset reached to check for
 // stack overflow + shadow pages.  This clobbers tsp and scratch.

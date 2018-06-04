@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,8 @@
 #ifndef CPU_ZERO_VM_INTERP_MASM_ZERO_HPP
 #define CPU_ZERO_VM_INTERP_MASM_ZERO_HPP
 
-#include "assembler_zero.inline.hpp"
+#include "asm/codeBuffer.hpp"
+#include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
 
 // This file specializes the assember with interpreter-specific macros
