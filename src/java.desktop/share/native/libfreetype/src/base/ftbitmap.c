@@ -237,7 +237,7 @@
       unsigned char*  out = buffer;
 
       unsigned char*  limit = bitmap->buffer + pitch * bitmap->rows;
-      unsigned int    delta = new_pitch - pitch;
+      unsigned int    delta = new_pitch - len;
 
 
       FT_MEM_ZERO( out, new_pitch * ypixels );
@@ -247,8 +247,10 @@
       {
         FT_MEM_COPY( out, in, len );
         in  += pitch;
-        out += pitch;
+        out += len;
 
+        /* we use FT_QALLOC_MULT, which doesn't zero out the buffer;      */
+        /* consequently, we have to manually zero out the remaining bytes */
         FT_MEM_ZERO( out, delta );
         out += delta;
       }
@@ -261,14 +263,14 @@
       unsigned char*  out = buffer;
 
       unsigned char*  limit = bitmap->buffer + pitch * bitmap->rows;
-      unsigned int    delta = new_pitch - pitch;
+      unsigned int    delta = new_pitch - len;
 
 
       while ( in < limit )
       {
         FT_MEM_COPY( out, in, len );
         in  += pitch;
-        out += pitch;
+        out += len;
 
         FT_MEM_ZERO( out, delta );
         out += delta;

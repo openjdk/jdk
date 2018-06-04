@@ -473,8 +473,8 @@
   /*    idx    :: The glyph index.                                         */
   /*                                                                       */
   /* <InOut>                                                               */
-  /*    PSname :: The address of a string pointer.  Will be NULL in case   */
-  /*              of error, otherwise it is a pointer to the glyph name.   */
+  /*    PSname :: The address of a string pointer.  Undefined in case of   */
+  /*              error, otherwise it is a pointer to the glyph name.      */
   /*                                                                       */
   /*              You must not modify the returned string!                 */
   /*                                                                       */

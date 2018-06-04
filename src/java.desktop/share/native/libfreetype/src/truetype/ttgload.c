@@ -1219,7 +1219,7 @@
              * Theoretically, a glyph's bytecode can toggle ClearType's
              * `backward compatibility' mode, which would allow modification
              * of the advance width.  In reality, however, applications
-             * neither allow nor expect modified advance widths if sub-pixel
+             * neither allow nor expect modified advance widths if subpixel
              * rendering is active.
              *
              */
@@ -2709,6 +2709,10 @@
          ( load_flags & FT_LOAD_NO_BITMAP ) == 0 &&
          IS_DEFAULT_INSTANCE                     )
     {
+      FT_Fixed  x_scale = size->root.metrics.x_scale;
+      FT_Fixed  y_scale = size->root.metrics.y_scale;
+
+
       error = load_sbit_image( size, glyph, glyph_index, load_flags );
       if ( FT_ERR_EQ( error, Missing_Bitmap ) )
       {
@@ -2716,9 +2720,13 @@
         /* if we have a bitmap-only font, return an empty glyph            */
         if ( !FT_IS_SCALABLE( glyph->face ) )
         {
-          TT_Face    face = (TT_Face)glyph->face;
-          FT_Short   left_bearing = 0, top_bearing = 0;
-          FT_UShort  advance_width = 0, advance_height = 0;
+          TT_Face  face = (TT_Face)glyph->face;
+
+          FT_Short  left_bearing = 0;
+          FT_Short  top_bearing  = 0;
+
+          FT_UShort  advance_width  = 0;
+          FT_UShort  advance_height = 0;
 
 
           /* to return an empty glyph, however, we need metrics data   */
@@ -2744,13 +2752,13 @@
           glyph->metrics.width  = 0;
           glyph->metrics.height = 0;
 
-          glyph->metrics.horiBearingX = left_bearing;
+          glyph->metrics.horiBearingX = FT_MulFix( left_bearing, x_scale );
           glyph->metrics.horiBearingY = 0;
-          glyph->metrics.horiAdvance  = advance_width;
+          glyph->metrics.horiAdvance  = FT_MulFix( advance_width, x_scale );
 
           glyph->metrics.vertBearingX = 0;
-          glyph->metrics.vertBearingY = top_bearing;
-          glyph->metrics.vertAdvance  = advance_height;
+          glyph->metrics.vertBearingY = FT_MulFix( top_bearing, y_scale );
+          glyph->metrics.vertAdvance  = FT_MulFix( advance_height, y_scale );
 
           glyph->format            = FT_GLYPH_FORMAT_BITMAP;
           glyph->bitmap.pixel_mode = FT_PIXEL_MODE_MONO;
@@ -2781,13 +2789,11 @@
           /* sanity checks: if `xxxAdvance' in the sbit metric */
           /* structure isn't set, use `linearXXXAdvance'      */
           if ( !glyph->metrics.horiAdvance && glyph->linearHoriAdvance )
-            glyph->metrics.horiAdvance =
-              FT_MulFix( glyph->linearHoriAdvance,
-                         size->metrics->x_scale );
+            glyph->metrics.horiAdvance = FT_MulFix( glyph->linearHoriAdvance,
+                                                    x_scale );
           if ( !glyph->metrics.vertAdvance && glyph->linearVertAdvance )
-            glyph->metrics.vertAdvance =
-              FT_MulFix( glyph->linearVertAdvance,
-                         size->metrics->y_scale );
+            glyph->metrics.vertAdvance = FT_MulFix( glyph->linearVertAdvance,
+                                                    y_scale );
         }
 
         return FT_Err_Ok;

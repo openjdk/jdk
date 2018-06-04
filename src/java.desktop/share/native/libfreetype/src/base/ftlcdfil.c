@@ -77,7 +77,7 @@
 
 
     /* take care of bitmap flow */
-    if ( pitch > 0 )
+    if ( pitch > 0 && height > 0 )
       origin += pitch * (FT_Int)( height - 1 );
 
     /* horizontal in-place FIR filter */
@@ -192,7 +192,7 @@
 
 
     /* take care of bitmap flow */
-    if ( pitch > 0 )
+    if ( pitch > 0 && height > 0 )
       origin += pitch * (FT_Int)( height - 1 );
 
     /* horizontal in-place intra-pixel filter */

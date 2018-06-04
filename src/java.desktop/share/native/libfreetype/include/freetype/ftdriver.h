@@ -111,9 +111,9 @@ FT_BEGIN_HEADER
    *
    *   One of the reasons to not hint horizontally is antialiasing for LCD
    *   screens: The pixel geometry of modern displays supplies three
-   *   vertical sub-pixels as the eye moves horizontally across each visible
+   *   vertical subpixels as the eye moves horizontally across each visible
    *   pixel.  On devices where we can be certain this characteristic is
-   *   present a rasterizer can take advantage of the sub-pixels to add
+   *   present a rasterizer can take advantage of the subpixels to add
    *   increments of weight.  In Western writing systems this turns out to
    *   be the more critical direction anyway; the weights and spacing of
    *   vertical stems (see above) are central to Armenian, Cyrillic, Greek,

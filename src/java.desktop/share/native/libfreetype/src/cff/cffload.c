@@ -1933,6 +1933,24 @@
     else if ( priv->initial_random_seed == 0 )
       priv->initial_random_seed = 987654321;
 
+    /* some sanitizing to avoid overflows later on; */
+    /* the upper limits are ad-hoc values           */
+    if ( priv->blue_shift > 1000 || priv->blue_shift < 0 )
+    {
+      FT_TRACE2(( "cff_load_private_dict:"
+                  " setting unlikely BlueShift value %d to default (7)\n",
+                  priv->blue_shift ));
+      priv->blue_shift = 7;
+    }
+
+    if ( priv->blue_fuzz > 1000 || priv->blue_fuzz < 0 )
+    {
+      FT_TRACE2(( "cff_load_private_dict:"
+                  " setting unlikely BlueFuzz value %d to default (1)\n",
+                  priv->blue_fuzz ));
+      priv->blue_fuzz = 1;
+    }
+
   Exit:
     /* clean up */
     cff_blend_clear( subfont ); /* clear blend stack */
