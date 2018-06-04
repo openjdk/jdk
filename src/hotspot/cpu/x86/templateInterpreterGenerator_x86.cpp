@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -48,7 +49,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
 // fail with a guarantee ("not enough space for interpreter generation");
@@ -1774,18 +1775,30 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& vep) {
   assert(t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();  __ push_ptr();   __ jmp(L);
+  aep = __ pc();     // atos entry point
+      __ push_ptr();
+      __ jmp(L);
 #ifndef _LP64
-  fep = __ pc(); __ push(ftos); __ jmp(L);
-  dep = __ pc(); __ push(dtos); __ jmp(L);
+  fep = __ pc();     // ftos entry point
+      __ push(ftos);
+      __ jmp(L);
+  dep = __ pc();     // dtos entry point
+      __ push(dtos);
+      __ jmp(L);
 #else
-  fep = __ pc();  __ push_f(xmm0); __ jmp(L);
-  dep = __ pc();  __ push_d(xmm0); __ jmp(L);
+  fep = __ pc();     // ftos entry point
+      __ push_f(xmm0);
+      __ jmp(L);
+  dep = __ pc();     // dtos entry point
+      __ push_d(xmm0);
+      __ jmp(L);
 #endif // _LP64
-  lep = __ pc();  __ push_l();     __ jmp(L);
-  bep = cep = sep =
-  iep = __ pc();  __ push_i();
-  vep = __ pc();
+  lep = __ pc();     // ltos entry point
+      __ push_l();
+      __ jmp(L);
+  bep = cep = sep = iep = __ pc();      // [bcsi]tos entry point
+      __ push_i();
+  vep = __ pc();    // vtos entry point
   __ bind(L);
   generate_and_dispatch(t);
 }
