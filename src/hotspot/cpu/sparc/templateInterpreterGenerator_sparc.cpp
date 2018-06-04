@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"

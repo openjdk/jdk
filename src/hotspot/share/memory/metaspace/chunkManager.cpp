@@ -40,6 +40,13 @@
 
 namespace metaspace {
 
+ChunkManager::ChunkManager(bool is_class)
+      : _is_class(is_class), _free_chunks_total(0), _free_chunks_count(0) {
+  _free_chunks[SpecializedIndex].set_size(get_size_for_nonhumongous_chunktype(SpecializedIndex, is_class));
+  _free_chunks[SmallIndex].set_size(get_size_for_nonhumongous_chunktype(SmallIndex, is_class));
+  _free_chunks[MediumIndex].set_size(get_size_for_nonhumongous_chunktype(MediumIndex, is_class));
+}
+
 void ChunkManager::remove_chunk(Metachunk* chunk) {
   size_t word_size = chunk->word_size();
   ChunkIndex index = list_index(word_size);

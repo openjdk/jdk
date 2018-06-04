@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -724,12 +724,4 @@ inline void MacroAssembler::swap(const Address& a, Register d, int offset) {
   if (a.has_index()) { assert(offset == 0, ""); swap(a.base(), a.index(), d        ); }
   else               {                          swap(a.base(), a.disp() + offset, d); }
 }
-
-inline void MacroAssembler::bang_stack_with_offset(int offset) {
-  // stack grows down, caller passes positive offset
-  assert(offset > 0, "must bang with negative offset");
-  set((-offset)+STACK_BIAS, G3_scratch);
-  st(G0, SP, G3_scratch);
-}
-
 #endif // CPU_SPARC_VM_MACROASSEMBLER_SPARC_INLINE_HPP
