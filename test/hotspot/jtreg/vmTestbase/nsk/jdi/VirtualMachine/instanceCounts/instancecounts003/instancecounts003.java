@@ -41,6 +41,7 @@
  *         com.sun.jdi.ObjectCollectedException or com.sun.jdi.ClassNotLoadedException
  *         exception is thrown.
  *
+ * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
