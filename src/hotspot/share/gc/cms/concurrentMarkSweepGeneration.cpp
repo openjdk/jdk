@@ -5142,7 +5142,7 @@ void CMSCollector::refProcessingWork() {
   rp->setup_policy(false);
   verify_work_stacks_empty();
 
-  ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_queues());
+  ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->max_num_queues());
   {
     GCTraceTime(Debug, gc, phases) t("Reference Processing", _gc_timer_cm);
 

@@ -1625,7 +1625,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // Reference lists are balanced (see balance_all_queues() and balance_queues()).
     rp->set_active_mt_degree(active_workers);
 
-    ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_queues());
+    ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->max_num_queues());
 
     // Process the weak references.
     const ReferenceProcessorStats& stats =

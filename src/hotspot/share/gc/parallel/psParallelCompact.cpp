@@ -2111,7 +2111,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
     ReferenceProcessorStats stats;
-    ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->num_queues());
+    ReferenceProcessorPhaseTimes pt(&_gc_timer, ref_processor()->max_num_queues());
     if (ref_processor()->processing_is_mt()) {
       RefProcTaskExecutor task_executor;
       stats = ref_processor()->process_discovered_references(
