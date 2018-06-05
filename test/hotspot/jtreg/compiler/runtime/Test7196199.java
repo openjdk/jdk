@@ -26,7 +26,7 @@
  * @bug 7196199
  * @summary java/text/Bidi/Bug6665028.java failed: Bidi run count incorrect
  *
- * @run main/othervm/timeout=400 -Xmx32m -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=400 -Xmx128m -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation
  *      -XX:+SafepointALot -XX:GuaranteedSafepointInterval=100
  *      -XX:CompileCommand=exclude,compiler.runtime.Test7196199::test
@@ -194,4 +194,3 @@ public class Test7196199 {
         return 0;
     }
 }
-

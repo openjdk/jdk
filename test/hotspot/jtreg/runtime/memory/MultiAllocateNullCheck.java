@@ -25,7 +25,7 @@
  * @test MultiAllocateNullCheck
  * @bug 6726963
  * @summary multi_allocate() call does not CHECK_NULL and causes crash in fastdebug bits
- * @run main/othervm -Xmx32m MultiAllocateNullCheck
+ * @run main/othervm -Xmx128m MultiAllocateNullCheck
  */
 
 import java.lang.reflect.Array;

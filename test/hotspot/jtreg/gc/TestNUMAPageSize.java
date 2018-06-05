@@ -27,7 +27,7 @@
  * @summary Make sure that start up with NUMA support does not cause problems.
  * @bug 8061467
  * @requires (vm.opt.AggressiveOpts == null) | (vm.opt.AggressiveOpts == false)
- * @run main/othervm -Xmx8M -XX:+UseNUMA TestNUMAPageSize
+ * @run main/othervm -Xmx128m -XX:+UseNUMA TestNUMAPageSize
  */
 
 public class TestNUMAPageSize {

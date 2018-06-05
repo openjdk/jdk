@@ -26,7 +26,7 @@
  * @bug 6910605
  * @summary C2: NullPointerException/ClassCaseException is thrown when C2 with DeoptimizeALot is used
  *
- * @run main/othervm -Xmx64m -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeALot
+ * @run main/othervm -Xmx128m -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeALot
  *      -XX:+DoEscapeAnalysis -Xbatch -XX:InlineSmallCode=2000
  *      compiler.c2.Test6910605_2
  */

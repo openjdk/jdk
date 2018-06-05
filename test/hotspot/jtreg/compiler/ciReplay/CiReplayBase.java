@@ -61,7 +61,7 @@ public abstract class CiReplayBase {
     private static final String HS_ERR_NAME = "hs_err_pid";
     private static final String RUN_SHELL_ZERO_LIMIT = "ulimit -S -c 0 && ";
     private static final String VERSION_OPTION = "-version";
-    private static final String[] REPLAY_GENERATION_OPTIONS = new String[]{"-Xms8m", "-Xmx32m",
+    private static final String[] REPLAY_GENERATION_OPTIONS = new String[]{"-Xms128m", "-Xmx128m",
         "-XX:MetaspaceSize=4m", "-XX:MaxMetaspaceSize=16m", "-XX:InitialCodeCacheSize=512k",
         "-XX:ReservedCodeCacheSize=4m", "-XX:ThreadStackSize=512", "-XX:VMThreadStackSize=512",
         "-XX:CompilerThreadStackSize=512", "-XX:ParallelGCThreads=1", "-XX:CICompilerCount=2",

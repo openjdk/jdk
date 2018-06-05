@@ -42,7 +42,7 @@ public class ClassInitializationTest {
         // (1)
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+init=info",
                                                                   "-Xverify:all",
-                                                                  "-Xmx64m",
+                                                                  "-Xmx128m",
                                                                   "BadMap50");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldContain("Start class verification for:");
@@ -56,7 +56,7 @@ public class ClassInitializationTest {
             pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+init=info",
                                                        "-Xverify:all",
                                                        "-XX:+EagerInitialization",
-                                                       "-Xmx64m",
+                                                       "-Xmx128m",
                                                        InnerClass.class.getName());
             out = new OutputAnalyzer(pb.start());
             out.shouldContain("[Initialized").shouldContain("without side effects]");
@@ -66,7 +66,7 @@ public class ClassInitializationTest {
         // (3) class+init should turn off.
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+init=off",
                                                    "-Xverify:all",
-                                                   "-Xmx64m",
+                                                   "-Xmx128m",
                                                    "BadMap50");
         out = new OutputAnalyzer(pb.start());
         out.shouldNotContain("[class,init]");
