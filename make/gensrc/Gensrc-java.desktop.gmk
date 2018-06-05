@@ -78,13 +78,6 @@ $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
 
 GENSRC_JAVA_DESKTOP += $(COMPILE_PROPERTIES)
 
-# Some resources bundles are already present as java files but still need to be
-# copied to zh_HK locale.
-$(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
-    $(TOPDIR)/src/java.desktop/share/classes/sun/applet/resources/MsgAppletViewer_zh_TW.java))
-
-GENSRC_JAVA_DESKTOP += $(COPY_ZH_HK)
-
 ################################################################################
 
 java.desktop: $(GENSRC_JAVA_DESKTOP)
