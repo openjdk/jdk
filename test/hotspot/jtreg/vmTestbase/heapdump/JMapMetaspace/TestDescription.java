@@ -33,6 +33,7 @@
  *     parsed by HprofParser. It fills metaspace with classes till OutOfMemoryError,
  *     then uses JMap to create heap dump and then verifies created heap dump with HprofParser.
  *
+ * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
@@ -40,4 +41,3 @@
  *        heapdump.share.EatMemory
  * @run shell/timeout=300 run.sh
  */
-

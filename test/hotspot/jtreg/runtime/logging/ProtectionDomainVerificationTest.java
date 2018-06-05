@@ -39,7 +39,7 @@ public class ProtectionDomainVerificationTest {
 
         // -Xlog:protectiondomain=trace
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=trace",
-                                                                  "-Xmx64m",
+                                                                  "-Xmx128m",
                                                                   Hello.class.getName());
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldContain("[protectiondomain] Checking package access");
@@ -47,7 +47,7 @@ public class ProtectionDomainVerificationTest {
 
         // -Xlog:protectiondomain=debug
         pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=debug",
-                                                                  "-Xmx64m",
+                                                                  "-Xmx128m",
                                                                   Hello.class.getName());
         out = new OutputAnalyzer(pb.start());
         out.shouldContain("[protectiondomain] Checking package access");
