@@ -30,7 +30,7 @@ tier1 = \
     :tier1_part1 \
     :tier1_part2 \
     :tier1_part3
-    
+
 tier1_part1 = \
     :jdk_lang
 
@@ -74,7 +74,7 @@ tier2_part2 = \
 
 tier2_part3 = \
     :jdk_net
-   
+
 tier3 = \
     :jdk_rmi \
     :jdk_beans \
@@ -354,8 +354,7 @@ jdk_awt = \
     com/sun/awt \
     com/apple/eawt \
     com/apple/laf \
-    sun/awt \
-    sun/applet
+    sun/awt
 
 jdk_2d = \
     javax/print \
