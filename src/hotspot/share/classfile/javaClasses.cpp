@@ -4257,7 +4257,7 @@ int java_lang_AssertionStatusDirectives::packages_offset;
 int java_lang_AssertionStatusDirectives::packageEnabled_offset;
 int java_lang_AssertionStatusDirectives::deflt_offset;
 int java_nio_Buffer::_limit_offset;
-int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset = 0;
+int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset;
 int reflect_ConstantPool::_oop_offset;
 int reflect_UnsafeStaticFieldAccessorImpl::_base_offset;
 
@@ -4399,13 +4399,12 @@ void java_nio_Buffer::serialize(SerializeClosure* f) {
 }
 #endif
 
-void java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(TRAPS) {
-  if (_owner_offset != 0) return;
+#define AOS_FIELDS_DO(macro) \
+  macro(_owner_offset, k, "exclusiveOwnerThread", thread_signature, false)
 
-  SystemDictionary::load_abstract_ownable_synchronizer_klass(CHECK);
-  InstanceKlass* k = SystemDictionary::abstract_ownable_synchronizer_klass();
-  compute_offset(_owner_offset, k,
-                 "exclusiveOwnerThread", vmSymbols::thread_signature());
+void java_util_concurrent_locks_AbstractOwnableSynchronizer::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass();
+  AOS_FIELDS_DO(FIELD_COMPUTE_OFFSET);
 }
 
 oop java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(oop obj) {
@@ -4473,6 +4472,7 @@ void JavaClasses::compute_offsets() {
   java_lang_StackTraceElement::compute_offsets();
   java_lang_StackFrameInfo::compute_offsets();
   java_lang_LiveStackFrameInfo::compute_offsets();
+  java_util_concurrent_locks_AbstractOwnableSynchronizer::compute_offsets();
 
   // generated interpreter code wants to know about the offsets we just computed:
   AbstractAssembler::update_delayed_values();

@@ -1483,7 +1483,7 @@ class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
  private:
   static int  _owner_offset;
  public:
-  static void initialize(TRAPS);
+  static void compute_offsets();
   static oop  get_owner_threadObj(oop obj);
 };
 
