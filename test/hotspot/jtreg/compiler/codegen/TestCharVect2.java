@@ -26,7 +26,7 @@
  * @bug 8001183
  * @summary incorrect results of char vectors right shift operaiton
  *
- * @run main/othervm/timeout=400 -Xbatch -Xmx64m compiler.codegen.TestCharVect2
+ * @run main/othervm/timeout=400 -Xbatch -Xmx128m compiler.codegen.TestCharVect2
  */
 
 package compiler.codegen;

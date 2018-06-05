@@ -25,7 +25,7 @@
  * @test TestBigObj
  * @bug 6845368
  * @summary ensure gc updates references > 64K bytes from the start of the obj
- * @run main/othervm/timeout=720 -Xmx64m -verbose:gc TestBigObj
+ * @run main/othervm/timeout=720 -Xmx256m -verbose:gc TestBigObj
  */
 
 // Allocate an object with a block of reference fields that starts more

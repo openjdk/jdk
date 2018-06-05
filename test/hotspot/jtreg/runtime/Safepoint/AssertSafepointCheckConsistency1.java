@@ -52,7 +52,7 @@ public class AssertSafepointCheckConsistency1 {
                   "-XX:+WhiteBoxAPI",
                   "-XX:-TransmitErrorReport",
                   "-XX:-CreateCoredumpOnCrash",
-                  "-Xmx32m",
+                  "-Xmx128m",
                   "AssertSafepointCheckConsistency1",
                   "test");
             OutputAnalyzer output = new OutputAnalyzer(pb.start());

@@ -26,7 +26,7 @@
  * @bug 8002069
  * @summary Assert failed in C2: assert(field->edge_count() > 0) failed: sanity
  *
- * @run main/othervm -Xmx32m -XX:+IgnoreUnrecognizedVMOptions -Xbatch
+ * @run main/othervm -Xmx128m -XX:+IgnoreUnrecognizedVMOptions -Xbatch
  *      -XX:CompileCommand=exclude,compiler.c2.Test8002069::dummy
  *      compiler.c2.Test8002069
  */
@@ -109,4 +109,3 @@ public class Test8002069 {
         return i * 2;
     }
 }
-

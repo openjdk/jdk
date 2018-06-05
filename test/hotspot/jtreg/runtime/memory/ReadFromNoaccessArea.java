@@ -53,7 +53,7 @@ public class ReadFromNoaccessArea {
           "-XX:+UseCompressedOops",
           "-XX:HeapBaseMinAddress=33G",
           "-XX:-CreateCoredumpOnCrash",
-          "-Xmx32m",
+          "-Xmx128m",
           DummyClassWithMainTryingToReadFromNoaccessArea.class.getName());
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

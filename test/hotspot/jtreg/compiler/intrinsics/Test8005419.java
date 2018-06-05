@@ -26,7 +26,7 @@
  * @bug 8005419
  * @summary Improve intrinsics code performance on x86 by using AVX2
  *
- * @run main/othervm -Xbatch -Xmx64m compiler.intrinsics.Test8005419
+ * @run main/othervm -Xbatch -Xmx128m compiler.intrinsics.Test8005419
  */
 
 package compiler.intrinsics;
