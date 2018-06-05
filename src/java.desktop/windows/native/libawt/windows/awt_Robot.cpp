@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,62 +43,20 @@ AwtRobot::~AwtRobot()
 {
 }
 
-#ifndef SPI_GETMOUSESPEED
-#define SPI_GETMOUSESPEED 112
-#endif
-
-#ifndef SPI_SETMOUSESPEED
-#define SPI_SETMOUSESPEED 113
-#endif
+static int signum(int i) {
+  // special version of signum which returns 1 when value is 0
+  return i >= 0 ? 1 : -1;
+}
 
 void AwtRobot::MouseMove( jint x, jint y)
 {
-    // Fix for Bug 4288230. See Q193003 from MSDN.
-      int oldAccel[3], newAccel[3];
-      INT_PTR oldSpeed, newSpeed;
-      BOOL bResult;
-
-   // The following values set mouse ballistics to 1 mickey/pixel.
-      newAccel[0] = 0;
-      newAccel[1] = 0;
-      newAccel[2] = 0;
-      newSpeed = 10;
-
-      // Save the Current Mouse Acceleration Constants
-      bResult = SystemParametersInfo(SPI_GETMOUSE,0,oldAccel,0);
-      bResult = SystemParametersInfo(SPI_GETMOUSESPEED, 0, &oldSpeed,0);
-      // Set the new Mouse Acceleration Constants (Disabled).
-      bResult = SystemParametersInfo(SPI_SETMOUSE,0,newAccel,SPIF_SENDCHANGE);
-      bResult = SystemParametersInfo(SPI_SETMOUSESPEED, 0,
-                // 4504963: Though the third argument to SystemParameterInfo is
-                // declared as a PVOID, as of Windows 2000 it is apparently
-                // interpreted as an int.  (The MSDN docs for SPI_SETMOUSESPEED
-                // say that it's an integer between 1 and 20, the default being
-                // 10).  Instead of passing the @ of the desired value, the
-                // value itself is now passed, cast as a PVOID so as to
-                // compile.  -bchristi 10/02/2001
-                                     (PVOID)newSpeed,
-                                     SPIF_SENDCHANGE);
-
-      int primaryIndex = AwtWin32GraphicsDevice::GetDefaultDeviceIndex();
-      Devices::InstanceAccess devices;
-      AwtWin32GraphicsDevice *device = devices->GetDevice(primaryIndex);
-
-      x = (device == NULL) ? x : device->ScaleUpX(x);
-      y = (device == NULL) ? y : device->ScaleUpY(y);
-
-      POINT curPos;
-      ::GetCursorPos(&curPos);
-      x -= curPos.x;
-      y -= curPos.y;
-
-      mouse_event(MOUSEEVENTF_MOVE,x,y,0,0);
-      // Move the cursor to the desired coordinates.
-
-      // Restore the old Mouse Acceleration Constants.
-      bResult = SystemParametersInfo(SPI_SETMOUSE,0, oldAccel, SPIF_SENDCHANGE);
-      bResult = SystemParametersInfo(SPI_SETMOUSESPEED, 0, (PVOID)oldSpeed,
-                                     SPIF_SENDCHANGE);
+    INPUT mouseInput = {0};
+    mouseInput.type = INPUT_MOUSE;
+    mouseInput.mi.time = 0;
+    mouseInput.mi.dwFlags = MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE;
+    mouseInput.mi.dx = (x * 65536 /::GetSystemMetrics(SM_CXSCREEN)) + signum(x);
+    mouseInput.mi.dy = (y * 65536 /::GetSystemMetrics(SM_CYSCREEN)) + signum(y);
+    ::SendInput(1, &mouseInput, sizeof(mouseInput));
 }
 
 void AwtRobot::MousePress( jint buttonMask )
