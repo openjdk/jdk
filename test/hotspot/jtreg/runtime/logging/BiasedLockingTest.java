@@ -48,22 +48,26 @@ public class BiasedLockingTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:biasedlocking",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseBiasedLocking",
+                                                                  "-Xlog:biasedlocking",
                                                                   "-XX:BiasedLockingStartupDelay=0",
                                                                   InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceBiasedLocking",
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseBiasedLocking",
+                                                   "-XX:+TraceBiasedLocking",
                                                    "-XX:BiasedLockingStartupDelay=0",
                                                    InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:biasedlocking=off",
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseBiasedLocking",
+                                                   "-Xlog:biasedlocking=off",
                                                    "-XX:BiasedLockingStartupDelay=0",
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:-TraceBiasedLocking",
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseBiasedLocking",
+                                                   "-XX:-TraceBiasedLocking",
                                                    "-XX:BiasedLockingStartupDelay=0",
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);
