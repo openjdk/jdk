@@ -452,7 +452,7 @@ WinAccessBridge::queuePackage(char *buffer, long bufsize) {
  */
 BOOL
 WinAccessBridge::receiveAQueuedPackage() {
-    AccessBridgeQueueElement *element;
+    AccessBridgeQueueElement *element = NULL;
 
     PrintDebugString("in WinAccessBridge::receiveAQueuedPackage()");
 
@@ -464,15 +464,6 @@ WinAccessBridge::receiveAQueuedPackage() {
 
         QueueReturns result = messageQueue->remove(&element);
 
-        PrintDebugString("   'element->buffer' contains:");
-        DEBUG_CODE(PackageType *type = (PackageType *) element->buffer);
-        DEBUG_CODE(FocusGainedPackageTag *pkg = (FocusGainedPackageTag *) (((char *) element->buffer) + sizeof(PackageType)));
-        DEBUG_CODE(PrintDebugString("     PackageType = %X", *type));
-#ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-        DEBUG_CODE(PrintDebugString("     EventPackage: vmID = %X, event = %p, source = %p", pkg->vmID, pkg->Event, pkg->AccessibleContextSource));
-#else // JOBJECT64 is jlong (64 bit)
-        DEBUG_CODE(PrintDebugString("     EventPackage: vmID = %X, event = %016I64X, source = %016I64X", pkg->vmID, pkg->Event, pkg->AccessibleContextSource));
-#endif
         switch (result) {
 
         case cQueueBroken:
