@@ -28,6 +28,7 @@
  * @summary converted from VM Testbase metaspace/shrink_grow/ShrinkGrowMultiJVM.
  * VM Testbase keywords: [nonconcurrent]
  *
+ * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
  * @build metaspace.shrink_grow.ShrinkGrowMultiJVM.ShrinkGrowMultiJVM

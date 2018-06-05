@@ -49,6 +49,7 @@
  *                 - enable collection of class object using ObjectReference.enableCollection
  *                 - check class object was collected
  *
+ * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
