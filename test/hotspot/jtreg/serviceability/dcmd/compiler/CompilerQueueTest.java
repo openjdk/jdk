@@ -24,6 +24,7 @@
 /*
  * @test CompilerQueueTest
  * @bug 8054889
+ * @key intermittent
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.compiler

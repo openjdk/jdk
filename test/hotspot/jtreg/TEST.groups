@@ -267,6 +267,7 @@ tier1_runtime_appcds_exclude = \
 
 tier1_serviceability = \
   serviceability/dcmd/compiler \
+  -serviceability/dcmd/compiler/CompilerQueueTest.java \
   serviceability/logging \
   serviceability/sa \
   -serviceability/sa/ClhsdbScanOops.java \
