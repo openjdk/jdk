@@ -137,18 +137,10 @@ HeapWord* CollectedHeap::common_mem_allocate_noinit(Klass* klass, size_t size, T
     return NULL;  // caller does a CHECK_0 too
   }
 
-  HeapWord* result = NULL;
-  if (UseTLAB) {
-    result = allocate_from_tlab(klass, THREAD, size);
-    if (result != NULL) {
-      assert(!HAS_PENDING_EXCEPTION,
-             "Unexpected exception, will result in uninitialized storage");
-      return result;
-    }
-  }
   bool gc_overhead_limit_was_exceeded = false;
-  result = Universe::heap()->mem_allocate(size,
-                                          &gc_overhead_limit_was_exceeded);
+  CollectedHeap* heap = Universe::heap();
+  HeapWord* result = heap->obj_allocate_raw(klass, size, &gc_overhead_limit_was_exceeded, THREAD);
+
   if (result != NULL) {
     NOT_PRODUCT(Universe::heap()->
       check_for_non_bad_heap_word_value(result, size));
@@ -160,7 +152,6 @@ HeapWord* CollectedHeap::common_mem_allocate_noinit(Klass* klass, size_t size, T
 
     return result;
   }
-
 
   if (!gc_overhead_limit_was_exceeded) {
     // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
@@ -193,15 +184,18 @@ HeapWord* CollectedHeap::common_mem_allocate_init(Klass* klass, size_t size, TRA
   return obj;
 }
 
-HeapWord* CollectedHeap::allocate_from_tlab(Klass* klass, Thread* thread, size_t size) {
+HeapWord* CollectedHeap::allocate_from_tlab(Klass* klass, size_t size, TRAPS) {
   assert(UseTLAB, "should use UseTLAB");
 
-  HeapWord* obj = thread->tlab().allocate(size);
+  HeapWord* obj = THREAD->tlab().allocate(size);
   if (obj != NULL) {
     return obj;
   }
   // Otherwise...
-  return allocate_from_tlab_slow(klass, thread, size);
+  obj = allocate_from_tlab_slow(klass, size, THREAD);
+  assert(obj == NULL || !HAS_PENDING_EXCEPTION,
+         "Unexpected exception, will result in uninitialized storage");
+  return obj;
 }
 
 void CollectedHeap::init_obj(HeapWord* obj, size_t size) {
