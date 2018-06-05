@@ -29,7 +29,7 @@
  * @author  Mandy Chung
  *
  * @modules jdk.management
- * @run main MemoryTest 2
+ * @run main MemoryTest 2 3
  */
 
 /*
@@ -65,16 +65,23 @@ public class MemoryTest {
     // - Code cache (between one and three depending on the -XX:SegmentedCodeCache option)
     // - Metaspace
     // - Compressed Class Space (if compressed class pointers are used)
-    private static int[] expectedMinNumPools = {3, 2};
-    private static int[] expectedMaxNumPools = {3, 5};
-    private static int expectedNumGCMgrs = 2;
-    private static int expectedNumMgrs = expectedNumGCMgrs + 2;
+
+    private static int[] expectedMinNumPools = new int[2];
+    private static int[] expectedMaxNumPools = new int[2];
+    private static int expectedNumGCMgrs;
+    private static int expectedNumMgrs;
     private static String[] types = { "heap", "non-heap" };
 
     public static void main(String args[]) throws Exception {
-        Integer value = new Integer(args[0]);
-        expectedNumGCMgrs = value.intValue();
+        expectedNumGCMgrs = Integer.valueOf(args[0]);
         expectedNumMgrs = expectedNumGCMgrs + 2;
+
+        int expectedNumPools = Integer.valueOf(args[1]);
+        expectedMinNumPools[HEAP] = expectedNumPools;
+        expectedMaxNumPools[HEAP] = expectedNumPools;
+
+        expectedMinNumPools[NONHEAP] = 2;
+        expectedMaxNumPools[NONHEAP] = 5;
 
         checkMemoryPools();
         checkMemoryManagers();
