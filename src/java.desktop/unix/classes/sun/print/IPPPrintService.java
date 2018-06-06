@@ -25,8 +25,6 @@
 
 package sun.print;
 
-import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
 import javax.print.DocFlavor;
@@ -1073,11 +1071,6 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             catList.add(PrinterResolution.class);
         }
 
-        if (GraphicsEnvironment.isHeadless() == false) {
-            catList.add(DialogOwner.class);
-            catList.add(DialogTypeSelection.class);
-        }
-
         supportedCats = new Class<?>[catList.size()];
         catList.toArray(supportedCats);
         Class<?>[] copyCats = new Class<?>[supportedCats.length];
@@ -1399,37 +1392,9 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 }
             }
             return false;
-        } else if (attr.getCategory() == PrinterResolution.class) {
+        } if (attr.getCategory() == PrinterResolution.class) {
             if (attr instanceof PrinterResolution) {
                 return isSupportedResolution((PrinterResolution)attr);
-            }
-        } else if (attr.getCategory() == DialogOwner.class) {
-            DialogOwner owner = (DialogOwner)attr;
-            // ID not supported on any dialog type on Unix platforms.
-            if (DialogOwnerAccessor.getID(owner) != 0) {
-                return false;
-            }
-            // On Mac we have no control over the native dialog.
-            DialogTypeSelection dst = (attributes == null) ? null :
-               (DialogTypeSelection)attributes.get(DialogTypeSelection.class);
-            if (PrintServiceLookupProvider.isMac() &&
-                dst == DialogTypeSelection.NATIVE) {
-                return false;
-            }
-            // The other case is always a Swing dialog on all Unix platforms.
-            // So we only need to check that the toolkit supports
-            // always on top.
-            if (owner.getOwner() != null) {
-                return true;
-            } else {
-                return Toolkit.getDefaultToolkit().isAlwaysOnTopSupported();
-            }
-        } else if (attr.getCategory() == DialogTypeSelection.class) {
-            if (PrintServiceLookupProvider.isMac()) {
-                return true;
-            } else {
-               DialogTypeSelection dst = (DialogTypeSelection)attr;
-               return attr == DialogTypeSelection.COMMON;
             }
         }
         return true;
