@@ -328,14 +328,17 @@ jrtfs-jar:
 jdk-image:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk jdk)
 
-jre-image:
+legacy-jre-image:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk jre)
 
 symbols-image:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk symbols)
 
-mac-bundles-jdk:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk)
+mac-jdk-bundle:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk jdk-bundle)
+
+mac-legacy-jre-bundle:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk jre-bundle)
 
 release-file:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ReleaseFile.gmk)
@@ -344,8 +347,8 @@ exploded-image-optimize:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f ExplodedImageOptimize.gmk)
 
 ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-images zip-security \
-    zip-source jrtfs-jar jdk-image jre-image \
-    symbols-image mac-bundles-jdk \
+    zip-source jrtfs-jar jdk-image legacy-jre-image \
+    symbols-image mac-jdk-bundle mac-legacy-jre-bundle \
     release-file exploded-image-optimize
 
 ################################################################################
@@ -776,16 +779,17 @@ else
     generate-link-opt-data: buildtools-jdk
 
     # The generated classlist needs to go into java.base-jmod.
-    java.base-jmod jdk.jlink-jmod jdk-image jre-image: generate-link-opt-data
+    java.base-jmod jdk.jlink-jmod jdk-image legacy-jre-image: generate-link-opt-data
   endif
 
   release-file: create-source-revision-tracker
 
   jdk-image: jmods zip-source demos release-file
-  jre-image: jmods release-file
+  legacy-jre-image: jmods release-file
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
-  mac-bundles-jdk: jdk-image jre-image
+  mac-jdk-bundle: jdk-image
+  mac-legacy-jre-bundle: legacy-jre-image
 
   # The optimize target can run as soon as the modules dir has been completely
   # populated (java, copy and gendata targets) and the basic libs and launchers
@@ -956,14 +960,14 @@ docs-reference: docs-reference-api
 # alias for backwards compatibility
 docs-javadoc: docs-jdk-api
 
-mac-bundles: mac-bundles-jdk
+mac-bundles: mac-jdk-bundle
 
 # The $(OUTPUTDIR)/images directory contain the resulting deliverables,
 # and in line with this, our targets for creating these are named *-image[s].
 
-# This target builds the product images, e.g. the JRE and JDK image
+# This target builds the product images, e.g. the JDK image
 # (and possibly other, more specific versions)
-product-images: jdk-image jre-image symbols-image exploded-image
+product-images: jdk-image symbols-image exploded-image
 
 # zip-security is actually a bundle, but for now it needs to be considered
 # an image until this can be cleaned up properly.
@@ -980,7 +984,7 @@ ifneq ($(CREATE_BUILDJDK), true)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  product-images: mac-bundles
+  product-images: mac-jdk-bundle
 endif
 
 # This target builds the documentation image
