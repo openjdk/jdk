@@ -884,7 +884,7 @@ table.striped {
     border: 1px solid black;
 }
 table.striped > thead {
-    background-color: #DDD;
+    background-color: #E3E3E3;
 }
 table.striped > thead > tr > th, table.striped > thead > tr > td {
     border: 1px solid black;

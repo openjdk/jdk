@@ -1081,9 +1081,6 @@ JVM_ENTRY(jint, jmm_GetThreadInfo(JNIEnv *env, jlongArray ids, jint maxDepth, jo
                "The length of the given ThreadInfo array does not match the length of the given array of thread IDs", -1);
   }
 
-  // make sure the AbstractOwnableSynchronizer klass is loaded before taking thread snapshots
-  java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(CHECK_0);
-
   // Must use ThreadDumpResult to store the ThreadSnapshot.
   // GC may occur after the thread snapshots are taken but before
   // this function returns. The threadObj and other oops kept
@@ -1153,9 +1150,6 @@ JVM_END
 JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboolean locked_monitors,
                                         jboolean locked_synchronizers, jint maxDepth))
   ResourceMark rm(THREAD);
-
-  // make sure the AbstractOwnableSynchronizer klass is loaded before taking thread snapshots
-  java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(CHECK_NULL);
 
   typeArrayOop ta = typeArrayOop(JNIHandles::resolve(thread_ids));
   int num_threads = (ta != NULL ? ta->length() : 0);

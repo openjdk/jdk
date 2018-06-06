@@ -685,8 +685,15 @@ void CodeCache::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurre
   assert_locked_or_safepoint(CodeCache_lock);
   CompiledMethodIterator iter;
   while(iter.next_alive()) {
-    iter.method()->do_unloading(is_alive, unloading_occurred);
+    iter.method()->do_unloading(is_alive);
   }
+
+  // Now that all the unloaded nmethods are known, cleanup caches
+  // before CLDG is purged.
+  // This is another code cache walk but it is moved from gc_epilogue.
+  // G1 does a parallel walk of the nmethods so cleans them up
+  // as it goes and doesn't call this.
+  do_unloading_nmethod_caches(unloading_occurred);
 }
 
 void CodeCache::blobs_do(CodeBlobClosure* f) {
@@ -720,8 +727,11 @@ void CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure* f) {
     assert(cur->on_scavenge_root_list(), "else shouldn't be on this list");
 
     bool is_live = (!cur->is_zombie() && !cur->is_unloaded());
-    if (TraceScavenge) {
-      cur->print_on(tty, is_live ? "scavenge root" : "dead scavenge root"); tty->cr();
+    LogTarget(Trace, gc, nmethod) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      CompileTask::print(&ls, cur,
+        is_live ? "scavenge root " : "dead scavenge root", /*short_form:*/ true);
     }
     if (is_live) {
       // Perform cur->oops_do(f), maybe just once per nmethod.
@@ -892,18 +902,26 @@ void CodeCache::verify_icholder_relocations() {
 #endif
 }
 
-void CodeCache::gc_prologue() {
-}
+void CodeCache::gc_prologue() { }
 
 void CodeCache::gc_epilogue() {
+  prune_scavenge_root_nmethods();
+}
+
+
+void CodeCache::do_unloading_nmethod_caches(bool class_unloading_occurred) {
   assert_locked_or_safepoint(CodeCache_lock);
-  NOT_DEBUG(if (needs_cache_clean())) {
+  // Even if classes are not unloaded, there may have been some nmethods that are
+  // unloaded because oops in them are no longer reachable.
+  NOT_DEBUG(if (needs_cache_clean() || class_unloading_occurred)) {
     CompiledMethodIterator iter;
     while(iter.next_alive()) {
       CompiledMethod* cm = iter.method();
       assert(!cm->is_unloaded(), "Tautology");
-      DEBUG_ONLY(if (needs_cache_clean())) {
-        cm->cleanup_inline_caches();
+      DEBUG_ONLY(if (needs_cache_clean() || class_unloading_occurred)) {
+        // Clean up both unloaded klasses from nmethods and unloaded nmethods
+        // from inline caches.
+        cm->unload_nmethod_caches(/*parallel*/false, class_unloading_occurred);
       }
       DEBUG_ONLY(cm->verify());
       DEBUG_ONLY(cm->verify_oop_relocations());
@@ -911,8 +929,6 @@ void CodeCache::gc_epilogue() {
   }
 
   set_needs_cache_clean(false);
-  prune_scavenge_root_nmethods();
-
   verify_icholder_relocations();
 }
 

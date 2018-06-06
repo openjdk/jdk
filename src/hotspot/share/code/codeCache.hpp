@@ -168,9 +168,10 @@ class CodeCache : AllStatic {
   static void gc_epilogue();
   static void gc_prologue();
   static void verify_oops();
-  // If "unloading_occurred" is true, then unloads (i.e., breaks root links
+  // If any oops are not marked this method unloads (i.e., breaks root links
   // to) any unmarked codeBlobs in the cache.  Sets "marked_for_unloading"
   // to "true" iff some code got unloaded.
+  // "unloading_occurred" controls whether metadata should be cleaned because of class unloading.
   static void do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred);
   static void asserted_non_scavengable_nmethods_do(CodeBlobClosure* f = NULL) PRODUCT_RETURN;
 
@@ -223,8 +224,10 @@ class CodeCache : AllStatic {
 
   static bool needs_cache_clean()                     { return _needs_cache_clean; }
   static void set_needs_cache_clean(bool v)           { _needs_cache_clean = v;    }
+
   static void clear_inline_caches();                  // clear all inline caches
-  static void cleanup_inline_caches();
+  static void cleanup_inline_caches();                // clean unloaded/zombie nmethods from inline caches
+  static void do_unloading_nmethod_caches(bool class_unloading_occurred);  // clean all nmethod caches for unloading, including inline caches
 
   // Returns true if an own CodeHeap for the given CodeBlobType is available
   static bool heap_available(int code_blob_type);

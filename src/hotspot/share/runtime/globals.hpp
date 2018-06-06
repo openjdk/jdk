@@ -1055,9 +1055,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
                                                                             \
-  notproduct(bool, TraceScavenge, false,                                    \
-          "Trace scavenge")                                                 \
-                                                                            \
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
                                                                             \
