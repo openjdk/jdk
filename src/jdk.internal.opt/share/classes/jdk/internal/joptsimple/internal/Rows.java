@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,8 +55,8 @@
 
 package jdk.internal.joptsimple.internal;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.lang.Math.*;
 
@@ -68,7 +68,8 @@ import static jdk.internal.joptsimple.internal.Strings.*;
 public class Rows {
     private final int overallWidth;
     private final int columnSeparatorWidth;
-    private final Set<Row> rows = new LinkedHashSet<Row>();
+    private final List<Row> rows = new ArrayList<>();
+
     private int widthOfWidestOption;
     private int widthOfWidestDescription;
 
@@ -87,7 +88,7 @@ public class Rows {
         widthOfWidestDescription = max( widthOfWidestDescription, row.description.length() );
     }
 
-    private void reset() {
+    public void reset() {
         rows.clear();
         widthOfWidestOption = 0;
         widthOfWidestDescription = 0;
@@ -96,7 +97,7 @@ public class Rows {
     public void fitToWidth() {
         Columns columns = new Columns( optionWidth(), descriptionWidth() );
 
-        Set<Row> fitted = new LinkedHashSet<Row>();
+        List<Row> fitted = new ArrayList<>();
         for ( Row each : rows )
             fitted.addAll( columns.fit( each ) );
 
@@ -122,7 +123,7 @@ public class Rows {
     }
 
     private int descriptionWidth() {
-        return min( ( overallWidth - columnSeparatorWidth ) / 2, widthOfWidestDescription );
+        return min( overallWidth - optionWidth() - columnSeparatorWidth, widthOfWidestDescription );
     }
 
     private StringBuilder pad( StringBuilder buffer, String s, int length ) {

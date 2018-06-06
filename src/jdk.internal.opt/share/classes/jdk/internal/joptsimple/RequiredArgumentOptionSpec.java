@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,7 +55,7 @@
 
 package jdk.internal.joptsimple;
 
-import java.util.Collection;
+import java.util.List;
 
 /**
  * Specification of an option that accepts a required argument.
@@ -68,14 +68,14 @@ class RequiredArgumentOptionSpec<V> extends ArgumentAcceptingOptionSpec<V> {
         super( option, true );
     }
 
-    RequiredArgumentOptionSpec( Collection<String> options, String description ) {
+    RequiredArgumentOptionSpec( List<String> options, String description ) {
         super( options, true, description );
     }
 
     @Override
     protected void detectOptionArgument( OptionParser parser, ArgumentList arguments, OptionSet detectedOptions ) {
         if ( !arguments.hasMore() )
-            throw new OptionMissingRequiredArgumentException( options() );
+            throw new OptionMissingRequiredArgumentException( this );
 
         addArguments( detectedOptions, arguments.next() );
     }

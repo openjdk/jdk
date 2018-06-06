@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,22 +55,23 @@
 
 package jdk.internal.joptsimple.internal;
 
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.ResourceBundle;
+
 /**
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
-public final class Objects {
-    private Objects() {
+public class Messages {
+    private Messages() {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * Rejects {@code null} references.
-     *
-     * @param target reference to check
-     * @throws NullPointerException if {@code target} is {@code null}
-     */
-    public static void ensureNotNull( Object target ) {
-        if ( target == null )
-            throw new NullPointerException();
+    public static String message( Locale locale, String bundleName, Class<?> type, String key, Object... args ) {
+        ResourceBundle bundle = ResourceBundle.getBundle( bundleName, locale );
+        String template = bundle.getString( type.getName() + '.' + key );
+        MessageFormat format = new MessageFormat( template );
+        format.setLocale( locale );
+        return format.format( args );
     }
 }

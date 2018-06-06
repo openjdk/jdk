@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,22 +55,22 @@
 
 package jdk.internal.joptsimple;
 
-import java.util.Collection;
+import java.util.List;
 
 /**
- * Thrown when an option is marked as required, but not specified on the command line.
+ * Thrown when options marked as required are not specified on the command line.
  *
  * @author <a href="https://github.com/TC1">Emils Solmanis</a>
  */
-class MissingRequiredOptionException extends OptionException {
+class MissingRequiredOptionsException extends OptionException {
     private static final long serialVersionUID = -1L;
 
-    protected MissingRequiredOptionException( Collection<String> options ) {
-        super( options );
+    protected MissingRequiredOptionsException( List<? extends OptionSpec<?>> missingRequiredOptions ) {
+        super( missingRequiredOptions );
     }
 
     @Override
-    public String getMessage() {
-        return "Missing required option(s) " + multipleOptionMessage();
+    Object[] messageArguments() {
+        return new Object[] { multipleOptionString() };
     }
 }

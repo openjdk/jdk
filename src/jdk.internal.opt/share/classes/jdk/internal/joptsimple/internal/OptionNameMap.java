@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -53,32 +53,25 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package jdk.internal.joptsimple;
+package jdk.internal.joptsimple.internal;
 
-import static java.util.Collections.*;
+import java.util.Map;
 
 /**
- * Thrown when the option parser detects an unacceptable number of {@code linkplain NonOptionArgumentSpec
- * non-option arguments}.
+ * Map-like interface for storing String-value pairs.
  *
- * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
+ * @param <V> type of values stored in the map
  */
-class UnacceptableNumberOfNonOptionsException extends OptionException {
-    private static final long serialVersionUID = -1L;
-    private final int minimum;
-    private final int maximum;
-    private final int actual;
+public interface OptionNameMap<V> {
+    boolean contains( String key );
 
-    UnacceptableNumberOfNonOptionsException( int minimum, int maximum, int actual ) {
-        super( singletonList( NonOptionArgumentSpec.NAME ) );
+    V get( String key );
 
-        this.minimum = minimum;
-        this.maximum = maximum;
-        this.actual = actual;
-    }
+    void put( String key, V newValue );
 
-    @Override
-    public String getMessage() {
-        return String.format( "actual = %d, minimum = %d, maximum = %d", actual, minimum, maximum );
-    }
+    void putAll( Iterable<String> keys, V newValue );
+
+    void remove( String key );
+
+    Map<String, V> toJavaUtilMap();
 }

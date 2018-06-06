@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,7 +55,6 @@
 
 package jdk.internal.joptsimple;
 
-import java.util.Collection;
 import java.util.List;
 
 import static java.util.Collections.*;
@@ -70,7 +69,7 @@ class NoArgumentOptionSpec extends AbstractOptionSpec<Void> {
         this( singletonList( option ), "" );
     }
 
-    NoArgumentOptionSpec( Collection<String> options, String description ) {
+    NoArgumentOptionSpec( List<String> options, String description ) {
         super( options, description );
     }
 
