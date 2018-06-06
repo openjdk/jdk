@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt.desktop;
+
+import java.awt.Desktop;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
 
 /**
  * Event sent when the user session has been changed.
@@ -66,9 +71,15 @@ public final class UserSessionEvent extends AppEvent {
     }
 
     /**
-     * Constructs a {@code UserSessionEvent}
+     * Constructs a {@code UserSessionEvent}.
      *
-     * @param reason of session change
+     * @param  reason the reason of the user session change
+     * @throws HeadlessException if {@link GraphicsEnvironment#isHeadless()}
+     *         returns {@code true}
+     * @throws UnsupportedOperationException if Desktop API is not supported on
+     *         the current platform
+     * @see Desktop#isDesktopSupported()
+     * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public UserSessionEvent(Reason reason) {
         this.reason = reason;

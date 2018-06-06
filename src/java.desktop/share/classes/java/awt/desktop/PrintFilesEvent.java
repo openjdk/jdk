@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
  * questions.
  */
 
-
 package java.awt.desktop;
 
+import java.awt.Desktop;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
 import java.io.File;
 import java.util.List;
-
 
 /**
  * Event sent when the app is asked to print a list of files.
@@ -37,14 +38,21 @@ import java.util.List;
  * @since 9
  */
 public final class PrintFilesEvent extends FilesEvent {
+
     private static final long serialVersionUID = -5752560876153618618L;
 
     /**
-     * Constructs a {@code PrintFilesEvent}
-     * @param files files
+     * Constructs a {@code PrintFilesEvent}.
+     *
+     * @param  files the list of files
+     * @throws HeadlessException if {@link GraphicsEnvironment#isHeadless()}
+     *         returns {@code true}
+     * @throws UnsupportedOperationException if Desktop API is not supported on
+     *         the current platform
+     * @see Desktop#isDesktopSupported()
+     * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public PrintFilesEvent(final List<File> files) {
         super(files);
     }
-
 }

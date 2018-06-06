@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 
 package java.awt.desktop;
 
+import java.awt.Desktop;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  * Auxiliary event containing a list of files.
@@ -36,19 +38,28 @@ import java.util.List;
  * @since 9
  */
 public class FilesEvent extends AppEvent {
+
     private static final long serialVersionUID = 5271763715462312871L;
     final List<File> files;
 
     /**
-     * Constructs a {@code FilesEvent}
-     * @param files files
+     * Constructs a {@code FilesEvent}.
+     *
+     * @param  files the list of files
+     * @throws HeadlessException if {@link GraphicsEnvironment#isHeadless()}
+     *         returns {@code true}
+     * @throws UnsupportedOperationException if Desktop API is not supported on
+     *         the current platform
+     * @see Desktop#isDesktopSupported()
+     * @see java.awt.GraphicsEnvironment#isHeadless
      */
     FilesEvent(final List<File> files) {
         this.files = files;
     }
 
     /**
-     * Gets the list of files
+     * Gets the list of files.
+     *
      * @return the list of files
      */
     public List<File> getFiles() {
@@ -56,5 +67,4 @@ public class FilesEvent extends AppEvent {
                 ? null
                 : new ArrayList<>(files);
     }
-
 }
