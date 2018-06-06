@@ -284,8 +284,8 @@ private:
   bool is_aot_runtime_stub() const { return _method == NULL; }
 
 protected:
-  virtual bool do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive, bool unloading_occurred);
-  virtual bool do_unloading_jvmci(bool unloading_occurred) { return false; }
+  virtual bool do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive);
+  virtual bool do_unloading_jvmci() { return false; }
 
 };
 

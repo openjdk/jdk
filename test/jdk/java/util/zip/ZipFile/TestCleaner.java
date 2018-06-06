@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 /* @test
- * @bug 8185582
- * @modules java.base/java.util.zip:open
+ * @bug 8185582 8197989
+ * @modules java.base/java.util.zip:open java.base/jdk.internal.vm.annotation
  * @summary Check the resources of Inflater, Deflater and ZipFile are always
  *          cleaned/released when the instance is not unreachable
  */
@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.*;
+import jdk.internal.vm.annotation.DontInline;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class TestCleaner {
@@ -163,10 +164,8 @@ public class TestCleaner {
         }
     }
 
-    private static void testZipFile() throws Throwable {
-        File dir = new File(System.getProperty("test.dir", "."));
-        File zip = File.createTempFile("testzf", "zip", dir);
-        Object zsrc = null;
+    @DontInline
+    private static Object openAndCloseZipFile(File zip) throws Throwable {
         try {
             try (var fos = new FileOutputStream(zip);
                  var zos = new ZipOutputStream(fos)) {
@@ -193,12 +192,39 @@ public class TestCleaner {
             if (!fieldZsrc.trySetAccessible()) {
                 throw new RuntimeException("'ZipFile.zsrc' is not accesible");
             }
-            zsrc = fieldZsrc.get(zfRes);
-
+            return fieldZsrc.get(zfRes);
         } finally {
             zip.delete();
         }
+    }
 
+    @DontInline
+    private static void openAndCloseSubZipFile(File zip, CountDownLatch closeCountDown)
+        throws Throwable {
+        try {
+            try (var fos = new FileOutputStream(zip);
+                 var zos = new ZipOutputStream(fos)) {
+                zos.putNextEntry(new ZipEntry("hello"));
+                zos.write("hello".getBytes(US_ASCII));
+                zos.closeEntry();
+            }
+            var zf = new SubclassedZipFile(zip, closeCountDown);
+            var es = zf.entries();
+            while (es.hasMoreElements()) {
+                zf.getInputStream(es.nextElement()).read();
+            }
+            es = null;
+            zf = null;
+        } finally {
+            zip.delete();
+        }
+    }
+
+    private static void testZipFile() throws Throwable {
+        File dir = new File(System.getProperty("test.dir", "."));
+        File zip = File.createTempFile("testzf", "zip", dir);
+
+        Object zsrc = openAndCloseZipFile(zip);
         if (zsrc != null) {
             Field zfileField = zsrc.getClass().getDeclaredField("zfile");
             if (!zfileField.trySetAccessible()) {
@@ -219,23 +245,7 @@ public class TestCleaner {
         // test subclassed ZipFile, for behavioral compatibility.
         // should be removed if the finalize() method is finally removed.
         var closeCountDown = new CountDownLatch(1);
-        try {
-            try (var fos = new FileOutputStream(zip);
-                 var zos = new ZipOutputStream(fos)) {
-                zos.putNextEntry(new ZipEntry("hello"));
-                zos.write("hello".getBytes(US_ASCII));
-                zos.closeEntry();
-            }
-            var zf = new SubclassedZipFile(zip, closeCountDown);
-            var es = zf.entries();
-            while (es.hasMoreElements()) {
-                zf.getInputStream(es.nextElement()).read();
-            }
-            es = null;
-            zf = null;
-        } finally {
-            zip.delete();
-        }
+        openAndCloseSubZipFile(zip, closeCountDown);
         while (!closeCountDown.await(10, TimeUnit.MILLISECONDS)) {
             System.gc();
         }

@@ -198,7 +198,7 @@ class APITest {
             "help-doc.html",
             "index-all.html",
             "index.html",
-            "jquery/jquery-1.10.2.js",
+            "jquery/jquery-1.12.4.js",
             "jquery/jquery-ui.js",
             "jquery/jquery-ui.css",
             "jquery/jquery-ui.min.js",
