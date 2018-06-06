@@ -33,55 +33,16 @@ import java.util.*;
 import java.io.*;
 
 public class issynthetic002 {
-    final static String METHOD_NAME[] = {
-        "<init>",
-        "Mv",
-        "Mz", "Mz1", "Mz2",
-        "Mb", "Mb1", "Mb2",
-        "Mc", "Mc1", "Mc2",
-        "Md", "Md1", "Md2",
-        "Mf", "Mf1", "Mf2",
-        "Mi", "Mi1", "Mi2",
-        "Ml", "Ml1", "Ml2",
-        "Mr", "Mr1", "Mr2",
 
-        "MvF", "MlF", "MlF1", "MlF2",
-        "MvN", "MlN", "MlN1", "MlN2",
-        "MvS", "MlS", "MlS1", "MlS2",
-        "MvI", "MlI", "MlI1", "MlI2",
-        "MvY", "MlY", "MlY1", "MlY2",
-        "MvU", "MlU", "MlU1", "MlU2",
-        "MvR", "MlR", "MlR1", "MlR2",
-        "MvP", "MlP", "MlP1", "MlP2",
 
-        "MX", "MX1", "MX2",
-        "MO", "MO1", "MO2",
-
-        "MLF", "MLF1", "MLF2",
-        "MLN", "MLN1", "MLN2",
-        "MLS", "MLS1", "MLS2",
-        "MLI", "MLI1", "MLI2",
-        "MLY", "MLY1", "MLY2",
-        "MLU", "MLU1", "MLU2",
-        "MLR", "MLR1", "MLR2",
-        "MLP", "MLP1", "MLP2",
-
-        "ME", "ME1", "ME2",
-        "MEF", "MEF1", "MEF2",
-        "MEN", "MEN1", "MEN2",
-        "MES", "ME1S", "ME2S",
-        "MEI", "MEI1", "MEI2",
-        "MEY", "MEY1", "MEY2",
-        "MEU", "MEU1", "MEU2",
-        "MER", "MER1", "MER2",
-        "MEP", "MEP1", "MEP2"
-    };
+    final static String SYNTHETIC_METHOD_NAME = "test";
+    final static String SYNTHETIC_METHOD_SIGNATURE = "(Ljava/lang/Object;)Ljava/lang/Object;";
 
     private static Log log;
     private final static String prefix = "nsk.jdi.TypeComponent.isSynthetic.";
     private final static String className = "issynthetic002";
-    private final static String debugerName = prefix + className;
-    private final static String debugeeName = debugerName + "a";
+    private final static String debuggerName = prefix + className;
+    private final static String debuggeeName = debuggerName + "a";
     private final static String classToCheckName = prefix + "issynthetic002aClassToCheck";
 
     public static void main(String argv[]) {
@@ -92,38 +53,38 @@ public class issynthetic002 {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         log = new Log(out, argHandler);
         Binder binder = new Binder(argHandler, log);
-        Debugee debugee = binder.bindToDebugee(debugeeName
+        Debugee debuggee = binder.bindToDebugee(debuggeeName
                               + (argHandler.verbose() ? " -verbose" : ""));
-        VirtualMachine vm = debugee.VM();
+        VirtualMachine vm = debuggee.VM();
         boolean canGetSynthetic = vm.canGetSyntheticAttribute();
-        IOPipe pipe = new IOPipe(debugee);
+        IOPipe pipe = new IOPipe(debuggee);
         boolean testFailed = false;
         List methods;
         int totalSyntheticMethods = 0;
 
-        log.display("debuger> Value of canGetSyntheticAttribute in current "
+        log.display("debugger> Value of canGetSyntheticAttribute in current "
                   + "VM is " + canGetSynthetic);
 
-        // Connect with debugee and resume it
-        debugee.redirectStderr(out);
-        debugee.resume();
+        // Connect with debuggee and resume it
+        debuggee.redirectStderr(out);
+        debuggee.resume();
         String line = pipe.readln();
         if (line == null) {
-            log.complain("debuger FAILURE> UNEXPECTED debugee's signal - null");
+            log.complain("debugger FAILURE> UNEXPECTED debuggee's signal - null");
             return 2;
         }
         if (!line.equals("ready")) {
-            log.complain("debuger FAILURE> UNEXPECTED debugee's signal - "
+            log.complain("debugger FAILURE> UNEXPECTED debuggee's signal - "
                       + line);
             return 2;
         }
         else {
-            log.display("debuger> debugee's \"ready\" signal recieved.");
+            log.display("debugger> debuggee's \"ready\" signal received.");
         }
 
-        ReferenceType refType = debugee.classByName(classToCheckName);
+        ReferenceType refType = debuggee.classByName(classToCheckName);
         if (refType == null) {
-            log.complain("debuger FAILURE> Class " + classToCheckName
+            log.complain("debugger FAILURE> Class " + classToCheckName
                        + " not found.");
             return 2;
         }
@@ -132,51 +93,50 @@ public class issynthetic002 {
         try {
             methods = refType.methods();
         } catch (Exception e) {
-            log.complain("debuger FAILURE> Can't get methods from "
+            log.complain("debugger FAILURE> Can't get methods from "
                        + classToCheckName);
-            log.complain("debuger FAILURE> Exception: " + e);
+            log.complain("debugger FAILURE> Exception: " + e);
             return 2;
         }
         int totalMethods = methods.size();
         if (totalMethods < 1) {
-            log.complain("debuger FAILURE> Total number of methods in debuggee "
+            log.complain("debugger FAILURE> Total number of methods in debuggee "
                        + "read " + totalMethods);
             return 2;
         }
-        log.display("debuger> Total methods in debuggee read: "
-                  + totalMethods + " total methods in debuger: "
-                  + METHOD_NAME.length);
+        log.display("debugger> Total methods in debuggee read: "
+                  + totalMethods);
         for (int i = 0; i < totalMethods; i++) {
             Method method = (Method)methods.get(i);
             String name = method.name();
+            String signature = method.signature();
             boolean isSynthetic;
-            boolean isRealSynthetic = true;
 
             try {
                 isSynthetic = method.isSynthetic();
 
                 if (!canGetSynthetic) {
-                    log.complain("debuger FAILURE 1> Value of "
+                    log.complain("debugger FAILURE 1> Value of "
                                + "canGetSyntheticAttribute in current VM is "
                                + "false, so UnsupportedOperationException was "
                                + "expected for " + i + " method " + name);
                     testFailed = true;
                     continue;
                 } else {
-                    log.display("debuger> " + i + " method " + name + " with "
+                    log.display("debugger> " + i + " method " + name + " with "
                               + "synthetic value " + isSynthetic + " read "
                               + "without UnsupportedOperationException");
                 }
             } catch (UnsupportedOperationException e) {
                 if (canGetSynthetic) {
-                    log.complain("debuger FAILURE 2> Value of "
+                    log.complain("debugger FAILURE 2> Value of "
                                + "canGetSyntheticAttribute in current VM is "
                                + "true, but cannot get synthetic for method "
                                + "name.");
-                    log.complain("debuger FAILURE 2> Exception: " + e);
+                    log.complain("debugger FAILURE 2> Exception: " + e);
                     testFailed = true;
                 } else {
-                    log.display("debuger> UnsupportedOperationException was "
+                    log.display("debugger> UnsupportedOperationException was "
                               + "thrown while getting isSynthetic for " + i
                               + " method " + name + " because value "
                               + "canGetSynthetic is false.");
@@ -184,49 +144,39 @@ public class issynthetic002 {
                 continue;
             }
 
-            // Find out if method exists in list of methods
-            for (int j = 0; j < METHOD_NAME.length; j++) {
-                String nameFromList = METHOD_NAME[j];
-
-                if (nameFromList.equals(name)) {
-                    // Method found in list - is not synthetic
-
-                    isRealSynthetic = false;
-                    break;
-                }
-            }
-
-            if (isRealSynthetic != isSynthetic) {
-                log.complain("debuger FAILURE 3> Method's " + name
-                           + " synthetic is " + isSynthetic + ", but expected "
-                           + "is " + isRealSynthetic);
-                testFailed = true;
-                continue;
-            }
 
             if (isSynthetic) {
-                totalSyntheticMethods++;
+                if (SYNTHETIC_METHOD_NAME.equals(name) && SYNTHETIC_METHOD_SIGNATURE.equals(signature)) {
+                    totalSyntheticMethods++;
+                } else {
+                    testFailed = true;
+                    log.complain("debugger FAILURE 3> Found unexpected synthetic method " + name
+                            + signature);
+                }
             }
         }
 
         if (totalSyntheticMethods == 0) {
-            log.complain("debuger FAILURE 4> Synthetic methods not found.");
+            log.complain("debugger FAILURE 4> Synthetic methods not found.");
+            testFailed = true;
+        } else if (totalSyntheticMethods > 1 ) {
+            log.complain("debugger FAILURE 5> More than one Synthetic method is found.");
             testFailed = true;
         }
 
         pipe.println("quit");
-        debugee.waitFor();
-        int status = debugee.getStatus();
+        debuggee.waitFor();
+        int status = debuggee.getStatus();
         if (testFailed) {
-            log.complain("debuger FAILURE> TEST FAILED");
+            log.complain("debugger FAILURE> TEST FAILED");
             return 2;
         } else {
             if (status == 95) {
-                log.display("debuger> expected Debugee's exit "
+                log.display("debugger> expected Debuggee's exit "
                           + "status - " + status);
                 return 0;
             } else {
-                log.complain("debuger FAILURE> UNEXPECTED Debugee's exit "
+                log.complain("debugger FAILURE> UNEXPECTED Debuggee's exit "
                            + "status (not 95) - " + status);
                 return 2;
             }
