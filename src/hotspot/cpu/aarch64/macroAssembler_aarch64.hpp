@@ -1020,7 +1020,7 @@ public:
   address trampoline_call(Address entry, CodeBuffer *cbuf = NULL);
 
   static bool far_branches() {
-    return ReservedCodeCacheSize > branch_range;
+    return ReservedCodeCacheSize > branch_range || UseAOT;
   }
 
   // Jumps that can reach anywhere in the code cache.

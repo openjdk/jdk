@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -72,9 +73,9 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     if (preserve2 != noreg) { __ std(preserve2, frame_size - (++slot_nr) * wordSize, R1_SP); }
 
     if (UseCompressedOops) {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_pre_narrow_oop_entry), to, count);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry), to, count);
     } else {
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_pre_oop_entry), to, count);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_oop_entry), to, count);
     }
 
     slot_nr = 0;
@@ -98,7 +99,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ save_LR_CR(R0);
   __ push_frame(frame_size, R0);
   if (preserve != noreg) { __ std(preserve, frame_size - 1 * wordSize, R1_SP); }
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_post_entry), addr, count);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_post_entry), addr, count);
   if (preserve != noreg) { __ ld(preserve, frame_size - 1 * wordSize, R1_SP); }
   __ addi(R1_SP, R1_SP, frame_size); // pop_frame();
   __ restore_LR_CR(R0);
@@ -191,7 +192,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
   }
 
   if (pre_val->is_volatile() && preloaded) { __ mr(nv_save, pre_val); } // Save pre_val across C call if it was preloaded.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), pre_val, R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, R16_thread);
   if (pre_val->is_volatile() && preloaded) { __ mr(pre_val, nv_save); } // restore
 
   if (needs_frame) {
@@ -272,7 +273,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   __ bind(runtime);
 
   // Save the live input values.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), Rcard_addr, R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), Rcard_addr, R16_thread);
 
   __ bind(filtered);
 }

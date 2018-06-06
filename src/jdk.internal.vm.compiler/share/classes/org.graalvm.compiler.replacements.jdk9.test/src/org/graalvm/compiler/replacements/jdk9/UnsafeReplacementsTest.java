@@ -26,10 +26,14 @@ import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import org.graalvm.compiler.api.test.Graal;
+import org.graalvm.compiler.core.phases.HighTier;
+import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.replacements.test.MethodSubstitutionTest;
 import org.graalvm.compiler.runtime.RuntimeProvider;
 import org.graalvm.compiler.test.AddExports;
 import org.junit.Test;
+
+import java.lang.reflect.Field;
 
 @AddExports("java.base/jdk.internal.misc")
 public class UnsafeReplacementsTest extends MethodSubstitutionTest {
@@ -309,5 +313,201 @@ public class UnsafeReplacementsTest extends MethodSubstitutionTest {
         test("unsafeGetAndSetInt");
         test("unsafeGetAndSetLong");
         test("unsafeGetAndSetObject");
+    }
+
+    public static void fieldInstance() {
+        JdkInternalMiscUnsafeAccessTestBoolean.testFieldInstance();
+    }
+
+    @Test
+    public void testFieldInstance() {
+        test(new OptionValues(getInitialOptions(), HighTier.Options.Inline, false), "fieldInstance");
+    }
+
+    public static void array() {
+        JdkInternalMiscUnsafeAccessTestBoolean.testArray();
+    }
+
+    @Test
+    public void testArray() {
+        test(new OptionValues(getInitialOptions(), HighTier.Options.Inline, false), "array");
+    }
+
+    public static void fieldStatic() {
+        JdkInternalMiscUnsafeAccessTestBoolean.testFieldStatic();
+    }
+
+    @Test
+    public void testFieldStatic() {
+        test(new OptionValues(getInitialOptions(), HighTier.Options.Inline, false), "fieldStatic");
+    }
+
+    public static class JdkInternalMiscUnsafeAccessTestBoolean {
+        static final int ITERATIONS = 100000;
+
+        static final int WEAK_ATTEMPTS = 10;
+
+        static final long V_OFFSET;
+
+        static final Object STATIC_V_BASE;
+
+        static final long STATIC_V_OFFSET;
+
+        static final int ARRAY_OFFSET;
+
+        static final int ARRAY_SHIFT;
+
+        static {
+            try {
+                Field staticVField = UnsafeReplacementsTest.JdkInternalMiscUnsafeAccessTestBoolean.class.getDeclaredField("staticV");
+                STATIC_V_BASE = unsafe.staticFieldBase(staticVField);
+                STATIC_V_OFFSET = unsafe.staticFieldOffset(staticVField);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            try {
+                Field vField = UnsafeReplacementsTest.JdkInternalMiscUnsafeAccessTestBoolean.class.getDeclaredField("v");
+                V_OFFSET = unsafe.objectFieldOffset(vField);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            ARRAY_OFFSET = unsafe.arrayBaseOffset(boolean[].class);
+            int ascale = unsafe.arrayIndexScale(boolean[].class);
+            ARRAY_SHIFT = 31 - Integer.numberOfLeadingZeros(ascale);
+        }
+
+        static boolean staticV;
+
+        boolean v;
+
+        @BytecodeParserForceInline
+        public static void testFieldInstance() {
+            JdkInternalMiscUnsafeAccessTestBoolean t = new JdkInternalMiscUnsafeAccessTestBoolean();
+            for (int c = 0; c < ITERATIONS; c++) {
+                testAccess(t, V_OFFSET);
+            }
+        }
+
+        public static void testFieldStatic() {
+            for (int c = 0; c < ITERATIONS; c++) {
+                testAccess(STATIC_V_BASE, STATIC_V_OFFSET);
+            }
+        }
+
+        public static void testArray() {
+            boolean[] array = new boolean[10];
+            for (int c = 0; c < ITERATIONS; c++) {
+                for (int i = 0; i < array.length; i++) {
+                    testAccess(array, (((long) i) << ARRAY_SHIFT) + ARRAY_OFFSET);
+                }
+            }
+        }
+
+        public static void assertEquals(Object seen, Object expected, String message) {
+            if (seen != expected) {
+                throw new AssertionError(message + " - seen: " + seen + ", expected: " + expected);
+            }
+        }
+
+        // Checkstyle: stop
+        @BytecodeParserForceInline
+        public static void testAccess(Object base, long offset) {
+            // Advanced compare
+            {
+                boolean r = unsafe.compareAndExchangeBoolean(base, offset, false, true);
+                assertEquals(r, false, "success compareAndExchange boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, true, "success compareAndExchange boolean value");
+            }
+
+            {
+                boolean r = unsafe.compareAndExchangeBoolean(base, offset, false, false);
+                assertEquals(r, true, "failing compareAndExchange boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, true, "failing compareAndExchange boolean value");
+            }
+
+            {
+                boolean r = unsafe.compareAndExchangeBooleanAcquire(base, offset, true, false);
+                assertEquals(r, true, "success compareAndExchangeAcquire boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, false, "success compareAndExchangeAcquire boolean value");
+            }
+
+            {
+                boolean r = unsafe.compareAndExchangeBooleanAcquire(base, offset, true, false);
+                assertEquals(r, false, "failing compareAndExchangeAcquire boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, false, "failing compareAndExchangeAcquire boolean value");
+            }
+
+            {
+                boolean r = unsafe.compareAndExchangeBooleanRelease(base, offset, false, true);
+                assertEquals(r, false, "success compareAndExchangeRelease boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, true, "success compareAndExchangeRelease boolean value");
+            }
+
+            {
+                boolean r = unsafe.compareAndExchangeBooleanRelease(base, offset, false, false);
+                assertEquals(r, true, "failing compareAndExchangeRelease boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, true, "failing compareAndExchangeRelease boolean value");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = unsafe.weakCompareAndSetBooleanPlain(base, offset, true, false);
+                }
+                assertEquals(success, true, "weakCompareAndSetPlain boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, false, "weakCompareAndSetPlain boolean value");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = unsafe.weakCompareAndSetBooleanAcquire(base, offset, false, true);
+                }
+                assertEquals(success, true, "weakCompareAndSetAcquire boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, true, "weakCompareAndSetAcquire boolean");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = unsafe.weakCompareAndSetBooleanRelease(base, offset, true, false);
+                }
+                assertEquals(success, true, "weakCompareAndSetRelease boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, false, "weakCompareAndSetRelease boolean");
+            }
+
+            {
+                boolean success = false;
+                for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                    success = unsafe.weakCompareAndSetBoolean(base, offset, false, true);
+                }
+                assertEquals(success, true, "weakCompareAndSet boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, true, "weakCompareAndSet boolean");
+            }
+
+            unsafe.putBoolean(base, offset, false);
+
+            // Compare set and get
+            {
+                boolean o = unsafe.getAndSetBoolean(base, offset, true);
+                assertEquals(o, false, "getAndSet boolean");
+                boolean x = unsafe.getBoolean(base, offset);
+                assertEquals(x, true, "getAndSet boolean value");
+            }
+
+        }
+        // Checkstyle: resume
     }
 }

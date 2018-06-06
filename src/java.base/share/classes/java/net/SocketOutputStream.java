@@ -109,10 +109,6 @@ class SocketOutputStream extends FileOutputStream {
         try {
             socketWrite0(fd, b, off, len);
         } catch (SocketException se) {
-            if (se instanceof sun.net.ConnectionResetException) {
-                impl.setConnectionReset();
-                se = new SocketException("Connection reset");
-            }
             if (impl.isClosedOrPending()) {
                 throw new SocketException("Socket closed");
             } else {

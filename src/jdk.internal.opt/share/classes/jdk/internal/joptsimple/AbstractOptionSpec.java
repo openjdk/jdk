@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -56,7 +56,6 @@
 package jdk.internal.joptsimple;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import static java.util.Collections.*;
@@ -70,22 +69,22 @@ import static jdk.internal.joptsimple.internal.Strings.*;
  * @param <V> represents the type of the arguments this option accepts
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
-abstract class AbstractOptionSpec<V> implements OptionSpec<V>, OptionDescriptor {
-    private final List<String> options = new ArrayList<String>();
+public abstract class AbstractOptionSpec<V> implements OptionSpec<V>, OptionDescriptor {
+    private final List<String> options = new ArrayList<>();
     private final String description;
     private boolean forHelp;
 
-    protected AbstractOptionSpec( String option ) {
+    AbstractOptionSpec( String option ) {
         this( singletonList( option ), EMPTY );
     }
 
-    protected AbstractOptionSpec( Collection<String> options, String description ) {
+    AbstractOptionSpec( List<String> options, String description ) {
         arrangeOptions( options );
 
         this.description = description;
     }
 
-    public final Collection<String> options() {
+    public final List<String> options() {
         return unmodifiableList( options );
     }
 
@@ -119,12 +118,8 @@ abstract class AbstractOptionSpec<V> implements OptionSpec<V>, OptionDescriptor 
     protected V convertWith( ValueConverter<V> converter, String argument ) {
         try {
             return Reflection.convertWith( converter, argument );
-        }
-        catch ( ReflectionException ex ) {
-            throw new OptionArgumentConversionException( options(), argument, ex );
-        }
-        catch ( ValueConversionException ex ) {
-            throw new OptionArgumentConversionException( options(), argument, ex );
+        } catch ( ReflectionException | ValueConversionException ex ) {
+            throw new OptionArgumentConversionException( this, argument, ex );
         }
     }
 
@@ -139,14 +134,14 @@ abstract class AbstractOptionSpec<V> implements OptionSpec<V>, OptionDescriptor 
     abstract void handleOption( OptionParser parser, ArgumentList arguments, OptionSet detectedOptions,
         String detectedArgument );
 
-    private void arrangeOptions( Collection<String> unarranged ) {
+    private void arrangeOptions( List<String> unarranged ) {
         if ( unarranged.size() == 1 ) {
             options.addAll( unarranged );
             return;
         }
 
-        List<String> shortOptions = new ArrayList<String>();
-        List<String> longOptions = new ArrayList<String>();
+        List<String> shortOptions = new ArrayList<>();
+        List<String> longOptions = new ArrayList<>();
 
         for ( String each : unarranged ) {
             if ( each.length() == 1 )

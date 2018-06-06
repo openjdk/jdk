@@ -26,7 +26,6 @@
 #define CPU_X86_VM_INTERP_MASM_X86_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 

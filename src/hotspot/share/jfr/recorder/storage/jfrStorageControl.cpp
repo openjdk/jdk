@@ -26,7 +26,7 @@
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 
 // returns the updated value
 static jlong atomic_add(size_t value, size_t volatile* const dest) {

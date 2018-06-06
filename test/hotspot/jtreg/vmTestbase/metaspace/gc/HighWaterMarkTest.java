@@ -187,30 +187,22 @@ public class HighWaterMarkTest extends FirstGCTest {
         }
         System.out.println("% GC has been invoked: " + gcCount + " times");
 
-        if (VMRuntimeEnvUtils.isVMOptionEnabled("UseG1GC") &&
-              VMRuntimeEnvUtils.isVMOptionEnabled("ClassUnloadingWithConcurrentMark")) {
-            System.out.println("% isG1ClassUnloading: true");
-            if (gcCount != 0) {
-                throw new Fault ("G1 should unload classes, full GC is not expected");
-            }
+        if (maxMetaspaceFreeRatio <= 1) {
+            // min/max = 0/1  boundary value
+            // GC should happen very often
+            checkGCCount(gcCount, 20, -1);
+        } else if (minMetaspaceFreeRatio >= 99) {
+            // min/max = 99/100  boundary value
+            // GC should happen very rare
+            checkGCCount(gcCount, -1, 2);
+        } else if (minMetaspaceFreeRatio >= 10  && maxMetaspaceFreeRatio <= 20) {
+            // GC should happen quite often
+            checkGCCount(gcCount, 3, 30);
+        } else if (minMetaspaceFreeRatio >= 70  && maxMetaspaceFreeRatio <= 80) {
+            // GC should happen quite often
+            checkGCCount(gcCount, 1, 3);
         } else {
-            if (maxMetaspaceFreeRatio <= 1) {
-                // min/max = 0/1  boundary value
-                // GC should happen very often
-                checkGCCount(gcCount, 20, -1);
-            } else if (minMetaspaceFreeRatio >= 99) {
-                // min/max = 99/100  boundary value
-                // GC should happen very rare
-                checkGCCount(gcCount, -1, 2);
-            } else if (minMetaspaceFreeRatio >= 10  && maxMetaspaceFreeRatio <= 20) {
-                // GC should happen quite often
-                checkGCCount(gcCount, 3, 30);
-            } else if (minMetaspaceFreeRatio >= 70  && maxMetaspaceFreeRatio <= 80) {
-                // GC should happen quite often
-                checkGCCount(gcCount, 1, 3);
-            } else {
-                // hard to estimate
-            }
+            // hard to estimate
         }
 
     }

@@ -64,7 +64,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=-Xmx128M ${test.vm.opts} ${test.java.opts}"
+ *      "-debugee.vmkeys=-Xmx256M ${test.vm.opts} ${test.java.opts}"
  */
 
 package nsk.jdi.ObjectReference.referringObjects.referringObjects003;

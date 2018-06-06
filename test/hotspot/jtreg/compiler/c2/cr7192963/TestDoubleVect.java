@@ -26,7 +26,7 @@
  * @bug 7192963
  * @summary assert(_in[req-1] == this) failed: Must pass arg count to 'new'
  *
- * @run main/othervm/timeout=400 -Xbatch -Xmx64m compiler.c2.cr7192963.TestDoubleVect
+ * @run main/othervm/timeout=400 -Xbatch -Xmx128m compiler.c2.cr7192963.TestDoubleVect
  */
 
 package compiler.c2.cr7192963;
@@ -201,4 +201,3 @@ public class TestDoubleVect {
     return 0;
   }
 }
-

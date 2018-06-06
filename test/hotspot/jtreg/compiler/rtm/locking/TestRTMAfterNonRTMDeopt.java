@@ -167,7 +167,7 @@ public class TestRTMAfterNonRTMDeopt {
                 synchronized(monitor) {
                     a[0]++;
                     if (abort) {
-                        Test.field = Test.UNSAFE.addressSize();
+                        Test.field = Test.UNSAFE.pageSize();
                     }
                 }
             } catch (Throwable t) {

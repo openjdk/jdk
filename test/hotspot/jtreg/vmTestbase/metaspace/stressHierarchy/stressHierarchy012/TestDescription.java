@@ -28,6 +28,7 @@
  * @summary converted from VM Testbase metaspace/stressHierarchy/stressHierarchy012.
  * VM Testbase keywords: [nonconcurrent, javac, no_cds]
  *
+ * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
  * @build sun.hotspot.WhiteBox
@@ -48,4 +49,3 @@
  *      -hierarchyType MIXED
  *      -triggerUnloadingByFillingMetaspace
  */
-

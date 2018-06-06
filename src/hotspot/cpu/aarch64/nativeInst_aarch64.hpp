@@ -234,8 +234,12 @@ class NativeCall: public NativeInstruction {
   }
 
 #if INCLUDE_AOT
+  // Return true iff a call from instr to target is out of range.
+  // Used for calls from JIT- to AOT-compiled code.
   static bool is_far_call(address instr, address target) {
-    return !Assembler::reachable_from_branch_at(instr, target);
+    // On AArch64 we use trampolines which can reach anywhere in the
+    // address space, so calls are never out of range.
+    return false;
   }
 #endif
 

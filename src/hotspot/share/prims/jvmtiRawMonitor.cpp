@@ -27,7 +27,7 @@
 #include "prims/jvmtiRawMonitor.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 
 GrowableArray<JvmtiRawMonitor*> *JvmtiPendingMonitors::_monitors = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JvmtiRawMonitor*>(1,true);

@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"

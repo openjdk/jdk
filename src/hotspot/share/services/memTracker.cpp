@@ -25,7 +25,7 @@
 #include "jvm.h"
 
 #include "runtime/mutex.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memBaseline.hpp"

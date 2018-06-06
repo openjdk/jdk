@@ -365,20 +365,32 @@ void CollectedHeap::check_for_valid_allocation_state() {
 }
 #endif
 
-HeapWord* CollectedHeap::allocate_from_tlab_slow(Klass* klass, Thread* thread, size_t size) {
+HeapWord* CollectedHeap::obj_allocate_raw(Klass* klass, size_t size,
+                                          bool* gc_overhead_limit_was_exceeded, TRAPS) {
+  if (UseTLAB) {
+    HeapWord* result = allocate_from_tlab(klass, size, THREAD);
+    if (result != NULL) {
+      return result;
+    }
+  }
+  return Universe::heap()->mem_allocate(size, gc_overhead_limit_was_exceeded);
+}
+
+HeapWord* CollectedHeap::allocate_from_tlab_slow(Klass* klass, size_t size, TRAPS) {
+  ThreadLocalAllocBuffer& tlab = THREAD->tlab();
 
   // Retain tlab and allocate object in shared space if
   // the amount free in the tlab is too large to discard.
-  if (thread->tlab().free() > thread->tlab().refill_waste_limit()) {
-    thread->tlab().record_slow_allocation(size);
+  if (tlab.free() > tlab.refill_waste_limit()) {
+    tlab.record_slow_allocation(size);
     return NULL;
   }
 
   // Discard tlab and allocate a new one.
   // To minimize fragmentation, the last TLAB may be smaller than the rest.
-  size_t new_tlab_size = thread->tlab().compute_size(size);
+  size_t new_tlab_size = tlab.compute_size(size);
 
-  thread->tlab().clear_before_allocation();
+  tlab.clear_before_allocation();
 
   if (new_tlab_size == 0) {
     return NULL;
@@ -397,7 +409,7 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(Klass* klass, Thread* thread, s
   assert(actual_tlab_size != 0, "Allocation succeeded but actual size not updated. obj at: " PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
          p2i(obj), min_tlab_size, new_tlab_size);
 
-  AllocTracer::send_allocation_in_new_tlab(klass, obj, actual_tlab_size * HeapWordSize, size * HeapWordSize, thread);
+  AllocTracer::send_allocation_in_new_tlab(klass, obj, actual_tlab_size * HeapWordSize, size * HeapWordSize, THREAD);
 
   if (ZeroTLAB) {
     // ..and clear it.
@@ -412,7 +424,7 @@ HeapWord* CollectedHeap::allocate_from_tlab_slow(Klass* klass, Thread* thread, s
     Copy::fill_to_words(obj + hdr_size, actual_tlab_size - hdr_size, badHeapWordVal);
 #endif // ASSERT
   }
-  thread->tlab().fill(obj, obj + size, actual_tlab_size);
+  tlab.fill(obj, obj + size, actual_tlab_size);
   return obj;
 }
 

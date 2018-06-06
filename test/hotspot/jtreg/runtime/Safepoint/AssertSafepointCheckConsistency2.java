@@ -52,7 +52,7 @@ public class AssertSafepointCheckConsistency2 {
                   "-XX:+WhiteBoxAPI",
                   "-XX:-TransmitErrorReport",
                   "-XX:-CreateCoredumpOnCrash",
-                  "-Xmx32m",
+                  "-Xmx128m",
                   "AssertSafepointCheckConsistency2",
                   "test");
 

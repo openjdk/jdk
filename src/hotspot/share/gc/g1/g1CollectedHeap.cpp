@@ -86,7 +86,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
@@ -3355,7 +3355,7 @@ private:
       add_to_postponed_list(nm);
     }
 
-    // Mark that this thread has been cleaned/unloaded.
+    // Mark that this nmethod has been cleaned/unloaded.
     // After this call, it will be safe to ask if this nmethod was unloaded or not.
     nm->set_unloading_clock(CompiledMethod::global_unloading_clock());
   }

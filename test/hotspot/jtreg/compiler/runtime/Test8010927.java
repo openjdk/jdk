@@ -31,7 +31,7 @@
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Xmx64m -XX:NewSize=20971520
+ *                   -XX:+WhiteBoxAPI -Xbootclasspath/a:. -Xmx128m -XX:NewSize=20971520
  *                   -XX:MaxNewSize=32m -XX:-UseTLAB -XX:-UseAdaptiveSizePolicy
  *                   compiler.runtime.Test8010927
  */

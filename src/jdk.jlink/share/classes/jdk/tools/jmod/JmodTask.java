@@ -1224,7 +1224,7 @@ public class JmodTask {
 
             all.put(CMD_FILENAME, new OptionDescriptor() {
                 @Override
-                public Collection<String> options() {
+                public List<String> options() {
                     List<String> ret = new ArrayList<>();
                     ret.add(CMD_FILENAME);
                     return ret;
@@ -1314,7 +1314,7 @@ public class JmodTask {
                         .withValuesConvertedBy(new PatternConverter());
 
         OptionSpec<Void> help
-                = parser.acceptsAll(Set.of("h", "help", "?"), getMessage("main.opt.help"))
+                = parser.acceptsAll(List.of("h", "help", "?"), getMessage("main.opt.help"))
                         .forHelp();
 
         OptionSpec<Void> helpExtra
@@ -1347,7 +1347,7 @@ public class JmodTask {
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);
 
         OptionSpec<List<Path>> modulePath
-                = parser.acceptsAll(Set.of("p", "module-path"),
+                = parser.acceptsAll(List.of("p", "module-path"),
                                     getMessage("main.opt.module-path"))
                         .withRequiredArg()
                         .withValuesConvertedBy(DirPathConverter.INSTANCE);

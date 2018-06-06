@@ -2967,6 +2967,7 @@ class Assembler : public AbstractAssembler {
 
   // branch never (nop)
   inline void z_nop();
+  inline void nop(); // Used by shared code.
 
   // ===============================================================================================
 

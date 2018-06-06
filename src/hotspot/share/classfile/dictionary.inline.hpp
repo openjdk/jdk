@@ -26,7 +26,7 @@
 #define SHARE_VM_CLASSFILE_DICTIONARY_INLINE_HPP
 
 #include "classfile/dictionary.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 
 inline ProtectionDomainEntry* DictionaryEntry::pd_set_acquire() const {
   return OrderAccess::load_acquire(&_pd_set);

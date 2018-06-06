@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,8 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.inline.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/codeBuffer.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_zero.hpp"
 #include "oops/oop.inline.hpp"

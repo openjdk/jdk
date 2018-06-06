@@ -103,6 +103,7 @@
   LOG_TAG(normalize) \
   LOG_TAG(objecttagging) \
   LOG_TAG(obsolete) \
+  LOG_TAG(oom) \
   LOG_TAG(oopmap) \
   LOG_TAG(oopstorage) \
   LOG_TAG(os) \

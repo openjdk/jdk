@@ -180,14 +180,13 @@ public abstract class MetaspaceBaseGC {
 
     /**
      * Reads gc.log file and counts GC induced by metaspace.
-     * Note: this method doesn't work for ConcMarkSweep...
      * @return how many times GC induced by metaspace has occurred.
      */
     protected int getMetaspaceGCCount() {
         int count = 0;
         try {
             for (String line: readGCLog()) {
-                if (line.indexOf("Pause Full") > 0 && line.indexOf("Meta") > 0) {
+                if (line.indexOf("Metadata GC ") > 0) {
                     count++;
                 }
             }

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 
 #include "aot/aotLoader.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/filemap.hpp"
@@ -37,11 +38,13 @@
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspaceTracer.hpp"
+#include "memory/universe.hpp"
 #include "runtime/init.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 
@@ -1270,7 +1273,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
   tracer()->report_metadata_oom(loader_data, word_size, type, mdtype);
 
   // If result is still null, we are out of memory.
-  Log(gc, metaspace, freelist) log;
+  Log(gc, metaspace, freelist, oom) log;
   if (log.is_info()) {
     log.info("Metaspace (%s) allocation failed for size " SIZE_FORMAT,
              is_class_space_allocation(mdtype) ? "class" : "data", word_size);

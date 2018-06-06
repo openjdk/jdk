@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -98,22 +98,20 @@ public final class Reflection {
 
     private static <V> ValueConverter<V> valueOfConverter( Class<V> clazz ) {
         try {
-            Method valueOf = clazz.getDeclaredMethod( "valueOf", String.class );
+            Method valueOf = clazz.getMethod( "valueOf", String.class );
             if ( meetsConverterRequirements( valueOf, clazz ) )
-                return new MethodInvokingValueConverter<V>( valueOf, clazz );
+                return new MethodInvokingValueConverter<>( valueOf, clazz );
 
             return null;
-        }
-        catch ( NoSuchMethodException ignored ) {
+        } catch ( NoSuchMethodException ignored ) {
             return null;
         }
     }
 
     private static <V> ValueConverter<V> constructorConverter( Class<V> clazz ) {
         try {
-            return new ConstructorInvokingValueConverter<V>( clazz.getConstructor( String.class ) );
-        }
-        catch ( NoSuchMethodException ignored ) {
+            return new ConstructorInvokingValueConverter<>( clazz.getConstructor( String.class ) );
+        } catch ( NoSuchMethodException ignored ) {
             return null;
         }
     }
@@ -130,8 +128,7 @@ public final class Reflection {
     public static <T> T instantiate( Constructor<T> constructor, Object... args ) {
         try {
             return constructor.newInstance( args );
-        }
-        catch ( Exception ex ) {
+        } catch ( Exception ex ) {
             throw reflectionException( ex );
         }
     }
@@ -147,8 +144,7 @@ public final class Reflection {
     public static Object invoke( Method method, Object... args ) {
         try {
             return method.invoke( null, args );
-        }
-        catch ( Exception ex ) {
+        } catch ( Exception ex ) {
             throw reflectionException( ex );
         }
     }

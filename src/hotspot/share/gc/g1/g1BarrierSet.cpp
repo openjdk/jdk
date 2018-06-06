@@ -72,21 +72,6 @@ void G1BarrierSet::enqueue(oop pre_val) {
   }
 }
 
-void G1BarrierSet::write_ref_array_pre_oop_entry(oop* dst, size_t length) {
-  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
-  bs->write_ref_array_pre(dst, length, false);
-}
-
-void G1BarrierSet::write_ref_array_pre_narrow_oop_entry(narrowOop* dst, size_t length) {
-  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
-  bs->write_ref_array_pre(dst, length, false);
-}
-
-void G1BarrierSet::write_ref_array_post_entry(HeapWord* dst, size_t length) {
-  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
-  bs->G1BarrierSet::write_ref_array(dst, length);
-}
-
 template <class T> void
 G1BarrierSet::write_ref_array_pre_work(T* dst, size_t count) {
   if (!_satb_mark_queue_set.is_active()) return;

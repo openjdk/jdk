@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 6482247
  * @summary Test that creating MXBeans does not introduce memory leaks.
+ * @requires vm.opt.final.ClassUnloading
  * @author Eamonn McManus
  *
  * @run build LeakTest RandomMXBeanTest MerlinMXBean TigerMXBean

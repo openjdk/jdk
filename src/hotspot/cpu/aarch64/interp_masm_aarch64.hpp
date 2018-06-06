@@ -27,7 +27,6 @@
 #define CPU_AARCH64_VM_INTERP_MASM_AARCH64_64_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 

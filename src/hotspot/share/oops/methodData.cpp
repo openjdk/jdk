@@ -37,7 +37,7 @@
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"

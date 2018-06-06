@@ -43,9 +43,8 @@ import jdk.test.lib.process.ProcessTools;
 public class TestJfrJavaBase {
 
     private static void checkOutput(OutputAnalyzer output) {
-        output.shouldContain("jdk.jfr not found.");
+        output.shouldContain("Module jdk.jfr not found.");
         output.shouldContain("Flight Recorder can not be enabled.");
-        output.shouldContain("To use Flight Recorder, you might need to add \"--add-modules jdk.jfr\" to the VM command-line options.");
     }
 
     public static void main(String[] args) throws Exception {

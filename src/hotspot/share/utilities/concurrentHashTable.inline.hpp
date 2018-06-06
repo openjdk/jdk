@@ -27,7 +27,7 @@
 
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/concurrentHashTable.hpp"
 #include "utilities/globalCounter.inline.hpp"

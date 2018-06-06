@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 
 // Alternating epochs on each rotation allow for concurrent tagging.
 // The regular epoch shift happens only during a safepoint.
