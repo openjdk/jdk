@@ -52,10 +52,12 @@ import static jdk.test.lib.Asserts.assertEquals;
 public class InvokeTest {
     static MethodHandles.Lookup LOOKUP = MethodHandleHelper.IMPL_LOOKUP;
 
-    static final MethodHandle virtualMH;  // invokevirtual   T.f1
-    static final MethodHandle staticMH;   // invokestatic    T.f2
-    static final MethodHandle intfMH;     // invokeinterface I.f1
-    static final MethodHandle specialMH;  // invokespecial   T.f4 T
+    static final MethodHandle virtualMH; // invokevirtual   T.f1
+    static final MethodHandle staticMH;  // invokestatic    T.f2
+    static final MethodHandle intfMH;    // invokeinterface I.f3
+    static final MethodHandle defaultMH; // invokevirtual   T.f3
+    static final MethodHandle specialMH; // invokespecial   T.f4 T
+    static final MethodHandle privateMH; // invokespecial   I.f4 T
     static final MethodHandle basicMH;
 
     static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -69,7 +71,9 @@ public class InvokeTest {
             virtualMH  = LOOKUP.findVirtual(T.class, "f1", mtype);
             staticMH   = LOOKUP.findStatic (T.class, "f2", mtype);
             intfMH     = LOOKUP.findVirtual(I.class, "f3", mtype);
+            defaultMH  = LOOKUP.findVirtual(T.class, "f3", mtype);
             specialMH  = LOOKUP.findSpecial(T.class, "f4", mtype, T.class);
+            privateMH  = LOOKUP.findSpecial(I.class, "f4", mtype, I.class);
             basicMH    = NonInlinedReinvoker.make(staticMH);
         } catch (Exception e) {
             throw new Error(e);
@@ -92,24 +96,51 @@ public class InvokeTest {
         @DontInline public Class<?> f3() { if (doDeopt) WB.deoptimizeAll(); return P2.class; }
     }
 
-    static interface I {
+    interface I {
         @DontInline default Class<?> f3() { if (doDeopt) WB.deoptimizeAll(); return I.class; }
+        @DontInline private Class<?> f4() { if (doDeopt) WB.deoptimizeAll(); return I.class; }
     }
 
+    interface J1 extends I {
+        @DontInline default Class<?> f3() { if (doDeopt) WB.deoptimizeAll(); return J1.class; }
+    }
+
+    interface J2 extends I {
+        @DontInline default Class<?> f3() { if (doDeopt) WB.deoptimizeAll(); return J2.class; }
+    }
+
+    interface J3 extends I {
+        @DontInline default Class<?> f3() { if (doDeopt) WB.deoptimizeAll(); return J3.class; }
+    }
+
+    static class Q1 extends T implements J1 {}
+    static class Q2 extends T implements J2 {}
+    static class Q3 extends T implements J3 {}
+
     @DontInline
-    static void linkToVirtual(Object obj, Class<?> extecpted) {
+    static void linkToVirtual(T recv, Class<?> expected) {
         try {
-            Class<?> cls = (Class<?>)virtualMH.invokeExact((T)obj);
-            assertEquals(cls, obj.getClass());
+            Class<?> cls = (Class<?>)virtualMH.invokeExact(recv);
+            assertEquals(cls, expected);
         } catch (Throwable e) {
             throw new Error(e);
         }
     }
 
     @DontInline
-    static void linkToInterface(Object obj, Class<?> expected) {
+    static void linkToVirtualDefault(T recv, Class<?> expected) {
         try {
-            Class<?> cls = (Class<?>)intfMH.invokeExact((I)obj);
+            Class<?> cls = (Class<?>)defaultMH.invokeExact(recv);
+            assertEquals(cls, expected);
+        } catch (Throwable e) {
+            throw new Error(e);
+        }
+    }
+
+    @DontInline
+    static void linkToInterface(I recv, Class<?> expected) {
+        try {
+            Class<?> cls = (Class<?>)intfMH.invokeExact(recv);
             assertEquals(cls, expected);
         } catch (Throwable e) {
             throw new Error(e);
@@ -127,14 +158,25 @@ public class InvokeTest {
     }
 
     @DontInline
-    static void linkToSpecial(Object obj, Class<?> expected) {
+    static void linkToSpecial(T recv, Class<?> expected) {
         try {
-            Class<?> cls = (Class<?>)specialMH.invokeExact((T)obj);
+            Class<?> cls = (Class<?>)specialMH.invokeExact(recv);
             assertEquals(cls, expected);
         } catch (Throwable e) {
             throw new Error(e);
         }
     }
+
+    @DontInline
+    static void linkToSpecialIntf(I recv, Class<?> expected) {
+        try {
+            Class<?> cls = (Class<?>)privateMH.invokeExact(recv);
+            assertEquals(cls, expected);
+        } catch (Throwable e) {
+            throw new Error(e);
+        }
+    }
+
 
     @DontInline
     static void invokeBasic() {
@@ -171,13 +213,33 @@ public class InvokeTest {
 
         // Monomorphic case (optimized virtual call)
         run(() -> linkToVirtual(new T(), T.class));
+        run(() -> linkToVirtualDefault(new T(), I.class));
 
-        // Megamorphic case (virtual call)
-        Object[] recv = new Object[] { new T(), new P1(), new P2() };
+        // Megamorphic case (optimized virtual call)
         run(() -> {
-            for (Object r : recv) {
-                linkToVirtual(r, r.getClass());
-            }});
+            linkToVirtual(new T() {}, T.class);
+            linkToVirtual(new T() {}, T.class);
+            linkToVirtual(new T() {}, T.class);
+        });
+
+        run(() -> {
+            linkToVirtualDefault(new T(){}, I.class);
+            linkToVirtualDefault(new T(){}, I.class);
+            linkToVirtualDefault(new T(){}, I.class);
+        });
+
+        // Megamorphic case (virtual call), multiple implementations
+        run(() -> {
+            linkToVirtual(new T(),  T.class);
+            linkToVirtual(new P1(), P1.class);
+            linkToVirtual(new P2(), P2.class);
+        });
+
+        run(() -> {
+            linkToVirtualDefault(new Q1(), J1.class);
+            linkToVirtualDefault(new Q2(), J2.class);
+            linkToVirtualDefault(new Q3(), J3.class);
+        });
     }
 
     static void testInterface() {
@@ -190,17 +252,18 @@ public class InvokeTest {
         run(() -> linkToInterface(new T(), I.class));
 
         // Megamorphic case (virtual call)
-        Object[][] recv = new Object[][] {{new T(), I.class}, {new P1(), P1.class}, {new P2(), P2.class}};
         run(() -> {
-            for (Object[] r : recv) {
-                linkToInterface(r[0], (Class<?>)r[1]);
-            }});
+            linkToInterface(new T(),  I.class);
+            linkToInterface(new P1(), P1.class);
+            linkToInterface(new P2(), P2.class);
+        });
     }
 
     static void testSpecial() {
         System.out.println("linkToSpecial");
         // Monomorphic case (optimized virtual call)
         run(() -> linkToSpecial(new T(), T.class));
+        run(() -> linkToSpecialIntf(new T(), I.class));
     }
 
     static void testStatic() {

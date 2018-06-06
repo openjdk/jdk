@@ -53,6 +53,9 @@
   diagnostic(bool, StressGCM, false,                                        \
           "Randomize instruction scheduling in GCM")                        \
                                                                             \
+  develop(bool, StressMethodHandleLinkerInlining, false,                    \
+          "Stress inlining through method handle linkers")                  \
+                                                                            \
   develop(intx, OptoPrologueNops, 0,                                        \
           "Insert this many extra nop instructions "                        \
           "in the prologue of every nmethod")                               \

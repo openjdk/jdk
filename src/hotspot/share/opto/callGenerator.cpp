@@ -932,7 +932,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           speculative_receiver_type = (receiver_type != NULL) ? receiver_type->speculative_type() : NULL;
         }
         CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms,
-                                              true /* allow_inline */,
+                                              !StressMethodHandleLinkerInlining /* allow_inline */,
                                               PROB_ALWAYS,
                                               speculative_receiver_type);
         return cg;
