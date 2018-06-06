@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,19 @@
  *
  */
 
-#ifndef OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_INLINE_HPP
-#define OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_INLINE_HPP
+#ifndef OS_CPU_LINUX_SPARC_VM_ORDERACCESS_LINUX_SPARC_HPP
+#define OS_CPU_LINUX_SPARC_VM_ORDERACCESS_LINUX_SPARC_HPP
 
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
-#include "runtime/os.hpp"
-
-// Compiler version last used for testing: solaris studio 12u3
-// Please update this information when this file changes
+// Included in orderAccess.hpp header file.
 
 // Implementation of class OrderAccess.
 
 // A compiler barrier, forcing the C++ compiler to invalidate all memory assumptions
-inline void compiler_barrier() {
+static inline void compiler_barrier() {
   __asm__ volatile ("" : : : "memory");
 }
+
+// Assume TSO.
 
 inline void OrderAccess::loadload()   { compiler_barrier(); }
 inline void OrderAccess::storestore() { compiler_barrier(); }
@@ -48,14 +45,7 @@ inline void OrderAccess::acquire()    { compiler_barrier(); }
 inline void OrderAccess::release()    { compiler_barrier(); }
 
 inline void OrderAccess::fence() {
-  if (os::is_MP()) {
-#ifdef AMD64
-    __asm__ volatile ("lock; addl $0,0(%%rsp)" : : : "cc", "memory");
-#else
-    __asm__ volatile ("lock; addl $0,0(%%esp)" : : : "cc", "memory");
-#endif
-  }
-  compiler_barrier();
+  __asm__ volatile ("membar  #StoreLoad" : : : "memory");
 }
 
-#endif // OS_CPU_SOLARIS_X86_VM_ORDERACCESS_SOLARIS_X86_INLINE_HPP
+#endif // OS_CPU_LINUX_SPARC_VM_ORDERACCESS_LINUX_SPARC_HPP

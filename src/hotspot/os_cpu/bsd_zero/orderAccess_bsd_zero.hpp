@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,10 +23,10 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ZERO_VM_ORDERACCESS_LINUX_ZERO_INLINE_HPP
-#define OS_CPU_LINUX_ZERO_VM_ORDERACCESS_LINUX_ZERO_INLINE_HPP
+#ifndef OS_CPU_BSD_ZERO_VM_ORDERACCESS_BSD_ZERO_HPP
+#define OS_CPU_BSD_ZERO_VM_ORDERACCESS_BSD_ZERO_HPP
 
-#include "runtime/orderAccess.hpp"
+// Included in orderAccess.hpp header file.
 
 #ifdef ARM
 
@@ -56,15 +56,7 @@ typedef void (__kernel_dmb_t) (void);
 
 #else // PPC
 
-#ifdef ALPHA
-
-#define LIGHT_MEM_BARRIER __sync_synchronize()
-
-#else // ALPHA
-
 #define LIGHT_MEM_BARRIER __asm __volatile ("":::"memory")
-
-#endif // ALPHA
 
 #endif // PPC
 
@@ -80,7 +72,6 @@ inline void OrderAccess::storeload()  { FULL_MEM_BARRIER;  }
 
 inline void OrderAccess::acquire()    { LIGHT_MEM_BARRIER; }
 inline void OrderAccess::release()    { LIGHT_MEM_BARRIER; }
-
 inline void OrderAccess::fence()      { FULL_MEM_BARRIER;  }
 
-#endif // OS_CPU_LINUX_ZERO_VM_ORDERACCESS_LINUX_ZERO_INLINE_HPP
+#endif // OS_CPU_BSD_ZERO_VM_ORDERACCESS_BSD_ZERO_HPP

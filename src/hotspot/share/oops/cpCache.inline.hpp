@@ -27,7 +27,7 @@
 
 #include "oops/cpCache.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 
 inline int ConstantPoolCacheEntry::indices_ord() const { return OrderAccess::load_acquire(&_indices); }
 

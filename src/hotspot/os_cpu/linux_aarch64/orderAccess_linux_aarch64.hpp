@@ -23,12 +23,11 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_AARCH64_VM_ORDERACCESS_LINUX_AARCH64_INLINE_HPP
-#define OS_CPU_LINUX_AARCH64_VM_ORDERACCESS_LINUX_AARCH64_INLINE_HPP
+#ifndef OS_CPU_LINUX_AARCH64_VM_ORDERACCESS_LINUX_AARCH64_HPP
+#define OS_CPU_LINUX_AARCH64_VM_ORDERACCESS_LINUX_AARCH64_HPP
 
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
-#include "runtime/os.hpp"
+// Included in orderAccess.hpp header file.
+
 #include "vm_version_aarch64.hpp"
 
 // Implementation of class OrderAccess.
@@ -71,4 +70,4 @@ struct OrderAccess::PlatformOrderedStore<byte_size, RELEASE_X_FENCE>
   void operator()(T v, volatile T* p) const { release_store(p, v); fence(); }
 };
 
-#endif // OS_CPU_LINUX_AARCH64_VM_ORDERACCESS_LINUX_AARCH64_INLINE_HPP
+#endif // OS_CPU_LINUX_AARCH64_VM_ORDERACCESS_LINUX_AARCH64_HPP

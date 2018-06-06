@@ -26,7 +26,7 @@
 #define SHARE_VM_JFR_UTILITIES_JFRHASHTABLE_HPP
 
 #include "memory/allocation.inline.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 

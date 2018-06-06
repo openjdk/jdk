@@ -23,10 +23,11 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_S390_VM_ORDERACCESS_LINUX_S390_INLINE_HPP
-#define OS_CPU_LINUX_S390_VM_ORDERACCESS_LINUX_S390_INLINE_HPP
+#ifndef OS_CPU_LINUX_S390_VM_ORDERACCESS_LINUX_S390_HPP
+#define OS_CPU_LINUX_S390_VM_ORDERACCESS_LINUX_S390_HPP
 
-#include "runtime/orderAccess.hpp"
+// Included in orderAccess.hpp header file.
+
 #include "vm_version_s390.hpp"
 
 // Implementation of class OrderAccess.
@@ -87,4 +88,4 @@ struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 #undef inlasm_zarch_acquire
 #undef inlasm_zarch_fence
 
-#endif // OS_CPU_LINUX_S390_VM_ORDERACCESS_LINUX_S390_INLINE_HPP
+#endif // OS_CPU_LINUX_S390_VM_ORDERACCESS_LINUX_S390_HPP
