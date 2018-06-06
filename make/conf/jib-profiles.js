@@ -272,7 +272,6 @@ var getJibProfilesCommon = function (input, data) {
      */
     common.main_profile_artifacts = function (o) {
         var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
-        var jre_subdir = (o.jre_subdir != null ? o.jre_subdir : "jre-" + data.version);
         var pf = o.platform
         return {
             artifacts: {
@@ -284,15 +283,6 @@ var getJibProfilesCommon = function (input, data) {
                     ],
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
-                },
-                jre: {
-                    local: "bundles/\\(jre.*bin.tar.gz\\)",
-                    remote: [
-                        "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin.tar.gz",
-                        "bundles/" + pf + "/\\1"
-                    ],
-                    subdir: jre_subdir,
-                    exploded: "images/jre"
                 },
                 test: {
                     local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
@@ -319,15 +309,6 @@ var getJibProfilesCommon = function (input, data) {
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
                 },
-                jre_symbols: {
-                    local: "bundles/\\(jre.*bin-symbols.tar.gz\\)",
-                    remote: [
-                        "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin-symbols.tar.gz",
-                        "bundles/" + pf + "/\\1"
-                    ],
-                    subdir: jre_subdir,
-                    exploded: "images/jre"
-                }
             }
         };
     };
@@ -339,7 +320,6 @@ var getJibProfilesCommon = function (input, data) {
      */
     common.debug_profile_artifacts = function (o) {
         var jdk_subdir = "jdk-" + data.version + "/fastdebug";
-        var jre_subdir = "jre-" + data.version + "/fastdebug";
         var pf = o.platform
         return {
             artifacts: {
@@ -351,15 +331,6 @@ var getJibProfilesCommon = function (input, data) {
                     ],
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
-                },
-                jre: {
-                    local: "bundles/\\(jre.*bin-debug.tar.gz\\)",
-                    remote: [
-                        "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin-debug.tar.gz",
-                        "bundles/" + pf + "/\\1"
-                    ],
-                    subdir: jre_subdir,
-                    exploded: "images/jre"
                 },
                 test: {
                     local: "bundles/\\(jdk.*bin-tests-debug.tar.gz\\)",
@@ -378,15 +349,6 @@ var getJibProfilesCommon = function (input, data) {
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
                 },
-                jre_symbols: {
-                    local: "bundles/\\(jre.*bin-debug-symbols.tar.gz\\)",
-                    remote: [
-                        "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin-debug-symbols.tar.gz",
-                        "bundles/" + pf + "/\\1"
-                    ],
-                    subdir: jre_subdir,
-                    exploded: "images/jre"
-                }
             }
         };
     };
@@ -608,7 +570,6 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             platform: "osx-x64",
             jdk_subdir: "jdk-" + data.version +  ".jdk/Contents/Home",
-            jre_subdir: "jre-" + data.version +  ".jre/Contents/Home"
         },
         "solaris-x64": {
             platform: "solaris-x64",
