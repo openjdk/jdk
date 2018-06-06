@@ -79,6 +79,7 @@ import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
+import javax.print.attribute.standard.DialogOwner;
 import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSizeName;
@@ -95,7 +96,6 @@ import sun.print.Win32MediaTray;
 import sun.print.Win32PrintService;
 import sun.print.PrintServiceLookupProvider;
 import sun.print.ServiceDialog;
-import sun.print.DialogOwner;
 
 import java.awt.Frame;
 import java.io.FilePermission;
