@@ -31,8 +31,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
 import javax.print.DocFlavor;
 import javax.print.DocPrintJob;
 import javax.print.PrintService;
@@ -56,8 +54,6 @@ import javax.print.attribute.standard.ColorSupported;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.CopiesSupported;
 import javax.print.attribute.standard.Destination;
-import javax.print.attribute.standard.DialogOwner;
-import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.Fidelity;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaPrintableArea;
@@ -623,15 +619,10 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     public Class<?>[] getSupportedAttributeCategories() {
-        ArrayList<Class<?>> categList = new ArrayList<>(otherAttrCats.length);
-        for (Class<?> c : otherAttrCats) {
-            categList.add(c);
-        }
-        if (GraphicsEnvironment.isHeadless() == false) {
-            categList.add(DialogOwner.class);
-            categList.add(DialogTypeSelection.class);
-        }
-        return categList.toArray(new Class<?>[categList.size()]);
+        int totalCats = otherAttrCats.length;
+        Class<?>[] cats = new Class<?>[totalCats];
+        System.arraycopy(otherAttrCats, 0, cats, 0, otherAttrCats.length);
+        return cats;
     }
 
     public boolean
@@ -1032,24 +1023,6 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE))) {
                 return false;
             }
-        } else if (attr.getCategory() == DialogOwner.class) {
-            DialogOwner owner = (DialogOwner)attr;
-            // ID not supported on any dialog type on Unix platforms.
-            if (DialogOwnerAccessor.getID(owner) != 0) {
-                return false;
-            }
-            // UnixPrintService is not used on Mac, so this is
-            // always some Unix system that does not have CUPS/IPP
-            // Which means we always use a Swing dialog and we need
-            // only check if alwaysOnTop is supported by the toolkit.
-            if (owner.getOwner() != null) {
-                return true;
-            } else {
-                return Toolkit.getDefaultToolkit().isAlwaysOnTopSupported();
-            }
-        } else if (attr.getCategory() == DialogTypeSelection.class) {
-            DialogTypeSelection dts = (DialogTypeSelection)attr;
-            return dts == DialogTypeSelection.COMMON;
         }
         return true;
     }

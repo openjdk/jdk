@@ -25,6 +25,8 @@
 
 package javax.print;
 
+import java.awt.Dialog;
+import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.HeadlessException;
@@ -33,11 +35,11 @@ import java.awt.Window;
 
 import javax.print.attribute.Attribute;
 import javax.print.attribute.AttributeSet;
-import javax.print.attribute.standard.DialogOwner;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.Fidelity;
 
+import sun.print.DialogOwner;
 import sun.print.ServiceDialog;
 import sun.print.SunAlternateMedia;
 
@@ -183,7 +185,6 @@ public class ServiceUI {
 
         DialogOwner dlgOwner = (DialogOwner)attributes.get(DialogOwner.class);
         Window owner = (dlgOwner != null) ? dlgOwner.getOwner() : null;
-        boolean setOnTop = (dlgOwner != null) && (owner == null);
 
         Rectangle gcBounds = (gc == null) ?  GraphicsEnvironment.
             getLocalGraphicsEnvironment().getDefaultScreenDevice().
@@ -191,17 +192,21 @@ public class ServiceUI {
 
         x += gcBounds.x;
         y += gcBounds.y;
-        ServiceDialog dialog = new ServiceDialog(gc,
-                                                 x,
-                                                 y,
-                                                 services, defaultIndex,
-                                                 flavor, attributes,
-                                                 owner);
-        if (setOnTop) {
-            try {
-                dialog.setAlwaysOnTop(true);
-            } catch (SecurityException e) {
-            }
+        ServiceDialog dialog;
+        if (owner instanceof Frame) {
+            dialog = new ServiceDialog(gc,
+                                       x,
+                                       y,
+                                       services, defaultIndex,
+                                       flavor, attributes,
+                                       (Frame)owner);
+        } else {
+            dialog = new ServiceDialog(gc,
+                                       x,
+                                       y,
+                                       services, defaultIndex,
+                                       flavor, attributes,
+                                       (Dialog)owner);
         }
         Rectangle dlgBounds = dialog.getBounds();
 

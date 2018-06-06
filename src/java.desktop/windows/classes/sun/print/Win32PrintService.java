@@ -25,8 +25,6 @@
 
 package sun.print;
 
-import java.awt.GraphicsEnvironment;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.print.PrinterJob;
 import java.io.File;
@@ -56,8 +54,6 @@ import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.CopiesSupported;
 import javax.print.attribute.standard.Destination;
-import javax.print.attribute.standard.DialogOwner;
-import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.Fidelity;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSizeName;
@@ -1046,10 +1042,6 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             categList.add(PrinterResolution.class);
         }
 
-        if (GraphicsEnvironment.isHeadless() == false) {
-            categList.add(DialogOwner.class);
-            categList.add(DialogTypeSelection.class);
-        }
         return categList.toArray(new Class<?>[categList.size()]);
     }
 
@@ -1592,23 +1584,6 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             if  ((!isColorSup && (attr == ColorSupported.SUPPORTED)) ||
                 (isColorSup && (attr == ColorSupported.NOT_SUPPORTED))) {
                 return false;
-            }
-        } else if (category == DialogTypeSelection.class) {
-            return true; // isHeadless was checked by category support
-        } else if (category == DialogOwner.class) {
-            DialogOwner owner = (DialogOwner)attr;
-            DialogTypeSelection dts = (attributes == null) ? null :
-                (DialogTypeSelection)attributes.get(DialogTypeSelection.class);
-            if (dts == DialogTypeSelection.NATIVE) {
-                return DialogOwnerAccessor.getID(owner) != 0;
-            } else {
-               if (DialogOwnerAccessor.getID(owner) != 0) {
-                  return false;
-               } else if (owner.getOwner() != null) {
-                   return true;
-               } else {
-                   return Toolkit.getDefaultToolkit().isAlwaysOnTopSupported();
-               }
             }
         }
         return true;

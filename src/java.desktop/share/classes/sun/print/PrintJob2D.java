@@ -60,7 +60,6 @@ import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.DialogTypeSelection;
-import javax.print.attribute.standard.DialogOwner;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.PrintQuality;
