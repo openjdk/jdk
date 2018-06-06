@@ -491,17 +491,6 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                     wantJFIF = false;
                 }
                 break;
-            case ColorSpace.TYPE_3CLR:
-                if (cs == JPEG.JCS.getYCC()) {
-                    wantJFIF = false;
-                    componentIDs[0] = (byte) 'Y';
-                    componentIDs[1] = (byte) 'C';
-                    componentIDs[2] = (byte) 'c';
-                    if (hasAlpha) {
-                        componentIDs[3] = (byte) 'A';
-                    }
-                }
-                break;
             case ColorSpace.TYPE_YCbCr:
                 if (hasExtraComponents) { // e.g. K or alpha
                     wantJFIF = false;

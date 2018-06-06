@@ -182,29 +182,11 @@ class SOFMarkerSegment extends MarkerSegment {
         switch(componentSpecs.length) {
         case 3:
             if ((componentSpecs[0].componentId == 'R')
-                &&(componentSpecs[0].componentId == 'G')
-                &&(componentSpecs[0].componentId == 'B')) {
+                &&(componentSpecs[1].componentId == 'G')
+                &&(componentSpecs[2].componentId == 'B')) {
                 return JPEG.JCS_RGB;
             }
-            if ((componentSpecs[0].componentId == 'Y')
-                &&(componentSpecs[0].componentId == 'C')
-                &&(componentSpecs[0].componentId == 'c')) {
-                return JPEG.JCS_YCC;
-            }
             break;
-        case 4:
-            if ((componentSpecs[0].componentId == 'R')
-                &&(componentSpecs[0].componentId == 'G')
-                &&(componentSpecs[0].componentId == 'B')
-                &&(componentSpecs[0].componentId == 'A')) {
-                return JPEG.JCS_RGBA;
-            }
-            if ((componentSpecs[0].componentId == 'Y')
-                &&(componentSpecs[0].componentId == 'C')
-                &&(componentSpecs[0].componentId == 'c')
-                &&(componentSpecs[0].componentId == 'A')) {
-                return JPEG.JCS_YCCA;
-            }
         }
 
         return JPEG.JCS_UNKNOWN;

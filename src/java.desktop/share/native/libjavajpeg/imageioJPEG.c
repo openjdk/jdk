@@ -1762,11 +1762,6 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
                 }
             }
             break;
-#ifdef YCCALPHA
-        case JCS_YCC:
-            cinfo->out_color_space = JCS_YCC;
-            break;
-#endif
         case JCS_YCCK:
             if ((cinfo->saw_Adobe_marker) && (cinfo->Adobe_transform != 2)) {
                 /*

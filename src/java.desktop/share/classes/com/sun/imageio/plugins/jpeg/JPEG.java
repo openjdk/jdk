@@ -187,13 +187,7 @@ public class JPEG {
     public static final int JCS_RGB = 2;           // red/green/blue
     public static final int JCS_YCbCr = 3;         // Y/Cb/Cr (also known as YUV)
     public static final int JCS_CMYK = 4;          // C/M/Y/K
-    public static final int JCS_YCC = 5;           // PhotoYCC
-    public static final int JCS_RGBA = 6;          // RGB-Alpha
-    public static final int JCS_YCbCrA = 7;        // Y/Cb/Cr/Alpha
-    // 8 and 9 were old "Legacy" codes which the old code never identified
-    // on reading anyway.  Support for writing them is being dropped, too.
-    public static final int JCS_YCCA = 10;         // PhotoYCC-Alpha
-    public static final int JCS_YCCK = 11;         // Y/Cb/Cr/K
+    public static final int JCS_YCCK = 5;         // Y/Cb/Cr/K
 
     public static final int NUM_JCS_CODES = JCS_YCCK+1;
 
@@ -212,22 +206,6 @@ public class JPEG {
     public static class JCS {
         public static final ColorSpace sRGB =
             ColorSpace.getInstance(ColorSpace.CS_sRGB);
-
-        private static ColorSpace YCC = null;
-        private static boolean yccInited = false;
-
-        public static ColorSpace getYCC() {
-            if (!yccInited) {
-                try {
-                    YCC = ColorSpace.getInstance(ColorSpace.CS_PYCC);
-                } catch (IllegalArgumentException e) {
-                    // PYCC.pf may not always be installed
-                } finally {
-                    yccInited = true;
-                }
-            }
-            return YCC;
-        }
     }
 
     // Default value for ImageWriteParam

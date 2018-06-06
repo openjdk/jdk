@@ -73,7 +73,11 @@ public class JPEGImageWriterSpi extends ImageWriterSpi {
 
     public boolean canEncodeImage(ImageTypeSpecifier type) {
         SampleModel sampleModel = type.getSampleModel();
+        ColorModel cm = type.getColorModel();
 
+        if (cm.hasAlpha()) {
+            return false;
+        }
         // Find the maximum bit depth across all channels
         int[] sampleSize = sampleModel.getSampleSize();
         int bitDepth = sampleSize[0];
