@@ -1311,6 +1311,7 @@ inline void Assembler::z_clgij(Register r1, int64_t i2, branch_condition m3, Lab
 
 // branch never (nop), branch always
 inline void Assembler::z_nop() { z_bcr(bcondNop, Z_R0); }
+inline void Assembler::nop() { z_nop(); }
 inline void Assembler::z_br(Register r2) { assert(r2 != Z_R0, "nop if target is Z_R0, use z_nop() instead"); z_bcr(bcondAlways, r2 ); }
 
 inline void Assembler::z_exrl(Register r1, Label& L) { z_exrl(r1, target(L)); }  // z10
