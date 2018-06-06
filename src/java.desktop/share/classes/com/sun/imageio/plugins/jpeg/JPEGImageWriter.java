@@ -754,115 +754,47 @@ public class JPEGImageWriter extends ImageWriter {
                             }
                             break;
                         case ColorSpace.TYPE_RGB:
-                            if (!alpha) {
-                                if (jfif != null) {
+                            if (jfif != null) {
+                                outCsType = JPEG.JCS_YCbCr;
+                                if (JPEG.isNonStandardICC(cs)
+                                    || ((cs instanceof ICC_ColorSpace)
+                                        && (jfif.iccSegment != null))) {
+                                    iccProfile =
+                                        ((ICC_ColorSpace) cs).getProfile();
+                                }
+                            } else if (adobe != null) {
+                                switch (adobe.transform) {
+                                case JPEG.ADOBE_UNKNOWN:
+                                    outCsType = JPEG.JCS_RGB;
+                                    break;
+                                case JPEG.ADOBE_YCC:
                                     outCsType = JPEG.JCS_YCbCr;
-                                    if (JPEG.isNonStandardICC(cs)
-                                        || ((cs instanceof ICC_ColorSpace)
-                                            && (jfif.iccSegment != null))) {
-                                        iccProfile =
-                                            ((ICC_ColorSpace) cs).getProfile();
-                                    }
-                                } else if (adobe != null) {
-                                    switch (adobe.transform) {
-                                    case JPEG.ADOBE_UNKNOWN:
-                                        outCsType = JPEG.JCS_RGB;
-                                        break;
-                                    case JPEG.ADOBE_YCC:
-                                        outCsType = JPEG.JCS_YCbCr;
-                                        break;
-                                    default:
-                                        warningOccurred
-                                        (WARNING_IMAGE_METADATA_ADOBE_MISMATCH);
-                                        newAdobeTransform = JPEG.ADOBE_UNKNOWN;
-                                        outCsType = JPEG.JCS_RGB;
-                                        break;
-                                    }
-                                } else {
-                                    // consult the ids
-                                    int outCS = sof.getIDencodedCSType();
-                                    // if they don't resolve it,
-                                    // consult the sampling factors
-                                    if (outCS != JPEG.JCS_UNKNOWN) {
-                                        outCsType = outCS;
-                                    } else {
-                                        boolean subsampled =
-                                        isSubsampled(sof.componentSpecs);
-                                        if (subsampled) {
-                                            outCsType = JPEG.JCS_YCbCr;
-                                        } else {
-                                            outCsType = JPEG.JCS_RGB;
-                                        }
-                                    }
-                                }
-                            } else { // RGBA
-                                if (jfif != null) {
-                                    ignoreJFIF = true;
+                                    break;
+                                default:
                                     warningOccurred
-                                    (WARNING_IMAGE_METADATA_JFIF_MISMATCH);
+                                    (WARNING_IMAGE_METADATA_ADOBE_MISMATCH);
+                                    newAdobeTransform = JPEG.ADOBE_UNKNOWN;
+                                    outCsType = JPEG.JCS_RGB;
+                                    break;
                                 }
-                                if (adobe != null) {
-                                    if (adobe.transform
-                                        != JPEG.ADOBE_UNKNOWN) {
-                                        newAdobeTransform = JPEG.ADOBE_UNKNOWN;
-                                        warningOccurred
-                                        (WARNING_IMAGE_METADATA_ADOBE_MISMATCH);
-                                    }
-                                    outCsType = JPEG.JCS_RGBA;
+                            } else {
+                                // consult the ids
+                                int outCS = sof.getIDencodedCSType();
+                                // if they don't resolve it,
+                                // consult the sampling factors
+                                if (outCS != JPEG.JCS_UNKNOWN) {
+                                    outCsType = outCS;
                                 } else {
-                                    // consult the ids
-                                    int outCS = sof.getIDencodedCSType();
-                                    // if they don't resolve it,
-                                    // consult the sampling factors
-                                    if (outCS != JPEG.JCS_UNKNOWN) {
-                                        outCsType = outCS;
+                                    boolean subsampled =
+                                    isSubsampled(sof.componentSpecs);
+                                    if (subsampled) {
+                                        outCsType = JPEG.JCS_YCbCr;
                                     } else {
-                                        boolean subsampled =
-                                        isSubsampled(sof.componentSpecs);
-                                        outCsType = subsampled ?
-                                            JPEG.JCS_YCbCrA : JPEG.JCS_RGBA;
+                                        outCsType = JPEG.JCS_RGB;
                                     }
                                 }
                             }
                             break;
-                        case ColorSpace.TYPE_3CLR:
-                            if (cs == JPEG.JCS.getYCC()) {
-                                if (!alpha) {
-                                    if (jfif != null) {
-                                        convertTosRGB = true;
-                                        convertOp =
-                                        new ColorConvertOp(cs,
-                                                           JPEG.JCS.sRGB,
-                                                           null);
-                                        outCsType = JPEG.JCS_YCbCr;
-                                    } else if (adobe != null) {
-                                        if (adobe.transform
-                                            != JPEG.ADOBE_YCC) {
-                                            newAdobeTransform = JPEG.ADOBE_YCC;
-                                            warningOccurred
-                                            (WARNING_IMAGE_METADATA_ADOBE_MISMATCH);
-                                        }
-                                        outCsType = JPEG.JCS_YCC;
-                                    } else {
-                                        outCsType = JPEG.JCS_YCC;
-                                    }
-                                } else { // PhotoYCCA
-                                    if (jfif != null) {
-                                        ignoreJFIF = true;
-                                        warningOccurred
-                                        (WARNING_IMAGE_METADATA_JFIF_MISMATCH);
-                                    } else if (adobe != null) {
-                                        if (adobe.transform
-                                            != JPEG.ADOBE_UNKNOWN) {
-                                            newAdobeTransform
-                                            = JPEG.ADOBE_UNKNOWN;
-                                            warningOccurred
-                                            (WARNING_IMAGE_METADATA_ADOBE_MISMATCH);
-                                        }
-                                    }
-                                    outCsType = JPEG.JCS_YCCA;
-                                }
-                            }
                         }
                     }
                 } // else no dest, metadata, not an image.  Defaults ok
@@ -1564,27 +1496,10 @@ public class JPEGImageWriter extends ImageWriter {
                 retval = JPEG.JCS_GRAYSCALE;
                 break;
             case ColorSpace.TYPE_RGB:
-                if (alpha) {
-                    retval = JPEG.JCS_RGBA;
-                } else {
-                    retval = JPEG.JCS_RGB;
-                }
+                retval = JPEG.JCS_RGB;
                 break;
             case ColorSpace.TYPE_YCbCr:
-                if (alpha) {
-                    retval = JPEG.JCS_YCbCrA;
-                } else {
-                    retval = JPEG.JCS_YCbCr;
-                }
-                break;
-            case ColorSpace.TYPE_3CLR:
-                if (cs == JPEG.JCS.getYCC()) {
-                    if (alpha) {
-                        retval = JPEG.JCS_YCCA;
-                    } else {
-                        retval = JPEG.JCS_YCC;
-                    }
-                }
+                retval = JPEG.JCS_YCbCr;
                 break;
             case ColorSpace.TYPE_CMYK:
                 retval = JPEG.JCS_CMYK;
@@ -1604,27 +1519,10 @@ public class JPEGImageWriter extends ImageWriter {
                 retval = JPEG.JCS_GRAYSCALE;
                 break;
             case ColorSpace.TYPE_RGB:
-                if (alpha) {
-                    retval = JPEG.JCS_RGBA;
-                } else {
-                    retval = JPEG.JCS_RGB;
-                }
+                retval = JPEG.JCS_RGB;
                 break;
             case ColorSpace.TYPE_YCbCr:
-                if (alpha) {
-                    retval = JPEG.JCS_YCbCrA;
-                } else {
-                    retval = JPEG.JCS_YCbCr;
-                }
-                break;
-            case ColorSpace.TYPE_3CLR:
-                if (cs == JPEG.JCS.getYCC()) {
-                    if (alpha) {
-                        retval = JPEG.JCS_YCCA;
-                    } else {
-                        retval = JPEG.JCS_YCC;
-                    }
-                }
+                retval = JPEG.JCS_YCbCr;
                 break;
             case ColorSpace.TYPE_CMYK:
                 retval = JPEG.JCS_CMYK;
@@ -1651,27 +1549,10 @@ public class JPEGImageWriter extends ImageWriter {
                 retval = JPEG.JCS_GRAYSCALE;
                 break;
             case ColorSpace.TYPE_RGB:
-                if (alpha) {
-                    retval = JPEG.JCS_YCbCrA;
-                } else {
-                    retval = JPEG.JCS_YCbCr;
-                }
+                retval = JPEG.JCS_YCbCr;
                 break;
             case ColorSpace.TYPE_YCbCr:
-                if (alpha) {
-                    retval = JPEG.JCS_YCbCrA;
-                } else {
-                    retval = JPEG.JCS_YCbCr;
-                }
-                break;
-            case ColorSpace.TYPE_3CLR:
-                if (cs == JPEG.JCS.getYCC()) {
-                    if (alpha) {
-                        retval = JPEG.JCS_YCCA;
-                    } else {
-                        retval = JPEG.JCS_YCC;
-                    }
-                }
+                retval = JPEG.JCS_YCbCr;
                 break;
             case ColorSpace.TYPE_CMYK:
                 retval = JPEG.JCS_YCCK;
