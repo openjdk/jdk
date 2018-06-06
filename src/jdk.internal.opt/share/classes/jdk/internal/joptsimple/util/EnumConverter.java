@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2015 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2014 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,90 +55,80 @@
 
 package jdk.internal.joptsimple.util;
 
-import java.text.DateFormat;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.text.MessageFormat;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.ResourceBundle;
 
 import jdk.internal.joptsimple.ValueConversionException;
 import jdk.internal.joptsimple.ValueConverter;
-import jdk.internal.joptsimple.internal.Messages;
 
 /**
- * Converts values to {@link Date}s using a {@link DateFormat} object.
+ * Converts values to {@link java.lang.Enum}s.
  *
- * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
+ * @author <a href="mailto:christian.ohr@gmail.com">Christian Ohr</a>
  */
-public class DateConverter implements ValueConverter<Date> {
-    private final DateFormat formatter;
+public abstract class EnumConverter<E extends Enum<E>> implements ValueConverter<E> {
+    private final Class<E> clazz;
+
+    private String delimiters = "[,]";
 
     /**
-     * Creates a converter that uses the given date formatter/parser.
+     * This constructor must be called by subclasses, providing the enum class as the parameter.
      *
-     * @param formatter the formatter/parser to use
-     * @throws NullPointerException if {@code formatter} is {@code null}
+     * @param clazz enum class
      */
-    public DateConverter( DateFormat formatter ) {
-        if ( formatter == null )
-            throw new NullPointerException( "illegal null formatter" );
+    protected EnumConverter( Class<E> clazz ) {
+        this.clazz = clazz;
+    }
 
-        this.formatter = formatter;
+    @Override
+    public E convert( String value ) {
+        for ( E each : valueType().getEnumConstants() ) {
+            if ( each.name().equalsIgnoreCase( value ) ) {
+                return each;
+            }
+        }
+
+        throw new ValueConversionException( message( value ) );
+    }
+
+    @Override
+    public Class<E> valueType() {
+        return clazz;
     }
 
     /**
-     * Creates a converter that uses a {@link SimpleDateFormat} with the given date/time pattern.  The date formatter
-     * created is not {@link SimpleDateFormat#setLenient(boolean) lenient}.
+     * Sets the delimiters for the message string. Must be a 3-letter string,
+     * where the first character is the prefix, the second character is the
+     * delimiter between the values, and the 3rd character is the suffix.
      *
-     * @param pattern expected date/time pattern
-     * @return the new converter
-     * @throws NullPointerException if {@code pattern} is {@code null}
-     * @throws IllegalArgumentException if {@code pattern} is invalid
+     * @param delimiters delimiters for message string. Default is [,]
      */
-    public static DateConverter datePattern( String pattern ) {
-        SimpleDateFormat formatter = new SimpleDateFormat( pattern );
-        formatter.setLenient( false );
-
-        return new DateConverter( formatter );
+    public void setDelimiters( String delimiters ) {
+        this.delimiters = delimiters;
     }
 
-    public Date convert( String value ) {
-        ParsePosition position = new ParsePosition( 0 );
-
-        Date date = formatter.parse( value, position );
-        if ( position.getIndex() != value.length() )
-            throw new ValueConversionException( message( value ) );
-
-        return date;
-    }
-
-    public Class<Date> valueType() {
-        return Date.class;
-    }
-
+    @Override
     public String valuePattern() {
-        return formatter instanceof SimpleDateFormat
-            ? ( (SimpleDateFormat) formatter ).toPattern()
-            : "";
+        EnumSet<E> values = EnumSet.allOf( valueType() );
+
+        StringBuilder builder = new StringBuilder();
+        builder.append( delimiters.charAt(0) );
+        for ( Iterator<E> i = values.iterator(); i.hasNext(); ) {
+            builder.append( i.next().toString() );
+            if ( i.hasNext() )
+                builder.append( delimiters.charAt( 1 ) );
+        }
+        builder.append( delimiters.charAt( 2 ) );
+
+        return builder.toString();
     }
 
     private String message( String value ) {
-        String key;
-        Object[] arguments;
-
-        if ( formatter instanceof SimpleDateFormat ) {
-            key = "with.pattern.message";
-            arguments = new Object[] { value, ( (SimpleDateFormat) formatter ).toPattern() };
-        } else {
-            key = "without.pattern.message";
-            arguments = new Object[] { value };
-        }
-
-        return Messages.message(
-            Locale.getDefault(),
-            "jdk.internal.joptsimple.ExceptionMessages",
-            DateConverter.class,
-            key,
-            arguments );
+        ResourceBundle bundle = ResourceBundle.getBundle( "jdk.internal.joptsimple.ExceptionMessages" );
+        Object[] arguments = new Object[] { value, valuePattern() };
+        String template = bundle.getString( EnumConverter.class.getName() + ".message" );
+        return new MessageFormat( template ).format( arguments );
     }
 }

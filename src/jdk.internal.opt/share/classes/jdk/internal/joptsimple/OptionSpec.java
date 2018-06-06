@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,7 +55,6 @@
 
 package jdk.internal.joptsimple;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -116,7 +115,7 @@ public interface OptionSpec<V> {
     /**
      * @return the string representations of this option
      */
-    Collection<String> options();
+    List<String> options();
 
     /**
      * Tells whether this option is designated as a "help" option. The presence of a "help" option on a command line

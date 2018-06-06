@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,7 +55,7 @@
 
 package jdk.internal.joptsimple;
 
-import java.util.Collection;
+import java.util.List;
 
 import static java.lang.Character.*;
 
@@ -97,7 +97,7 @@ final class ParserRules {
             ensureLegalOptionCharacter( option.charAt( i ) );
     }
 
-    static void ensureLegalOptions( Collection<String> options ) {
+    static void ensureLegalOptions( List<String> options ) {
         for ( String each : options )
             ensureLegalOption( each );
     }
@@ -108,7 +108,7 @@ final class ParserRules {
     }
 
     private static boolean isAllowedPunctuation( char option ) {
-        String allowedPunctuation = "?." + HYPHEN_CHAR;
+        String allowedPunctuation = "?._" + HYPHEN_CHAR;
         return allowedPunctuation.indexOf( option ) != -1;
     }
 }

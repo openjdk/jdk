@@ -111,7 +111,7 @@ public class JmodTest {
 
         Path jmod = MODS_DIR.resolve("apa.jmod");
         jmod("create",
-             "--libs=", libDir.toString(),
+             "--libs=" + libDir.toString(),
              "--class-path", classesDir.toString(),
              jmod.toString())
             .assertSuccess();
@@ -310,7 +310,7 @@ public class JmodTest {
         Path lp = EXPLODED_DIR.resolve("foo").resolve("lib");
 
         jmod("create",
-             "--libs=", lp.toString(),
+             "--libs=" + lp.toString(),
              "--class-path", cp.toString(),
              jmod.toString())
             .assertSuccess()
@@ -335,8 +335,8 @@ public class JmodTest {
 
         jmod("create",
              "--conf", cf.toString(),
-             "--cmds=", bp.toString(),
-             "--libs=", lp.toString(),
+             "--cmds=" + bp.toString(),
+             "--libs=" + lp.toString(),
              "--class-path", cp.toString(),
              jmod.toString())
             .assertSuccess()
@@ -361,7 +361,7 @@ public class JmodTest {
         Path lp = EXPLODED_DIR.resolve("foo").resolve("lib");
 
         jmod("create",
-             "--libs=", lp.toString(),
+             "--libs=" + lp.toString(),
              "--class-path", cp.toString(),
              "--exclude", "**internal**",
              "--exclude", "first.so",

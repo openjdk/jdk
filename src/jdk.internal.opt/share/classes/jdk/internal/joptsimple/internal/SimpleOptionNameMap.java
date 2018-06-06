@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,37 +53,45 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package jdk.internal.joptsimple;
+package jdk.internal.joptsimple.internal;
 
-import static jdk.internal.joptsimple.ParserRules.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * <p>Wrapper for an array of command line arguments.</p>
- *
- * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
+ * <p>An {@code OptionNameMap} which wraps and behaves like {@code HashMap}.</p>
  */
-class ArgumentList {
-    private final String[] arguments;
-    private int currentIndex;
+public class SimpleOptionNameMap<V> implements OptionNameMap<V> {
+    private final Map<String, V> map = new HashMap<>();
 
-    ArgumentList( String... arguments ) {
-        this.arguments = arguments.clone();
+    @Override
+    public boolean contains( String key ) {
+        return map.containsKey( key );
     }
 
-    boolean hasMore() {
-        return currentIndex < arguments.length;
+    @Override
+    public V get( String key ) {
+        return map.get( key );
     }
 
-    String next() {
-        return arguments[ currentIndex++ ];
+    @Override
+    public void put( String key, V newValue ) {
+        map.put( key, newValue );
     }
 
-    String peek() {
-        return arguments[ currentIndex ];
+    @Override
+    public void putAll( Iterable<String> keys, V newValue ) {
+        for ( String each : keys )
+            map.put( each, newValue );
     }
 
-    void treatNextAsLongOption() {
-        if ( HYPHEN_CHAR != arguments[ currentIndex ].charAt( 0 ) )
-            arguments[ currentIndex ] = DOUBLE_HYPHEN + arguments[ currentIndex ];
+    @Override
+    public void remove( String key ) {
+        map.remove( key );
+    }
+
+    @Override
+    public Map<String, V> toJavaUtilMap() {
+        return new HashMap<>( map );
     }
 }
