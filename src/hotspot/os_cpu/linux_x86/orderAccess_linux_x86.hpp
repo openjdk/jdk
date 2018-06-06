@@ -22,26 +22,20 @@
  *
  */
 
-#ifndef OS_CPU_BSD_X86_VM_ORDERACCESS_BSD_X86_INLINE_HPP
-#define OS_CPU_BSD_X86_VM_ORDERACCESS_BSD_X86_INLINE_HPP
+#ifndef OS_CPU_LINUX_X86_VM_ORDERACCESS_LINUX_X86_HPP
+#define OS_CPU_LINUX_X86_VM_ORDERACCESS_LINUX_X86_HPP
 
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
-#include "runtime/os.hpp"
+// Included in orderAccess.hpp header file.
 
-// Compiler version last used for testing: clang 5.1
+// Compiler version last used for testing: gcc 4.8.2
 // Please update this information when this file changes
+
+// Implementation of class OrderAccess.
 
 // A compiler barrier, forcing the C++ compiler to invalidate all memory assumptions
 static inline void compiler_barrier() {
   __asm__ volatile ("" : : : "memory");
 }
-
-// x86 is TSO and hence only needs a fence for storeload
-// However, a compiler barrier is still needed to prevent reordering
-// between volatile and non-volatile memory accesses.
-
-// Implementation of class OrderAccess.
 
 inline void OrderAccess::loadload()   { compiler_barrier(); }
 inline void OrderAccess::storestore() { compiler_barrier(); }
@@ -52,14 +46,12 @@ inline void OrderAccess::acquire()    { compiler_barrier(); }
 inline void OrderAccess::release()    { compiler_barrier(); }
 
 inline void OrderAccess::fence() {
-  if (os::is_MP()) {
-    // always use locked addl since mfence is sometimes expensive
+   // always use locked addl since mfence is sometimes expensive
 #ifdef AMD64
-    __asm__ volatile ("lock; addl $0,0(%%rsp)" : : : "cc", "memory");
+  __asm__ volatile ("lock; addl $0,0(%%rsp)" : : : "cc", "memory");
 #else
-    __asm__ volatile ("lock; addl $0,0(%%esp)" : : : "cc", "memory");
+  __asm__ volatile ("lock; addl $0,0(%%esp)" : : : "cc", "memory");
 #endif
-  }
   compiler_barrier();
 }
 
@@ -113,4 +105,4 @@ struct OrderAccess::PlatformOrderedStore<8, RELEASE_X_FENCE>
 };
 #endif // AMD64
 
-#endif // OS_CPU_BSD_X86_VM_ORDERACCESS_BSD_X86_INLINE_HPP
+#endif // OS_CPU_LINUX_X86_VM_ORDERACCESS_LINUX_X86_HPP

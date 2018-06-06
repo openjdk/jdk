@@ -35,7 +35,7 @@
 #include "oops/markOop.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"

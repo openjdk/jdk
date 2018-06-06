@@ -26,7 +26,7 @@
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 
 #define MSG_IS_SYNCHRONOUS ( (MSGBIT(MSG_ROTATE)) |          \

@@ -26,7 +26,7 @@
 #define SHARE_VM_OOPS_ARRAY_INLINE_HPP
 
 #include "oops/array.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 
 template <typename T>
 inline T Array<T>::at_acquire(const int which) { return OrderAccess::load_acquire(adr_at(which)); }

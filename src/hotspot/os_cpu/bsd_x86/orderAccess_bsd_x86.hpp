@@ -22,67 +22,52 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
-#define OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
+#ifndef OS_CPU_BSD_X86_VM_ORDERACCESS_BSD_X86_HPP
+#define OS_CPU_BSD_X86_VM_ORDERACCESS_BSD_X86_HPP
 
-#include <intrin.h>
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
-#include "runtime/os.hpp"
+// Included in orderAccess.hpp header file.
 
-// Compiler version last used for testing: Microsoft Visual Studio 2010
+// Compiler version last used for testing: clang 5.1
 // Please update this information when this file changes
 
-// Implementation of class OrderAccess.
-
 // A compiler barrier, forcing the C++ compiler to invalidate all memory assumptions
-inline void compiler_barrier() {
-  _ReadWriteBarrier();
+static inline void compiler_barrier() {
+  __asm__ volatile ("" : : : "memory");
 }
 
-// Note that in MSVC, volatile memory accesses are explicitly
-// guaranteed to have acquire release semantics (w.r.t. compiler
-// reordering) and therefore does not even need a compiler barrier
-// for normal acquire release accesses. And all generalized
-// bound calls like release_store go through OrderAccess::load
-// and OrderAccess::store which do volatile memory accesses.
-template<> inline void ScopedFence<X_ACQUIRE>::postfix()       { }
-template<> inline void ScopedFence<RELEASE_X>::prefix()        { }
-template<> inline void ScopedFence<RELEASE_X_FENCE>::prefix()  { }
-template<> inline void ScopedFence<RELEASE_X_FENCE>::postfix() { OrderAccess::fence(); }
+// x86 is TSO and hence only needs a fence for storeload
+// However, a compiler barrier is still needed to prevent reordering
+// between volatile and non-volatile memory accesses.
+
+// Implementation of class OrderAccess.
 
 inline void OrderAccess::loadload()   { compiler_barrier(); }
 inline void OrderAccess::storestore() { compiler_barrier(); }
 inline void OrderAccess::loadstore()  { compiler_barrier(); }
-inline void OrderAccess::storeload()  { fence(); }
+inline void OrderAccess::storeload()  { fence();            }
 
 inline void OrderAccess::acquire()    { compiler_barrier(); }
 inline void OrderAccess::release()    { compiler_barrier(); }
 
 inline void OrderAccess::fence() {
+  // always use locked addl since mfence is sometimes expensive
 #ifdef AMD64
-  StubRoutines_fence();
+  __asm__ volatile ("lock; addl $0,0(%%rsp)" : : : "cc", "memory");
 #else
-  if (os::is_MP()) {
-    __asm {
-      lock add dword ptr [esp], 0;
-    }
-  }
-#endif // AMD64
+  __asm__ volatile ("lock; addl $0,0(%%esp)" : : : "cc", "memory");
+#endif
   compiler_barrier();
 }
 
-#ifndef AMD64
 template<>
 struct OrderAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>
 {
   template <typename T>
   void operator()(T v, volatile T* p) const {
-    __asm {
-      mov edx, p;
-      mov al, v;
-      xchg al, byte ptr [edx];
-    }
+    __asm__ volatile (  "xchgb (%2),%0"
+                      : "=q" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
   }
 };
 
@@ -91,11 +76,10 @@ struct OrderAccess::PlatformOrderedStore<2, RELEASE_X_FENCE>
 {
   template <typename T>
   void operator()(T v, volatile T* p) const {
-    __asm {
-      mov edx, p;
-      mov ax, v;
-      xchg ax, word ptr [edx];
-    }
+    __asm__ volatile (  "xchgw (%2),%0"
+                      : "=r" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
   }
 };
 
@@ -104,13 +88,25 @@ struct OrderAccess::PlatformOrderedStore<4, RELEASE_X_FENCE>
 {
   template <typename T>
   void operator()(T v, volatile T* p) const {
-    __asm {
-      mov edx, p;
-      mov eax, v;
-      xchg eax, dword ptr [edx];
-    }
+    __asm__ volatile (  "xchgl (%2),%0"
+                      : "=r" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
+  }
+};
+
+#ifdef AMD64
+template<>
+struct OrderAccess::PlatformOrderedStore<8, RELEASE_X_FENCE>
+{
+  template <typename T>
+  void operator()(T v, volatile T* p) const {
+    __asm__ volatile (  "xchgq (%2), %0"
+                      : "=r" (v)
+                      : "0" (v), "r" (p)
+                      : "memory");
   }
 };
 #endif // AMD64
 
-#endif // OS_CPU_WINDOWS_X86_VM_ORDERACCESS_WINDOWS_X86_INLINE_HPP
+#endif // OS_CPU_BSD_X86_VM_ORDERACCESS_BSD_X86_HPP

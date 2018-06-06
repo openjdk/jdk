@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_GLOBAL_COUNTER_INLINE_HPP
 #define SHARE_UTILITIES_GLOBAL_COUNTER_INLINE_HPP
 
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/globalCounter.hpp"
 

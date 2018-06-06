@@ -32,7 +32,7 @@
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/taskqueue.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 
 G1EvacStats* G1CollectedHeap::alloc_buffer_stats(InCSetState dest) {
   switch (dest.value()) {

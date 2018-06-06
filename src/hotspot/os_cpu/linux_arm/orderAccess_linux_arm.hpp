@@ -22,16 +22,17 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_ARM_VM_ORDERACCESS_LINUX_ARM_INLINE_HPP
-#define OS_CPU_LINUX_ARM_VM_ORDERACCESS_LINUX_ARM_INLINE_HPP
+#ifndef OS_CPU_LINUX_ARM_VM_ORDERACCESS_LINUX_ARM_HPP
+#define OS_CPU_LINUX_ARM_VM_ORDERACCESS_LINUX_ARM_HPP
 
-#include "runtime/orderAccess.hpp"
+// Included in orderAccess.hpp header file.
+
 #include "runtime/os.hpp"
 #include "vm_version_arm.hpp"
 
 // Implementation of class OrderAccess.
 // - we define the high level barriers below and use the general
-//   implementation in orderAccess.inline.hpp, with customizations
+//   implementation in orderAccess.hpp, with customizations
 //   on AARCH64 via the specialized_* template functions
 
 // Memory Ordering on ARM is weak.
@@ -53,7 +54,7 @@
 //      __asm__ volatile (
 //        "mcr p15, 0, %0, c7, c10, 4"
 //        : : "r" (dummy) : "memory");
-//   }
+//    }
 // }
 
 inline static void dmb_sy() {
@@ -244,4 +245,4 @@ struct OrderAccess::PlatformOrderedStore<8, RELEASE_X_FENCE>
 
 #endif // AARCH64
 
-#endif // OS_CPU_LINUX_ARM_VM_ORDERACCESS_LINUX_ARM_INLINE_HPP
+#endif // OS_CPU_LINUX_ARM_VM_ORDERACCESS_LINUX_ARM_HPP

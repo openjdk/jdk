@@ -23,10 +23,10 @@
  *
  */
 
-#ifndef OS_CPU_AIX_OJDKPPC_VM_ORDERACCESS_AIX_PPC_INLINE_HPP
-#define OS_CPU_AIX_OJDKPPC_VM_ORDERACCESS_AIX_PPC_INLINE_HPP
+#ifndef OS_CPU_AIX_OJDKPPC_VM_ORDERACCESS_AIX_PPC_HPP
+#define OS_CPU_AIX_OJDKPPC_VM_ORDERACCESS_AIX_PPC_HPP
 
-#include "runtime/orderAccess.hpp"
+// Included in orderAccess.hpp header file.
 
 // Compiler version last used for testing: xlc 12
 // Please update this information when this file changes
@@ -90,4 +90,4 @@ struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 #undef inlasm_eieio
 #undef inlasm_isync
 
-#endif // OS_CPU_AIX_OJDKPPC_VM_ORDERACCESS_AIX_PPC_INLINE_HPP
+#endif // OS_CPU_AIX_OJDKPPC_VM_ORDERACCESS_AIX_PPC_HPP
