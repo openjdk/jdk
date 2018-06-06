@@ -38,6 +38,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -136,32 +137,12 @@ public class ServiceDialog extends JDialog implements ActionListener {
                          int defaultServiceIndex,
                          DocFlavor flavor,
                          PrintRequestAttributeSet attributes,
-                         Dialog dialog)
+                         Window window)
     {
-        super(dialog, getMsg("dialog.printtitle"), true, gc);
+        super(window, getMsg("dialog.printtitle"), Dialog.DEFAULT_MODALITY_TYPE, gc);
         initPrintDialog(x, y, services, defaultServiceIndex,
                         flavor, attributes);
     }
-
-
-
-    /**
-     * Constructor for the "standard" print dialog (containing all relevant
-     * tabs)
-     */
-    public ServiceDialog(GraphicsConfiguration gc,
-                         int x, int y,
-                         PrintService[] services,
-                         int defaultServiceIndex,
-                         DocFlavor flavor,
-                         PrintRequestAttributeSet attributes,
-                         Frame frame)
-    {
-        super(frame, getMsg("dialog.printtitle"), true, gc);
-        initPrintDialog(x, y, services, defaultServiceIndex,
-                        flavor, attributes);
-    }
-
 
     /**
      * Initialize print dialog.
@@ -184,8 +165,22 @@ public class ServiceDialog extends JDialog implements ActionListener {
             isAWT = true;
         }
 
-        if (attributes.get(DialogOnTop.class) != null) {
-            setAlwaysOnTop(true);
+        if (attributes.get(DialogOwner.class) != null) {
+            DialogOwner owner = (DialogOwner)attributes.get(DialogOwner.class);
+            /* When the ServiceDialog is constructed the caller of the
+             * constructor checks for this attribute and if it specifies a
+             * window then it will use that in the constructor instead of
+             * inferring one from keyboard focus.
+             * In this case the owner of the dialog is the same as that
+             * specified in the attribute and we do not need to set the
+             * on top property
+             */
+            if ((getOwner() == null) || (owner.getOwner() != getOwner())) {
+                try {
+                    setAlwaysOnTop(true);
+                } catch (SecurityException e) {
+                }
+            }
         }
         Container c = getContentPane();
         c.setLayout(new BorderLayout());
@@ -244,26 +239,11 @@ public class ServiceDialog extends JDialog implements ActionListener {
                          PrintService ps,
                          DocFlavor flavor,
                          PrintRequestAttributeSet attributes,
-                         Dialog dialog)
+                         Window window)
     {
-        super(dialog, getMsg("dialog.pstitle"), true, gc);
+        super(window, getMsg("dialog.pstitle"), Dialog.DEFAULT_MODALITY_TYPE, gc);
         initPageDialog(x, y, ps, flavor, attributes);
     }
-
-    /**
-     * Constructor for the solitary "page setup" dialog
-     */
-    public ServiceDialog(GraphicsConfiguration gc,
-                         int x, int y,
-                         PrintService ps,
-                         DocFlavor flavor,
-                         PrintRequestAttributeSet attributes,
-                         Frame frame)
-    {
-        super(frame, getMsg("dialog.pstitle"), true, gc);
-        initPageDialog(x, y, ps, flavor, attributes);
-    }
-
 
     /**
      * Initialize "page setup" dialog
@@ -278,8 +258,15 @@ public class ServiceDialog extends JDialog implements ActionListener {
         this.asOriginal = attributes;
         this.asCurrent = new HashPrintRequestAttributeSet(attributes);
 
-        if (attributes.get(DialogOnTop.class) != null) {
-            setAlwaysOnTop(true);
+        if (attributes.get(DialogOwner.class) != null) {
+            /* See comments in same block in initPrintDialog */
+            DialogOwner owner = (DialogOwner)attributes.get(DialogOwner.class);
+            if ((getOwner() == null) || (owner.getOwner() != getOwner())) {
+                try {
+                    setAlwaysOnTop(true);
+                } catch (SecurityException e) {
+                }
+            }
         }
 
         Container c = getContentPane();

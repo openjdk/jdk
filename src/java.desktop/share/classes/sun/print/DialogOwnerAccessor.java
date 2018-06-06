@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,40 +25,23 @@
 
 package sun.print;
 
-import javax.print.attribute.Attribute;
-import javax.print.attribute.PrintRequestAttribute;
+import javax.print.attribute.standard.DialogOwner;
 
-/*
- * An implementation class used to request the dialog be set always-on-top.
- * It needs to be read and honoured by the dialog code which will use
- * java.awt.Window.setAlwaysOnTop(true) in cases where it is supported.
- */
-public class DialogOnTop implements PrintRequestAttribute {
+public abstract class DialogOwnerAccessor {
 
-    private static final long serialVersionUID = -1901909867156076547L;
+    public abstract long getOwnerID(DialogOwner owner);
 
-    long id;
+    public static DialogOwnerAccessor accessor = null;
 
-    public DialogOnTop() {
+    public static void setAccessor(DialogOwnerAccessor acc) {
+        accessor = acc;
     }
 
-    public DialogOnTop(long id) {
-        this.id = id;
-    }
-
-    public final Class<? extends Attribute> getCategory() {
-        return DialogOnTop.class;
-    }
-
-    public long getID() {
-        return id;
-    }
-
-    public final String getName() {
-        return "dialog-on-top";
-    }
-
-    public String toString() {
-       return "dialog-on-top";
+    public static long getID(DialogOwner owner) {
+        if (accessor == null || owner == null) {
+            return 0;
+        } else {
+            return accessor.getOwnerID(owner);
+        }
     }
 }
