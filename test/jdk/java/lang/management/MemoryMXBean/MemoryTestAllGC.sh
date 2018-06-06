@@ -49,10 +49,10 @@ runOne()
 }
 
 # Test MemoryTest with default collector
-runOne MemoryTest 2
+runOne MemoryTest 2 3
 
 # Test MemoryTest with parallel scavenger collector
-runOne -XX:+UseParallelGC MemoryTest 2
+runOne -XX:+UseParallelGC MemoryTest 2 3
 
 
 exit 0

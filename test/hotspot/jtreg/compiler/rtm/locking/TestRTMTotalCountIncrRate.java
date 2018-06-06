@@ -129,7 +129,7 @@ public class TestRTMTotalCountIncrRate {
                     // If an actual JNI call will be replaced by
                     // intrinsic - we'll be in trouble, since xabort
                     // will be no longer called and test may fail.
-                    UNSAFE.addressSize();
+                    UNSAFE.pageSize();
                 }
                 Test.field++;
             }

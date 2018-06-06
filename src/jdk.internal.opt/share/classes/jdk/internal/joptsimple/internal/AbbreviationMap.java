@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -84,37 +84,41 @@ import java.util.TreeMap;
  *
  * @param <V> a constraint on the types of the values in the map
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
- * @see <a href="http://www.perldoc.com/perl5.8.0/lib/Text/Abbrev.html">Perl's Text::Abbrev module</a>
+ * @see <a href="http://perldoc.perl.org/Text/Abbrev.html">Perl's Text::Abbrev module</a>
+ * @see <a href="https://en.wikipedia.org/wiki/Radix_tree">Radix tree</a>
  */
-public class AbbreviationMap<V> {
+public class AbbreviationMap<V> implements OptionNameMap<V> {
+    private final Map<Character, AbbreviationMap<V>> children = new TreeMap<>();
+
     private String key;
     private V value;
-    private final Map<Character, AbbreviationMap<V>> children = new TreeMap<Character, AbbreviationMap<V>>();
     private int keysBeyond;
 
     /**
      * <p>Tells whether the given key is in the map, or whether the given key is a unique
      * abbreviation of a key that is in the map.</p>
      *
-     * @param aKey key to look up
+     * @param key key to look up
      * @return {@code true} if {@code key} is present in the map
      * @throws NullPointerException if {@code key} is {@code null}
      */
-    public boolean contains( String aKey ) {
-        return get( aKey ) != null;
+    @Override
+    public boolean contains(String key) {
+        return get(key) != null;
     }
 
     /**
      * <p>Answers the value associated with the given key.  The key can be a unique
      * abbreviation of a key that is in the map. </p>
      *
-     * @param aKey key to look up
+     * @param key key to look up
      * @return the value associated with {@code aKey}; or {@code null} if there is no
      * such value or {@code aKey} is not a unique abbreviation of a key in the map
      * @throws NullPointerException if {@code aKey} is {@code null}
      */
-    public V get( String aKey ) {
-        char[] chars = charsOf( aKey );
+    @Override
+    public V get( String key ) {
+        char[] chars = charsOf( key );
 
         AbbreviationMap<V> child = this;
         for ( char each : chars ) {
@@ -130,18 +134,19 @@ public class AbbreviationMap<V> {
      * <p>Associates a given value with a given key.  If there was a previous
      * association, the old value is replaced with the new one.</p>
      *
-     * @param aKey key to create in the map
+     * @param key key to create in the map
      * @param newValue value to associate with the key
      * @throws NullPointerException if {@code aKey} or {@code newValue} is {@code null}
      * @throws IllegalArgumentException if {@code aKey} is a zero-length string
      */
-    public void put( String aKey, V newValue ) {
+    @Override
+    public void put( String key, V newValue ) {
         if ( newValue == null )
             throw new NullPointerException();
-        if ( aKey.length() == 0 )
+        if ( key.length() == 0 )
             throw new IllegalArgumentException();
 
-        char[] chars = charsOf( aKey );
+        char[] chars = charsOf(key);
         add( chars, newValue, 0, chars.length );
     }
 
@@ -154,6 +159,7 @@ public class AbbreviationMap<V> {
      * @throws NullPointerException if {@code keys} or {@code newValue} is {@code null}
      * @throws IllegalArgumentException if any of {@code keys} is a zero-length string
      */
+    @Override
     public void putAll( Iterable<String> keys, V newValue ) {
         for ( String each : keys )
             put( each, newValue );
@@ -170,7 +176,7 @@ public class AbbreviationMap<V> {
         char nextChar = chars[ offset ];
         AbbreviationMap<V> child = children.get( nextChar );
         if ( child == null ) {
-            child = new AbbreviationMap<V>();
+            child = new AbbreviationMap<>();
             children.put( nextChar, child );
         }
 
@@ -188,15 +194,16 @@ public class AbbreviationMap<V> {
     /**
      * <p>If the map contains the given key, dissociates the key from its value.</p>
      *
-     * @param aKey key to remove
+     * @param key key to remove
      * @throws NullPointerException if {@code aKey} is {@code null}
      * @throws IllegalArgumentException if {@code aKey} is a zero-length string
      */
-    public void remove( String aKey ) {
-        if ( aKey.length() == 0 )
+    @Override
+    public void remove( String key ) {
+        if ( key.length() == 0 )
             throw new IllegalArgumentException();
 
-        char[] keyChars = charsOf( aKey );
+        char[] keyChars = charsOf(key);
         remove( keyChars, 0, keyChars.length );
     }
 
@@ -242,8 +249,9 @@ public class AbbreviationMap<V> {
      *
      * @return a Java map corresponding to this abbreviation map
      */
+    @Override
     public Map<String, V> toJavaUtilMap() {
-        Map<String, V> mappings = new TreeMap<String, V>();
+        Map<String, V> mappings = new TreeMap<>();
         addToMappings( mappings );
         return mappings;
     }

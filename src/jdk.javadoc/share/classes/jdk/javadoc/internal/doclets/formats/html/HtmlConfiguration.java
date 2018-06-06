@@ -452,8 +452,12 @@ public class HtmlConfiguration extends BaseConfiguration {
      * packages is more than one. Sets {@link #createoverview} field to true.
      */
     protected void setCreateOverview() {
-        if ((overviewpath != null || packages.size() > 1) && !nooverview) {
-            createoverview = true;
+        if (!nooverview) {
+            if (overviewpath != null
+                    || modules.size() > 1
+                    || (modules.isEmpty() && packages.size() > 1)) {
+                createoverview = true;
+            }
         }
     }
 

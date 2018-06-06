@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/macros.hpp"
 
 //                Memory Access Ordering Model
 //
@@ -311,4 +312,38 @@ struct OrderAccess::PlatformOrderedLoad {
   }
 };
 
+#include OS_CPU_HEADER(orderAccess)
+
+template<> inline void ScopedFenceGeneral<X_ACQUIRE>::postfix()       { OrderAccess::acquire(); }
+template<> inline void ScopedFenceGeneral<RELEASE_X>::prefix()        { OrderAccess::release(); }
+template<> inline void ScopedFenceGeneral<RELEASE_X_FENCE>::prefix()  { OrderAccess::release(); }
+template<> inline void ScopedFenceGeneral<RELEASE_X_FENCE>::postfix() { OrderAccess::fence();   }
+
+
+template <typename FieldType, ScopedFenceType FenceType>
+inline void OrderAccess::ordered_store(volatile FieldType* p, FieldType v) {
+  ScopedFence<FenceType> f((void*)p);
+  Atomic::store(v, p);
+}
+
+template <typename FieldType, ScopedFenceType FenceType>
+inline FieldType OrderAccess::ordered_load(const volatile FieldType* p) {
+  ScopedFence<FenceType> f((void*)p);
+  return Atomic::load(p);
+}
+
+template <typename T>
+inline T OrderAccess::load_acquire(const volatile T* p) {
+  return LoadImpl<T, PlatformOrderedLoad<sizeof(T), X_ACQUIRE> >()(p);
+}
+
+template <typename T, typename D>
+inline void OrderAccess::release_store(volatile D* p, T v) {
+  StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X> >()(v, p);
+}
+
+template <typename T, typename D>
+inline void OrderAccess::release_store_fence(volatile D* p, T v) {
+  StoreImpl<T, D, PlatformOrderedStore<sizeof(D), RELEASE_X_FENCE> >()(v, p);
+}
 #endif // SHARE_VM_RUNTIME_ORDERACCESS_HPP

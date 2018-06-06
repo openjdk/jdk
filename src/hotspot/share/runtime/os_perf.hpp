@@ -26,7 +26,7 @@
 #define SHARE_VM_RUNTIME_OS_PERF_HPP
 
 #include "utilities/macros.hpp"
-#include "memory/allocation.inline.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #define FUNCTIONALITY_NOT_IMPLEMENTED -8

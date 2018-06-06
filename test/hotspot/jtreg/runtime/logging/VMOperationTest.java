@@ -38,8 +38,8 @@ import jdk.test.lib.process.ProcessTools;
 public class VMOperationTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:vmoperation=debug",
-                                                                  "-Xmx64m",
-                                                                  "-Xms64m",
+                                                                  "-Xmx128m",
+                                                                  "-Xms128m",
                                                                   InternalClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("VM_Operation (");
@@ -65,4 +65,3 @@ public class VMOperationTest {
         }
     }
 }
-

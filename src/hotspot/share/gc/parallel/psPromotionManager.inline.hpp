@@ -213,7 +213,8 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
     Copy::aligned_disjoint_words((HeapWord*)o, (HeapWord*)new_obj, new_obj_size);
 
     // Now we have to CAS in the header.
-    if (o->cas_forward_to(new_obj, test_mark)) {
+    // Make copy visible to threads reading the forwardee.
+    if (o->cas_forward_to(new_obj, test_mark, memory_order_release)) {
       // We won any races, we "own" this object.
       assert(new_obj == o->forwardee(), "Sanity");
 
@@ -256,11 +257,12 @@ inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
       }
 
       // don't update this before the unallocation!
-      new_obj = o->forwardee();
+      // Using acquire though consume would be accurate for accessing new_obj.
+      new_obj = o->forwardee_acquire();
     }
   } else {
     assert(o->is_forwarded(), "Sanity");
-    new_obj = o->forwardee();
+    new_obj = o->forwardee_acquire();
   }
 
   // This code must come after the CAS test, or it will print incorrect

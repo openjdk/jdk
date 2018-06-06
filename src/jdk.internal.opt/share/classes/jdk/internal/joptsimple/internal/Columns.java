@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -58,7 +58,6 @@ package jdk.internal.joptsimple.internal;
 import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import static java.text.BreakIterator.*;
 
@@ -82,7 +81,7 @@ class Columns {
         List<String> options = piecesOf( row.option, optionWidth );
         List<String> descriptions = piecesOf( row.description, descriptionWidth );
 
-        List<Row> rows = new ArrayList<Row>();
+        List<Row> rows = new ArrayList<>();
         for ( int i = 0; i < Math.max( options.size(), descriptions.size() ); ++i )
             rows.add( new Row( itemOrEmpty( options, i ), itemOrEmpty( descriptions, i ) ) );
 
@@ -94,7 +93,7 @@ class Columns {
     }
 
     private List<String> piecesOf( String raw, int width ) {
-        List<String> pieces = new ArrayList<String>();
+        List<String> pieces = new ArrayList<>();
 
         for ( String each : raw.trim().split( LINE_SEPARATOR ) )
             pieces.addAll( piecesOfEmbeddedLine( each, width ) );
@@ -103,9 +102,9 @@ class Columns {
     }
 
     private List<String> piecesOfEmbeddedLine( String line, int width ) {
-        List<String> pieces = new ArrayList<String>();
+        List<String> pieces = new ArrayList<>();
 
-        BreakIterator words = BreakIterator.getLineInstance( Locale.US );
+        BreakIterator words = BreakIterator.getLineInstance();
         words.setText( line );
 
         StringBuilder nextPiece = new StringBuilder();

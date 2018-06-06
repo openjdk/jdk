@@ -34,6 +34,7 @@
  * garbage collection takes place because their classloader is made unreachable
  * at the end of the each loop iteration. The loop is repeated 1000 times.
  *
+ * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,18 +261,20 @@ public abstract class StringConcat {
         public Item makeConcat(JCTree.JCAssignOp tree) {
             List<JCTree> args = collectAll(tree.lhs, tree.rhs);
             Item l = gen.genExpr(tree.lhs, tree.lhs.type);
-            emit(args, tree.type, tree.pos());
+            l.duplicate();
+            l.load();
+            emit(tree.pos(), args, false, tree.type);
             return l;
         }
 
         @Override
         public Item makeConcat(JCTree.JCBinary tree) {
             List<JCTree> args = collectAll(tree.lhs, tree.rhs);
-            emit(args, tree.type, tree.pos());
+            emit(tree.pos(), args, true, tree.type);
             return gen.getItems().makeStackItem(syms.stringType);
         }
 
-        protected abstract void emit(List<JCTree> args, Type type, JCDiagnostic.DiagnosticPosition pos);
+        protected abstract void emit(JCDiagnostic.DiagnosticPosition pos, List<JCTree> args, boolean generateFirstArg, Type type);
 
         /** Peel the argument list into smaller chunks. */
         protected List<List<JCTree>> split(List<JCTree> args) {
@@ -318,9 +320,10 @@ public abstract class StringConcat {
         }
 
         /** Emit the indy concat for all these arguments, possibly peeling along the way */
-        protected void emit(List<JCTree> args, Type type, JCDiagnostic.DiagnosticPosition pos) {
+        protected void emit(JCDiagnostic.DiagnosticPosition pos, List<JCTree> args, boolean generateFirstArg, Type type) {
             List<List<JCTree>> split = split(args);
 
+            boolean first = true;
             for (List<JCTree> t : split) {
                 Assert.check(!t.isEmpty(), "Arguments list is empty");
 
@@ -333,9 +336,11 @@ public abstract class StringConcat {
                     } else {
                         dynamicArgs.add(sharpestAccessible(arg.type));
                     }
-                    gen.genExpr(arg, arg.type).load();
+                    if (!first || generateFirstArg) {
+                        gen.genExpr(arg, arg.type).load();
+                    }
+                    first = false;
                 }
-
                 doCall(type, pos, dynamicArgs.toList());
             }
 
@@ -402,9 +407,10 @@ public abstract class StringConcat {
         }
 
         @Override
-        protected void emit(List<JCTree> args, Type type, JCDiagnostic.DiagnosticPosition pos) {
+        protected void emit(JCDiagnostic.DiagnosticPosition pos, List<JCTree> args, boolean generateFirstArg, Type type) {
             List<List<JCTree>> split = split(args);
 
+            boolean first = true;
             for (List<JCTree> t : split) {
                 Assert.check(!t.isEmpty(), "Arguments list is empty");
 
@@ -433,7 +439,10 @@ public abstract class StringConcat {
                         // Ordinary arguments come through the dynamic arguments.
                         recipe.append(TAG_ARG);
                         dynamicArgs.add(sharpestAccessible(arg.type));
-                        gen.genExpr(arg, arg.type).load();
+                        if (!first || generateFirstArg) {
+                            gen.genExpr(arg, arg.type).load();
+                        }
+                        first = false;
                     }
                 }
 

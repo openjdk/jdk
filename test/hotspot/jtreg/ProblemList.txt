@@ -148,6 +148,9 @@ vmTestbase/nsk/jvmti/IterateThroughHeap/filter-untagged/TestDescription.java 820
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8191869,8192647 generic-all
 
+vmTestbase/jit/escape/LockCoarsening/LockCoarsening001/TestDescription.java 8148743 generic-all
+vmTestbase/jit/escape/LockCoarsening/LockCoarsening002/TestDescription.java 8079666 generic-all
+
 vmTestbase/vm/mlvm/indy/func/jdi/breakpointOtherStratum/Test.java 8199578 generic-all
 vmTestbase/vm/mlvm/indy/func/jdi/breakpoint/Test.java 8199578 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInBootstrap/TestDescription.java 8013267 generic-all

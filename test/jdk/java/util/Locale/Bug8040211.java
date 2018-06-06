@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8040211 8191404
- * @summary Checks the IANA language subtag registry data updation
- *          (LSR Revision: 2017-08-15) with Locale and Locale.LanguageRange
+ * @bug 8040211 8191404 8203872
+ * @summary Checks the IANA language subtag registry data update
+ *          (LSR Revision: 2018-04-23) with Locale and Locale.LanguageRange
  *          class methods.
  * @run main Bug8040211
  */
@@ -67,8 +67,8 @@ public class Bug8040211 {
     private static void test_parse() {
         boolean error = false;
         String str = "Accept-Language: aam, adp, aue, bcg, cqu, ema,"
-                + " en-gb-oed, gti, koj, kwq, kxe, lii, lmm, mtm, ngv,"
-                + " oyb, phr, pub, suj, taj;q=0.9, yug;q=0.5, gfx;q=0.4";
+                + " en-gb-oed, gti, kdz, koj, kwq, kxe, lii, lmm, mtm, ngv,"
+                + " oyb, phr, pub, suj, taj;q=0.9, ar-hyw;q=0.8, yug;q=0.5, gfx;q=0.4";
         ArrayList<LanguageRange> expected = new ArrayList<>();
         expected.add(new LanguageRange("aam", 1.0));
         expected.add(new LanguageRange("aas", 1.0));
@@ -86,6 +86,8 @@ public class Bug8040211 {
         expected.add(new LanguageRange("en-gb-oxendict", 1.0));
         expected.add(new LanguageRange("gti", 1.0));
         expected.add(new LanguageRange("nyc", 1.0));
+        expected.add(new LanguageRange("kdz", 1.0));
+        expected.add(new LanguageRange("ncp", 1.0));
         expected.add(new LanguageRange("koj", 1.0));
         expected.add(new LanguageRange("kwv", 1.0));
         expected.add(new LanguageRange("kwq", 1.0));
@@ -112,6 +114,8 @@ public class Bug8040211 {
         expected.add(new LanguageRange("xsj", 1.0));
         expected.add(new LanguageRange("taj", 0.9));
         expected.add(new LanguageRange("tsf", 0.9));
+        expected.add(new LanguageRange("ar-hyw", 0.8));
+        expected.add(new LanguageRange("ar-arevmda", 0.8));
         expected.add(new LanguageRange("yug", 0.5));
         expected.add(new LanguageRange("yuu", 0.5));
         expected.add(new LanguageRange("gfx", 0.4));
@@ -176,15 +180,15 @@ public class Bug8040211 {
     private static void test_filter() {
         boolean error = false;
 
-        String ranges = "mtm-RU, en-gb-oed, coy";
-        String tags = "de-DE, en, mtm-RU, ymt-RU, en-gb-oxendict, ja-JP, pij, nts";
+        String ranges = "mtm-RU, en-gb-oed, coy, ar-HY";
+        String tags = "de-DE, en, mtm-RU, ymt-RU, en-gb-oxendict, ja-JP, pij, nts, ar-arevela";
         FilteringMode mode = EXTENDED_FILTERING;
 
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<Locale> tagList = generateLocales(tags);
         String actualLocales
                 = showLocales(Locale.filter(priorityList, tagList, mode));
-        String expectedLocales = "mtm-RU, ymt-RU, en-GB-oxendict, nts, pij";
+        String expectedLocales = "mtm-RU, ymt-RU, en-GB-oxendict, nts, pij, ar-arevela";
 
         if (!expectedLocales.equals(actualLocales)) {
             error = true;

@@ -103,7 +103,7 @@ ADD_EXPORTS := \
 $(GENSRC_DIR)/_gensrc_proc_done: $(PROC_SRCS) $(PROCESSOR_JARS)
 	$(call MakeDir, $(@D))
 	$(eval $(call ListPathsSafely,PROC_SRCS,$(@D)/_gensrc_proc_files))
-	$(JAVA_SMALL) $(NEW_JAVAC) \
+	$(JAVA) $(NEW_JAVAC) \
 	    -XDignore.symbol.file \
 	    --upgrade-module-path $(JDK_OUTPUTDIR)/modules --system none \
 	    $(ADD_EXPORTS) \

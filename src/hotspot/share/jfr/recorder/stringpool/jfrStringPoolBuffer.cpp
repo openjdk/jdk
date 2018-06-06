@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/recorder/stringpool/jfrStringPoolBuffer.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 
 JfrStringPoolBuffer::JfrStringPoolBuffer() : JfrBuffer(), _string_count_pos(0), _string_count_top(0) {}

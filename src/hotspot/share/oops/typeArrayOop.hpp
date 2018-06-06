@@ -32,12 +32,22 @@
 // It is used for arrays of {characters, singles, doubles, bytes, shorts, integers, longs}
 #include <limits.h>
 
+namespace TypeToBT {
+  template<typename T> BasicType to_basic_type();
+  template<> inline BasicType to_basic_type<jboolean>() { return T_BOOLEAN; }
+  template<> inline BasicType to_basic_type<jbyte>()    { return T_BYTE;    }
+  template<> inline BasicType to_basic_type<jchar>()    { return T_CHAR;    }
+  template<> inline BasicType to_basic_type<jshort>()   { return T_SHORT;   }
+  template<> inline BasicType to_basic_type<jint>()     { return T_INT;     }
+  template<> inline BasicType to_basic_type<jlong>()    { return T_LONG;    }
+  template<> inline BasicType to_basic_type<jfloat>()   { return T_FLOAT;   }
+  template<> inline BasicType to_basic_type<jdouble>()  { return T_DOUBLE;  }
+};
+
 class typeArrayOopDesc : public arrayOopDesc {
 private:
-  template <class T>
-  static ptrdiff_t element_offset(BasicType bt, int index) {
-    return arrayOopDesc::base_offset_in_bytes(bt) + sizeof(T) * index;
-  }
+  template <typename T>
+  static BasicType bt() { return TypeToBT::to_basic_type<T>(); }
 
  protected:
   jchar*    char_base()   const;
@@ -52,6 +62,11 @@ private:
   friend class TypeArrayKlass;
 
  public:
+  template <typename T>
+  static ptrdiff_t element_offset(int index) {
+    return arrayOopDesc::base_offset_in_bytes(bt<T>()) + sizeof(T) * index;
+  }
+
   jbyte* byte_at_addr(int which) const;
   jboolean* bool_at_addr(int which) const;
   jchar* char_at_addr(int which) const;

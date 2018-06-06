@@ -54,7 +54,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/relocator.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -448,12 +448,6 @@ bool Method::init_method_counters(MethodCounters* counters) {
   // Try to install a pointer to MethodCounters, return true on success.
   return Atomic::replace_if_null(counters, &_method_counters);
 }
-
-void Method::cleanup_inline_caches() {
-  // The current system doesn't use inline caches in the interpreter
-  // => nothing to do (keep this method around for future use)
-}
-
 
 int Method::extra_stack_words() {
   // not an inline function, to avoid a header dependency on Interpreter

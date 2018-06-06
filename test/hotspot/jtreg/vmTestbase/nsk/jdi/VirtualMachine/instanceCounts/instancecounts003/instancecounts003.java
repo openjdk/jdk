@@ -41,6 +41,7 @@
  *         com.sun.jdi.ObjectCollectedException or com.sun.jdi.ClassNotLoadedException
  *         exception is thrown.
  *
+ * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
@@ -54,7 +55,7 @@
  *      -waittime=5
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
- *      "-debugee.vmkeys=${test.vm.opts} ${test.java.opts}"
+ *      "-debugee.vmkeys=-Xmx256M ${test.vm.opts} ${test.java.opts}"
  *      -testClassPath ${test.class.path}
  */
 

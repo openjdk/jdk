@@ -27,7 +27,7 @@
 
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
 

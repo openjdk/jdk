@@ -57,7 +57,7 @@ public class ReserveMemory {
           "-XX:+WhiteBoxAPI",
           "-XX:-TransmitErrorReport",
           "-XX:-CreateCoredumpOnCrash",
-          "-Xmx32m",
+          "-Xmx128m",
           "ReserveMemory",
           "test");
 

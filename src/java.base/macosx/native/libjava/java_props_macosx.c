@@ -47,6 +47,7 @@ char *getPosixLocale(int cat) {
 #define LOCALEIDLENGTH  128
 char *getMacOSXLocale(int cat) {
     const char* retVal = NULL;
+    char languageString[LOCALEIDLENGTH];
     char localeString[LOCALEIDLENGTH];
 
     switch (cat) {
@@ -67,7 +68,6 @@ char *getMacOSXLocale(int cat) {
                 CFRelease(languages);
                 return NULL;
             }
-            char languageString[LOCALEIDLENGTH];
             if (CFStringGetCString(primaryLanguage, languageString,
                                    LOCALEIDLENGTH, CFStringGetSystemEncoding()) == false) {
                 CFRelease(languages);

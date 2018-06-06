@@ -76,7 +76,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "services/classLoadingService.hpp"
@@ -109,9 +109,6 @@ oop         SystemDictionary::_java_system_loader         =  NULL;
 oop         SystemDictionary::_java_platform_loader       =  NULL;
 
 bool        SystemDictionary::_has_checkPackageAccess     =  false;
-
-// lazily initialized klass variables
-InstanceKlass* volatile SystemDictionary::_abstract_ownable_synchronizer_klass = NULL;
 
 // Default ProtectionDomainCacheSize value
 
@@ -1894,22 +1891,6 @@ void SystemDictionary::remove_classes_in_error_state() {
   ClassLoaderData::the_null_class_loader_data()->dictionary()->remove_classes_in_error_state();
   RemoveClassesClosure rcc;
   ClassLoaderDataGraph::cld_do(&rcc);
-}
-
-// ----------------------------------------------------------------------------
-// Lazily load klasses
-
-void SystemDictionary::load_abstract_ownable_synchronizer_klass(TRAPS) {
-  // if multiple threads calling this function, only one thread will load
-  // the class.  The other threads will find the loaded version once the
-  // class is loaded.
-  Klass* aos = _abstract_ownable_synchronizer_klass;
-  if (aos == NULL) {
-    Klass* k = resolve_or_fail(vmSymbols::java_util_concurrent_locks_AbstractOwnableSynchronizer(), true, CHECK);
-    // Force a fence to prevent any read before the write completes
-    OrderAccess::fence();
-    _abstract_ownable_synchronizer_klass = InstanceKlass::cast(k);
-  }
 }
 
 // ----------------------------------------------------------------------------

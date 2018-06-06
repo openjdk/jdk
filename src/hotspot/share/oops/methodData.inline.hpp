@@ -26,7 +26,7 @@
 #define SHARE_VM_OOPS_METHODDATA_INLINE_HPP
 
 #include "oops/methodData.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 
 inline void DataLayout::release_set_cell_at(int index, intptr_t value) {
   OrderAccess::release_store(&_cells[index], value);

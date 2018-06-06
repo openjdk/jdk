@@ -3792,69 +3792,7 @@ bool Matcher::clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, Ve
   return false;
 }
 
-// Transform:
-// (AddP base (AddP base address (LShiftL index con)) offset)
-// into:
-// (AddP base (AddP base offset) (LShiftL index con))
-// to take full advantage of ARM's addressing modes
 void Compile::reshape_address(AddPNode* addp) {
-  Node *addr = addp->in(AddPNode::Address);
-  if (addr->is_AddP() && addr->in(AddPNode::Base) == addp->in(AddPNode::Base)) {
-    const AddPNode *addp2 = addr->as_AddP();
-    if ((addp2->in(AddPNode::Offset)->Opcode() == Op_LShiftL &&
-         addp2->in(AddPNode::Offset)->in(2)->is_Con() &&
-         size_fits_all_mem_uses(addp, addp2->in(AddPNode::Offset)->in(2)->get_int())) ||
-        addp2->in(AddPNode::Offset)->Opcode() == Op_ConvI2L) {
-
-      // Any use that can't embed the address computation?
-      for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
-        Node* u = addp->fast_out(i);
-        if (!u->is_Mem()) {
-          return;
-        }
-        if (u->is_LoadVector() || u->is_StoreVector() || u->Opcode() == Op_StoreCM) {
-          return;
-        }
-        if (addp2->in(AddPNode::Offset)->Opcode() != Op_ConvI2L) {
-          int scale = 1 << addp2->in(AddPNode::Offset)->in(2)->get_int();
-          if (VM_Version::expensive_load(u->as_Mem()->memory_size(), scale)) {
-            return;
-          }
-        }
-      }
-
-      Node* off = addp->in(AddPNode::Offset);
-      Node* addr2 = addp2->in(AddPNode::Address);
-      Node* base = addp->in(AddPNode::Base);
-
-      Node* new_addr = NULL;
-      // Check whether the graph already has the new AddP we need
-      // before we create one (no GVN available here).
-      for (DUIterator_Fast imax, i = addr2->fast_outs(imax); i < imax; i++) {
-        Node* u = addr2->fast_out(i);
-        if (u->is_AddP() &&
-            u->in(AddPNode::Base) == base &&
-            u->in(AddPNode::Address) == addr2 &&
-            u->in(AddPNode::Offset) == off) {
-          new_addr = u;
-          break;
-        }
-      }
-
-      if (new_addr == NULL) {
-        new_addr = new AddPNode(base, addr2, off);
-      }
-      Node* new_off = addp2->in(AddPNode::Offset);
-      addp->set_req(AddPNode::Address, new_addr);
-      if (addr->outcnt() == 0) {
-        addr->disconnect_inputs(NULL, this);
-      }
-      addp->set_req(AddPNode::Offset, new_off);
-      if (off->outcnt() == 0) {
-        off->disconnect_inputs(NULL, this);
-      }
-    }
-  }
 }
 
 // helper for encoding java_to_runtime calls on sim

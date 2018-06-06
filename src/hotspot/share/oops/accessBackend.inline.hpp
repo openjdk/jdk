@@ -118,8 +118,12 @@ inline T RawAccessBarrier<decorators>::oop_atomic_xchg_at(T new_value, oop base,
 
 template <DecoratorSet decorators>
 template <typename T>
-inline bool RawAccessBarrier<decorators>::oop_arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
-  return arraycopy(src_obj, dst_obj, src, dst, length);
+inline bool RawAccessBarrier<decorators>::oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                                        arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                                        size_t length) {
+  return arraycopy(src_obj, src_offset_in_bytes, src_raw,
+                   dst_obj, dst_offset_in_bytes, dst_raw,
+                   length);
 }
 
 template <DecoratorSet decorators>
@@ -247,35 +251,45 @@ public:
   template <DecoratorSet decorators, typename T>
   static inline typename EnableIf<
   HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value>::type
-  arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
+  arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+            arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+            size_t length) {
+
+    src_raw = arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw);
+    dst_raw = arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw);
+
     // We do not check for ARRAYCOPY_ATOMIC for oops, because they are unconditionally always atomic.
     if (HasDecorator<decorators, ARRAYCOPY_ARRAYOF>::value) {
-      AccessInternal::arraycopy_arrayof_conjoint_oops(src, dst, length);
+      AccessInternal::arraycopy_arrayof_conjoint_oops(src_raw, dst_raw, length);
     } else {
       typedef typename HeapOopType<decorators>::type OopType;
-      AccessInternal::arraycopy_conjoint_oops(reinterpret_cast<OopType*>(src),
-                                              reinterpret_cast<OopType*>(dst), length);
+      AccessInternal::arraycopy_conjoint_oops(reinterpret_cast<OopType*>(src_raw),
+                                              reinterpret_cast<OopType*>(dst_raw), length);
     }
   }
 
   template <DecoratorSet decorators, typename T>
   static inline typename EnableIf<
     !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value>::type
-  arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
+  arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw, arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw, size_t length) {
+
+    src_raw = arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw);
+    dst_raw = arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw);
+
     if (HasDecorator<decorators, ARRAYCOPY_ARRAYOF>::value) {
-      AccessInternal::arraycopy_arrayof_conjoint(src, dst, length);
+      AccessInternal::arraycopy_arrayof_conjoint(const_cast<T*>(src_raw), dst_raw, length);
     } else if (HasDecorator<decorators, ARRAYCOPY_DISJOINT>::value && sizeof(T) == HeapWordSize) {
       // There is only a disjoint optimization for word granularity copying
       if (HasDecorator<decorators, ARRAYCOPY_ATOMIC>::value) {
-        AccessInternal::arraycopy_disjoint_words_atomic(src, dst, length);
+        AccessInternal::arraycopy_disjoint_words_atomic(const_cast<T*>(src_raw), dst_raw, length);
       } else {
-        AccessInternal::arraycopy_disjoint_words(src, dst, length);
+        AccessInternal::arraycopy_disjoint_words(const_cast<T*>(src_raw), dst_raw, length);
       }
     } else {
       if (HasDecorator<decorators, ARRAYCOPY_ATOMIC>::value) {
-        AccessInternal::arraycopy_conjoint_atomic(src, dst, length);
+        AccessInternal::arraycopy_conjoint_atomic(const_cast<T*>(src_raw), dst_raw, length);
       } else {
-        AccessInternal::arraycopy_conjoint(src, dst, length);
+        AccessInternal::arraycopy_conjoint(const_cast<T*>(src_raw), dst_raw, length);
       }
     }
   }
@@ -283,19 +297,29 @@ public:
   template <DecoratorSet decorators>
   static inline typename EnableIf<
     !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value>::type
-  arraycopy(arrayOop src_obj, arrayOop dst_obj, void* src, void* dst, size_t length) {
+  arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const void* src_raw,
+            arrayOop dst_obj, size_t dst_offset_in_bytes, void* dst_raw,
+            size_t length) {
+
+    src_raw = arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw);
+    dst_raw = arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw);
+
     if (HasDecorator<decorators, ARRAYCOPY_ATOMIC>::value) {
-      AccessInternal::arraycopy_conjoint_atomic(src, dst, length);
+      AccessInternal::arraycopy_conjoint_atomic(const_cast<void*>(src_raw), dst_raw, length);
     } else {
-      AccessInternal::arraycopy_conjoint(src, dst, length);
+      AccessInternal::arraycopy_conjoint(const_cast<void*>(src_raw), dst_raw, length);
     }
   }
 };
 
 template <DecoratorSet decorators>
 template <typename T>
-inline bool RawAccessBarrier<decorators>::arraycopy(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
-  RawAccessBarrierArrayCopy::arraycopy<decorators>(src_obj, dst_obj, src, dst, length);
+inline bool RawAccessBarrier<decorators>::arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                                    arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                                    size_t length) {
+  RawAccessBarrierArrayCopy::arraycopy<decorators>(src_obj, src_offset_in_bytes, src_raw,
+                                                   dst_obj, dst_offset_in_bytes, dst_raw,
+                                                   length);
   return true;
 }
 

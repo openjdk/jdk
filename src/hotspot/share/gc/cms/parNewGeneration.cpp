@@ -958,7 +958,7 @@ void ParNewGeneration::collect(bool   full,
   // Can  the mt_degree be set later (at run_task() time would be best)?
   rp->set_active_mt_degree(active_workers);
   ReferenceProcessorStats stats;
-  ReferenceProcessorPhaseTimes pt(_gc_timer, rp->num_queues());
+  ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
   if (rp->processing_is_mt()) {
     ParNewRefProcTaskExecutor task_executor(*this, *_old_gen, thread_state_set);
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
