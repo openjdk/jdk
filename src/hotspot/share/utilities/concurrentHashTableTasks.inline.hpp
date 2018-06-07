@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_CONCURRENT_HASH_TABLE_TASKS_INLINE_HPP
 #define SHARE_UTILITIES_CONCURRENT_HASH_TABLE_TASKS_INLINE_HPP
 
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 
 // This inline file contains BulkDeleteTask and GrowTasks which are both bucket
@@ -63,6 +64,7 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BucketsOperation {
   // Calculate starting values.
   void setup() {
     _size_log2 = _cht->_table->_log2_size;
+    _task_size_log2 = MIN2(_task_size_log2, _size_log2);
     size_t tmp = _size_log2 > _task_size_log2 ?
                  _size_log2 - _task_size_log2 : 0;
     _stop_task = (((size_t)1) << tmp);

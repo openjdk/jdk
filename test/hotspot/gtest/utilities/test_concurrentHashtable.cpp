@@ -265,6 +265,40 @@ static void cht_scan(Thread* thr) {
   delete cht;
 }
 
+struct ChtCountScan {
+  size_t _count;
+  ChtCountScan() : _count(0) {}
+  bool operator()(uintptr_t* val) {
+    _count++;
+    return true; /* continue scan */
+  }
+};
+
+static void cht_move_to(Thread* thr) {
+  uintptr_t val1 = 0x2;
+  uintptr_t val2 = 0xe0000002;
+  uintptr_t val3 = 0x3;
+  SimpleTestLookup stl1(val1), stl2(val2), stl3(val3);
+  SimpleTestTable* from_cht = new SimpleTestTable();
+  EXPECT_TRUE(from_cht->insert(thr, stl1, val1)) << "Insert unique value failed.";
+  EXPECT_TRUE(from_cht->insert(thr, stl2, val2)) << "Insert unique value failed.";
+  EXPECT_TRUE(from_cht->insert(thr, stl3, val3)) << "Insert unique value failed.";
+
+  SimpleTestTable* to_cht = new SimpleTestTable();
+  EXPECT_TRUE(from_cht->try_move_nodes_to(thr, to_cht)) << "Moving nodes to new table failed";
+
+  ChtCountScan scan_old;
+  EXPECT_TRUE(from_cht->try_scan(thr, scan_old)) << "Scanning table should work.";
+  EXPECT_EQ(scan_old._count, (size_t)0) << "All items should be moved";
+
+  ChtCountScan scan_new;
+  EXPECT_TRUE(to_cht->try_scan(thr, scan_new)) << "Scanning table should work.";
+  EXPECT_EQ(scan_new._count, (size_t)3) << "All items should be moved";
+  EXPECT_TRUE(to_cht->get_copy(thr, stl1) == val1) << "Getting an inserted value should work.";
+  EXPECT_TRUE(to_cht->get_copy(thr, stl2) == val2) << "Getting an inserted value should work.";
+  EXPECT_TRUE(to_cht->get_copy(thr, stl3) == val3) << "Getting an inserted value should work.";
+}
+
 static void cht_grow(Thread* thr) {
   uintptr_t val = 0x2;
   uintptr_t val2 = 0x22;
@@ -369,6 +403,10 @@ TEST_VM(ConcurrentHashTable, basic_get_insert_bulk_delete_task) {
 
 TEST_VM(ConcurrentHashTable, basic_scan) {
   nomt_test_doer(cht_scan);
+}
+
+TEST_VM(ConcurrentHashTable, basic_move_to) {
+  nomt_test_doer(cht_move_to);
 }
 
 TEST_VM(ConcurrentHashTable, basic_grow) {

@@ -30,6 +30,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
+#include "gc/shared/oopStorageParState.hpp"
 #include "utilities/growableArray.hpp"
 
 class CLDClosure;
@@ -90,7 +91,8 @@ public:
                          ScanningOption so,
                          bool only_strong_roots,
                          OopsInGenClosure* root_closure,
-                         CLDClosure* cld_closure);
+                         CLDClosure* cld_closure,
+                         OopStorage::ParState<false, false>* par_state_string = NULL);
 
   GCMemoryManager* old_manager() const { return _old_manager; }
 

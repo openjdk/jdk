@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.hpp"
@@ -33,6 +34,10 @@
 
 template <> OopStorage* WeakHandle<vm_class_loader_data>::get_storage() {
   return SystemDictionary::vm_weak_oop_storage();
+}
+
+template <> OopStorage* WeakHandle<vm_string_table_data>::get_storage() {
+  return StringTable::weak_storage();
 }
 
 template <WeakHandleType T>
@@ -68,4 +73,5 @@ void WeakHandle<T>::print_on(outputStream* st) const {
 
 // Provide instantiation.
 template class WeakHandle<vm_class_loader_data>;
+template class WeakHandle<vm_string_table_data>;
 

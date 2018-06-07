@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/stringTable.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/serviceThread.hpp"
@@ -82,6 +83,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool has_gc_notification_event = false;
     bool has_dcmd_notification_event = false;
     bool acs_notify = false;
+    bool stringtable_work = false;
     JvmtiDeferredEvent jvmti_event;
     {
       // Need state transition ThreadBlockInVM so that this thread
@@ -98,7 +100,8 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
       while (!(sensors_changed = LowMemoryDetector::has_pending_requests()) &&
              !(has_jvmti_events = JvmtiDeferredEventQueue::has_events()) &&
               !(has_gc_notification_event = GCNotifier::has_event()) &&
-              !(has_dcmd_notification_event = DCmdFactory::has_pending_jmx_notification())) {
+              !(has_dcmd_notification_event = DCmdFactory::has_pending_jmx_notification()) &&
+              !(stringtable_work = StringTable::has_work())) {
         // wait until one of the sensors has pending requests, or there is a
         // pending JVMTI event or JMX GC notification to post
         Service_lock->wait(Mutex::_no_safepoint_check_flag);
@@ -107,6 +110,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
       if (has_jvmti_events) {
         jvmti_event = JvmtiDeferredEventQueue::dequeue();
       }
+    }
+
+    if (stringtable_work) {
+      StringTable::do_concurrent_work(jt);
     }
 
     if (has_jvmti_events) {

@@ -220,13 +220,14 @@ void CMSHeap::cms_process_roots(StrongRootsScope* scope,
                                 ScanningOption so,
                                 bool only_strong_roots,
                                 OopsInGenClosure* root_closure,
-                                CLDClosure* cld_closure) {
+                                CLDClosure* cld_closure,
+                                OopStorage::ParState<false, false>* par_state_string) {
   MarkingCodeBlobClosure mark_code_closure(root_closure, !CodeBlobToOopClosure::FixRelocations);
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
 
   process_roots(scope, so, root_closure, cld_closure, weak_cld_closure, &mark_code_closure);
   if (!only_strong_roots) {
-    process_string_table_roots(scope, root_closure);
+    process_string_table_roots(scope, root_closure, par_state_string);
   }
 
   if (young_gen_as_roots &&

@@ -54,6 +54,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
@@ -2769,10 +2770,12 @@ class CMSParMarkTask : public AbstractGangTask {
  protected:
   CMSCollector*     _collector;
   uint              _n_workers;
+  OopStorage::ParState<false, false> _par_state_string;
   CMSParMarkTask(const char* name, CMSCollector* collector, uint n_workers) :
       AbstractGangTask(name),
       _collector(collector),
-      _n_workers(n_workers) {}
+      _n_workers(n_workers),
+      _par_state_string(StringTable::weak_storage()) {}
   // Work method in support of parallel rescan ... of young gen spaces
   void do_young_space_rescan(OopsInGenClosure* cl,
                              ContiguousSpace* space,
@@ -4274,7 +4277,9 @@ void CMSParInitialMarkTask::work(uint worker_id) {
                           GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                           _collector->should_unload_classes(),
                           &par_mri_cl,
-                          &cld_closure);
+                          &cld_closure,
+                          &_par_state_string);
+
   assert(_collector->should_unload_classes()
          || (_collector->CMSCollector::roots_scanning_options() & GenCollectedHeap::SO_AllCodeCache),
          "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
@@ -4403,7 +4408,8 @@ void CMSParRemarkTask::work(uint worker_id) {
                           GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                           _collector->should_unload_classes(),
                           &par_mrias_cl,
-                          NULL);     // The dirty klasses will be handled below
+                          NULL,     // The dirty klasses will be handled below
+                          &_par_state_string);
 
   assert(_collector->should_unload_classes()
          || (_collector->CMSCollector::roots_scanning_options() & GenCollectedHeap::SO_AllCodeCache),

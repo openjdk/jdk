@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/stringTable.hpp"
 #include "gc/cms/cmsHeap.inline.hpp"
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
@@ -589,7 +590,8 @@ ParNewGenTask::ParNewGenTask(ParNewGeneration* young_gen,
     _young_gen(young_gen), _old_gen(old_gen),
     _young_old_boundary(young_old_boundary),
     _state_set(state_set),
-    _strong_roots_scope(strong_roots_scope)
+    _strong_roots_scope(strong_roots_scope),
+    _par_state_string(StringTable::weak_storage())
 {}
 
 void ParNewGenTask::work(uint worker_id) {
@@ -611,7 +613,8 @@ void ParNewGenTask::work(uint worker_id) {
   heap->young_process_roots(_strong_roots_scope,
                            &par_scan_state.to_space_root_closure(),
                            &par_scan_state.older_gen_closure(),
-                           &cld_scan_closure);
+                           &cld_scan_closure,
+                           &_par_state_string);
 
   par_scan_state.end_strong_roots();
 
