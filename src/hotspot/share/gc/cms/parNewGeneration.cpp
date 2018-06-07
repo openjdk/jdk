@@ -816,7 +816,7 @@ void ParNewRefProcTaskExecutor::set_single_threaded_mode() {
 
 ScanClosureWithParBarrier::
 ScanClosureWithParBarrier(ParNewGeneration* g, bool gc_barrier) :
-  ScanClosure(g, gc_barrier)
+  OopsInClassLoaderDataOrGenClosure(g), _g(g), _boundary(g->reserved().end()), _gc_barrier(gc_barrier)
 { }
 
 template <typename OopClosureType1, typename OopClosureType2>
