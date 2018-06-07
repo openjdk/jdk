@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,12 +502,13 @@ public final class LauncherHelper {
     }
 
     // From src/share/bin/java.c:
-    //   enum LaunchMode { LM_UNKNOWN = 0, LM_CLASS, LM_JAR, LM_MODULE }
+    //   enum LaunchMode { LM_UNKNOWN = 0, LM_CLASS, LM_JAR, LM_MODULE, LM_SOURCE }
 
     private static final int LM_UNKNOWN = 0;
     private static final int LM_CLASS   = 1;
     private static final int LM_JAR     = 2;
     private static final int LM_MODULE  = 3;
+    private static final int LM_SOURCE  = 4;
 
     static void abort(Throwable t, String msgKey, Object... args) {
         if (msgKey != null) {
@@ -538,13 +539,21 @@ public final class LauncherHelper {
      *
      * @return the application's main class
      */
+    @SuppressWarnings("fallthrough")
     public static Class<?> checkAndLoadMain(boolean printToStderr,
                                             int mode,
                                             String what) {
         initOutput(printToStderr);
 
-        Class<?> mainClass = (mode == LM_MODULE) ? loadModuleMainClass(what)
-                                                 : loadMainClass(mode, what);
+        Class<?> mainClass = null;
+        switch (mode) {
+            case LM_MODULE: case LM_SOURCE:
+                mainClass = loadModuleMainClass(what);
+                break;
+            default:
+                mainClass = loadMainClass(mode, what);
+                break;
+        }
 
         // record the real main class for UI purposes
         // neither method above can return null, they will abort()
