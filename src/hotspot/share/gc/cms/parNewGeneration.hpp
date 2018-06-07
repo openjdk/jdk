@@ -275,9 +275,14 @@ class EvacuateFollowersClosureGeneral: public VoidClosure {
 
 // Closure for scanning ParNewGeneration.
 // Same as ScanClosure, except does parallel GC barrier.
-class ScanClosureWithParBarrier: public ScanClosure {
- protected:
+class ScanClosureWithParBarrier: public OopsInClassLoaderDataOrGenClosure {
+ private:
+  ParNewGeneration* _g;
+  HeapWord*         _boundary;
+  bool              _gc_barrier;
+
   template <class T> void do_oop_work(T* p);
+
  public:
   ScanClosureWithParBarrier(ParNewGeneration* g, bool gc_barrier);
   virtual void do_oop(oop* p);
