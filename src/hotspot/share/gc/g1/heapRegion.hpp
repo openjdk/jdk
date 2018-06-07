@@ -541,10 +541,6 @@ class HeapRegion: public G1ContiguousSpace {
   // objects during evac failure handling.
   void note_self_forwarding_removal_end(size_t marked_bytes);
 
-  // Returns "false" iff no object in the region was allocated when the
-  // last mark phase ended.
-  bool is_marked() { return _prev_top_at_mark_start != bottom(); }
-
   void reset_during_compaction() {
     assert(is_humongous(),
            "should only be called for humongous regions");
