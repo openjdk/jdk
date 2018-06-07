@@ -214,11 +214,9 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   assert(sizeof(*ct->card_table()->byte_map_base()) == sizeof(jbyte), "adjust this code");
 
   // Does store cross heap regions?
-  if (G1RSBarrierRegionFilter) {
-    __ xorr(tmp1, store_addr, new_val);
-    __ srdi_(tmp1, tmp1, HeapRegion::LogOfHRGrainBytes);
-    __ beq(CCR0, filtered);
-  }
+  __ xorr(tmp1, store_addr, new_val);
+  __ srdi_(tmp1, tmp1, HeapRegion::LogOfHRGrainBytes);
+  __ beq(CCR0, filtered);
 
   // Crosses regions, storing NULL?
   if (not_null) {

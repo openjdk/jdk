@@ -273,16 +273,14 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
   // Does store cross heap regions?
   // It does if the two addresses specify different grain addresses.
-  if (G1RSBarrierRegionFilter) {
-    if (VM_Version::has_DistinctOpnds()) {
-      __ z_xgrk(Rtmp1, Rstore_addr, Rnew_val);
-    } else {
-      __ z_lgr(Rtmp1, Rstore_addr);
-      __ z_xgr(Rtmp1, Rnew_val);
-    }
-    __ z_srag(Rtmp1, Rtmp1, HeapRegion::LogOfHRGrainBytes);
-    __ z_bre(filtered);
+  if (VM_Version::has_DistinctOpnds()) {
+    __ z_xgrk(Rtmp1, Rstore_addr, Rnew_val);
+  } else {
+    __ z_lgr(Rtmp1, Rstore_addr);
+    __ z_xgr(Rtmp1, Rnew_val);
   }
+  __ z_srag(Rtmp1, Rtmp1, HeapRegion::LogOfHRGrainBytes);
+  __ z_bre(filtered);
 
   // Crosses regions, storing NULL?
   if (not_null) {
