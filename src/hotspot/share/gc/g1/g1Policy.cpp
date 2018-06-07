@@ -825,10 +825,10 @@ double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards) const {
 
 size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {
   size_t bytes_to_copy;
-  if (hr->is_marked())
+  if (!hr->is_young()) {
     bytes_to_copy = hr->max_live_bytes();
-  else {
-    assert(hr->is_young() && hr->age_in_surv_rate_group() != -1, "invariant");
+  } else {
+    assert(hr->age_in_surv_rate_group() != -1, "invariant");
     int age = hr->age_in_surv_rate_group();
     double yg_surv_rate = predict_yg_surv_rate(age, hr->surv_rate_group());
     bytes_to_copy = (size_t) (hr->used() * yg_surv_rate);
