@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.family != "aix"
  *
  * @summary converted from VM testbase runtime/signal/sigpoll01.
  * VM testbase keywords: [signal, runtime, linux, solaris, macosx]
