@@ -524,14 +524,9 @@ void before_exit(JavaThread* thread) {
   }
 
   if (VerifyStringTableAtExit) {
-    int fail_cnt = 0;
-    {
-      MutexLocker ml(StringTable_lock);
-      fail_cnt = StringTable::verify_and_compare_entries();
-    }
-
+    size_t fail_cnt = StringTable::verify_and_compare_entries();
     if (fail_cnt != 0) {
-      tty->print_cr("ERROR: fail_cnt=%d", fail_cnt);
+      tty->print_cr("ERROR: fail_cnt=" SIZE_FORMAT, fail_cnt);
       guarantee(fail_cnt == 0, "unexpected StringTable verification failures");
     }
   }

@@ -2542,8 +2542,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Relax the access control checks in the verifier")                \
                                                                             \
   product(uintx, StringTableSize, defaultStringTableSize,                   \
-          "Number of buckets in the interned String table")                 \
-          range(minimumStringTableSize, 111*defaultStringTableSize)         \
+          "Number of buckets in the interned String table "                 \
+          "(will be rounded to nearest higher power of 2)")                 \
+          range(minimumStringTableSize, 16777216ul)                         \
                                                                             \
   experimental(uintx, SymbolTableSize, defaultSymbolTableSize,              \
           "Number of buckets in the JVM internal Symbol table")             \

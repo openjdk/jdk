@@ -42,6 +42,8 @@ extern Mutex*   JNIGlobalAlloc_lock;             // JNI global storage allocate 
 extern Mutex*   JNIGlobalActive_lock;            // JNI global storage active list lock
 extern Mutex*   JNIWeakAlloc_lock;               // JNI weak storage allocate list lock
 extern Mutex*   JNIWeakActive_lock;              // JNI weak storage active list lock
+extern Mutex*   StringTableWeakAlloc_lock;       // StringTable weak storage allocate list lock
+extern Mutex*   StringTableWeakActive_lock;      // STringTable weak storage active list lock
 extern Mutex*   JNIHandleBlockFreeList_lock;     // a lock on the JNI handle block free list
 extern Mutex*   VMWeakAlloc_lock;                // VM Weak Handles storage allocate list lock
 extern Mutex*   VMWeakActive_lock;               // VM Weak Handles storage active list lock

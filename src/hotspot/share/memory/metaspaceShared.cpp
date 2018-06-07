@@ -1841,7 +1841,7 @@ void MetaspaceShared::dump_closed_archive_heap_objects(
   G1CollectedHeap::heap()->begin_archive_alloc_range();
 
   // Archive interned string objects
-  StringTable::write_to_archive(closed_archive);
+  StringTable::write_to_archive();
 
   G1CollectedHeap::heap()->end_archive_alloc_range(closed_archive,
                                                    os::vm_allocation_granularity());
