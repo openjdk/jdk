@@ -34,6 +34,7 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "opto/compile.hpp"
@@ -4053,6 +4054,7 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_HEAP_ARRAY | IN_ROOT | OOP_NOT_NULL |
                          ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type,
@@ -4071,6 +4073,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_HEAP_ARRAY | IN_ROOT | OOP_NOT_NULL |
                          ON_PHANTOM_OOP_REF | ON_WEAK_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type,
