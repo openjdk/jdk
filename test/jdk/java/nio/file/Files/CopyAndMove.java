@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6917021 7006126 6950237 8006645
+ * @bug 4313887 6838333 6917021 7006126 6950237 8006645 8201407
  * @summary Unit test for java.nio.file.Files copy and move methods (use -Dseed=X to set PRNG seed)
  * @library .. /test/lib
  * @build jdk.test.lib.RandomFactory
@@ -448,6 +448,10 @@ public class CopyAndMove {
                 moveAndVerify(source, target);
                 throw new RuntimeException("IOException expected");
             } catch (IOException x) {
+                if (!(x instanceof DirectoryNotEmptyException)) {
+                    throw new RuntimeException
+                        ("DirectoryNotEmptyException expected", x);
+                }
             }
             delete(source.resolve("foo"));
             delete(source);
