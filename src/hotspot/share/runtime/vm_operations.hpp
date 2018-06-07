@@ -103,6 +103,7 @@
   template(RotateGCLog)                           \
   template(WhiteBoxOperation)                     \
   template(ClassLoaderStatsOperation)             \
+  template(ClassLoaderHierarchyOperation)         \
   template(DumpHashtable)                         \
   template(DumpTouchedMethods)                    \
   template(MarkActiveNMethods)                    \
