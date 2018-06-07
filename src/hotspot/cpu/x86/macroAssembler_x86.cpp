@@ -33,7 +33,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/access.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -5259,7 +5259,7 @@ void MacroAssembler::resolve_jobject(Register value,
   jmp(done);
   bind(not_weak);
   // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_ROOT | IN_CONCURRENT_ROOT,
+  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
                  value, Address(value, 0), tmp, thread);
   verify_oop(value);
   bind(done);
@@ -6281,7 +6281,7 @@ void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // Only 64 bit platforms support GCs that require a tmp register
   // Only IN_HEAP loads require a thread_tmp register
   // OopHandle::resolve is an indirection like jobject.
-  access_load_at(T_OBJECT, IN_ROOT | IN_CONCURRENT_ROOT,
+  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
                  result, Address(result, 0), tmp, /*tmp_thread*/noreg);
 }
 
@@ -6323,6 +6323,7 @@ void MacroAssembler::store_klass(Register dst, Register src) {
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                                     Register tmp1, Register thread_tmp) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
@@ -6334,6 +6335,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Reg
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
                                      Register tmp1, Register tmp2) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, tmp2);

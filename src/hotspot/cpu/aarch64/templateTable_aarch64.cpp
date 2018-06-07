@@ -813,7 +813,7 @@ void TemplateTable::aaload()
   do_oop_load(_masm,
               Address(r1, arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
               r0,
-              IN_HEAP | IN_HEAP_ARRAY);
+              IN_HEAP_ARRAY);
 }
 
 void TemplateTable::baload()
@@ -1141,7 +1141,7 @@ void TemplateTable::aastore() {
   // Get the value we will store
   __ ldr(r0, at_tos());
   // Now store using the appropriate barrier
-  do_oop_store(_masm, element_address, r0, IN_HEAP | IN_HEAP_ARRAY);
+  do_oop_store(_masm, element_address, r0, IN_HEAP_ARRAY);
   __ b(done);
 
   // Have a NULL in r0, r3=array, r2=index.  Store NULL at ary[idx]
@@ -1149,7 +1149,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(r2);
 
   // Store a NULL
-  do_oop_store(_masm, element_address, noreg, IN_HEAP | IN_HEAP_ARRAY);
+  do_oop_store(_masm, element_address, noreg, IN_HEAP_ARRAY);
 
   // Pop stack arguments
   __ bind(done);
