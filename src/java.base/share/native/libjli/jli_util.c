@@ -84,6 +84,16 @@ JLI_MemFree(void *ptr)
     free(ptr);
 }
 
+jboolean
+JLI_HasSuffix(const char *s1, const char *s2)
+{
+    char *p = JLI_StrRChr(s1, '.');
+    if (p == NULL || *p == '\0') {
+        return JNI_FALSE;
+    }
+    return (JLI_StrCaseCmp(p, s2) == 0);
+}
+
 /*
  * debug helpers we use
  */
