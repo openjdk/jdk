@@ -36,11 +36,8 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBATTACH, \
     NAME := attach, \
-    SRC := $(call FindSrcDirsForLib, jdk.attach, attach), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) \
-        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.attach \
-        $(LIBJAVA_HEADER_FLAGS) $(LIBATTACH_CFLAGS), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(LIBATTACH_CFLAGS), \
     CFLAGS_windows := /Gy, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

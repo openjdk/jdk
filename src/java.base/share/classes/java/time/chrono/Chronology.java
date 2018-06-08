@@ -736,8 +736,8 @@ public interface Chronology extends Comparable<Chronology> {
      * @throws DateTimeException if any of the values are out of range
      * @since 9
      */
-     public default long epochSecond(int prolepticYear, int month, int dayOfMonth,
-                                     int hour, int minute, int second, ZoneOffset zoneOffset) {
+    public default long epochSecond(int prolepticYear, int month, int dayOfMonth,
+                                    int hour, int minute, int second, ZoneOffset zoneOffset) {
         Objects.requireNonNull(zoneOffset, "zoneOffset");
         HOUR_OF_DAY.checkValidValue(hour);
         MINUTE_OF_HOUR.checkValidValue(minute);
@@ -765,8 +765,8 @@ public interface Chronology extends Comparable<Chronology> {
      * @throws DateTimeException if any of the values are out of range
      * @since 9
      */
-     public default long epochSecond(Era era, int yearOfEra, int month, int dayOfMonth,
-                                     int hour, int minute, int second, ZoneOffset zoneOffset) {
+    public default long epochSecond(Era era, int yearOfEra, int month, int dayOfMonth,
+                                    int hour, int minute, int second, ZoneOffset zoneOffset) {
         Objects.requireNonNull(era, "era");
         return epochSecond(prolepticYear(era, yearOfEra), month, dayOfMonth, hour, minute, second, zoneOffset);
     }

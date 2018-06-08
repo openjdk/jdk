@@ -369,12 +369,10 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Register
 
   G1BarrierSet* bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
 
-  if (G1RSBarrierRegionFilter) {
-    __ xor3(store_addr, new_val, tmp);
-    __ srlx(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
+  __ xor3(store_addr, new_val, tmp);
+  __ srlx(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
 
-    __ cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
-  }
+  __ cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
 
   // If the "store_addr" register is an "in" or "local" register, move it to
   // a scratch reg so we can pass it as an argument.

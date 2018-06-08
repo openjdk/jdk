@@ -27,17 +27,10 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBMANAGEMENT_AGENT_SRC += $(TOPDIR)/src/jdk.management.agent/$(OPENJDK_TARGET_OS_TYPE)/native/libmanagement_agent
-LIBMANAGEMENT_AGENT_CFLAGS := $(addprefix -I,$(LIBMANAGEMENT_AGENT_SRC)) \
-    -I$(SUPPORT_OUTPUTDIR)/headers/jdk.management.agent \
-    $(LIBJAVA_HEADER_FLAGS) \
-    #
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_AGENT, \
     NAME := management_agent, \
-    SRC := $(LIBMANAGEMENT_AGENT_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_AGENT_CFLAGS), \
+    CFLAGS := $(CFLAGS_JDKLIB), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \

@@ -1132,6 +1132,9 @@ static void reset_vm_info_property(TRAPS) {
   ResourceMark rm(THREAD);
   const char *vm_info = VM_Version::vm_info_string();
 
+  // update the native system property first
+  Arguments::PropertyList_update_value(Arguments::system_properties(), "java.vm.info", vm_info);
+
   // java.lang.System class
   Klass* klass =  SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
 
@@ -3779,9 +3782,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
 
-  // We need this for ClassDataSharing - the initial vm.info property is set
-  // with the default value of CDS "sharing" which may be reset through
-  // command line options.
+  // We need this to update the java.vm.info property in case any flags used
+  // to initially define it have been changed. This is needed for both CDS and
+  // AOT, since UseSharedSpaces and UseAOT may be changed after java.vm.info
+  // is initially computed. See Abstract_VM_Version::vm_info_string().
   reset_vm_info_property(CHECK_JNI_ERR);
 
   quicken_jni_functions();

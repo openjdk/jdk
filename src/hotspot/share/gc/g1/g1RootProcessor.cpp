@@ -38,6 +38,7 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
+#include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/allocation.inline.hpp"
@@ -72,6 +73,7 @@ G1RootProcessor::G1RootProcessor(G1CollectedHeap* g1h, uint n_workers) :
     _process_strong_tasks(G1RP_PS_NumElements),
     _srs(n_workers),
     _lock(Mutex::leaf, "G1 Root Scanning barrier lock", false, Monitor::_safepoint_check_never),
+    _par_state_string(StringTable::weak_storage()),
     _n_workers_discovered_strong_classes(0) {}
 
 void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
@@ -301,7 +303,7 @@ void G1RootProcessor::process_string_table_roots(G1RootClosures* closures,
   G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::StringTableRoots, worker_i);
   // All threads execute the following. A specific chunk of buckets
   // from the StringTable are the individual tasks.
-  StringTable::possibly_parallel_oops_do(closures->weak_oops());
+  StringTable::possibly_parallel_oops_do(&_par_state_string, closures->weak_oops());
 }
 
 void G1RootProcessor::process_code_cache_roots(CodeBlobClosure* code_closure,

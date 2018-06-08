@@ -172,8 +172,12 @@ public class HtmlDoclet extends AbstractDoclet {
             }
         }
 
-        if (!configuration.frames && !configuration.createoverview) {
-            IndexRedirectWriter.generate(configuration);
+        if (!configuration.frames) {
+            if (configuration.createoverview) {
+                IndexRedirectWriter.generate(configuration, DocPaths.OVERVIEW_SUMMARY, DocPaths.INDEX);
+            } else {
+                IndexRedirectWriter.generate(configuration);
+            }
         }
 
         if (configuration.helpfile.isEmpty() && !configuration.nohelp) {
@@ -201,7 +205,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
-    protected void copyJqueryFiles() throws DocletException {
+    private void copyJqueryFiles() throws DocletException {
         List<String> files = Arrays.asList(
                 "jquery-1.12.4.js",
                 "jquery-ui.js",
@@ -245,7 +249,6 @@ public class HtmlDoclet extends AbstractDoclet {
     protected void generateClassFiles(SortedSet<TypeElement> arr, ClassTree classtree)
             throws DocletException {
         List<TypeElement> list = new ArrayList<>(arr);
-        ListIterator<TypeElement> iterator = list.listIterator();
         for (TypeElement klass : list) {
             if (utils.hasHiddenTag(klass) ||
                     !(configuration.isGeneratedDoc(klass) && utils.isIncluded(klass))) {
@@ -274,7 +277,6 @@ public class HtmlDoclet extends AbstractDoclet {
                 ModuleIndexFrameWriter.generate(configuration);
             }
             List<ModuleElement> mdles = new ArrayList<>(configuration.modulePackages.keySet());
-            int i = 0;
             for (ModuleElement mdle : mdles) {
                 if (configuration.frames && configuration.modules.size() > 1) {
                     ModulePackageIndexFrameWriter.generate(configuration, mdle);
@@ -283,19 +285,8 @@ public class HtmlDoclet extends AbstractDoclet {
                 AbstractBuilder moduleSummaryBuilder =
                         configuration.getBuilderFactory().getModuleSummaryBuilder(mdle);
                 moduleSummaryBuilder.build();
-                i++;
             }
         }
-    }
-
-    PackageElement getNamedPackage(List<PackageElement> list, int idx) {
-        if (idx < list.size()) {
-            PackageElement pkg = list.get(idx);
-            if (pkg != null && !pkg.isUnnamed()) {
-                return pkg;
-            }
-        }
-        return null;
     }
 
     /**
@@ -308,11 +299,10 @@ public class HtmlDoclet extends AbstractDoclet {
             PackageIndexFrameWriter.generate(configuration);
         }
         List<PackageElement> pList = new ArrayList<>(packages);
-        for (int i = 0 ; i < pList.size() ; i++) {
+        for (PackageElement pkg : pList) {
             // if -nodeprecated option is set and the package is marked as
             // deprecated, do not generate the package-summary.html, package-frame.html
             // and package-tree.html pages for that package.
-            PackageElement pkg = pList.get(i);
             if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
                 if (configuration.frames) {
                     PackageFrameWriter.generate(configuration, pkg);

@@ -49,6 +49,7 @@ import sun.jvm.hotspot.code.NMethod;
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
+import sun.jvm.hotspot.memory.FileMapInfo;
 import sun.jvm.hotspot.memory.SymbolTable;
 import sun.jvm.hotspot.memory.SystemDictionary;
 import sun.jvm.hotspot.memory.Universe;
@@ -89,6 +90,7 @@ import sun.jvm.hotspot.ui.tree.OopTreeNodeAdapter;
 import sun.jvm.hotspot.ui.tree.SimpleTreeNode;
 import sun.jvm.hotspot.utilities.AddressOps;
 import sun.jvm.hotspot.utilities.Assert;
+import sun.jvm.hotspot.utilities.CompactHashTable;
 import sun.jvm.hotspot.utilities.HeapProgressThunk;
 import sun.jvm.hotspot.utilities.LivenessPathElement;
 import sun.jvm.hotspot.utilities.MethodArray;
@@ -637,12 +639,22 @@ public class CommandProcessor {
         },
         new Command("symboldump", "symboldump", false) {
             public void doit(Tokens t) {
-                SymbolTable.getTheTable().symbolsDo(new SymbolTable.SymbolVisitor() {
+                SymbolTable theTable = SymbolTable.getTheTable();
+                theTable.symbolsDo(new SymbolTable.SymbolVisitor() {
                         public void visit(Symbol sym) {
                             sym.printValueOn(out);
                             out.println();
                         }
                     });
+                CompactHashTable sharedTable = theTable.getSharedTable();
+                if (sharedTable != null) {
+                    sharedTable.symbolsDo(new CompactHashTable.SymbolVisitor() {
+                            public void visit(Symbol sym) {
+                                sym.printValueOn(out);
+                                out.println();
+                            }
+                        });
+                }
             }
         },
         new Command("flags", "flags [ flag | -nd ]", false) {
@@ -1048,6 +1060,15 @@ public class CommandProcessor {
                     }
                     if (node == null) {
                         Type type = VM.getVM().getTypeDataBase().guessTypeForAddress(a);
+                        if (type == null && VM.getVM().isSharingEnabled()) {
+                            // Check if the value falls in the _md_region
+                            Address loc1 = a.getAddressAt(0);
+                            FileMapInfo cdsFileMapInfo = VM.getVM().getFileMapInfo();
+                            if (cdsFileMapInfo.inCopiedVtableSpace(loc1)) {
+                               type = cdsFileMapInfo.getTypeForVptrAddress(loc1);
+                            }
+
+                        }
                         if (type != null) {
                             out.println("Type is " + type.getName() + " (size of " + type.getSize() + ")");
                             node = new CTypeTreeNodeAdapter(a, type, null);

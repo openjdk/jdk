@@ -38,8 +38,6 @@ MarkScope::~MarkScope() {
 
 StrongRootsScope::StrongRootsScope(uint n_threads) : _n_threads(n_threads) {
   Threads::change_thread_claim_parity();
-  // Zero the claimed high water mark in the StringTable
-  StringTable::clear_parallel_claimed_index();
 }
 
 StrongRootsScope::~StrongRootsScope() {

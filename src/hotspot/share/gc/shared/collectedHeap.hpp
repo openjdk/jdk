@@ -144,6 +144,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   inline static HeapWord* allocate_from_tlab(Klass* klass, size_t size, TRAPS);
   static HeapWord* allocate_from_tlab_slow(Klass* klass, size_t size, TRAPS);
 
+  inline static HeapWord* allocate_outside_tlab(Klass* klass, size_t size,
+                                                bool* gc_overhead_limit_was_exceeded, TRAPS);
+
   // Raw memory allocation facilities
   // The obj and array allocate methods are covers for these methods.
   // mem_allocate() should never be

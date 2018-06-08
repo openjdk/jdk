@@ -1651,7 +1651,11 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   }
 
   if (has_overflown()) {
-    // We can not trust g1_is_alive if the marking stack overflowed
+    // We can not trust g1_is_alive and the contents of the heap if the marking stack
+    // overflowed while processing references. Exit the VM.
+    fatal("Overflow during reference processing, can not continue. Please "
+          "increase MarkStackSizeMax (current value: " SIZE_FORMAT ") and "
+          "restart.", MarkStackSizeMax);
     return;
   }
 

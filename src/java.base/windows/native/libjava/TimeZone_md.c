@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -437,6 +437,8 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
     char *mapFileName;
     char lineBuffer[MAX_ZONE_CHAR * 4];
     int noMapID = *mapID == '\0';       /* no mapID on Vista and later */
+    int offset = 0;
+    const char* errorMessage = "unknown error";
 
     mapFileName = malloc(strlen(java_home_dir) + strlen(MAPPINGS_FILE) + 1);
     if (mapFileName == NULL) {
@@ -472,10 +474,14 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
             items[itemIndex] = start;
             while (*idx && *idx != ':') {
                 if (++idx >= endp) {
+                    errorMessage = "premature end of line";
+                    offset = (int)(idx - lineBuffer);
                     goto illegal_format;
                 }
             }
             if (*idx == '\0') {
+                errorMessage = "illegal null character found";
+                offset = (int)(idx - lineBuffer);
                 goto illegal_format;
             }
             *idx++ = '\0';
@@ -483,6 +489,8 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
         }
 
         if (*idx != '\n') {
+            errorMessage = "illegal non-newline character found";
+            offset = (int)(idx - lineBuffer);
             goto illegal_format;
         }
 
@@ -516,7 +524,8 @@ static char *matchJavaTZ(const char *java_home_dir, int value_type, char *tzName
 
  illegal_format:
     (void) fclose(fp);
-    jio_fprintf(stderr, "tzmappings: Illegal format at line %d.\n", line);
+    jio_fprintf(stderr, "Illegal format in tzmappings file: %s at line %d, offset %d.\n",
+                errorMessage, line, offset);
     return NULL;
 }
 

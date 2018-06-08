@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class TargetVM implements Runnable {
      * TO DO: The limit numbers below are somewhat arbitrary and should
      * be configurable in the future.
      */
-    static private final int OVERLOADED_QUEUE = 2000;
+    static private final int OVERLOADED_QUEUE = 10000;
     static private final int UNDERLOADED_QUEUE = 100;
 
     TargetVM(VirtualMachineImpl vm, Connection connection) {

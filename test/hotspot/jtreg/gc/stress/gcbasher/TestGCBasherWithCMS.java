@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.io.IOException;
  * @test TestGCBasherWithCMS
  * @key gc stress
  * @requires vm.gc.ConcMarkSweep
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
  * @summary Stress the CMS GC by trying to make old objects more likely to be garbage than young objects.
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx256m -server -XX:+UseConcMarkSweepGC TestGCBasherWithCMS 120000
  */

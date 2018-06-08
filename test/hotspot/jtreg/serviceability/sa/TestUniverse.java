@@ -21,6 +21,8 @@
  * questions.
  */
 
+import sun.hotspot.code.Compiler;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
@@ -37,7 +39,9 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @bug 8190307
  * @library /test/lib
  * @build jdk.test.lib.apps.*
- * @run main/othervm TestUniverse
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestUniverse
  */
 
 public class TestUniverse {
@@ -132,7 +136,9 @@ public class TestUniverse {
             test("-XX:+UseG1GC");
             test("-XX:+UseParallelGC");
             test("-XX:+UseSerialGC");
-            test("-XX:+UseConcMarkSweepGC");
+            if (!Compiler.isGraalEnabled()) { // Graal does not support CMS
+              test("-XX:+UseConcMarkSweepGC");
+            }
         } catch (Exception e) {
             throw new Error("Test failed with " + e);
         }

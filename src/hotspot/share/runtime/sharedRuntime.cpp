@@ -1082,6 +1082,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
   Bytecode_invoke bytecode(caller, bci);
   int bytecode_index = bytecode.index();
+  bc = bytecode.invoke_code();
 
   methodHandle attached_method = extract_attached_method(vfst);
   if (attached_method.not_null()) {
@@ -1095,6 +1096,11 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
       // Adjust invocation mode according to the attached method.
       switch (bc) {
+        case Bytecodes::_invokevirtual:
+          if (attached_method->method_holder()->is_interface()) {
+            bc = Bytecodes::_invokeinterface;
+          }
+          break;
         case Bytecodes::_invokeinterface:
           if (!attached_method->method_holder()->is_interface()) {
             bc = Bytecodes::_invokevirtual;
@@ -1110,9 +1116,9 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
           break;
       }
     }
-  } else {
-    bc = bytecode.invoke_code();
   }
+
+  assert(bc != Bytecodes::_illegal, "not initialized");
 
   bool has_receiver = bc != Bytecodes::_invokestatic &&
                       bc != Bytecodes::_invokedynamic &&

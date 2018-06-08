@@ -108,9 +108,6 @@
           "When expanding, % of uncommitted space to claim.")               \
           range(0, 100)                                                     \
                                                                             \
-  develop(bool, G1RSBarrierRegionFilter, true,                              \
-          "If true, generate region filtering code in RS barrier")          \
-                                                                            \
   product(size_t, G1UpdateBufferSize, 256,                                  \
           "Size of an update buffer")                                       \
           range(1, NOT_LP64(32*M) LP64_ONLY(1*G))                           \

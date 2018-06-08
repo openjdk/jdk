@@ -119,7 +119,7 @@ import java.util.Collections;
  * Providers must ensure that once a rule has been seen by the application, the
  * rule must continue to be available.
  * <p>
-*  Providers are encouraged to implement a meaningful {@code toString} method.
+ * Providers are encouraged to implement a meaningful {@code toString} method.
  * <p>
  * Many systems would like to update time-zone rules dynamically without stopping the JVM.
  * When examined in detail, this is a complex problem.

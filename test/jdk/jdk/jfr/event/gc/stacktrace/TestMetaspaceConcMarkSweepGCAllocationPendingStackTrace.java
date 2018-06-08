@@ -28,7 +28,7 @@ package jdk.jfr.event.gc.stacktrace;
  * @test
  * @key jfr
  *
- * @requires vm.gc == "null" | vm.gc == "ConcMarkSweep"
+ * @requires (vm.gc == "null" | vm.gc == "ConcMarkSweep") & !vm.graal.enabled
  * @requires !(vm.compMode == "Xcomp" & os.arch == "aarch64")
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UseConcMarkSweepGC -XX:MaxMetaspaceSize=64M -Xlog:gc* jdk.jfr.event.gc.stacktrace.TestMetaspaceConcMarkSweepGCAllocationPendingStackTrace

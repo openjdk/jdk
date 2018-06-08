@@ -1115,7 +1115,7 @@ JVM_ENTRY(jobjectArray, JVM_GetClassSigners(JNIEnv *env, jclass cls))
     return NULL;
   }
 
-  objArrayOop signers = java_lang_Class::signers(JNIHandles::resolve_non_null(cls));
+  objArrayHandle signers(THREAD, java_lang_Class::signers(JNIHandles::resolve_non_null(cls)));
 
   // If there are no signers set in the class, or if the class
   // is an array, return NULL.

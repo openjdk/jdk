@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,8 @@ public class Head {
     private Script mainBodyScript;
     private final List<Script> scripts;
     private final List<Content> extraContent;
-    boolean addDefaultScript = true;
+    private boolean addDefaultScript = true;
+    private DocPath canonicalLink;
 
     private static final Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
 
@@ -228,6 +229,16 @@ public class Head {
     }
 
     /**
+     * Specifies a value for a
+     * <a href="https://en.wikipedia.org/wiki/Canonical_link_element">canonical link</a>
+     * in the {@code <head>} element.
+     * @param link
+     */
+    public void setCanonicalLink(DocPath link) {
+        this.canonicalLink = link;
+    }
+
+    /**
      * Adds additional content to be included in the HEAD element.
      *
      * @param contents the content
@@ -269,6 +280,13 @@ public class Head {
 
         for (Content c : extraContent) {
             tree.addContent(c);
+        }
+
+        if (canonicalLink != null) {
+            HtmlTree link = new HtmlTree(HtmlTag.LINK);
+            link.addAttr(HtmlAttr.REL, "canonical");
+            link.addAttr(HtmlAttr.HREF, canonicalLink.getPath());
+            tree.addContent(link);
         }
 
         addStylesheets(tree);

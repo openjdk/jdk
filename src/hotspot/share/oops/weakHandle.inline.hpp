@@ -40,4 +40,10 @@ oop WeakHandle<T>::peek() const {
   return RootAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(_obj);
 }
 
+template <WeakHandleType T>
+void WeakHandle<T>::replace(oop with_obj) {
+  RootAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, with_obj);
+}
+
 #endif // SHARE_VM_OOPS_WEAKHANDLE_INLINE_HPP
+
