@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ STATUS=0
 SINCE=`${TESTJAVA}/bin/java -cp "${TESTCLASSES}" SupplementalJapaneseEraTest -s`
 
 echo "Tests with valid property values..."
-for P in "name=NewEra,abbr=N.E.,since=$SINCE" \
-         "name = NewEra, abbr = N.E., since = $SINCE"
+for P in "name=SupEra,abbr=S.E.,since=$SINCE" \
+         "name = SupEra, abbr = S.E., since = $SINCE"
 do
     if ${TESTJAVA}/bin/java ${TESTVMOPTS} -cp "${TESTCLASSES}" \
            -D$PROPERTY="$P" SupplementalJapaneseEraTest -t; then
@@ -51,17 +51,17 @@ done
 ERA=`${TESTJAVA}/bin/java -cp "${TESTCLASSES}" SupplementalJapaneseEraTest -e`
 
 echo "Tests with invalid property values..."
-for P in "foo=Bar,name=NewEra,abbr=N.E.,since=$SINCE" \
-         "=NewEra,abbr=N.E.,since=$SINCE" \
-         "=,abbr=N.E.,since=$SINCE" \
-         "name,abbr=N.E.,since=$SINCE" \
-         "abbr=N.E.,since=$SINCE" \
-         "name=NewEra,since=$SINCE" \
-         "name=,abbr=N.E.,since=$SINCE" \
-         "name=NewEra,abbr=,since=$SINCE" \
-         "name=NewEra,abbr=N.E." \
-         "name=NewEra,abbr=N.E.,since=0" \
-         "name=NewEra,abbr=N.E.,since=9223372036854775808" # Long.MAX_VALUE+1
+for P in "foo=Bar,name=SupEra,abbr=S.E.,since=$SINCE" \
+         "=SupEra,abbr=S.E.,since=$SINCE" \
+         "=,abbr=S.E.,since=$SINCE" \
+         "name,abbr=S.E.,since=$SINCE" \
+         "abbr=S.E.,since=$SINCE" \
+         "name=SupEra,since=$SINCE" \
+         "name=,abbr=S.E.,since=$SINCE" \
+         "name=SupEra,abbr=,since=$SINCE" \
+         "name=SupEra,abbr=S.E." \
+         "name=SupEra,abbr=S.E.,since=0" \
+         "name=SupEra,abbr=S.E.,since=9223372036854775808" # Long.MAX_VALUE+1
 do
     if ${TESTJAVA}/bin/java ${TESTVMOPTS} -cp "${TESTCLASSES}" \
            -D$PROPERTY="$P" SupplementalJapaneseEraTest -b "$ERA"; then

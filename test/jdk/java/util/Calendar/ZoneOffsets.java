@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,7 @@ public class ZoneOffsets {
         cal2.setTimeZone(tz2);
         cal2.clear();
         cal2.set(2005, MARCH, 11);
+        adjustJapaneseEra(cal2);
         // test5: set only ZONE_OFFSET in non-lenient
         cal2.set(ZONE_OFFSET, gmtOffset);
         if (t1 != cal2.getTime().getTime() || dst != cal2.get(DST_OFFSET)) {
@@ -201,6 +202,7 @@ public class ZoneOffsets {
         cal2.setTimeZone(tz3);
         cal2.clear();
         cal2.set(2005, MARCH, 11);
+        adjustJapaneseEra(cal2);
         // test6: set only DST_OFFSET in non-lenient
         cal2.set(DST_OFFSET, dstOffset);
         if (t1 != cal2.getTime().getTime() || gmt != cal2.get(ZONE_OFFSET)) {
@@ -210,6 +212,7 @@ public class ZoneOffsets {
         cal2.setTimeZone(tz2);
         cal2.clear();
         cal2.set(2005, MARCH, 11);
+        adjustJapaneseEra(cal2);
         // test7: set both ZONE_OFFSET and DST_OFFSET in non-lenient
         cal2.set(ZONE_OFFSET, gmtOffset);
         cal2.set(DST_OFFSET, dstOffset);
@@ -220,6 +223,7 @@ public class ZoneOffsets {
         cal2.setTimeZone(tz3);
         cal2.clear();
         cal2.set(2005, MARCH, 11);
+        adjustJapaneseEra(cal2);
         // test8: set both ZONE_OFFSET and DST_OFFSET in non-lenient
         cal2.set(ZONE_OFFSET, gmtOffset);
         cal2.set(DST_OFFSET, dstOffset);
@@ -233,5 +237,17 @@ public class ZoneOffsets {
         throw new RuntimeException(msg + ": Locale=" + loc
                 + ", gmtOffset=" + gmtOffset + ", dstOffset=" + dstOffset
                 + ", cal1 time=" + t1 + ", cal2 time=" + cal2.getTime().getTime());
+    }
+
+    private static void adjustJapaneseEra(Calendar cal) {
+        // In case of Japanese calendar, explicitly set the last era; NEWERA so that
+        // year 2005 won't throw exception
+        if (!cal.isLenient() &&
+                cal.getCalendarType().equals("japanese") &&
+                System.currentTimeMillis() < 1556668800000L) { // Current time not in NEWERA
+            cal.set(Calendar.ERA, 5);
+            cal.add(Calendar.YEAR, -30); // -30: Subtract year-length of HEISEI era
+        }
+        return;
     }
 }
