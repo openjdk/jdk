@@ -305,6 +305,8 @@ static JLI_List readArgFile(FILE *file) {
 
     ctx.state = FIND_NEXT;
     ctx.parts = JLI_List_new(4);
+    // initialize to avoid -Werror=maybe-uninitialized issues from gcc 7.3 onwards.
+    ctx.quote_char = '"';
 
     /* arbitrarily pick 8, seems to be a reasonable number of arguments */
     rv = JLI_List_new(8);

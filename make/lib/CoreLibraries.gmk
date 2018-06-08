@@ -298,7 +298,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(LIBJLI_CFLAGS), \
-    DISABLED_WARNINGS_gcc := maybe-uninitialized, \
     DISABLED_WARNINGS_solstudio := \
         E_ASM_DISABLES_OPTIMIZATION \
         E_STATEMENT_NOT_REACHED, \
