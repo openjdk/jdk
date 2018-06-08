@@ -4447,6 +4447,18 @@ void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, c
   PropertyList_add(plist, k, v, writeable == WriteableProperty, internal == InternalProperty);
 }
 
+// Update existing property with new value.
+void Arguments::PropertyList_update_value(SystemProperty* plist, const char* k, const char* v) {
+  SystemProperty* prop;
+  for (prop = plist; prop != NULL; prop = prop->next()) {
+    if (strcmp(k, prop->key()) == 0) {
+        prop->set_value(v);
+        return;
+    }
+  }
+  assert(false, "invalid property");
+}
+
 // Copies src into buf, replacing "%%" with "%" and "%p" with pid
 // Returns true if all of the source pointed by src has been copied over to
 // the destination buffer pointed by buf. Otherwise, returns false.
