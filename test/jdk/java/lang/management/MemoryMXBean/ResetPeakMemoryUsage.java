@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,20 @@
  *
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
  * @requires vm.opt.DisableExplicitGC != "true"
- * @library /lib/testlibrary/
+ * @library /lib/testlibrary/ /test/lib
  * @modules jdk.management
  *
  * @build jdk.testlibrary.* ResetPeakMemoryUsage MemoryUtil RunUtil
- * @run main ResetPeakMemoryUsage
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ResetPeakMemoryUsage
  */
 
 import java.lang.management.*;
 import java.lang.ref.WeakReference;
 import java.util.*;
+
+import sun.hotspot.code.Compiler;
 
 public class ResetPeakMemoryUsage {
     private static MemoryMXBean mbean = ManagementFactory.getMemoryMXBean();
@@ -59,7 +63,9 @@ public class ResetPeakMemoryUsage {
         final String main = "ResetPeakMemoryUsage$TestMain";
         final String ms = "-Xms256m";
         final String mn = "-Xmn8m";
-        RunUtil.runTestClearGcOpts(main, ms, mn, "-XX:+UseConcMarkSweepGC");
+        if (!Compiler.isGraalEnabled()) { // Graal does not support CMS
+            RunUtil.runTestClearGcOpts(main, ms, mn, "-XX:+UseConcMarkSweepGC");
+        }
         RunUtil.runTestClearGcOpts(main, ms, mn, "-XX:+UseParallelGC");
         RunUtil.runTestClearGcOpts(main, ms, mn, "-XX:+UseG1GC", "-XX:G1HeapRegionSize=1m");
         RunUtil.runTestClearGcOpts(main, ms, mn, "-XX:+UseSerialGC",

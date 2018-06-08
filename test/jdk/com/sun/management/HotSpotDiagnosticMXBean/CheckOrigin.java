@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @test
  * @bug 8028994
  * @author Staffan Larsen
+ * @comment Graal does not support CMS
+ * @requires !vm.graal.enabled
  * @library /lib/testlibrary
  * @modules jdk.attach/sun.tools.attach
  *          jdk.management

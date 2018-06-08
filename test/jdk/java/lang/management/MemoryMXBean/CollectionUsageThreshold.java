@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,13 @@
  *
  * @author  Mandy Chung
  *
- * @library /lib/testlibrary/
+ * @library /lib/testlibrary/ /test/lib
  * @modules jdk.management
  * @build jdk.testlibrary.* CollectionUsageThreshold MemoryUtil RunUtil
  * @requires vm.opt.ExplicitGCInvokesConcurrent == "false" | vm.opt.ExplicitGCInvokesConcurrent == "null"
- * @run main/timeout=300 CollectionUsageThreshold
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. CollectionUsageThreshold
  */
 
 import java.util.*;
@@ -45,6 +47,8 @@ import javax.management.openmbean.CompositeData;
 import java.lang.management.*;
 import static java.lang.management.MemoryNotificationInfo.*;;
 import static java.lang.management.ManagementFactory.*;
+
+import sun.hotspot.code.Compiler;
 
 public class CollectionUsageThreshold {
     private static final MemoryMXBean mm = getMemoryMXBean();
@@ -72,7 +76,9 @@ public class CollectionUsageThreshold {
         RunUtil.runTestClearGcOpts(main, "-XX:+UseSerialGC");
         RunUtil.runTestClearGcOpts(main, "-XX:+UseParallelGC");
         RunUtil.runTestClearGcOpts(main, "-XX:+UseG1GC");
-        RunUtil.runTestClearGcOpts(main, "-XX:+UseConcMarkSweepGC");
+        if (!Compiler.isGraalEnabled()) { // Graal does not support CMS
+            RunUtil.runTestClearGcOpts(main, "-XX:+UseConcMarkSweepGC");
+        }
     }
 
     static class PoolRecord {

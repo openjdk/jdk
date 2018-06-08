@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,21 @@ import gc.testlibrary.PerfCounters;
  * @run main/othervm -XX:+UsePerfData -XX:+UseSerialGC TestGenerationPerfCounter
  * @run main/othervm -XX:+UsePerfData -XX:+UseParallelGC TestGenerationPerfCounter
  * @run main/othervm -XX:+UsePerfData -XX:+UseG1GC TestGenerationPerfCounter
+ */
+
+/* @test TestGenerationPerfCounterCMS
+ * @bug 8080345
+ * @comment Graal does not support CMS
+ * @requires vm.gc=="null" & !vm.graal.enabled
+ * @library /test/lib /
+ * @summary Tests that the sun.gc.policy.generations returns 2 for all GCs.
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management/sun.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseConcMarkSweepGC TestGenerationPerfCounter
  */
+
 public class TestGenerationPerfCounter {
     public static void main(String[] args) throws Exception {
         long numGenerations =

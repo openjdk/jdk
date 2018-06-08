@@ -42,7 +42,7 @@ import jdk.test.lib.jfr.EventNames;
  * @test
  * @key jfr
  *
- * @requires vm.gc == "ConcMarkSweep" | vm.gc == null
+ * @requires (vm.gc == "ConcMarkSweep" | vm.gc == null) & !vm.graal.enabled
  * @library /test/lib /test/jdk
  *
  * @run main jdk.jfr.event.gc.detailed.TestCMSConcurrentModeFailureEvent

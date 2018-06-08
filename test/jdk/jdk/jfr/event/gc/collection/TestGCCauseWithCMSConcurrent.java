@@ -29,7 +29,7 @@ import jdk.test.lib.jfr.GCHelper;
 /*
  * @test
  * @key jfr
- * @requires vm.gc == "ConcMarkSweep" | vm.gc == null
+ * @requires (vm.gc == "ConcMarkSweep" | vm.gc == null) & !vm.graal.enabled
  * @requires vm.opt.ExplicitGCInvokesConcurrent != false
  * @library /test/lib /test/jdk
  * @run driver jdk.jfr.event.gc.collection.TestGCCauseWithCMSConcurrent
