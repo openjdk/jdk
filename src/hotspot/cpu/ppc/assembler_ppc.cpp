@@ -486,7 +486,7 @@ int Assembler::add_const_optimized(Register d, Register s, long x, Register tmp,
   // Case 2: Can use addis.
   if (xd == 0) {
     short xc = rem & 0xFFFF; // 2nd 16-bit chunk.
-    rem = (rem >> 16) + ((unsigned short)xd >> 15);
+    rem = (rem >> 16) + ((unsigned short)xc >> 15);
     if (rem == 0) {
       addis(d, s, xc);
       return 0;
