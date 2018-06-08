@@ -3049,7 +3049,7 @@ public final class DateTimeFormatterBuilder {
      * Prints and parses a numeric date-time field with optional padding.
      */
     static final class FractionPrinterParser extends NumberPrinterParser {
-       private final boolean decimalPoint;
+        private final boolean decimalPoint;
 
         /**
          * Constructor.
