@@ -25,21 +25,22 @@
  * @bug 4313887 6838333 6917021 7006126 6950237 8006645 8201407
  * @summary Unit test for java.nio.file.Files copy and move methods (use -Dseed=X to set PRNG seed)
  * @library .. /test/lib
- * @build jdk.test.lib.RandomFactory
+ * @build jdk.test.lib.Platform jdk.test.lib.RandomFactory
  *        CopyAndMove PassThroughFileSystem
  * @run main/othervm CopyAndMove
  * @key randomness
  */
 
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
 import static java.nio.file.Files.*;
 import static java.nio.file.StandardCopyOption.*;
 import static java.nio.file.LinkOption.*;
 import java.nio.file.attribute.*;
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import jdk.test.lib.Platform;
 import jdk.test.lib.RandomFactory;
 
 public class CopyAndMove {
@@ -169,8 +170,7 @@ public class CopyAndMove {
         Map<String,ByteBuffer> namedAttributes = null;
 
         // get file attributes of source file
-        String os = System.getProperty("os.name");
-        if (os.startsWith("Windows")) {
+        if (Platform.isWindows()) {
             dosAttributes = readAttributes(source, DosFileAttributes.class, NOFOLLOW_LINKS);
             basicAttributes = dosAttributes;
         } else {
@@ -657,17 +657,14 @@ public class CopyAndMove {
             if (source.getFileSystem().provider() == target.getFileSystem().provider()) {
 
                 // check POSIX attributes are copied
-                String os = System.getProperty("os.name");
-                if ((os.equals("SunOS") || os.equals("Linux")) &&
-                    testPosixAttributes)
-                {
+                if (!Platform.isWindows() && testPosixAttributes) {
                     checkPosixAttributes(
                         readAttributes(source, PosixFileAttributes.class, linkOptions),
                         readAttributes(target, PosixFileAttributes.class, linkOptions));
                 }
 
                 // check DOS attributes are copied
-                if (os.startsWith("Windows")) {
+                if (Platform.isWindows()) {
                     checkDosAttributes(
                         readAttributes(source, DosFileAttributes.class, linkOptions),
                         readAttributes(target, DosFileAttributes.class, linkOptions));
@@ -925,9 +922,7 @@ public class CopyAndMove {
         /**
          * Test: Copy link to UNC (Windows only)
          */
-        if (supportsLinks &&
-            System.getProperty("os.name").startsWith("Windows"))
-        {
+        if (supportsLinks && Platform.isWindows()) {
             Path unc = Paths.get("\\\\rialto\\share\\file");
             link = dir1.resolve("link");
             createSymbolicLink(link, unc);
@@ -1160,12 +1155,14 @@ public class CopyAndMove {
 
     // "randomize" the file attributes of the given file.
     static void randomizeAttributes(Path file) throws IOException {
-        String os = System.getProperty("os.name");
-        boolean isWindows = os.startsWith("Windows");
-        boolean isUnix = os.equals("SunOS") || os.equals("Linux");
         boolean isDirectory = isDirectory(file, NOFOLLOW_LINKS);
 
-        if (isUnix) {
+        if (Platform.isWindows()) {
+            DosFileAttributeView view =
+                getFileAttributeView(file, DosFileAttributeView.class, NOFOLLOW_LINKS);
+            // only set or unset the hidden attribute
+            view.setHidden(heads());
+        } else {
             Set<PosixFilePermission> perms =
                 getPosixFilePermissions(file, NOFOLLOW_LINKS);
             PosixFilePermission[] toChange = {
@@ -1186,18 +1183,12 @@ public class CopyAndMove {
             setPosixFilePermissions(file, perms);
         }
 
-        if (isWindows) {
-            DosFileAttributeView view =
-                getFileAttributeView(file, DosFileAttributeView.class, NOFOLLOW_LINKS);
-            // only set or unset the hidden attribute
-            view.setHidden(heads());
-        }
-
         boolean addUserDefinedFileAttributes = heads() &&
             getFileStore(file).supportsFileAttributeView("xattr");
 
         // remove this when copying a direcory copies its named streams
-        if (isWindows && isDirectory) addUserDefinedFileAttributes = false;
+        if (Platform.isWindows() && isDirectory)
+            addUserDefinedFileAttributes = false;
 
         if (addUserDefinedFileAttributes) {
             UserDefinedFileAttributeView view =
