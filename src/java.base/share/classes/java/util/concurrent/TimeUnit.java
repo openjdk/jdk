@@ -35,6 +35,7 @@
 
 package java.util.concurrent;
 
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
@@ -192,6 +193,50 @@ public enum TimeUnit {
     }
 
     /**
+     * Converts the given time duration to this unit.
+     *
+     * <p>For any TimeUnit {@code unit},
+     * {@code unit.convert(Duration.ofNanos(n))}
+     * is equivalent to
+     * {@code unit.convert(n, NANOSECONDS)}, and
+     * {@code unit.convert(Duration.of(n, unit.toChronoUnit()))}
+     * is equivalent to {@code n} (in the absence of overflow).
+     *
+     * @param duration the time duration
+     * @return the converted duration in this unit,
+     * or {@code Long.MIN_VALUE} if conversion would negatively overflow,
+     * or {@code Long.MAX_VALUE} if it would positively overflow.
+     * @throws NullPointerException if {@code duration} is null
+     * @see Duration#of(long,TemporalUnit)
+     * @since 11
+     */
+    public long convert(Duration duration) {
+        long secs = duration.getSeconds();
+        int nano = duration.getNano();
+        if (secs < 0 && nano > 0) {
+            // use representation compatible with integer division
+            secs++;
+            nano -= SECOND_SCALE;
+        }
+        final long s, nanoVal;
+        // Optimize for the common case - NANOSECONDS without overflow
+        if (this == NANOSECONDS)
+            nanoVal = nano;
+        else if ((s = scale) < SECOND_SCALE)
+            nanoVal = nano / s;
+        else if (this == SECONDS)
+            return secs;
+        else
+            return secs / secRatio;
+        long val = secs * secRatio + nanoVal;
+        return ((secs < maxSecs && secs > -maxSecs) ||
+                (secs == maxSecs && val > 0) ||
+                (secs == -maxSecs && val < 0))
+            ? val
+            : (secs > 0) ? Long.MAX_VALUE : Long.MIN_VALUE;
+    }
+
+    /**
      * Equivalent to
      * {@link #convert(long, TimeUnit) NANOSECONDS.convert(duration, this)}.
      * @param duration the duration
@@ -221,10 +266,8 @@ public enum TimeUnit {
      */
     public long toMicros(long duration) {
         long s, m;
-        if ((s = scale) == MICRO_SCALE)
-            return duration;
-        else if (s < MICRO_SCALE)
-            return duration / microRatio;
+        if ((s = scale) <= MICRO_SCALE)
+            return (s == MICRO_SCALE) ? duration : duration / microRatio;
         else if (duration > (m = maxMicros))
             return Long.MAX_VALUE;
         else if (duration < -m)
@@ -243,10 +286,8 @@ public enum TimeUnit {
      */
     public long toMillis(long duration) {
         long s, m;
-        if ((s = scale) == MILLI_SCALE)
-            return duration;
-        else if (s < MILLI_SCALE)
-            return duration / milliRatio;
+        if ((s = scale) <= MILLI_SCALE)
+            return (s == MILLI_SCALE) ? duration : duration / milliRatio;
         else if (duration > (m = maxMillis))
             return Long.MAX_VALUE;
         else if (duration < -m)
@@ -265,10 +306,8 @@ public enum TimeUnit {
      */
     public long toSeconds(long duration) {
         long s, m;
-        if ((s = scale) == SECOND_SCALE)
-            return duration;
-        else if (s < SECOND_SCALE)
-            return duration / secRatio;
+        if ((s = scale) <= SECOND_SCALE)
+            return (s == SECOND_SCALE) ? duration : duration / secRatio;
         else if (duration > (m = maxSecs))
             return Long.MAX_VALUE;
         else if (duration < -m)
