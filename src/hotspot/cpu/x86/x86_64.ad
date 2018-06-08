@@ -11607,16 +11607,6 @@ instruct testUL_reg(rFlagsRegU cr, rRegL src, immL0 zero)
   ins_pipe(ialu_cr_reg_imm);
 %}
 
-instruct compUB_mem_imm(rFlagsReg cr, memory mem, immU8 imm)
-%{
-  match(Set cr (CmpI (LoadUB mem) imm));
-
-  ins_cost(125);
-  format %{ "cmpb    $mem, $imm" %}
-  ins_encode %{ __ cmpb($mem$$Address, $imm$$constant); %}
-  ins_pipe(ialu_cr_reg_mem);
-%}
-
 instruct compB_mem_imm(rFlagsReg cr, memory mem, immI8 imm)
 %{
   match(Set cr (CmpI (LoadB mem) imm));
@@ -11624,16 +11614,6 @@ instruct compB_mem_imm(rFlagsReg cr, memory mem, immI8 imm)
   ins_cost(125);
   format %{ "cmpb    $mem, $imm" %}
   ins_encode %{ __ cmpb($mem$$Address, $imm$$constant); %}
-  ins_pipe(ialu_cr_reg_mem);
-%}
-
-instruct testUB_mem_imm(rFlagsReg cr, memory mem, immU8 imm, immI0 zero)
-%{
-  match(Set cr (CmpI (AndI (LoadUB mem) imm) zero));
-
-  ins_cost(125);
-  format %{ "testb   $mem, $imm" %}
-  ins_encode %{ __ testb($mem$$Address, $imm$$constant); %}
   ins_pipe(ialu_cr_reg_mem);
 %}
 
