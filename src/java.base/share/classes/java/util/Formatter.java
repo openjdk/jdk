@@ -2914,7 +2914,7 @@ public final class Formatter implements Closeable, Flushable {
                 a.append(System.lineSeparator());
                 break;
             case Conversion.PERCENT_SIGN:
-                a.append('%');
+                print("%", l);
                 break;
             default:
                 assert false;

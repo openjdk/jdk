@@ -147,7 +147,7 @@ void CollectionSetChooser::sort_regions() {
 void CollectionSetChooser::add_region(HeapRegion* hr) {
   assert(!hr->is_pinned(),
          "Pinned region shouldn't be added to the collection set (index %u)", hr->hrm_index());
-  assert(!hr->is_young(), "should not be young!");
+  assert(hr->is_old(), "should be old but is %s", hr->get_type_str());
   assert(hr->rem_set()->is_complete(),
          "Trying to add region %u to the collection set with incomplete remembered set", hr->hrm_index());
   _regions.append(hr);
@@ -185,7 +185,7 @@ uint CollectionSetChooser::claim_array_chunk(uint chunk_size) {
 
 void CollectionSetChooser::set_region(uint index, HeapRegion* hr) {
   assert(regions_at(index) == NULL, "precondition");
-  assert(!hr->is_young(), "should not be young!");
+  assert(hr->is_old(), "should be old but is %s", hr->get_type_str());
   regions_at_put(index, hr);
   hr->calc_gc_efficiency();
 }
@@ -233,18 +233,19 @@ public:
     _cset_updater(hrSorted, true /* parallel */, chunk_size) { }
 
   bool do_heap_region(HeapRegion* r) {
-    // Do we have any marking information for this region?
-    if (r->is_marked()) {
-      // We will skip any region that's currently used as an old GC
-      // alloc region (we should not consider those for collection
-      // before we fill them up).
-      if (_cset_updater.should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
-        _cset_updater.add_region(r);
-      } else if (r->is_old()) {
-        // Can clean out the remembered sets of all regions that we did not choose but
-        // we created the remembered set for.
-        r->rem_set()->clear(true);
-      }
+    // We will skip any region that's currently used as an old GC
+    // alloc region (we should not consider those for collection
+    // before we fill them up).
+    if (_cset_updater.should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
+      _cset_updater.add_region(r);
+    } else if (r->is_old()) {
+      // Keep remembered sets for humongous regions, otherwise clean out remembered
+      // sets for old regions.
+      r->rem_set()->clear(true /* only_cardset */);
+    } else {
+      assert(!r->is_old() || !r->rem_set()->is_tracked(),
+             "Missed to clear unused remembered set of region %u (%s) that is %s",
+             r->hrm_index(), r->get_type_str(), r->rem_set()->get_state_str());
     }
     return false;
   }
@@ -280,11 +281,10 @@ bool CollectionSetChooser::region_occupancy_low_enough_for_evac(size_t live_byte
 }
 
 bool CollectionSetChooser::should_add(HeapRegion* hr) const {
-  assert(hr->is_marked(), "pre-condition");
-  assert(!hr->is_young(), "should never consider young regions");
-  return !hr->is_pinned() &&
-          region_occupancy_low_enough_for_evac(hr->live_bytes()) &&
-          hr->rem_set()->is_complete();
+  return !hr->is_young() &&
+         !hr->is_pinned() &&
+         region_occupancy_low_enough_for_evac(hr->live_bytes()) &&
+         hr->rem_set()->is_complete();
 }
 
 void CollectionSetChooser::rebuild(WorkGang* workers, uint n_regions) {

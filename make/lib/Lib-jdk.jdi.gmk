@@ -29,22 +29,13 @@ include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
-  LIBDT_SHMEM_SRC := $(TOPDIR)/src/jdk.jdi/share/native/libdt_shmem \
-      $(TOPDIR)/src/jdk.jdi/$(OPENJDK_TARGET_OS_TYPE)/native/libdt_shmem \
-      #
-  LIBDT_SHMEM_CPPFLAGS := -I$(INCLUDEDIR) -I$(JDK_OUTPUTDIR)/include/$(OPENJDK_TARGET_OS) \
-      $(addprefix -I, $(LIBDT_SHMEM_SRC)) \
-      -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
-      -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/include \
-      -I$(SUPPORT_OUTPUTDIR)/headers/jdk.jdi \
-      #
-
   $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SHMEM, \
       NAME := dt_shmem, \
-      SRC := $(LIBDT_SHMEM_SRC), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
-          $(LIBDT_SHMEM_CPPFLAGS), \
+      CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP, \
+      EXTRA_HEADER_DIRS := \
+          jdk.jdwp.agent:include \
+          jdk.jdwp.agent:libjdwp/export, \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
       LIBS := $(JDKLIB_LIBS), \
   ))

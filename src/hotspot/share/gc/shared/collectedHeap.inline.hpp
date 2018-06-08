@@ -142,14 +142,6 @@ HeapWord* CollectedHeap::common_mem_allocate_noinit(Klass* klass, size_t size, T
   HeapWord* result = heap->obj_allocate_raw(klass, size, &gc_overhead_limit_was_exceeded, THREAD);
 
   if (result != NULL) {
-    NOT_PRODUCT(Universe::heap()->
-      check_for_non_bad_heap_word_value(result, size));
-    assert(!HAS_PENDING_EXCEPTION,
-           "Unexpected exception, will result in uninitialized storage");
-    THREAD->incr_allocated_bytes(size * HeapWordSize);
-
-    AllocTracer::send_allocation_outside_tlab(klass, result, size * HeapWordSize, THREAD);
-
     return result;
   }
 
@@ -196,6 +188,22 @@ HeapWord* CollectedHeap::allocate_from_tlab(Klass* klass, size_t size, TRAPS) {
   assert(obj == NULL || !HAS_PENDING_EXCEPTION,
          "Unexpected exception, will result in uninitialized storage");
   return obj;
+}
+
+HeapWord* CollectedHeap::allocate_outside_tlab(Klass* klass, size_t size,
+                                               bool* gc_overhead_limit_was_exceeded, TRAPS) {
+  HeapWord* result = Universe::heap()->mem_allocate(size, gc_overhead_limit_was_exceeded);
+  if (result == NULL) {
+    return result;
+  }
+
+  NOT_PRODUCT(Universe::heap()->check_for_non_bad_heap_word_value(result, size));
+  assert(!HAS_PENDING_EXCEPTION,
+         "Unexpected exception, will result in uninitialized storage");
+  THREAD->incr_allocated_bytes(size * HeapWordSize);
+
+  AllocTracer::send_allocation_outside_tlab(klass, result, size * HeapWordSize, THREAD);
+  return result;
 }
 
 void CollectedHeap::init_obj(HeapWord* obj, size_t size) {

@@ -29,9 +29,7 @@ include LibCommon.gmk
 $(eval $(call IncludeCustomExtension, lib/Lib-java.base.gmk))
 
 # Prepare the find cache.
-LIB_java.base_SRC_DIRS += $(TOPDIR)/src/java.base/*/native
-
-$(eval $(call FillCacheFind, $(wildcard $(LIB_java.base_SRC_DIRS))))
+$(eval $(call FillCacheFind, $(wildcard $(TOPDIR)/src/java.base/*/native)))
 
 ################################################################################
 # Create all the core libraries
@@ -41,14 +39,10 @@ include CoreLibraries.gmk
 ################################################################################
 # Create the network library
 
-LIBNET_SRC_DIRS := $(call FindSrcDirsForLib, java.base, net)
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     NAME := net, \
-    SRC := $(LIBNET_SRC_DIRS), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
-        $(LIBJAVA_HEADER_FLAGS) $(addprefix -I, $(LIBNET_SRC_DIRS)), \
+    CFLAGS := $(CFLAGS_JDKLIB), \
     DISABLED_WARNINGS_gcc := format-nonliteral, \
     DISABLED_WARNINGS_clang := parentheses-equality constant-logical-operand, \
     DISABLED_WARNINGS_microsoft := 4244 4047 4133 4996, \
@@ -72,31 +66,15 @@ TARGETS += $(BUILD_LIBNET)
 ################################################################################
 # Create the nio library
 
-BUILD_LIBNIO_SRC := \
-    $(TOPDIR)/src/java.base/share/native/libnio \
-    $(TOPDIR)/src/java.base/share/native/libnio/ch \
-    $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio \
-    $(sort $(wildcard \
-      $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/ch \
-      $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libnio/fs \
-      $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnio/ch \
-      $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnio/fs)) \
-    #
-
-BUILD_LIBNIO_CFLAGS := \
-    $(addprefix -I, $(BUILD_LIBNIO_SRC)) \
-    -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
-    $(LIBJAVA_HEADER_FLAGS) \
-    $(addprefix -I, $(BUILD_LIBNET_SRC))
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     NAME := nio, \
-    SRC := $(BUILD_LIBNIO_SRC), \
-    EXCLUDE_FILES := $(BUILD_LIBNIO_EXFILES), \
     OPTIMIZATION := HIGH, \
     WARNINGS_AS_ERRORS_xlc := false, \
-    CFLAGS := $(CFLAGS_JDKLIB) \
-        $(BUILD_LIBNIO_CFLAGS), \
+    CFLAGS := $(CFLAGS_JDKLIB), \
+    EXTRA_HEADER_DIRS := \
+        libnio/ch \
+        libnio/fs \
+        libnet, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljava -lnet, \
@@ -122,17 +100,10 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   # JavaNativeFoundation framework not supported in static builds
   ifneq ($(STATIC_BUILD), true)
 
-    LIBOSXSECURITY_DIRS := $(TOPDIR)/src/java.base/macosx/native/libosxsecurity
-    LIBOSXSECURITY_CFLAGS := -I$(LIBOSXSECURITY_DIRS) \
-        $(LIBJAVA_HEADER_FLAGS) \
-        -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
-
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXSECURITY, \
         NAME := osxsecurity, \
-        SRC := $(LIBOSXSECURITY_DIRS), \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB) \
-            $(LIBOSXSECURITY_CFLAGS), \
+        CFLAGS := $(CFLAGS_JDKLIB), \
         DISABLED_WARNINGS_clang := deprecated-declarations, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
@@ -158,7 +129,6 @@ endif
 ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
   ifeq ($(STATIC_BUILD), false)
 
-    LIBJSIG_SRC_DIR := $(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjsig
     LIBJSIG_MAPFILE := $(wildcard $(TOPDIR)/make/mapfiles/libjsig/mapfile-vers-$(OPENJDK_TARGET_OS))
 
     ifeq ($(OPENJDK_TARGET_OS), linux)
@@ -168,7 +138,6 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
 
     $(eval $(call SetupJdkLibrary, BUILD_LIBJSIG, \
         NAME := jsig, \
-        SRC := $(LIBJSIG_SRC_DIR), \
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBJSIG_CFLAGS), \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \

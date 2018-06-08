@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,12 @@
  * @requires vm.gc == "null"
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
  * @requires vm.opt.DisableExplicitGC != "true"
- * @library /lib/testlibrary/
+ * @library /lib/testlibrary/ /test/lib
  *
  * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
- * @run main/timeout=600 LowMemoryTest
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm/timeout=600 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LowMemoryTest
  */
 
 import java.lang.management.*;
@@ -46,6 +48,8 @@ import javax.management.openmbean.CompositeData;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JDKToolFinder;
 import jdk.testlibrary.Utils;
+
+import sun.hotspot.code.Compiler;
 
 public class LowMemoryTest {
     private static final MemoryMXBean mm = ManagementFactory.getMemoryMXBean();
@@ -80,7 +84,9 @@ public class LowMemoryTest {
         traceTest(classMain + ", -XX:+UseSerialGC", nmFlag, lpFlag, "-XX:+UseSerialGC");
         traceTest(classMain + ", -XX:+UseParallelGC", nmFlag, lpFlag, "-XX:+UseParallelGC");
         traceTest(classMain + ", -XX:+UseG1GC", nmFlag, lpFlag, "-XX:+UseG1GC", g1Flag);
-        traceTest(classMain + ", -XX:+UseConcMarkSweepGC", nmFlag, lpFlag, "-XX:+UseConcMarkSweepGC");
+        if (!Compiler.isGraalEnabled()) { // Graal does not support CMS
+            traceTest(classMain + ", -XX:+UseConcMarkSweepGC", nmFlag, lpFlag, "-XX:+UseConcMarkSweepGC");
+        }
     }
 
     /*

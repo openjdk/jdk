@@ -45,6 +45,7 @@ public interface Config {
 
     final int NREGION                   = 10;
     final int MAX_BACKREF_NUM           = 1000;
+    final int MAX_CAPTURE_GROUP_NUM     = 0x8000;
     final int MAX_REPEAT_NUM            = 100000;
     final int MAX_MULTI_BYTE_RANGES_NUM = 10000;
 

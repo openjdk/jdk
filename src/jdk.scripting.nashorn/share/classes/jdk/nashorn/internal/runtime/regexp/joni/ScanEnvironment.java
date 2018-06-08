@@ -62,6 +62,9 @@ public final class ScanEnvironment {
     }
 
     public int addMemEntry() {
+        if (numMem >= Config.MAX_CAPTURE_GROUP_NUM) {
+            throw new InternalException(ErrorMessages.ERR_TOO_MANY_CAPTURE_GROUPS);
+        }
         if (numMem++ == 0) {
             memNodes = new Node[SCANENV_MEMNODES_SIZE];
         } else if (numMem >= memNodes.length) {

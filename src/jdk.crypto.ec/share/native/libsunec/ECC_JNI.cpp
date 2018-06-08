@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 #include <jni.h>
 #include "jni_util.h"
 #include "impl/ecc_impl.h"
+#include "sun_security_ec_ECDHKeyAgreement.h"
+#include "sun_security_ec_ECKeyPairGenerator.h"
+#include "sun_security_ec_ECDSASignature.h"
 
 #define ILLEGAL_STATE_EXCEPTION "java/lang/IllegalStateException"
 #define INVALID_ALGORITHM_PARAMETER_EXCEPTION \

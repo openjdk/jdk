@@ -688,7 +688,7 @@ void TemplateTable::aaload() {
                  Rtemp2     = R31;
   __ index_check(Rarray, R17_tos /* index */, UseCompressedOops ? 2 : LogBytesPerWord, Rtemp, Rload_addr);
   do_oop_load(_masm, Rload_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos, Rtemp, Rtemp2,
-              IN_HEAP | IN_HEAP_ARRAY);
+              IN_HEAP_ARRAY);
   __ verify_oop(R17_tos);
   //__ dcbt(R17_tos); // prefetch
 }
@@ -1015,14 +1015,14 @@ void TemplateTable::aastore() {
 
   __ bind(Lis_null);
   do_oop_store(_masm, Rstore_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), noreg /* 0 */,
-               Rscratch, Rscratch2, Rscratch3, IN_HEAP | IN_HEAP_ARRAY);
+               Rscratch, Rscratch2, Rscratch3, IN_HEAP_ARRAY);
   __ profile_null_seen(Rscratch, Rscratch2);
   __ b(Ldone);
 
   // Store is OK.
   __ bind(Lstore_ok);
   do_oop_store(_masm, Rstore_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos /* value */,
-               Rscratch, Rscratch2, Rscratch3, IN_HEAP | IN_HEAP_ARRAY | OOP_NOT_NULL);
+               Rscratch, Rscratch2, Rscratch3, IN_HEAP_ARRAY | OOP_NOT_NULL);
 
   __ bind(Ldone);
   // Adjust sp (pops array, index and value).

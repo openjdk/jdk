@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1391,8 +1391,9 @@ public final class Files {
      *          specific exception)</i>
      * @throws  DirectoryNotEmptyException
      *          the {@code REPLACE_EXISTING} option is specified but the file
-     *          cannot be replaced because it is a non-empty directory
-     *          <i>(optional specific exception)</i>
+     *          cannot be replaced because it is a non-empty directory, or the
+     *          source is a non-empty directory containing entries that would
+     *          be required to be moved <i>(optional specific exceptions)</i>
      * @throws  AtomicMoveNotSupportedException
      *          if the options array contains the {@code ATOMIC_MOVE} option but
      *          the file cannot be moved as an atomic file system operation.

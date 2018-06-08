@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,15 @@
  */
 
 /*
-* @test TestCMS
-* @key gc
-* @bug 8006398 8155948 8179013
-* @summary Test that CMS prints a warning message
-* @library /test/lib
-* @modules java.base/jdk.internal.misc
-*          java.management
-*/
+ * @test TestCMS
+ * @key gc
+ * @bug 8006398 8155948 8179013
+ * @summary Test that CMS prints a warning message
+ * @requires !vm.graal.enabled
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;

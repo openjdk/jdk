@@ -30,13 +30,6 @@ $(eval $(call IncludeCustomExtension, lib/Lib-java.management.gmk))
 
 ################################################################################
 
-LIBMANAGEMENT_SRC += $(TOPDIR)/src/java.management/share/native/libmanagement
-LIBMANAGEMENT_CFLAGS := -I$(TOPDIR)/src/hotspot/share/include \
-    $(addprefix -I,$(LIBMANAGEMENT_SRC)) \
-    -I$(SUPPORT_OUTPUTDIR)/headers/java.management \
-    $(LIBJAVA_HEADER_FLAGS) \
-    #
-
 LIBMANAGEMENT_OPTIMIZATION := HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
@@ -46,9 +39,8 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     NAME := management, \
-    SRC := $(LIBMANAGEMENT_SRC), \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_CFLAGS), \
+    CFLAGS := $(CFLAGS_JDKLIB), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \

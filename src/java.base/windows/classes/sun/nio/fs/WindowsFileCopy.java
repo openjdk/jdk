@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,6 +249,17 @@ class WindowsFileCopy {
         }
     }
 
+    // throw a DirectoryNotEmpty exception if not empty
+    static void ensureEmptyDir(WindowsPath dir) throws IOException {
+        try (WindowsDirectoryStream dirStream =
+            new WindowsDirectoryStream(dir, (e) -> true)) {
+            if (dirStream.iterator().hasNext()) {
+                throw new DirectoryNotEmptyException(
+                    dir.getPathForExceptionMessage());
+            }
+        }
+    }
+
     /**
      * Move file from source to target
      */
@@ -407,6 +418,7 @@ class WindowsFileCopy {
         // create new directory or directory junction
         try {
             if (sourceAttrs.isDirectory()) {
+                ensureEmptyDir(source);
                 CreateDirectory(targetPath, 0L);
             } else {
                 String linkTarget = WindowsLinkSupport.readLink(source);

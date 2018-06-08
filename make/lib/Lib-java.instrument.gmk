@@ -30,32 +30,24 @@ $(eval $(call IncludeCustomExtension, lib/Lib-java.instrument.gmk))
 
 ################################################################################
 
-LIBINSTRUMENT_SRC := $(TOPDIR)/src/java.instrument/share/native/libinstrument \
-    $(TOPDIR)/src/java.instrument/$(OPENJDK_TARGET_OS_TYPE)/native/libinstrument \
-    #
-LIBINSTRUMENT_CFLAGS := $(CFLAGS_JDKLIB) \
-    $(addprefix -I, $(LIBINSTRUMENT_SRC)) \
-    -I$(SUPPORT_OUTPUTDIR)/headers/java.instrument \
-    -I$(TOPDIR)/src/java.base/share/native/libjli \
-    -I$(TOPDIR)/src/java.base/share/native/libjava \
-    #
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
   # Statically link the C runtime so that there are not dependencies on modules
   # not on the search patch when invoked from the Windows system directory
   # (or elsewhere).
-  LIBINSTRUMENT_CFLAGS := $(filter-out -MD, $(LIBINSTRUMENT_CFLAGS))
+  LIBINSTRUMENT_CFLAGS_JDKLIB := $(filter-out -MD, $(CFLAGS_JDKLIB))
   # equivalent of strcasecmp is stricmp on Windows
-  LIBINSTRUMENT_CFLAGS += -Dstrcasecmp=stricmp
+  LIBINSTRUMENT_CFLAGS := -Dstrcasecmp=stricmp
+else
+  LIBINSTRUMENT_CFLAGS_JDKLIB := $(CFLAGS_JDKLIB)
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     NAME := instrument, \
-    SRC := $(LIBINSTRUMENT_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(LIBINSTRUMENT_CFLAGS), \
+    CFLAGS := $(LIBINSTRUMENT_CFLAGS_JDKLIB) $(LIBINSTRUMENT_CFLAGS), \
     CFLAGS_debug := -DJPLIS_LOGGING, \
     CFLAGS_release := -DNO_JPLIS_LOGGING, \
+    EXTRA_HEADER_DIRS := java.base:libjli, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN) \
         $(LIBINSTRUMENT_LDFLAGS), \

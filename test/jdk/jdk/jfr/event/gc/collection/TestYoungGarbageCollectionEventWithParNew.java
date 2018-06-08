@@ -28,7 +28,7 @@ package jdk.jfr.event.gc.collection;
 /*
  * @test
  * @key jfr
- * @requires vm.gc == "ConcMarkSweep" | vm.gc == null
+ * @requires (vm.gc == "ConcMarkSweep" | vm.gc == null) & !vm.graal.enabled
  * @library /test/lib /test/jdk
  * @run main/othervm -Xmx50m -Xmn2m -XX:+UseConcMarkSweepGC -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc+heap=trace,gc*=debug jdk.jfr.event.gc.collection.TestYoungGarbageCollectionEventWithParNew
  */

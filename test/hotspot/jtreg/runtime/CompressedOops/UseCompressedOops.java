@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,17 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main UseCompressedOops
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. UseCompressedOops
  */
 import java.util.ArrayList;
 import java.util.Collections;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+
+import sun.hotspot.code.Compiler;
 
 public class UseCompressedOops {
 
@@ -51,7 +55,9 @@ public class UseCompressedOops {
         testCompressedOopsModes(args);
         // Test GCs.
         testCompressedOopsModes(args, "-XX:+UseG1GC");
-        testCompressedOopsModes(args, "-XX:+UseConcMarkSweepGC");
+        if (!Compiler.isGraalEnabled()) { // Graal does not support CMS
+            testCompressedOopsModes(args, "-XX:+UseConcMarkSweepGC");
+        }
         testCompressedOopsModes(args, "-XX:+UseSerialGC");
         testCompressedOopsModes(args, "-XX:+UseParallelGC");
         testCompressedOopsModes(args, "-XX:+UseParallelOldGC");

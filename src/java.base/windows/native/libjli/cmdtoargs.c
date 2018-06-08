@@ -246,7 +246,7 @@ JLI_CmdToArgs(char* cmdline) {
     // iterate through rest of command line
     while (src != NULL) {
         src = next_arg(src, arg, &wildcard);
-        argsInFile = JLI_PreprocessArg(arg);
+        argsInFile = JLI_PreprocessArg(arg, JNI_TRUE);
         if (argsInFile != NULL) {
             // resize to accommodate another Arg
             cnt = argsInFile->size;

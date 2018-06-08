@@ -545,7 +545,6 @@ java/io/RandomAccessFile/UnreferencedRAFClosesFd.java           8202292 linux-al
 
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
-sun/management/HotspotRuntimeMBean/GetSafepointSyncTime.java    8174734 generic-all
 
 ############################################################################
 
@@ -822,6 +821,8 @@ java/awt/im/memoryleak/InputContextMemoryLeakTest.java 8023814 linux-all,solaris
 ############################################################################
 
 # core_tools
+
+tools/launcher/SourceMode.java                                  8204588 linux-all,macosx-all
 
 tools/pack200/CommandLineTests.java                             8059906 generic-all
 

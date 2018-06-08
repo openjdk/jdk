@@ -393,7 +393,27 @@ public class Manifest implements Cloneable {
                 off += n;
                 total += n;
                 pos = tpos;
-                if (c == '\n' || c == '\r') {
+                c = tbuf[tpos-1];
+                if (c == '\n') {
+                    break;
+                }
+                if (c == '\r') {
+                    if (count == pos) {
+                        // try to see if there is a trailing LF
+                        fill();
+                        if (pos < count && tbuf[pos] == '\n') {
+                            if (total < len) {
+                                b[off++] = '\n';
+                                total++;
+                            } else {
+                                // we should always have big enough lbuf but
+                                // just in case we don't, replace the last CR
+                                // with LF.
+                                b[off - 1] = '\n';
+                            }
+                            pos++;
+                        }
+                    }
                     break;
                 }
             }
