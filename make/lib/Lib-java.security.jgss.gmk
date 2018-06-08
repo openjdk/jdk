@@ -27,16 +27,10 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBJ2GSS_SRC := $(TOPDIR)/src/java.security.jgss/share/native/libj2gss \
-  #
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
     NAME := j2gss, \
-    SRC := $(LIBJ2GSS_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2GSS_SRC)) \
-        $(LIBJAVA_HEADER_FLAGS) \
-        -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
+    CFLAGS := $(CFLAGS_JDKLIB), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBDL), \
@@ -49,15 +43,10 @@ TARGETS += $(BUILD_LIBJ2GSS)
 ifneq ($(BUILD_CRYPTO), false)
 
   ifeq ($(OPENJDK_TARGET_OS), windows)
-    BUILD_LIBW2K_LSA_AUTH_SRC := $(call FindSrcDirsForLib, $(MODULE), w2k_lsa_auth)
-
     $(eval $(call SetupJdkLibrary, BUILD_LIBW2K_LSA_AUTH, \
         NAME := w2k_lsa_auth, \
-        SRC := $(BUILD_LIBW2K_LSA_AUTH_SRC), \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB) \
-            $(addprefix -I, $(BUILD_LIBW2K_LSA_AUTH_SRC)) \
-            -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
+        CFLAGS := $(CFLAGS_JDKLIB), \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS := advapi32.lib Secur32.lib netapi32.lib kernel32.lib user32.lib \
@@ -69,17 +58,12 @@ ifneq ($(BUILD_CRYPTO), false)
   endif
 
   ifeq ($(OPENJDK_TARGET_OS), macosx)
-    BUILD_LIBOSXKRB5_SRC := $(call FindSrcDirsForLib, $(MODULE), osxkrb5)
-
     # libosxkrb5 needs to call deprecated krb5 APIs so that java
     # can use the native credentials cache.
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \
         NAME := osxkrb5, \
-        SRC := $(BUILD_LIBOSXKRB5_SRC), \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB) \
-            $(addprefix -I, $(BUILD_LIBOSXKRB5_SRC)) \
-            -I$(SUPPORT_OUTPUTDIR)/headers/java.security.jgss, \
+        CFLAGS := $(CFLAGS_JDKLIB), \
         DISABLED_WARNINGS_clang := deprecated-declarations, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \

@@ -28,6 +28,8 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
+#include "java_util_prefs_WindowsPreferences.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

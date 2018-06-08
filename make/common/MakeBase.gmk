@@ -634,7 +634,7 @@ endef
 ################################################################################
 # Filter out duplicate sub strings while preserving order. Keeps the first occurance.
 uniq = \
-    $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+    $(strip $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1))))
 
 # Returns all whitespace-separated words in $2 where at least one of the
 # whitespace-separated words in $1 is a substring.

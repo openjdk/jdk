@@ -30,7 +30,7 @@
 #include "jni_util.h"
 #include "nativeCrypto.h"
 #include "nativeFunc.h"
-
+#include "com_oracle_security_ucrypto_NativeDigestMD.h"
 
 extern void throwOutOfMemoryError(JNIEnv *env, const char *msg);
 extern jbyte* getBytes(JNIEnv *env, jbyteArray bytes, int offset, int len);
