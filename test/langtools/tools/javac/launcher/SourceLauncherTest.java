@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920
+ * @bug 8192920 8204588
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -34,6 +34,7 @@
  */
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -281,8 +282,9 @@ public class SourceLauncherTest extends TestRunner {
 
         List<String> javacArgs = List.of("-classpath", auxSrc.toString());
         List<String> classArgs = List.of("1", "2", "3");
+        String FS = File.separator;
         String expectStdErr =
-            "testNoSourceOnClassPath/mainSrc/HelloWorld.java:4: error: cannot find symbol\n" +
+            "testNoSourceOnClassPath" + FS + "mainSrc" + FS + "HelloWorld.java:4: error: cannot find symbol\n" +
             "        System.out.println(Aux.MESSAGE + Arrays.toString(args));\n" +
             "                           ^\n" +
             "  symbol:   variable Aux\n" +
