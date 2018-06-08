@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920
+ * @bug 8192920 8204588
  * @summary Test source mode
  * @modules jdk.compiler
  * @run main SourceMode
@@ -31,6 +31,7 @@
 
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,78 +49,114 @@ public class SourceMode extends TestHelper {
         new SourceMode().run(args);
     }
 
+    // to reduce the chance of creating shebang lines that are too long,
+    // we use a relative path to the java command if that is shorter
+    private final Path shortJavaCmd;
+
+    private final PrintStream log;
+
+    private final boolean skipShebangTest;
+
+    SourceMode() {
+        Path cwd = Paths.get(System.getProperty("user.dir"));
+        Path cmd = Paths.get(javaCmd);
+
+        if (isWindows) {
+            // Skip shebang tests on Windows, because that requires Cygwin.
+            shortJavaCmd = cmd;
+            skipShebangTest = true;
+        } else {
+            // Skip shebang tests if the path to the Java launcher is too long,
+            // because that will cause tests to overflow the mostly undocumented
+            // limit of 120 characters for a shebang line.
+            Path p = cwd.relativize(cmd);
+            shortJavaCmd = (p.toString().length() < cmd.toString().length()) ? p : cmd;
+            skipShebangTest = shortJavaCmd.toString().length() > 100;
+        }
+
+        log = System.err;
+    }
+
     // java Simple.java 1 2 3
     @Test
     void testSimpleJava() throws IOException {
+        starting("testSimpleJava");
         Path file = getSimpleFile("Simple.java", false);
         TestResult tr = doExec(javaCmd, file.toString(), "1", "2", "3");
         if (!tr.isOK())
             error(tr, "Bad exit code: " + tr.exitValue);
         if (!tr.contains("[1, 2, 3]"))
             error(tr, "Expected output not found");
-        System.out.println(tr.testOutput);
+        show(tr);
     }
 
     // java --source 10 simple 1 2 3
     @Test
     void testSimple() throws IOException {
+        starting("testSimple");
         Path file = getSimpleFile("simple", false);
         TestResult tr = doExec(javaCmd, "--source", "10", file.toString(), "1", "2", "3");
         if (!tr.isOK())
             error(tr, "Bad exit code: " + tr.exitValue);
         if (!tr.contains("[1, 2, 3]"))
             error(tr, "Expected output not found");
-        System.out.println(tr.testOutput);
+        show(tr);
     }
 
     // execSimple 1 2 3
     @Test
     void testExecSimple() throws IOException {
-        if (isWindows) // Will not work without cygwin, pass silently
+        starting("testExecSimple");
+        if (skipShebangTest) {
+            log.println("SKIPPED");
             return;
+        }
         Path file = setExecutable(getSimpleFile("execSimple", true));
         TestResult tr = doExec(file.toAbsolutePath().toString(), "1", "2", "3");
         if (!tr.isOK())
             error(tr, "Bad exit code: " + tr.exitValue);
         if (!tr.contains("[1, 2, 3]"))
             error(tr, "Expected output not found");
-        System.out.println(tr.testOutput);
+        show(tr);
     }
 
     // java @simpleJava.at  (contains Simple.java 1 2 3)
     @Test
     void testSimpleJavaAtFile() throws IOException {
+        starting("testSimpleJavaAtFile");
         Path file = getSimpleFile("Simple.java", false);
         Path atFile = Paths.get("simpleJava.at");
-        createFile(atFile.toFile(), List.of(file + " 1 2 3"));
+        createFile(atFile, List.of(file + " 1 2 3"));
         TestResult tr = doExec(javaCmd, "@" + atFile);
         if (!tr.isOK())
             error(tr, "Bad exit code: " + tr.exitValue);
         if (!tr.contains("[1, 2, 3]"))
             error(tr, "Expected output not found");
-        System.out.println(tr.testOutput);
+        show(tr);
     }
 
     // java @simple.at  (contains --source 10 simple 1 2 3)
     @Test
     void testSimpleAtFile() throws IOException {
+        starting("testSimpleAtFile");
         Path file = getSimpleFile("simple", false);
         Path atFile = Paths.get("simple.at");
-        createFile(atFile.toFile(), List.of("--source 10 " + file + " 1 2 3"));
+        createFile(atFile, List.of("--source 10 " + file + " 1 2 3"));
         TestResult tr = doExec(javaCmd, "@" + atFile);
         if (!tr.isOK())
             error(tr, "Bad exit code: " + tr.exitValue);
         if (!tr.contains("[1, 2, 3]"))
             error(tr, "Expected output not found");
-        System.out.println(tr.testOutput);
+        show(tr);
     }
 
     // java -cp classes Main.java 1 2 3
     @Test
     void testClasspath() throws IOException {
+        starting("testClasspath");
         Path base = Files.createDirectories(Paths.get("testClasspath"));
         Path otherJava = base.resolve("Other.java");
-        createFile(otherJava.toFile(), List.of(
+        createFile(otherJava, List.of(
             "public class Other {",
             "  public static String join(String[] args) {",
             "    return String.join(\"-\", args);",
@@ -128,7 +165,7 @@ public class SourceMode extends TestHelper {
         ));
         Path classes = Files.createDirectories(base.resolve("classes"));
         Path mainJava = base.resolve("Main.java");
-        createFile(mainJava.toFile(), List.of(
+        createFile(mainJava, List.of(
             "class Main {",
             "  public static void main(String[] args) {",
             "    System.out.println(Other.join(args));",
@@ -141,14 +178,15 @@ public class SourceMode extends TestHelper {
             error(tr, "Bad exit code: " + tr.exitValue);
         if (!tr.contains("1-2-3"))
             error(tr, "Expected output not found");
-        System.out.println(tr.testOutput);
+        show(tr);
     }
 
     // java --add-exports=... Export.java --help
     @Test
     void testAddExports() throws IOException {
+        starting("testAddExports");
         Path exportJava = Paths.get("Export.java");
-        createFile(exportJava.toFile(), List.of(
+        createFile(exportJava, List.of(
             "public class Export {",
             "  public static void main(String[] args) {",
             "    new com.sun.tools.javac.main.Main(\"demo\").compile(args);",
@@ -159,6 +197,7 @@ public class SourceMode extends TestHelper {
         TestResult tr1 = doExec(javaCmd, exportJava.toString(), "--help");
         if (tr1.isOK())
             error(tr1, "Compilation succeeded unexpectedly");
+        show(tr1);
         // verify access succeeds with --add-exports
         TestResult tr2 = doExec(javaCmd,
             "--add-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
@@ -167,15 +206,17 @@ public class SourceMode extends TestHelper {
             error(tr2, "Bad exit code: " + tr2.exitValue);
         if (!(tr2.contains("demo") && tr2.contains("Usage")))
             error(tr2, "Expected output not found");
+        show(tr2);
     }
 
     // java -cp ... HelloWorld.java  (for a class "java" in package "HelloWorld")
     @Test
     void testClassNamedJava() throws IOException {
+        starting("testClassNamedJava");
         Path base = Files.createDirectories(Paths.get("testClassNamedJava"));
         Path src = Files.createDirectories(base.resolve("src"));
         Path srcfile = src.resolve("java.java");
-        createFile(srcfile.toFile(), List.of(
+        createFile(srcfile, List.of(
                 "package HelloWorld;",
                 "class java {",
                 "    public static void main(String... args) {",
@@ -191,22 +232,25 @@ public class SourceMode extends TestHelper {
             error(tr, "Command failed");
         if (!tr.contains("HelloWorld.java"))
             error(tr, "Expected output not found");
+        show(tr);
     }
 
     // java --source
     @Test
     void testSourceNoArg() throws IOException {
+        starting("testSourceNoArg");
         TestResult tr = doExec(javaCmd, "--source");
         if (tr.isOK())
             error(tr, "Command succeeded unexpectedly");
-        System.err.println(tr);
         if (!tr.contains("--source requires source version"))
             error(tr, "Expected output not found");
+        show(tr);
     }
 
     // java --source 10 -jar simple.jar
     @Test
     void testSourceJarConflict() throws IOException {
+        starting("testSourceJarConflict");
         Path base = Files.createDirectories(Paths.get("testSourceJarConflict"));
         Path file = getSimpleFile("Simple.java", false);
         Path classes = Files.createDirectories(base.resolve("classes"));
@@ -219,70 +263,100 @@ public class SourceMode extends TestHelper {
             error(tr, "Command succeeded unexpectedly");
         if (!tr.contains("Option -jar is not allowed with --source"))
             error(tr, "Expected output not found");
+        show(tr);
     }
 
     // java --source 10 -m jdk.compiler
     @Test
     void testSourceModuleConflict() throws IOException {
+        starting("testSourceModuleConflict");
         TestResult tr = doExec(javaCmd, "--source", "10", "-m", "jdk.compiler");
         if (tr.isOK())
             error(tr, "Command succeeded unexpectedly");
         if (!tr.contains("Option -m is not allowed with --source"))
             error(tr, "Expected output not found");
+        show(tr);
     }
 
     // #!.../java --source 10 -version
     @Test
     void testTerminalOptionInShebang() throws IOException {
-        if (isWindows) // Will not work without cygwin, pass silently
+        starting("testTerminalOptionInShebang");
+        if (skipShebangTest) {
+            log.println("SKIPPED");
             return;
+        }
         Path base = Files.createDirectories(
             Paths.get("testTerminalOptionInShebang"));
         Path bad = base.resolve("bad");
-        createFile(bad.toFile(), List.of(
-            "#!" + javaCmd + " --source 10 -version"));
+        createFile(bad, List.of(
+            "#!" + shortJavaCmd + " --source 10 -version"));
         setExecutable(bad);
         TestResult tr = doExec(bad.toString());
         if (!tr.contains("Option -version is not allowed in this context"))
             error(tr, "Expected output not found");
+        show(tr);
     }
 
     // #!.../java --source 10 @bad.at  (contains -version)
     @Test
     void testTerminalOptionInShebangAtFile() throws IOException {
-        if (isWindows) // Will not work without cygwin, pass silently
+        starting("testTerminalOptionInShebangAtFile");
+        if (skipShebangTest) {
+            log.println("SKIPPED");
             return;
+        }
         // Use a short directory name, to avoid line length limitations
         Path base = Files.createDirectories(Paths.get("testBadAtFile"));
         Path bad_at = base.resolve("bad.at");
-        createFile(bad_at.toFile(), List.of("-version"));
+        createFile(bad_at, List.of("-version"));
         Path bad = base.resolve("bad");
-        createFile(bad.toFile(), List.of(
-            "#!" + javaCmd + " --source 10 @" + bad_at));
+        createFile(bad, List.of(
+            "#!" + shortJavaCmd + " --source 10 @" + bad_at));
         setExecutable(bad);
         TestResult tr = doExec(bad.toString());
-        System.err.println("JJG JJG " + tr);
         if (!tr.contains("Option -version in @testBadAtFile/bad.at is "
                 + "not allowed in this context"))
             error(tr, "Expected output not found");
+        show(tr);
     }
 
     // #!.../java --source 10 HelloWorld
     @Test
     void testMainClassInShebang() throws IOException {
-        if (isWindows) // Will not work without cygwin, pass silently
+        starting("testMainClassInShebang");
+        if (skipShebangTest) {
+            log.println("SKIPPED");
             return;
+        }
         Path base = Files.createDirectories(Paths.get("testMainClassInShebang"));
         Path bad = base.resolve("bad");
-        createFile(bad.toFile(), List.of(
-            "#!" + javaCmd + " --source 10 HelloWorld"));
+        createFile(bad, List.of(
+            "#!" + shortJavaCmd + " --source 10 HelloWorld"));
         setExecutable(bad);
         TestResult tr = doExec(bad.toString());
         if (!tr.contains("Cannot specify main class in this context"))
             error(tr, "Expected output not found");
+        show(tr);
     }
 
     //--------------------------------------------------------------------------
+
+    private void starting(String label) {
+        System.out.println();
+        System.out.println("*** Starting: " + label + " (stdout)");
+
+        System.err.println();
+        System.err.println("*** Starting: " + label + " (stderr)");
+    }
+
+    private void show(TestResult tr) {
+        log.println("*** Test Output:");
+        for (String line: tr.testOutput) {
+            log.println(line);
+        }
+        log.println("*** End Of Test Output:");
+    }
 
     private Map<String,String> getLauncherDebugEnv() {
         return Map.of("_JAVA_LAUNCHER_DEBUG", "1");
@@ -291,14 +365,29 @@ public class SourceMode extends TestHelper {
     private Path getSimpleFile(String name, boolean shebang) throws IOException {
         Path file = Paths.get(name);
         if (!Files.exists(file)) {
-            createFile(file.toFile(), List.of(
-                (shebang ? "#!" + javaCmd + " --source 10" : ""),
+            createFile(file, List.of(
+                (shebang ? "#!" + shortJavaCmd + " --source 10" : ""),
                 "public class Simple {",
                 "  public static void main(String[] args) {",
                 "    System.out.println(java.util.Arrays.toString(args));",
                 "  }}"));
         }
         return file;
+    }
+
+    private void createFile(Path file, List<String> lines) throws IOException {
+        lines.stream()
+            .filter(line -> line.length() > 128)
+            .forEach(line -> {
+                    log.println("*** Warning: long line ("
+                                        + line.length()
+                                        + " chars) in file " + file);
+                    log.println("*** " + line);
+                });
+        log.println("*** File: " + file);
+        lines.stream().forEach(log::println);
+        log.println("*** End Of File");
+        createFile(file.toFile(), lines);
     }
 
     private Path setExecutable(Path file) throws IOException {
@@ -309,7 +398,7 @@ public class SourceMode extends TestHelper {
     }
 
     private void error(TestResult tr, String message) {
-        System.err.println(tr);
+        show(tr);
         throw new RuntimeException(message);
     }
 }
