@@ -30,12 +30,6 @@ include LibCommon.gmk
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
   ROOT_SRCDIR := $(TOPDIR)/src/jdk.accessibility/windows/native
-  JAVA_AB_SRCDIR := $(ROOT_SRCDIR)/libjavaaccessbridge $(ROOT_SRCDIR)/common
-  WIN_AB_SRCDIR := $(ROOT_SRCDIR)/libwindowsaccessbridge $(ROOT_SRCDIR)/common
-  SYSINFO_SRCDIR := $(ROOT_SRCDIR)/libjabsysinfo
-  ACCESSBRIDGE_CFLAGS := -I$(SUPPORT_OUTPUTDIR)/headers/jdk.accessibility \
-      -I$(TOPDIR)/src/java.desktop/windows/native/include \
-      -I$(TOPDIR)/src/java.desktop/share/native/include
 
   define SetupJavaDLL
     # Parameter 1 Suffix
@@ -43,13 +37,16 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
     $(call SetupJdkLibrary, BUILD_JAVAACCESSBRIDGE$1, \
         NAME := javaaccessbridge$1, \
-        SRC := $(JAVA_AB_SRCDIR), \
+        SRC := libjavaaccessbridge, \
+        EXTRA_SRC := common, \
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
-        CFLAGS := $(CFLAGS_JDKLIB) $(ACCESSBRIDGE_CFLAGS) \
-            $(addprefix -I,$(JAVA_AB_SRCDIR)) \
-            -I$(ROOT_SRCDIR)/include/bridge \
+        CFLAGS := $(CFLAGS_JDKLIB) \
             -DACCESSBRIDGE_ARCH_$2, \
+        EXTRA_HEADER_DIRS := \
+            include/bridge \
+            java.base:include \
+            java.desktop:include, \
         LDFLAGS := $(LDFLAGS_JDKLIB), \
         LIBS := kernel32.lib user32.lib gdi32.lib \
             winspool.lib comdlg32.lib advapi32.lib shell32.lib \
@@ -68,13 +65,15 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
     # Parameter 2 ACCESSBRIDGE_ARCH_ suffix
     $(call SetupJdkLibrary, BUILD_WINDOWSACCESSBRIDGE$1, \
         NAME := windowsaccessbridge$1, \
-        SRC := $(WIN_AB_SRCDIR), \
+        SRC := libwindowsaccessbridge, \
+        EXTRA_SRC := common, \
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
-        CFLAGS := $(filter-out -MD, $(CFLAGS_JDKLIB)) -MT $(ACCESSBRIDGE_CFLAGS) \
-            $(addprefix -I,$(WIN_AB_SRCDIR)) \
-            -I$(ROOT_SRCDIR)/include/bridge \
+        CFLAGS := $(filter-out -MD, $(CFLAGS_JDKLIB)) -MT \
             -DACCESSBRIDGE_ARCH_$2, \
+        EXTRA_HEADER_DIRS := \
+            include/bridge \
+            java.base:include, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             -def:$(ROOT_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
         LIBS := kernel32.lib user32.lib gdi32.lib \
@@ -91,9 +90,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
     $(call SetupJdkLibrary, BUILD_ACCESSBRIDGESYSINFO, \
         NAME := jabsysinfo, \
-        SRC := $(SYSINFO_SRCDIR), \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB) $(ACCESSBRIDGE_CFLAGS), \
+        CFLAGS := $(CFLAGS_JDKLIB), \
         LDFLAGS := $(LDFLAGS_JDKLIB), \
         VERSIONINFO_RESOURCE := $(ROOT_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )

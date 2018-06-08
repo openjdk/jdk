@@ -30,15 +30,6 @@ $(eval $(call IncludeCustomExtension, lib/Lib-jdk.management.gmk))
 
 ################################################################################
 
-LIBMANAGEMENT_EXT_SRC += $(TOPDIR)/src/jdk.management/share/native/libmanagement_ext \
-    $(TOPDIR)/src/jdk.management/$(OPENJDK_TARGET_OS_TYPE)/native/libmanagement_ext       \
-    $(TOPDIR)/src/jdk.management/$(OPENJDK_TARGET_OS)/native/libmanagement_ext
-LIBMANAGEMENT_EXT_CFLAGS := -I$(TOPDIR)/src/java.management/share/native/include \
-    $(addprefix -I,$(LIBMANAGEMENT_EXT_SRC)) \
-    -I$(SUPPORT_OUTPUTDIR)/headers/jdk.management \
-    $(LIBJAVA_HEADER_FLAGS) \
-    #
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
   # In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
   # a binary that is compatible with windows versions older than 7/2008R2.
@@ -55,8 +46,6 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     NAME := management_ext, \
-    SRC := $(LIBMANAGEMENT_EXT_SRC), \
-    LANG := C, \
     OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_EXT_CFLAGS), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \

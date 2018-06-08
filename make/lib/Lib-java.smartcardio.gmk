@@ -27,18 +27,12 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBJ2PCSC_SRC := $(TOPDIR)/src/java.smartcardio/share/native/libj2pcsc \
-    $(TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pcsc
-LIBJ2PCSC_CPPFLAGS := $(addprefix -I,$(LIBJ2PCSC_SRC)) \
-    -I$(TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pcsc/MUSCLE \
-    -I$(SUPPORT_OUTPUTDIR)/headers/java.smartcardio
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PCSC, \
     NAME := j2pcsc, \
-    SRC := $(LIBJ2PCSC_SRC), \
+    CFLAGS := $(CFLAGS_JDKLIB), \
     CFLAGS_unix := -D__sun_jdk, \
+    EXTRA_HEADER_DIRS := libj2pcsc/MUSCLE, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBJ2PCSC_CPPFLAGS), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include <jni.h>
 #include <jni_util.h>
 #include <sizecalc.h>
+#include "java_awt_SplashScreen.h"
 
 JNIEXPORT jint JNICALL
 DEF_JNI_OnLoad(JavaVM * vm, void *reserved)

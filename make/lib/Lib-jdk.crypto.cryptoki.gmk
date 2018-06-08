@@ -27,16 +27,10 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBJ2PKCS11_SRC := $(TOPDIR)/src/jdk.crypto.cryptoki/share/native/libj2pkcs11 \
-    $(TOPDIR)/src/jdk.crypto.cryptoki/$(OPENJDK_TARGET_OS_TYPE)/native/libj2pkcs11
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PKCS11, \
     NAME := j2pkcs11, \
-    SRC := $(LIBJ2PKCS11_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBJ2PKCS11_SRC)) \
-        $(LIBJAVA_HEADER_FLAGS) \
-        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.crypto.cryptoki, \
+    CFLAGS := $(CFLAGS_JDKLIB), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \
