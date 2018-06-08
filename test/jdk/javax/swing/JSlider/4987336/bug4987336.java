@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.Hashtable;
 public class bug4987336 extends JApplet {
     private static final String IMAGE_RES = "box.gif";
 
-    private static final String ANIM_IMAGE_RES = "cupanim.gif";
+    private static final String ANIM_IMAGE_RES = "duke.gif";
 
     public void init() {
         JPanel pnLafs = new JPanel();
