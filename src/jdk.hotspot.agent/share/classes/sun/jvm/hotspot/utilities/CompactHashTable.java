@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,4 +119,39 @@ public class CompactHashTable extends VMObject {
     }
     return null;
   }
+
+  public interface SymbolVisitor {
+    public void visit(Symbol sym);
+  }
+
+  public void symbolsDo(SymbolVisitor visitor) {
+    long    symOffset;
+    Symbol  sym;
+    Address baseAddress = baseAddressField.getValue(addr);
+    Address bucket = bucketsField.getValue(addr);
+    for (long index = 0; index < bucketCount(); index++) {
+      int bucketInfo = (int)bucket.getCIntegerAt(index * uintSize, uintSize, true);
+      int bucketOffset = bucketOffset(bucketInfo);
+      int nextBucketInfo = (int)bucket.getCIntegerAt((index+1) * uintSize, uintSize, true);
+      int nextBucketOffset = bucketOffset(nextBucketInfo);
+
+      Address entry = entriesField.getValue(addr).addOffsetTo(bucketOffset * uintSize);
+
+      if (isValueOnlyBucket(bucketInfo)) {
+        symOffset = entry.getCIntegerAt(0, uintSize, true);
+        sym = Symbol.create(baseAddress.addOffsetTo(symOffset));
+        visitor.visit(sym);
+      } else {
+        Address entryMax = entriesField.getValue(addr).addOffsetTo(nextBucketOffset * uintSize);
+        while (entry.lessThan(entryMax)) {
+          symOffset = entry.getCIntegerAt(uintSize, uintSize, true);
+          Address symAddr = baseAddress.addOffsetTo(symOffset);
+          sym = Symbol.create(symAddr);
+          visitor.visit(sym);
+          entry = entry.addOffsetTo(2 * uintSize);
+        }
+      }
+    }
+  }
 }
+

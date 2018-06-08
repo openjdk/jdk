@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,10 @@ public class SymbolTable extends sun.jvm.hotspot.utilities.Hashtable {
     Address shared = sharedTableField.getStaticFieldAddress();
     table.sharedTable = (CompactHashTable)VMObjectFactory.newObject(CompactHashTable.class, shared);
     return table;
+  }
+
+  public CompactHashTable getSharedTable() {
+      return sharedTable;
   }
 
   public static long getSeed() {
