@@ -42,6 +42,8 @@
 # line looking like this:
 #
 # make cross_compile_target="aarch64-linux-gnu" BASE_OS=Fedora27
+# or
+# make cross_compile_target="arm-linux-gnueabihf" BASE_OS=Fedora27
 #
 # This is the makefile which iterates over all host and target platforms.
 #
