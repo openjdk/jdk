@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,20 @@ import java.util.*;
 public final class VersionHelper {
     private static final VersionHelper helper = new VersionHelper();
 
+    /**
+     * Determines whether classes may be loaded from an arbitrary URL code base.
+     */
+    private static final boolean TRUST_URL_CODE_BASE;
+
+    static {
+        // System property to control whether classes may be loaded from an
+        // arbitrary URL code base
+        PrivilegedAction<String> act
+                = () -> System.getProperty("com.sun.jndi.ldap.object.trustURLCodebase", "false");
+        String trust = AccessController.doPrivileged(act);
+        TRUST_URL_CODE_BASE = "true".equalsIgnoreCase(trust);
+    }
+
     final static String[] PROPS = new String[]{
         javax.naming.Context.INITIAL_CONTEXT_FACTORY,
         javax.naming.Context.OBJECT_FACTORIES,
@@ -88,12 +102,14 @@ public final class VersionHelper {
      */
     public Class<?> loadClass(String className, String codebase)
             throws ClassNotFoundException, MalformedURLException {
-
-        ClassLoader parent = getContextClassLoader();
-        ClassLoader cl =
-                URLClassLoader.newInstance(getUrlArray(codebase), parent);
-
-        return loadClass(className, cl);
+        if (TRUST_URL_CODE_BASE) {
+            ClassLoader parent = getContextClassLoader();
+            ClassLoader cl
+                    = URLClassLoader.newInstance(getUrlArray(codebase), parent);
+            return loadClass(className, cl);
+        } else {
+            return null;
+        }
     }
 
     /**
