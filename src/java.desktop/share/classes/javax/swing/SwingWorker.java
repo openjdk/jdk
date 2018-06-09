@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package javax.swing;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.beans.PropertyChangeEvent;
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
-
-import java.awt.event.*;
-
-import javax.swing.SwingUtilities;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import sun.awt.AppContext;
 import sun.swing.AccumulativeRunnable;
@@ -597,6 +606,8 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      * //the dialog will be visible until the SwingWorker is done
      * dialog.setVisible(true);
      * </pre>
+     *
+     * @throws CancellationException {@inheritDoc}
      */
     public final T get() throws InterruptedException, ExecutionException {
         return future.get();
@@ -606,6 +617,8 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      * {@inheritDoc}
      * <p>
      * Please refer to {@link #get} for more details.
+     *
+     * @throws CancellationException {@inheritDoc}
      */
     public final T get(long timeout, TimeUnit unit) throws InterruptedException,
             ExecutionException, TimeoutException {
