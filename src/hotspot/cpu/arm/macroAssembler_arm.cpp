@@ -1367,9 +1367,12 @@ void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Regi
   // Bump total bytes allocated by this thread
   Label done;
 
-  ldr(tmp, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
+  // Borrow the Rthread for alloc counter
+  Register Ralloc = Rthread;
+  add(Ralloc, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
+  ldr(tmp, Address(Ralloc));
   adds(tmp, tmp, size_in_bytes);
-  str(tmp, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())), cc);
+  str(tmp, Address(Ralloc), cc);
   b(done, cc);
 
   // Increment the high word and store single-copy atomically (that is an unlikely scenario on typical embedded systems as it means >4GB has been allocated)
@@ -1387,14 +1390,17 @@ void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Regi
   }
   push(RegisterSet(low, high));
 
-  ldrd(low, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
+  ldrd(low, Address(Ralloc));
   adds(low, low, size_in_bytes);
   adc(high, high, 0);
-  strd(low, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
+  strd(low, Address(Ralloc));
 
   pop(RegisterSet(low, high));
 
   bind(done);
+
+  // Unborrow the Rthread
+  sub(Rthread, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
 #endif // AARCH64
 }
 
