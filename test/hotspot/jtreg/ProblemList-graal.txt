@@ -143,3 +143,9 @@ vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn002/TestDescription.java  
 vmTestbase/nsk/jvmti/AttachOnDemand/attach024/TestDescription.java                 8195630   generic-all
 
 vmTestbase/nsk/jvmti/unit/FollowReferences/followref003/TestDescription.java       8202342   generic-all
+
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t002/TestDescription.java        8204506   macosx-all
+
+compiler/stable/TestStableShort.java                             8204346   generic-all
+compiler/stable/TestStableUShort.java                            8204346   generic-all
+compiler/stable/TestStableUByte.java                             8204346   generic-all
