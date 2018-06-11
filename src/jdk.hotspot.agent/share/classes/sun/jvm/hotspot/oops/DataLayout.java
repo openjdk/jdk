@@ -47,19 +47,14 @@ public class DataLayout {
   public static final int parametersTypeDataTag = 12;
   public static final int speculativeTrapDataTag = 13;
 
-  // The _struct._flags word is formatted as [trapState:4 | flags:4].
-  // The trap state breaks down further as [recompile:1 | reason:3].
+  // The trap state breaks down as [recompile:1 | reason:31].
   // This further breakdown is defined in deoptimization.cpp.
   // See Deoptimization.trapStateReason for an assert that
   // trapBits is big enough to hold reasons < reasonRecordedLimit.
   //
   // The trapState is collected only if ProfileTraps is true.
-  public static final int trapBits = 1+3;  // 3: enough to distinguish [0..reasonRecordedLimit].
-  public static final int trapShift = 8 - trapBits;
+  public static final int trapBits = 1+31;  // 31: enough to distinguish [0..reasonRecordedLimit].
   public static final int trapMask = Bits.rightNBits(trapBits);
-  public static final int trapMaskInPlace = (trapMask << trapShift);
-  public static final int flagLimit = trapShift;
-  public static final int flagMask = Bits.rightNBits(flagLimit);
   public static final int firstFlag = 0;
 
   private Address data;
@@ -97,16 +92,17 @@ public class DataLayout {
 
   // Every data layout begins with a header.  This header
   // contains a tag, which is used to indicate the size/layout
-  // of the data, 4 bits of flags, which can be used in any way,
-  // 4 bits of trap history (none/one reason/many reasons),
+  // of the data, 8 bits of flags, which can be used in any way,
+  // 32 bits of trap history (none/one reason/many reasons),
   // and a bci, which is used to tie this piece of data to a
   // specific bci in the bytecodes.
   // union {
-  //   intptrT _bits;
+  //   u8 _bits;
   //   struct {
   //     u1 _tag;
   //     u1 _flags;
   //     u2 _bci;
+  //     u4 _traps;
   //   } _struct;
   // } _header;
 
@@ -119,10 +115,10 @@ public class DataLayout {
 
   // Size computation
   static int headerSizeInBytes() {
-    return MethodData.cellSize;
+    return MethodData.cellSize * headerSizeInCells();
   }
   static int headerSizeInCells() {
-    return 1;
+      return VM.getVM().isLP64() ? 1 : 2;
   }
 
   static public int computeSizeInBytes(int cellCount) {
@@ -146,7 +142,7 @@ public class DataLayout {
   // simplifying assumption that all N occurrences can be blamed
   // on that BCI.
   int trapState() {
-    return (flags() >> trapShift) & trapMask;
+    return data.getJIntAt(offset+4);
   }
 
   int flags() {

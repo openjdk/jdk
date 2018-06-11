@@ -1682,9 +1682,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     // Object is null; update MDO and exit
     Register mdo  = klass_RInfo;
     __ mov_metadata(mdo, md->constant_encoding());
-    Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::header_offset()));
-    int header_bits = DataLayout::flag_mask_to_header_mask(BitData::null_seen_byte_constant());
-    __ orl(data_addr, header_bits);
+    Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
+    int header_bits = BitData::null_seen_byte_constant();
+    __ orb(data_addr, header_bits);
     __ jmp(*obj_is_null);
     __ bind(not_null);
   } else {
@@ -1828,9 +1828,9 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       // Object is null; update MDO and exit
       Register mdo  = klass_RInfo;
       __ mov_metadata(mdo, md->constant_encoding());
-      Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::header_offset()));
-      int header_bits = DataLayout::flag_mask_to_header_mask(BitData::null_seen_byte_constant());
-      __ orl(data_addr, header_bits);
+      Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
+      int header_bits = BitData::null_seen_byte_constant();
+      __ orb(data_addr, header_bits);
       __ jmp(done);
       __ bind(not_null);
     } else {
