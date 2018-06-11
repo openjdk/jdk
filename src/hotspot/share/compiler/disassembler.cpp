@@ -155,6 +155,7 @@ class decode_env {
   CodeStrings   _strings;
   outputStream* _output;
   address       _start, _end;
+  ptrdiff_t     _offset;
 
   char          _option_buf[512];
   char          _print_raw;
@@ -191,7 +192,8 @@ class decode_env {
   void print_address(address value);
 
  public:
-  decode_env(CodeBlob* code, outputStream* output, CodeStrings c = CodeStrings());
+  decode_env(CodeBlob* code, outputStream* output,
+             CodeStrings c = CodeStrings(), ptrdiff_t offset = 0);
 
   address decode_instructions(address start, address end);
 
@@ -221,13 +223,15 @@ class decode_env {
   const char* options() { return _option_buf; }
 };
 
-decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) {
+decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c,
+                       ptrdiff_t offset) {
   memset(this, 0, sizeof(*this)); // Beware, this zeroes bits of fields.
   _output = output ? output : tty;
   _code = code;
   if (code != NULL && code->is_nmethod())
     _nm = (nmethod*) code;
   _strings.copy(c);
+  _offset = offset;
 
   // by default, output pc but not bytes:
   _print_pc       = true;
@@ -354,7 +358,7 @@ void decode_env::print_insn_labels() {
   if (cb != NULL) {
     cb->print_block_comment(st, p);
   }
-  _strings.print_block_comment(st, (intptr_t)(p - _start));
+  _strings.print_block_comment(st, (intptr_t)(p - _start + _offset));
   if (_print_pc) {
     st->print("  " PTR_FORMAT ": ", p2i(p));
   }
@@ -507,10 +511,11 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   env.decode_instructions(cb->code_begin(), cb->code_end());
 }
 
-void Disassembler::decode(address start, address end, outputStream* st, CodeStrings c) {
+void Disassembler::decode(address start, address end, outputStream* st, CodeStrings c,
+                          ptrdiff_t offset) {
   ttyLocker ttyl;
   if (!load_library())  return;
-  decode_env env(CodeCache::find_blob_unsafe(start), st, c);
+  decode_env env(CodeCache::find_blob_unsafe(start), st, c, offset);
   env.decode_instructions(start, end);
 }
 
