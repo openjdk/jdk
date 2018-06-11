@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,8 @@ class Disassembler {
   }
   static void decode(CodeBlob *cb,               outputStream* st = NULL);
   static void decode(nmethod* nm,                outputStream* st = NULL);
-  static void decode(address begin, address end, outputStream* st = NULL, CodeStrings c = CodeStrings());
+  static void decode(address begin, address end, outputStream* st = NULL,
+                     CodeStrings c = CodeStrings(), ptrdiff_t offset = 0);
 };
 
 #endif // SHARE_VM_COMPILER_DISASSEMBLER_HPP
