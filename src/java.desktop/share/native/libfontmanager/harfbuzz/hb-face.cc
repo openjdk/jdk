@@ -117,9 +117,6 @@ _hb_face_for_data_closure_create (hb_blob_t *blob, unsigned int index)
   return closure;
 }
 
-#ifdef __SUNPRO_CC
-extern "C" {
-#endif
 static void
 _hb_face_for_data_closure_destroy (void *data)
 {
@@ -128,9 +125,6 @@ _hb_face_for_data_closure_destroy (void *data)
   hb_blob_destroy (closure->blob);
   free (closure);
 }
-#ifdef __SUNPRO_CC
-}
-#endif
 
 static hb_blob_t *
 _hb_face_for_data_reference_table (hb_face_t *face HB_UNUSED, hb_tag_t tag, void *user_data)
@@ -496,7 +490,7 @@ hb_face_get_table_tags (hb_face_t    *face,
                         unsigned int *table_count, /* IN/OUT */
                         hb_tag_t     *table_tags /* OUT */)
 {
-  if (face->destroy != _hb_face_for_data_closure_destroy)
+  if (face->destroy != (hb_destroy_func_t) _hb_face_for_data_closure_destroy)
   {
     if (table_count)
       *table_count = 0;

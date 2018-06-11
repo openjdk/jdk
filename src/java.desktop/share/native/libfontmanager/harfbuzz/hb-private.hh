@@ -139,7 +139,7 @@ extern "C" void  hb_free_impl(void *ptr);
 #define HB_FUNC __func__
 #endif
 
-#ifdef __SUNPRO_CC
+#if defined(__SUNPRO_CC) && (__SUNPRO_CC < 0x5140)
 /* https://github.com/harfbuzz/harfbuzz/issues/630 */
 #define __restrict
 #endif
