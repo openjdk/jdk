@@ -74,10 +74,17 @@ public class CImage extends CFRetainedResource {
 
     // This is used to create a CImage from a Image
     public static CImage createFromImage(final Image image) {
-        return getCreator().createFromImage(image);
+        return getCreator().createFromImage(image, null);
+    }
+
+    // This is used to create a CImage from a Image
+    public static CImage createFromImage(final Image image, CTrayIcon.IconObserver observer) {
+        return getCreator().createFromImage(image, observer);
     }
 
     public static class Creator {
+        CTrayIcon.IconObserver observer;
+
         Creator() { }
 
         // This is used to create a CImage with an NSImage pointer. It MUST be a CFRetained
@@ -124,7 +131,7 @@ public class CImage extends CFRetainedResource {
             return createImageUsingNativeSize(nativeCreateNSImageFromImageName(name));
         }
 
-        private static int[] imageToArray(Image image, boolean prepareImage) {
+        private static int[] imageToArray(Image image, boolean prepareImage, CTrayIcon.IconObserver observer) {
             if (image == null) return null;
 
             if (prepareImage && !(image instanceof BufferedImage)) {
@@ -153,14 +160,14 @@ public class CImage extends CFRetainedResource {
             BufferedImage bimg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB_PRE);
             Graphics2D g2 = bimg.createGraphics();
             g2.setComposite(AlphaComposite.Src);
-            g2.drawImage(image, 0, 0, null);
+            g2.drawImage(image, 0, 0, observer);
             g2.dispose();
 
             return ((DataBufferInt)bimg.getRaster().getDataBuffer()).getData();
         }
 
         public byte[] getPlatformImageBytes(final Image image) {
-            int[] buffer = imageToArray(image, false);
+            int[] buffer = imageToArray(image, false, null);
 
             if (buffer == null) {
                 return null;
@@ -178,22 +185,27 @@ public class CImage extends CFRetainedResource {
 
         // This is used to create a CImage from a Image
         public CImage createFromImage(final Image image) {
-            return createFromImage(image, true);
-        }
-
-        public CImage createFromImageImmediately(final Image image) {
-            return createFromImage(image, false);
+            return createFromImage(image, true, null);
         }
 
         // This is used to create a CImage from a Image
-        private CImage createFromImage(final Image image, final boolean prepareImage) {
+        public CImage createFromImage(final Image image, CTrayIcon.IconObserver observer) {
+            return createFromImage(image, true, observer);
+        }
+
+        public CImage createFromImageImmediately(final Image image) {
+            return createFromImage(image, false, null);
+        }
+
+        // This is used to create a CImage from a Image
+        private CImage createFromImage(final Image image, final boolean prepareImage, CTrayIcon.IconObserver observer) {
             if (image instanceof MultiResolutionImage) {
                 List<Image> resolutionVariants
                         = ((MultiResolutionImage) image).getResolutionVariants();
                 return createFromImages(resolutionVariants, prepareImage);
             }
 
-            int[] buffer = imageToArray(image, prepareImage);
+            int[] buffer = imageToArray(image, prepareImage, observer);
             if (buffer == null) {
                 return null;
             }
@@ -218,7 +230,7 @@ public class CImage extends CFRetainedResource {
             num = 0;
 
             for (final Image img : images) {
-                buffers[num] = imageToArray(img, prepareImage);
+                buffers[num] = imageToArray(img, prepareImage, null);
                 if (buffers[num] == null) {
                     // Unable to process the image
                     continue;
