@@ -272,13 +272,14 @@ var getJibProfilesCommon = function (input, data) {
      */
     common.main_profile_artifacts = function (o) {
         var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
+        var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
         var pf = o.platform
         return {
             artifacts: {
                 jdk: {
-                    local: "bundles/\\(jdk.*bin.tar.gz\\)",
+                    local: "bundles/\\(jdk.*bin." + jdk_suffix + "\\)",
                     remote: [
-                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin.tar.gz",
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin." + jdk_suffix,
                         "bundles/" + pf + "/\\1"
                     ],
                     subdir: jdk_subdir,
@@ -320,13 +321,14 @@ var getJibProfilesCommon = function (input, data) {
      */
     common.debug_profile_artifacts = function (o) {
         var jdk_subdir = "jdk-" + data.version + "/fastdebug";
+        var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
         var pf = o.platform
         return {
             artifacts: {
                 jdk: {
-                    local: "bundles/\\(jdk.*bin-debug.tar.gz\\)",
+                    local: "bundles/\\(jdk.*bin-debug." + jdk_suffix + "\\)",
                     remote: [
-                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-debug.tar.gz",
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-debug." + jdk_suffix,
                         "bundles/" + pf + "/\\1"
                     ],
                     subdir: jdk_subdir,
@@ -590,9 +592,11 @@ var getJibProfilesProfiles = function (input, common, data) {
         },
         "windows-x64": {
             platform: "windows-x64",
+            jdk_suffix: "zip",
         },
         "windows-x86": {
             platform: "windows-x86",
+            jdk_suffix: "zip",
         },
        "linux-aarch64": {
             platform: "linux-aarch64",
