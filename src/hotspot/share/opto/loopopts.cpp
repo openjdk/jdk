@@ -1743,6 +1743,23 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
   }
 }
 
+static void clone_outer_loop_helper(Node* n, const IdealLoopTree *loop, const IdealLoopTree* outer_loop,
+                                    const Node_List &old_new, Unique_Node_List& wq, PhaseIdealLoop* phase,
+                                    bool check_old_new) {
+  for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+    Node* u = n->fast_out(j);
+    assert(check_old_new || old_new[u->_idx] == NULL, "shouldn't have been cloned");
+    if (!u->is_CFG() && (!check_old_new || old_new[u->_idx] == NULL)) {
+      Node* c = phase->get_ctrl(u);
+      IdealLoopTree* u_loop = phase->get_loop(c);
+      assert(!loop->is_member(u_loop), "can be in outer loop or out of both loops only");
+      if (outer_loop->is_member(u_loop)) {
+        wq.push(u);
+      }
+    }
+  }
+}
+
 void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealLoopTree *loop,
                                       IdealLoopTree* outer_loop, int dd, Node_List &old_new,
                                       Node_List& extra_data_nodes) {
@@ -1847,6 +1864,22 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
       _igvn.register_new_node_with_optimizer(new_sfpt);
       _igvn.register_new_node_with_optimizer(new_cle_out);
     }
+    // Some other transformation may have pessimistically assign some
+    // data nodes to the outer loop. Set their control so they are out
+    // of the outer loop.
+    ResourceMark rm;
+    Unique_Node_List wq;
+    for (uint i = 0; i < extra_data_nodes.size(); i++) {
+      Node* old = extra_data_nodes.at(i);
+      clone_outer_loop_helper(old, loop, outer_loop, old_new, wq, this, true);
+    }
+    Node* new_ctrl = cl->outer_loop_exit();
+    assert(get_loop(new_ctrl) != outer_loop, "must be out of the loop nest");
+    for (uint i = 0; i < wq.size(); i++) {
+      Node* n = wq.at(i);
+      set_ctrl(n, new_ctrl);
+      clone_outer_loop_helper(n, loop, outer_loop, old_new, wq, this, false);
+    }
   } else {
     Node *newhead = old_new[loop->_head->_idx];
     set_idom(newhead, newhead->in(LoopNode::EntryControl), dd);
@@ -1947,7 +1980,7 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   }
 
   ResourceArea *area = Thread::current()->resource_area();
-  Node_List extra_data_nodes(area);
+  Node_List extra_data_nodes(area); // data nodes in the outer strip mined loop
   clone_outer_loop(head, mode, loop, outer_loop, dd, old_new, extra_data_nodes);
 
   // Step 3: Now fix control uses.  Loop varying control uses have already
