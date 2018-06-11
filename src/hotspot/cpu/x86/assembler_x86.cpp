@@ -3338,6 +3338,14 @@ void Assembler::orl(Address dst, Register src) {
   emit_operand(src, dst);
 }
 
+void Assembler::orb(Address dst, int imm8) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0x80);
+  emit_operand(rcx, dst, 1);
+  emit_int8(imm8);
+}
+
 void Assembler::packuswb(XMMRegister dst, Address src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   assert((UseAVX > 0), "SSE mode requires address alignment 16 bytes");

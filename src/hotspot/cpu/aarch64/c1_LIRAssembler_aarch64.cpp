@@ -1344,12 +1344,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ mov_metadata(mdo, md->constant_encoding());
       Address data_addr
         = __ form_address(rscratch2, mdo,
-                          md->byte_offset_of_slot(data, DataLayout::DataLayout::header_offset()),
-                          LogBytesPerWord);
-      int header_bits = DataLayout::flag_mask_to_header_mask(BitData::null_seen_byte_constant());
-      __ ldr(rscratch1, data_addr);
-      __ orr(rscratch1, rscratch1, header_bits);
-      __ str(rscratch1, data_addr);
+                          md->byte_offset_of_slot(data, DataLayout::flags_offset()),
+                          0);
+      __ ldrb(rscratch1, data_addr);
+      __ orr(rscratch1, rscratch1, BitData::null_seen_byte_constant());
+      __ strb(rscratch1, data_addr);
       __ b(*obj_is_null);
       __ bind(not_null);
     } else {
@@ -1422,7 +1421,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     Address counter_addr
       = __ form_address(rscratch2, mdo,
                         md->byte_offset_of_slot(data, CounterData::count_offset()),
-                        LogBytesPerWord);
+                        0);
     __ ldr(rscratch1, counter_addr);
     __ sub(rscratch1, rscratch1, DataLayout::counter_increment);
     __ str(rscratch1, counter_addr);
@@ -1471,12 +1470,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ mov_metadata(mdo, md->constant_encoding());
       Address data_addr
         = __ form_address(rscratch2, mdo,
-                          md->byte_offset_of_slot(data, DataLayout::header_offset()),
-                          LogBytesPerInt);
-      int header_bits = DataLayout::flag_mask_to_header_mask(BitData::null_seen_byte_constant());
-      __ ldrw(rscratch1, data_addr);
-      __ orrw(rscratch1, rscratch1, header_bits);
-      __ strw(rscratch1, data_addr);
+                          md->byte_offset_of_slot(data, DataLayout::flags_offset()),
+                          0);
+      __ ldrb(rscratch1, data_addr);
+      __ orr(rscratch1, rscratch1, BitData::null_seen_byte_constant());
+      __ strb(rscratch1, data_addr);
       __ b(done);
       __ bind(not_null);
     } else {

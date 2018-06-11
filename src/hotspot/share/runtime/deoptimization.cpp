@@ -2071,7 +2071,7 @@ Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, j
 
 // Local derived constants.
 // Further breakdown of DataLayout::trap_state, as promised by DataLayout.
-const int DS_REASON_MASK   = DataLayout::trap_mask >> 1;
+const int DS_REASON_MASK   = ((uint)DataLayout::trap_mask) >> 1;
 const int DS_RECOMPILE_BIT = DataLayout::trap_mask - DS_REASON_MASK;
 
 //---------------------------trap_state_reason---------------------------------

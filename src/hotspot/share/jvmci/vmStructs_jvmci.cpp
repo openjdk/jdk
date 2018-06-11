@@ -136,6 +136,7 @@
   nonstatic_field(DataLayout,                  _header._struct._tag,                   u1)                                           \
   nonstatic_field(DataLayout,                  _header._struct._flags,                 u1)                                           \
   nonstatic_field(DataLayout,                  _header._struct._bci,                   u2)                                           \
+  nonstatic_field(DataLayout,                  _header._struct._traps,                 u4)                                           \
   nonstatic_field(DataLayout,                  _cells[0],                              intptr_t)                                     \
                                                                                                                                      \
   nonstatic_field(Deoptimization::UnrollBlock, _size_of_deoptimized_frame,             int)                                          \

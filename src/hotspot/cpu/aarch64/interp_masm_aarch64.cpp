@@ -967,12 +967,11 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
 void InterpreterMacroAssembler::set_mdp_flag_at(Register mdp_in,
                                                 int flag_byte_constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  int header_offset = in_bytes(DataLayout::header_offset());
-  int header_bits = DataLayout::flag_mask_to_header_mask(flag_byte_constant);
+  int flags_offset = in_bytes(DataLayout::flags_offset());
   // Set the flag
-  ldr(rscratch1, Address(mdp_in, header_offset));
-  orr(rscratch1, rscratch1, header_bits);
-  str(rscratch1, Address(mdp_in, header_offset));
+  ldrb(rscratch1, Address(mdp_in, flags_offset));
+  orr(rscratch1, rscratch1, flag_byte_constant);
+  strb(rscratch1, Address(mdp_in, flags_offset));
 }
 
 
