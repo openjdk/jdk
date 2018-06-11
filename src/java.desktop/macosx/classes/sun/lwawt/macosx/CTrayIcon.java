@@ -43,6 +43,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.awt.peer.TrayIconPeer;
 
 import javax.swing.Icon;
@@ -61,6 +62,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     // Component target. Because TrayIcon isn't Component's subclass,
     // we use this dummy frame instead
     private final Frame dummyFrame;
+    IconObserver observer = new IconObserver();
 
     // A bitmask that indicates what mouse buttons produce MOUSE_CLICKED events
     // on MOUSE_RELEASE. Click events are only generated if there were no drag
@@ -143,7 +145,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         CImage cimage = null;
         if (icon != null) {
             BufferedImage image = scaleIcon(icon, 0.75);
-            cimage = CImage.getCreator().createFromImage(image);
+            cimage = CImage.getCreator().createFromImage(image, null);
         }
         if (cimage != null) {
             cimage.execute(imagePtr -> {
@@ -184,9 +186,14 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
 
     @Override
     public void updateImage() {
-        Image image = target.getImage();
-        if (image == null) return;
 
+        Image image = target.getImage();
+        if (image != null) {
+            updateNativeImage(image);
+        }
+    }
+
+    void updateNativeImage(Image image) {
         MediaTracker tracker = new MediaTracker(new Button(""));
         tracker.addImage(image, 0);
         try {
@@ -199,7 +206,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
             return;
         }
 
-        CImage cimage = CImage.getCreator().createFromImage(image);
+        CImage cimage = CImage.getCreator().createFromImage(image, observer);
         boolean imageAutoSize = target.isImageAutoSize();
         cimage.execute(imagePtr -> {
             execute(ptr -> {
@@ -344,6 +351,26 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         } else {
             // this is just an application icon
             return UIManager.getIcon("OptionPane.informationIcon");
+        }
+    }
+
+    class IconObserver implements ImageObserver {
+        @Override
+        public boolean imageUpdate(Image image, int flags, int x, int y, int width, int height) {
+            if (image != target.getImage()) // if the image has been changed
+            {
+                return false;
+            }
+            if ((flags & (ImageObserver.FRAMEBITS | ImageObserver.ALLBITS |
+                          ImageObserver.WIDTH | ImageObserver.HEIGHT)) != 0)
+            {
+                SunToolkit.executeOnEventHandlerThread(target, new Runnable() {
+                            public void run() {
+                                updateNativeImage(image);
+                            }
+                        });
+            }
+            return (flags & ImageObserver.ALLBITS) == 0;
         }
     }
 }
