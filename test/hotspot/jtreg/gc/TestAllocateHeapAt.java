@@ -24,6 +24,7 @@
 /* @test TestAllocateHeapAt.java
  * @key gc
  * @summary Test to check allocation of Java Heap with AllocateHeapAt option
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  */

@@ -694,6 +694,14 @@ var getJibProfilesProfiles = function (input, common, data) {
                        profiles[openName].artifacts["jdk"].remote));
     });
 
+    // Enable ZGC in linux-x64-open builds
+    [ "linux-x64-open" ].forEach(function (name) {
+        var configureArgs = { configure_args: [ "--with-jvm-features=zgc" ] };
+        var debugName = name + common.debug_suffix;
+        profiles[name] = concatObjects(profiles[name], configureArgs);
+        profiles[debugName] = concatObjects(profiles[debugName], configureArgs);
+    });
+
     // Profiles used to run tests. Used in JPRT and Mach 5.
     var testOnlyProfiles = {
         "run-test-jprt": {

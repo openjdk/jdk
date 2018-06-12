@@ -60,6 +60,7 @@
  *     Finally, debugger sends debuggee signal to quit, waits for it exits
  *     and exits too with the proper exit code.
  *
+ * @requires vm.gc != "Z"
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
@@ -156,6 +157,10 @@ public class instances001 extends TestDebuggerType1 {
 
         long typeID = debuggee.getReferenceTypeID(createTypeSignature(testClassName));
 
+        // Note! This test is broken, in the sense that it incorrectly assumes
+        // that no GC can happen before it walks the heap. In practice, it seems
+        // to only affect this test when using ZGC. However, this test will also
+        // fail when using other GCs if an explicit GC is done here.
 
         // create command with maxInstances=1, only 1 instance should be returned
         testClass(typeID, 1, 1, false, 0);

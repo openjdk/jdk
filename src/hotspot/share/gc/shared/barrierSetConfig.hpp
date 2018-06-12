@@ -31,7 +31,8 @@
 #define FOR_EACH_CONCRETE_BARRIER_SET_DO(f)          \
   f(CardTableBarrierSet)                             \
   EPSILONGC_ONLY(f(EpsilonBarrierSet))               \
-  G1GC_ONLY(f(G1BarrierSet))
+  G1GC_ONLY(f(G1BarrierSet))                         \
+  ZGC_ONLY(f(ZBarrierSet))
 
 #define FOR_EACH_ABSTRACT_BARRIER_SET_DO(f)          \
   f(ModRef)

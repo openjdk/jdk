@@ -28,6 +28,7 @@
 // Build a table of class names as strings.  Used both for debugging printouts
 // and in the ADL machine descriptions.
 #define macro(x) #x,
+#define optionalmacro(x) macro(x)
 const char *NodeClassNames[] = {
   "Node",
   "Set",
@@ -48,3 +49,4 @@ const char *NodeClassNames[] = {
   "_last_class_name",
 };
 #undef macro
+#undef optionalmacro

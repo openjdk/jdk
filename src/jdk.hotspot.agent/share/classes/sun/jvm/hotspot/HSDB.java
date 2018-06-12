@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import sun.jvm.hotspot.gc.epsilon.*;
 import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.gc.g1.*;
+import sun.jvm.hotspot.gc.z.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
@@ -1111,6 +1112,10 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                           }
                         } else if (collHeap instanceof EpsilonHeap) {
                           anno = "Epsilon ";
+                          bad = false;
+                        } else if (collHeap instanceof ZCollectedHeap) {
+                          ZCollectedHeap heap = (ZCollectedHeap) collHeap;
+                          anno = "ZHeap ";
                           bad = false;
                         } else {
                           // Optimistically assume the oop isn't bad

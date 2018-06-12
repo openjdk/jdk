@@ -41,6 +41,7 @@
  *         done
  *         Test is executed for following sublcasses of ObjectReference: StringReference, ThreadReference, ClassLoaderReference
  *
+ * @requires vm.gc != "Z"
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
@@ -124,6 +125,11 @@ public class instances003 extends HeapwalkingDebugger {
         pipe.println(HeapwalkingDebuggee.COMMAND_CREATE_INSTANCES + ":" + className + ":" + createInstanceCount +
             ":" + referrerCount + ":" + referrerType +
             (referrerType.equals(ObjectInstancesManager.WEAK_REFERENCE) ? "|" + ObjectInstancesManager.STRONG_REFERENCE : ""));
+
+        // Note! This test is broken, in the sense that it incorrectly assumes
+        // that no GC can happen before it walks the heap. In practice, it seems
+        // to only affect this test when using ZGC. However, this test will also
+        // fail when using other GCs if an explicit GC is done here.
 
         // the instance counts should not be affected by creating multiple references
         checkDebugeeAnswer_instanceCounts(className, createInstanceCount, objectsToFilter);

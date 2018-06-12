@@ -25,7 +25,7 @@
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero minimal dtrace jvmti jvmci \
-    graal vm-structs jni-check services management cmsgc g1gc parallelgc serialgc epsilongc nmt cds \
+    graal vm-structs jni-check services management cmsgc epsilongc g1gc parallelgc serialgc zgc nmt cds \
     static-build link-time-opt aot jfr"
 
 # Deprecated JVM features (these are ignored, but with a warning)
@@ -326,6 +326,19 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     if test "x$OPENJDK_TARGET_OS" != xlinux || test "x$OPENJDK_TARGET_CPU" != xsparcv9; then
       NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES jfr"
     fi
+  fi
+
+  # Only enable ZGC on Linux x86_64
+  AC_MSG_CHECKING([if zgc should be built])
+  if HOTSPOT_CHECK_JVM_FEATURE(zgc); then
+    if test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
+      AC_MSG_RESULT([yes])
+    else
+      DISABLED_JVM_FEATURES="$DISABLED_JVM_FEATURES zgc"
+      AC_MSG_RESULT([no, platform not supported])
+    fi
+  else
+    AC_MSG_RESULT([no])
   fi
 
   # Turn on additional features based on other parts of configure
