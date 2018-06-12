@@ -32,6 +32,7 @@
 #include "logging/log.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -743,16 +744,15 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 oop ConstantPoolCache::archived_references() {
-  // Loading an archive root forces the oop to become strongly reachable.
-  // For example, if it is loaded during concurrent marking in a SATB
-  // collector, it will be enqueued to the SATB queue, effectively
-  // shading the previously white object gray.
-  return RootAccess<IN_ARCHIVE_ROOT>::oop_load(&_archived_references);
+  if (CompressedOops::is_null(_archived_references)) {
+    return NULL;
+  }
+  return MetaspaceShared::materialize_archived_object(CompressedOops::decode_not_null(_archived_references));
 }
 
 void ConstantPoolCache::set_archived_references(oop o) {
   assert(DumpSharedSpaces, "called only during runtime");
-  RootAccess<IN_ARCHIVE_ROOT>::oop_store(&_archived_references, o);
+  _archived_references = CompressedOops::encode(o);
 }
 #endif
 
