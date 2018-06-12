@@ -3126,7 +3126,10 @@ static address get_stack_commited_bottom(address bottom, size_t size) {
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
   int mincore_return_value;
   const size_t stripe = 1024;  // query this many pages each time
-  unsigned char vec[stripe];
+  unsigned char vec[stripe + 1];
+  // set a guard
+  vec[stripe] = 'X';
+
   const size_t page_sz = os::vm_page_size();
   size_t pages = size / page_sz;
 
@@ -3138,7 +3141,9 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   int loops = (pages + stripe - 1) / stripe;
   int committed_pages = 0;
   address loop_base = start;
-  for (int index = 0; index < loops; index ++) {
+  bool found_range = false;
+
+  for (int index = 0; index < loops && !found_range; index ++) {
     assert(pages > 0, "Nothing to do");
     int pages_to_query = (pages >= stripe) ? stripe : pages;
     pages -= pages_to_query;
@@ -3153,12 +3158,14 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
       return false;
     }
 
+    assert(vec[stripe] == 'X', "overflow guard");
     assert(mincore_return_value == 0, "Range must be valid");
     // Process this stripe
     for (int vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
       if ((vec[vecIdx] & 0x01) == 0) { // not committed
         // End of current contiguous region
         if (committed_start != NULL) {
+          found_range = true;
           break;
         }
       } else { // committed
