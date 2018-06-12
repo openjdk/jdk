@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,17 +185,17 @@ public class AotCompiler {
                 if (Platform.isX64()) {
                     @Artifact(organization = "jpg.infra.builddeps",
                             name = "devkit-windows_x64",
-                            revision = "VS2013SP4+1.0",
+                            revision = "VS2017-15.5.5+1.0",
                             extension = "tar.gz")
                     class DevkitWindowsX64 { }
                     String artifactName = "jpg.infra.builddeps."
                             + "devkit-windows_x64-"
-                            + "VS2013SP4+1.0";
+                            + "VS2017-15.5.5+1.0";
                     Path devkit = ArtifactResolver.resolve(DevkitWindowsX64.class)
                                                   .get(artifactName);
                     linker = devkit.resolve("VC")
                                    .resolve("bin")
-                                   .resolve("amd64")
+                                   .resolve("x64")
                                    .resolve("link.exe");
                 }
             } else if (Platform.isOSX()) {
@@ -221,13 +221,13 @@ public class AotCompiler {
                 if (Platform.isSparc()) {
                     @Artifact(organization =  "jpg.infra.builddeps",
                             name = "devkit-solaris_sparcv9",
-                            revision = "SS12u4-Solaris11u1+1.0",
+                            revision = "SS12u4-Solaris11u1+1.1",
                             extension = "tar.gz")
                     class DevkitSolarisSparc { }
 
                     String artifactName = "jpg.infra.builddeps."
                             + "devkit-solaris_sparcv9-"
-                            + "SS12u4-Solaris11u1+1.0";
+                            + "SS12u4-Solaris11u1+1.1";
                     Path devkit = ArtifactResolver.resolve(DevkitSolarisSparc.class)
                                                   .get(artifactName);
                     linker = devkit.resolve("SS12u4-Solaris11u1")
@@ -285,13 +285,13 @@ public class AotCompiler {
                 } else if (Platform.isX64()) {
                     @Artifact(organization = "jpg.infra.builddeps",
                             name = "devkit-linux_x64",
-                            revision = "gcc4.9.2-OEL6.4+1.1",
+                            revision = "gcc7.3.0-OEL6.4+1.0",
                             extension = "tar.gz")
                     class DevkitLinuxX64 { }
 
                     String artifactName = "jpg.infra.builddeps."
                             + "devkit-linux_x64-"
-                            + "gcc4.9.2-OEL6.4+1.1";
+                            + "gcc7.3.0-OEL6.4+1.0";
                     Path devkit = ArtifactResolver.resolve(DevkitLinuxX64.class)
                                                   .get(artifactName);
                     linker = devkit.resolve("bin")
