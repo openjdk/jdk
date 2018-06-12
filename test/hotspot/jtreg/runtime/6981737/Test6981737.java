@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test Test6981737.java
- * @bug 6981737
+ * @bug 6981737 8204565
  * @summary check for correct vm properties
  * @run main Test6981737
  * @author kamg
@@ -33,13 +33,12 @@ public class Test6981737 {
 
     /**
      * Check the 'vendor' properties and java.vm.specification.version property.
-     * In jdk9 onwards they should be "Oracle..." and "<major_version>"
      */
     public static void main(String[] args) throws Exception {
 
         String vendor_re = "Oracle Corporation";
-        int major_version = Runtime.version().major();
-        String vm_spec_version_re = Integer.toString(major_version);
+        int feature_version = Runtime.version().feature();
+        String vm_spec_version_re = Integer.toString(feature_version);
 
         verifyProperty("java.vm.specification.vendor", vendor_re);
         verifyProperty("java.specification.vendor", vendor_re);

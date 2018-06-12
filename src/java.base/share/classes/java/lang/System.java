@@ -607,8 +607,9 @@ public final class System {
      * <tr><th scope="row">{@code java.home}</th>
      *     <td>Java installation directory</td></tr>
      * <tr><th scope="row">{@code java.vm.specification.version}</th>
-     *     <td>Java Virtual Machine specification version which may be
-     *     interpreted as a {@link Runtime.Version}</td></tr>
+     *     <td>Java Virtual Machine specification version, whose value is the
+     *     {@linkplain Runtime.Version#feature feature} element of the
+     *     {@linkplain Runtime#version() runtime version}</td></tr>
      * <tr><th scope="row">{@code java.vm.specification.vendor}</th>
      *     <td>Java Virtual Machine specification vendor</td></tr>
      * <tr><th scope="row">{@code java.vm.specification.name}</th>
@@ -621,8 +622,9 @@ public final class System {
      * <tr><th scope="row">{@code java.vm.name}</th>
      *     <td>Java Virtual Machine implementation name</td></tr>
      * <tr><th scope="row">{@code java.specification.version}</th>
-     *     <td>Java Runtime Environment specification version which may be
-     *     interpreted as a {@link Runtime.Version}</td></tr>
+     *     <td>Java Runtime Environment specification version, whose value is
+     *     the {@linkplain Runtime.Version#feature feature} element of the
+     *     {@linkplain Runtime#version() runtime version}</td></tr>
      * <tr><th scope="row">{@code java.specification.vendor}</th>
      *     <td>Java Runtime Environment specification  vendor</td></tr>
      * <tr><th scope="row">{@code java.specification.name}</th>
