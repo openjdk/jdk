@@ -50,9 +50,6 @@ public class FontManagerNativeLibrary {
                       To avoid link error we have to load freetype explicitly
                       before we load fontmanager.
 
-                      Note that we do not need to do this for T2K because
-                      fontmanager.dll does not depend on t2k.dll.
-
                       NB: consider moving freetype wrapper part to separate
                           shared library in order to avoid dependency. */
                    System.loadLibrary("freetype");
