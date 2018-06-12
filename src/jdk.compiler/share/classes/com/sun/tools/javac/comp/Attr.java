@@ -2562,7 +2562,9 @@ public class Attr extends JCTree.Visitor {
                     Type argType = arityMismatch ?
                             syms.errType :
                             actuals.head;
-                    setSyntheticVariableType(params.head, argType);
+                    if (params.head.isImplicitlyTyped()) {
+                        setSyntheticVariableType(params.head, argType);
+                    }
                     params.head.sym = null;
                     actuals = actuals.isEmpty() ?
                             actuals :
