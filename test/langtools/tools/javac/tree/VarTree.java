@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8188225
+ * @bug 8188225 8204674
  * @summary Check that variables of type var have a consistent model
  * @modules jdk.compiler/com.sun.tools.javac.api
  */
@@ -42,6 +42,7 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
 import com.sun.source.tree.VariableTree;
+import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
 
@@ -64,6 +65,10 @@ public class VarTree {
                  "java.lang.String testVar");
         test.run("java.util.function.Consumer<String> c = (|testVar|) -> {};",
                  "java.lang.String testVar");
+        test.run("java.util.function.Consumer<String> c = (|var testVar|) -> {};",
+                 "java.lang.String testVar");
+        test.run("java.util.function.IntBinaryOperator c = (var x, |testType|) -> 1;",
+                 "testType ");
     }
 
     void run(String code, String expected) throws IOException {
@@ -81,9 +86,12 @@ public class VarTree {
                                                         null, Arrays.asList(new MyFileObject(src)));
 
         Iterable<? extends CompilationUnitTree> units = ct.parse();
+
+        runSpanCheck(ct, units, src, prefix.length() + parts[0].length(), prefix.length() + parts[0].length() + parts[1].length());
+
         ct.analyze();
 
-        Trees trees = Trees.instance(ct);
+        runSpanCheck(ct, units, src, prefix.length() + parts[0].length(), prefix.length() + parts[0].length() + parts[1].length());
 
         for (CompilationUnitTree cut : units) {
             new TreeScanner<Void, Void>() {
@@ -93,13 +101,34 @@ public class VarTree {
                         if (!expected.equals(node.toString())) {
                             throw new AssertionError("Unexpected tree: " + node.toString());
                         }
+                    }
+                    if (String.valueOf(node.getType()).equals("testType")) {
+                        if (!expected.equals(node.toString())) {
+                            throw new AssertionError("Unexpected tree: " + node.toString());
+                        }
+                    }
+                    return super.visitVariable(node, p);
+                }
 
+            }.scan(cut, null);
+        }
+    }
+
+    private void runSpanCheck(JavacTask ct, Iterable<? extends CompilationUnitTree> units, String src, int spanStart, int spanEnd) {
+        Trees trees = Trees.instance(ct);
+        boolean[] found = new boolean[1];
+
+        for (CompilationUnitTree cut : units) {
+            new TreeScanner<Void, Void>() {
+                @Override
+                public Void visitVariable(VariableTree node, Void p) {
+                    if (node.getName().contentEquals("testVar")) {
                         int start = (int) trees.getSourcePositions().getStartPosition(cut, node);
                         int end   = (int) trees.getSourcePositions().getEndPosition(cut, node);
 
                         String snip = src.substring(start, end);
 
-                        if (start != prefix.length() + parts[0].length() || end != prefix.length() + parts[0].length() + parts[1].length()) {
+                        if (start != spanStart || end != spanEnd) {
                             throw new AssertionError("Unexpected span: " + snip);
                         }
 
@@ -109,13 +138,32 @@ public class VarTree {
                         if (typeStart != (-1) && typeEnd != (-1)) {
                             throw new AssertionError("Unexpected type position: " + typeStart + ", " + typeEnd);
                         }
+
+                        found[0] = true;
+                    }
+                    if (String.valueOf(node.getType()).equals("testType")) {
+                        int start = (int) trees.getSourcePositions().getStartPosition(cut, node);
+                        int end   = (int) trees.getSourcePositions().getEndPosition(cut, node);
+
+                        String snip = src.substring(start, end);
+
+                        if (start != spanStart || end != spanEnd) {
+                            throw new AssertionError("Unexpected span: " + snip);
+                        }
+
+                        found[0] = true;
                     }
                     return super.visitVariable(node, p);
                 }
 
             }.scan(cut, null);
         }
+
+        if (!found[0]) {
+            throw new AssertionError("Didn't find the test variable.");
+        }
     }
+
     class MyFileObject extends SimpleJavaFileObject {
 
         private String text;
