@@ -533,8 +533,6 @@ static jlong read_input_via_gzip(unpacker* u,
   char* bufptr = (char*) buf;
   char* inbuf = u->gzin->inbuf;
   size_t inbuflen = sizeof(u->gzin->inbuf);
-  // capture return values from fread to avoid -Werror=unused-result issues
-  size_t ret = 0;
   unpacker::read_input_fn_t read_gzin_fn =
     (unpacker::read_input_fn_t) u->gzin->read_input_fn;
   z_stream& zs = *(z_stream*) u->gzin->zstream;
@@ -581,8 +579,8 @@ static jlong read_input_via_gzip(unpacker* u,
         fseek(u->infileptr, -TRAILER_LEN, SEEK_END);
         uint filecrc;
         uint filelen;
-        ret = fread(&filecrc, sizeof(filecrc), 1, u->infileptr);
-        ret = fread(&filelen, sizeof(filelen), 1, u->infileptr);
+        fread(&filecrc, sizeof(filecrc), 1, u->infileptr);
+        fread(&filelen, sizeof(filelen), 1, u->infileptr);
         filecrc = SWAP_INT(filecrc);
         filelen = SWAP_INT(filelen);
         if (u->gzin->gzcrc != filecrc ||
