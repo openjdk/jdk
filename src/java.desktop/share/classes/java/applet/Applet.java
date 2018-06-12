@@ -42,6 +42,8 @@ import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 
+import com.sun.media.sound.JavaSoundAudioClip;
+
 /**
  * An applet is a small program that is intended not to be run on
  * its own, but rather to be embedded inside another application.
@@ -322,7 +324,7 @@ public class Applet extends Panel {
      * @since       1.2
      */
     public static final AudioClip newAudioClip(URL url) {
-        return new sun.applet.AppletAudioClip(url);
+        return JavaSoundAudioClip.create(url);
     }
 
     /**
