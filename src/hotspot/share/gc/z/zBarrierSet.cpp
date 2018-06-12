@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+#include "precompiled.hpp"
+#include "gc/z/c1/zBarrierSetC1.hpp"
+#include "gc/z/c2/zBarrierSetC2.hpp"
+#include "gc/z/zBarrierSet.hpp"
+#include "gc/z/zBarrierSetAssembler.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "gc/z/zHeap.inline.hpp"
+#include "gc/z/zThreadLocalData.hpp"
+#include "runtime/thread.hpp"
+
+ZBarrierSet::ZBarrierSet() :
+    BarrierSet(make_barrier_set_assembler<ZBarrierSetAssembler>(),
+               make_barrier_set_c1<ZBarrierSetC1>(),
+               make_barrier_set_c2<ZBarrierSetC2>(),
+               BarrierSet::FakeRtti(BarrierSet::ZBarrierSet)) {}
+
+ZBarrierSetAssembler* ZBarrierSet::assembler() {
+  BarrierSetAssembler* const bsa = BarrierSet::barrier_set()->barrier_set_assembler();
+  return reinterpret_cast<ZBarrierSetAssembler*>(bsa);
+}
+
+bool ZBarrierSet::barrier_needed(DecoratorSet decorators, BasicType type) {
+  assert((decorators & AS_RAW) == 0, "Unexpected decorator");
+  assert((decorators & AS_NO_KEEPALIVE) == 0, "Unexpected decorator");
+  assert((decorators & IN_ARCHIVE_ROOT) == 0, "Unexpected decorator");
+  //assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Unexpected decorator");
+
+  if (type == T_OBJECT || type == T_ARRAY) {
+    if (((decorators & IN_HEAP) != 0) ||
+        ((decorators & IN_CONCURRENT_ROOT) != 0) ||
+        ((decorators & ON_PHANTOM_OOP_REF) != 0)) {
+      // Barrier needed
+      return true;
+    }
+  }
+
+  // Barrier not neeed
+  return false;
+}
+
+void ZBarrierSet::on_thread_create(Thread* thread) {
+  // Create thread local data
+  ZThreadLocalData::create(thread);
+}
+
+void ZBarrierSet::on_thread_destroy(Thread* thread) {
+  // Destroy thread local data
+  ZThreadLocalData::destroy(thread);
+}
+
+void ZBarrierSet::on_thread_attach(JavaThread* thread) {
+  // Set thread local address bad mask
+  ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
+}
+
+void ZBarrierSet::on_thread_detach(JavaThread* thread) {
+  // Flush and free any remaining mark stacks
+  ZHeap::heap()->mark_flush_and_free(thread);
+}

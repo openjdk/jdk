@@ -1271,6 +1271,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_integer_type(intptr_t)                                          \
   declare_unsigned_integer_type(uintx)                                    \
   declare_unsigned_integer_type(uintptr_t)                                \
+  declare_unsigned_integer_type(uint8_t)                                  \
   declare_unsigned_integer_type(uint32_t)                                 \
   declare_unsigned_integer_type(uint64_t)                                 \
                                                                           \
@@ -2601,6 +2602,12 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
 // all #defined constants.
 
 #define VM_LONG_CONSTANTS(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
+                                                                          \
+  /****************/                                                      \
+  /* GC constants */                                                      \
+  /****************/                                                      \
+                                                                          \
+  VM_LONG_CONSTANTS_GC(declare_constant)                                  \
                                                                           \
   /*********************/                                                 \
   /* MarkOop constants */                                                 \

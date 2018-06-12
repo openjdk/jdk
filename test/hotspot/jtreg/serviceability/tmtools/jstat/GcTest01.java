@@ -35,6 +35,7 @@
  * @library /test/lib
  * @library ../share
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
+ * @requires vm.gc != "Z"
  * @run main/othervm -XX:+UsePerfData -Xmx128M GcTest01
  */
 import utils.*;

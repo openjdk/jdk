@@ -838,8 +838,11 @@ InitializeEncoding(JNIEnv *env, const char *encname)
     CHECK_NULL(String_getBytes_ID);
     String_init_ID = (*env)->GetMethodID(env, strClazz,
                                          "<init>", "([BLjava/lang/String;)V");
+    CHECK_NULL(String_init_ID);
     String_coder_ID = (*env)->GetFieldID(env, strClazz, "coder", "B");
+    CHECK_NULL(String_coder_ID);
     String_value_ID = (*env)->GetFieldID(env, strClazz, "value", "[B");
+    CHECK_NULL(String_value_ID);
 }
 
 JNIEXPORT jstring

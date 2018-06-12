@@ -327,7 +327,11 @@ void JNIHandles::verify() {
   VerifyJNIHandles verify_handle;
 
   oops_do(&verify_handle);
-  weak_oops_do(&verify_handle);
+
+  // JNI weaks are handled concurrently in ZGC, so they can't be verified here
+  if (!UseZGC) {
+    weak_oops_do(&verify_handle);
+  }
 }
 
 // This method is implemented here to avoid circular includes between

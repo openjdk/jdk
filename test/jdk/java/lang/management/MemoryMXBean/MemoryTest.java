@@ -26,6 +26,7 @@
  * @bug     4530538
  * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
  *          MemoryMXBean.getMemoryManager().
+ * @requires vm.gc != "Z"
  * @author  Mandy Chung
  *
  * @modules jdk.management

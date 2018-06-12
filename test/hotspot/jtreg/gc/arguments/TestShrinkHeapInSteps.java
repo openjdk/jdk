@@ -25,6 +25,7 @@
  * @test TestShrinkHeapInSteps
  * @key gc
  * @summary Verify that -XX:-ShrinkHeapInSteps works properly.
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

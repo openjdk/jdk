@@ -59,6 +59,9 @@
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1YCTypes.hpp"
 #endif
+#if INCLUDE_ZGC
+#include "gc/z/zStat.hpp"
+#endif
 
 // implementation for the static registration function exposed in the api
 bool JfrSerializer::register_serializer(JfrTypeId id, bool require_safepoint, bool permit_cache, JfrSerializer* cs) {
@@ -345,4 +348,28 @@ void JfrThreadConstant::serialize(JfrCheckpointWriter& writer) {
   writer.write(java_lang_thread_id);
   writer.write(thread_group_id);
   JfrThreadGroup::serialize(&writer, thread_group_id);
+}
+
+void ZStatisticsCounterTypeConstant::serialize(JfrCheckpointWriter& writer) {
+#if INCLUDE_ZGC
+  writer.write_count(ZStatCounter::count());
+  for (ZStatCounter* counter = ZStatCounter::first(); counter != NULL; counter = counter->next()) {
+    writer.write_key(counter->id());
+    writer.write(counter->name());
+  }
+#else
+  writer.write_count(0);
+#endif
+}
+
+void ZStatisticsSamplerTypeConstant::serialize(JfrCheckpointWriter& writer) {
+#if INCLUDE_ZGC
+  writer.write_count(ZStatSampler::count());
+  for (ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+    writer.write_key(sampler->id());
+    writer.write(sampler->name());
+  }
+#else
+  writer.write_count(0);
+#endif
 }

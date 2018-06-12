@@ -488,13 +488,13 @@ void IdealKit::do_memory_merge(Node* merging, Node* join) {
 
 //----------------------------- make_call  ----------------------------
 // Trivial runtime call
-void IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
-                              address slow_call,
-                              const char *leaf_name,
-                              Node* parm0,
-                              Node* parm1,
-                              Node* parm2,
-                              Node* parm3) {
+Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
+                               address slow_call,
+                               const char *leaf_name,
+                               Node* parm0,
+                               Node* parm1,
+                               Node* parm2,
+                               Node* parm3) {
 
   // We only handle taking in RawMem and modifying RawMem
   const TypePtr* adr_type = TypeRawPtr::BOTTOM;
@@ -532,6 +532,12 @@ void IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
 
   assert(C->alias_type(call->adr_type()) == C->alias_type(adr_type),
          "call node must be constructed correctly");
+  Node* res = NULL;
+  if (slow_call_type->range()->cnt() > TypeFunc::Parms) {
+    assert(slow_call_type->range()->cnt() == TypeFunc::Parms+1, "only one return value");
+    res = transform(new ProjNode(call, TypeFunc::Parms));
+  }
+  return res;
 }
 
 void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,

@@ -158,7 +158,7 @@ class OopStorage::Block /* No base class, to avoid messing up alignment. */ {
   Block& operator=(const Block&);
 
 public:
-  static const AllocateEntry& get_allocate_entry(const Block& block);
+  const AllocateEntry& allocate_entry() const;
 
   static size_t allocation_size();
   static size_t allocation_alignment_shift();
@@ -214,19 +214,19 @@ inline const OopStorage::Block* OopStorage::AllocateList::ctail() const {
 }
 
 inline OopStorage::Block* OopStorage::AllocateList::prev(Block& block) {
-  return const_cast<Block*>(_get_entry(block)._prev);
+  return const_cast<Block*>(block.allocate_entry()._prev);
 }
 
 inline OopStorage::Block* OopStorage::AllocateList::next(Block& block) {
-  return const_cast<Block*>(_get_entry(block)._next);
+  return const_cast<Block*>(block.allocate_entry()._next);
 }
 
 inline const OopStorage::Block* OopStorage::AllocateList::prev(const Block& block) const {
-  return _get_entry(block)._prev;
+  return block.allocate_entry()._prev;
 }
 
 inline const OopStorage::Block* OopStorage::AllocateList::next(const Block& block) const {
-  return _get_entry(block)._next;
+  return block.allocate_entry()._next;
 }
 
 template<typename Closure>
@@ -296,7 +296,11 @@ inline OopStorage::SkipNullFn<F> OopStorage::skip_null_fn(F f) {
   return SkipNullFn<F>(f);
 }
 
-// Inline Block accesses for use in iteration inner loop.
+// Inline Block accesses for use in iteration loops.
+
+inline const OopStorage::AllocateEntry& OopStorage::Block::allocate_entry() const {
+  return _allocate_entry;
+}
 
 inline void OopStorage::Block::check_index(unsigned index) const {
   assert(index < ARRAY_SIZE(_data), "Index out of bounds: %u", index);

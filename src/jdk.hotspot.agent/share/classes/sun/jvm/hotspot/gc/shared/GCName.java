@@ -37,6 +37,8 @@ public enum GCName {
   ConcurrentMarkSweep ("ConcurrentMarkSweep"),
   G1Old ("G1Old"),
   G1Full ("G1Full"),
+  Z ("Z"),
+  NA ("N/A"),
   GCNameEndSentinel ("GCNameEndSentinel");
 
   private final String value;
@@ -48,4 +50,3 @@ public enum GCName {
     return value;
   }
 }
-

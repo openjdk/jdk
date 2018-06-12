@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8189131 8198240 8191844 8189949 8191031
+ * @bug 8189131 8198240 8191844 8189949 8191031 8196141
  * @requires java.runtime.name ~= "OpenJDK.*"
  * @summary Check root CA entries in cacerts file
  */
@@ -42,7 +42,7 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 70;
+    private static final int COUNT = 74;
 
     // map of cert alias to SHA-256 fingerprint
     private static final Map<String, String> FINGERPRINT_MAP
@@ -188,6 +188,14 @@ public class VerifyCACerts {
                     "F1:C1:B5:0A:E5:A2:0D:D8:03:0E:C9:F6:BC:24:82:3D:D3:67:B5:25:57:59:B4:E7:1B:61:FC:E9:F7:37:5D:73");
             put("xrampglobalca [jdk]",
                     "CE:CD:DC:90:50:99:D8:DA:DF:C5:B1:D2:09:B7:37:CB:E2:C1:8C:FB:2C:10:C0:FF:0B:CF:0D:32:86:FC:1A:A2");
+            put("godaddyrootg2ca [jdk]",
+                    "45:14:0B:32:47:EB:9C:C8:C5:B4:F0:D7:B5:30:91:F7:32:92:08:9E:6E:5A:63:E2:74:9D:D3:AC:A9:19:8E:DA");
+            put("godaddyclass2ca [jdk]",
+                    "C3:84:6B:F2:4B:9E:93:CA:64:27:4C:0E:C6:7C:1E:CC:5E:02:4F:FC:AC:D2:D7:40:19:35:0E:81:FE:54:6A:E4");
+            put("starfieldclass2ca [jdk]",
+                    "14:65:FA:20:53:97:B8:76:FA:A6:F0:A9:95:8E:55:90:E4:0F:CC:7F:AA:4F:B7:C2:C8:67:75:21:FB:5F:B6:58");
+            put("starfieldrootg2ca [jdk]",
+                    "2C:E1:CB:0B:F9:D2:F9:E1:02:99:3F:BE:21:51:52:C3:B2:DD:0C:AB:DE:1C:68:E5:31:9B:83:91:54:DB:B7:F5");
         }
     };
 

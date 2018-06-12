@@ -25,6 +25,7 @@
  * @key gc
  * @bug 8032771
  * @summary Test silent verification.
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  */
