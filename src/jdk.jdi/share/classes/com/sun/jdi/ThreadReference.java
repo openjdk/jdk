@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,6 @@ public interface ThreadReference extends ObjectReference {
      * @throws InvalidTypeException if <code>throwable</code> is not
      * an instance of java.lang.Throwable in the target VM.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
-     * @see java.lang.Thread#stop(Throwable)
      */
     @SuppressWarnings("javadoc")
     void stop(ObjectReference throwable) throws InvalidTypeException;
