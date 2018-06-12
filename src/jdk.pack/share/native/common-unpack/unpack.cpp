@@ -1799,6 +1799,7 @@ unpacker::attr_definitions::parseLayout(const char* lp, band** &res,
     case 'B': case 'H': case 'I': case 'V': // unsigned_int
     case 'S': // signed_int
       --lp; // reparse
+      /* fall through */
     case 'F':
       lp = parseIntLayout(lp, b, EK_INT);
       break;
