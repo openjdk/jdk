@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8195795 8201396
+ * @bug 8195795 8201396 8196202
  * @summary test the use of module directories in output,
  *          and the --no-module-directories option
  * @modules jdk.javadoc/jdk.javadoc.internal.api
@@ -82,6 +82,7 @@ public class TestModuleDirs extends JavadocTester {
 
         javadoc("-d", base.resolve("api").toString(),
                 "-quiet",
+                "--frames",
                 "--module-source-path", src.toString(),
                 "--no-module-directories",
                 "--module", "ma,mb");
@@ -125,6 +126,7 @@ public class TestModuleDirs extends JavadocTester {
 
         javadoc("-d", base.resolve("api").toString(),
                 "-quiet",
+                "--frames",
                 "--module-source-path", src.toString(),
                 "--module", "ma,mb");
 

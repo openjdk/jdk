@@ -25,6 +25,7 @@
 /*
  * @test ClassLoadUnloadTest
  * @bug 8142506
+ * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /runtime/testlibrary
  * @library classes

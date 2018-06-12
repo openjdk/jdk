@@ -1625,7 +1625,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     // Reference lists are balanced (see balance_all_queues() and balance_queues()).
     rp->set_active_mt_degree(active_workers);
 
-    ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->num_queues());
+    ReferenceProcessorPhaseTimes pt(_gc_timer_cm, rp->max_num_queues());
 
     // Process the weak references.
     const ReferenceProcessorStats& stats =
@@ -1651,7 +1651,11 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   }
 
   if (has_overflown()) {
-    // We can not trust g1_is_alive if the marking stack overflowed
+    // We can not trust g1_is_alive and the contents of the heap if the marking stack
+    // overflowed while processing references. Exit the VM.
+    fatal("Overflow during reference processing, can not continue. Please "
+          "increase MarkStackSizeMax (current value: " SIZE_FORMAT ") and "
+          "restart.", MarkStackSizeMax);
     return;
   }
 
@@ -1665,7 +1669,7 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   // Unload Klasses, String, Symbols, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
-    bool purged_classes = SystemDictionary::do_unloading(&g1_is_alive, _gc_timer_cm, false /* Defer cleaning */);
+    bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm, false /* Defer cleaning */);
     _g1h->complete_cleaning(&g1_is_alive, purged_classes);
   } else {
     GCTraceTime(Debug, gc, phases) debug("Cleanup", _gc_timer_cm);

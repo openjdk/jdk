@@ -30,6 +30,7 @@ import java.util.List;
 
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
 import org.graalvm.compiler.core.common.type.Stamp;
+import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.Canonicalizable;
@@ -273,55 +274,60 @@ public class SimplifyingGraphDecoder extends GraphDecoder {
         return new CanonicalizeToNullNode(node.stamp);
     }
 
+    @SuppressWarnings("try")
     private void handleCanonicalization(LoopScope loopScope, int nodeOrderId, FixedNode node, Node c) {
         assert c != node : "unnecessary call";
-        Node canonical = c == null ? canonicalizeFixedNodeToNull(node) : c;
-        if (!canonical.isAlive()) {
-            assert !canonical.isDeleted();
-            canonical = graph.addOrUniqueWithInputs(canonical);
-            if (canonical instanceof FixedWithNextNode) {
-                graph.addBeforeFixed(node, (FixedWithNextNode) canonical);
-            } else if (canonical instanceof ControlSinkNode) {
-                FixedWithNextNode predecessor = (FixedWithNextNode) node.predecessor();
-                predecessor.setNext((ControlSinkNode) canonical);
-                List<Node> successorSnapshot = node.successors().snapshot();
-                node.safeDelete();
-                for (Node successor : successorSnapshot) {
-                    successor.safeDelete();
+        try (DebugCloseable position = graph.withNodeSourcePosition(node)) {
+            Node canonical = c == null ? canonicalizeFixedNodeToNull(node) : c;
+            if (!canonical.isAlive()) {
+                assert !canonical.isDeleted();
+                canonical = graph.addOrUniqueWithInputs(canonical);
+                if (canonical instanceof FixedWithNextNode) {
+                    graph.addBeforeFixed(node, (FixedWithNextNode) canonical);
+                } else if (canonical instanceof ControlSinkNode) {
+                    FixedWithNextNode predecessor = (FixedWithNextNode) node.predecessor();
+                    predecessor.setNext((ControlSinkNode) canonical);
+                    List<Node> successorSnapshot = node.successors().snapshot();
+                    node.safeDelete();
+                    for (Node successor : successorSnapshot) {
+                        successor.safeDelete();
+                    }
+                } else {
+                    assert !(canonical instanceof FixedNode);
                 }
-
-            } else {
-                assert !(canonical instanceof FixedNode);
             }
+            if (!node.isDeleted()) {
+                GraphUtil.unlinkFixedNode((FixedWithNextNode) node);
+                node.replaceAtUsagesAndDelete(canonical);
+            }
+            assert lookupNode(loopScope, nodeOrderId) == node;
+            registerNode(loopScope, nodeOrderId, canonical, true, false);
         }
-        if (!node.isDeleted()) {
-            GraphUtil.unlinkFixedNode((FixedWithNextNode) node);
-            node.replaceAtUsagesAndDelete(canonical);
-        }
-        assert lookupNode(loopScope, nodeOrderId) == node;
-        registerNode(loopScope, nodeOrderId, canonical, true, false);
     }
 
     @Override
+    @SuppressWarnings("try")
     protected Node handleFloatingNodeBeforeAdd(MethodScope methodScope, LoopScope loopScope, Node node) {
         if (node instanceof ValueNode) {
             ((ValueNode) node).inferStamp();
         }
         if (node instanceof Canonicalizable) {
-            Node canonical = ((Canonicalizable) node).canonical(canonicalizerTool);
-            if (canonical == null) {
-                /*
-                 * This is a possible return value of canonicalization. However, we might need to
-                 * add additional usages later on for which we need a node. Therefore, we just do
-                 * nothing and leave the node in place.
-                 */
-            } else if (canonical != node) {
-                if (!canonical.isAlive()) {
-                    assert !canonical.isDeleted();
-                    canonical = graph.addOrUniqueWithInputs(canonical);
+            try (DebugCloseable context = graph.withNodeSourcePosition(node)) {
+                Node canonical = ((Canonicalizable) node).canonical(canonicalizerTool);
+                if (canonical == null) {
+                    /*
+                     * This is a possible return value of canonicalization. However, we might need
+                     * to add additional usages later on for which we need a node. Therefore, we
+                     * just do nothing and leave the node in place.
+                     */
+                } else if (canonical != node) {
+                    if (!canonical.isAlive()) {
+                        assert !canonical.isDeleted();
+                        canonical = graph.addOrUniqueWithInputs(canonical);
+                    }
+                    assert node.hasNoUsages();
+                    return canonical;
                 }
-                assert node.hasNoUsages();
-                return canonical;
             }
         }
         return node;

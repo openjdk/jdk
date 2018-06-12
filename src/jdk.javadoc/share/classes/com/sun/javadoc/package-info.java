@@ -97,32 +97,32 @@ classes:
 <pre>
 import com.sun.javadoc.*;
 
-public class ListParams extends <span style="color:red" >Doclet</span> {
+public class ListParams extends <span style="color:#E00000" >Doclet</span> {
 
-    public static boolean start(<span style="color:red" >RootDoc</span> root) {
-        <span style="color:red" >ClassDoc</span>[] classes = root.<span style="color:red" >classes</span>();
+    public static boolean start(<span style="color:#E00000" >RootDoc</span> root) {
+        <span style="color:#E00000" >ClassDoc</span>[] classes = root.<span style="color:#E00000" >classes</span>();
         for (int i = 0; i &lt; classes.length; ++i) {
-            <span style="color:red" >ClassDoc</span> cd = classes[i];
-            printMembers(cd.<span style="color:red" >constructors</span>());
-            printMembers(cd.<span style="color:red" >methods</span>());
+            <span style="color:#E00000" >ClassDoc</span> cd = classes[i];
+            printMembers(cd.<span style="color:#E00000" >constructors</span>());
+            printMembers(cd.<span style="color:#E00000" >methods</span>());
         }
         return true;
     }
 
-    static void printMembers(<span style="color:red" >ExecutableMemberDoc</span>[] mems) {
+    static void printMembers(<span style="color:#E00000" >ExecutableMemberDoc</span>[] mems) {
         for (int i = 0; i &lt; mems.length; ++i) {
-            <span style="color:red" >ParamTag</span>[] params = mems[i].<span style="color:red" >paramTags</span>();
-            System.out.println(mems[i].<span style="color:red" >qualifiedName</span>());
+            <span style="color:#E00000" >ParamTag</span>[] params = mems[i].<span style="color:#E00000" >paramTags</span>();
+            System.out.println(mems[i].<span style="color:#E00000" >qualifiedName</span>());
             for (int j = 0; j &lt; params.length; ++j) {
-                System.out.println("   " + params[j].<span style="color:red" >parameterName</span>()
-                    + " - " + params[j].<span style="color:red" >parameterComment</span>());
+                System.out.println("   " + params[j].<span style="color:#E00000" >parameterName</span>()
+                    + " - " + params[j].<span style="color:#E00000" >parameterComment</span>());
             }
         }
     }
 }
 </pre>
 Interfaces and methods from the Javadoc API are marked in
-<span style="color:red" >red</span>.
+<span style="color:#E00000" >red</span>.
 {@link com.sun.javadoc.Doclet Doclet} is an abstract class that specifies
 the invocation interface for doclets,
 {@link com.sun.javadoc.Doclet Doclet} holds class or interface information,

@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -571,7 +571,7 @@ static jvmtiError JNICALL
     transition = false;
   } else {
     this_thread = Thread::current_or_null();
-    transition = ((this_thread != NULL) &amp;&amp; !this_thread->is_VM_thread() &amp;&amp; !this_thread->is_ConcurrentGC_thread());
+    transition = ((this_thread != NULL) &amp;&amp; !this_thread->is_Named_thread());
   }
   if (transition) {</xsl:text>
 	</xsl:otherwise>

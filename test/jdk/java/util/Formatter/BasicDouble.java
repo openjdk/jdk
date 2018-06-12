@@ -1792,6 +1792,15 @@ public class BasicDouble extends Basic {
         //---------------------------------------------------------------------
         test("%%", "%", (Object)null);
         test("%%", "%", "");
+
+        test("%5%", "    %", (Object)null);
+        test("%5%", "    %", "");
+        test("%-5%", "%    ", (Object)null);
+        test("%-5%", "%    ", "");
+
+        tryCatch("%.5%", IllegalFormatPrecisionException.class);
+        tryCatch("%5.5%", IllegalFormatPrecisionException.class);
+
         tryCatch("%%%", UnknownFormatConversionException.class);
         // perhaps an IllegalFormatArgumentIndexException should be defined?
         tryCatch("%<%", IllegalFormatFlagsException.class);

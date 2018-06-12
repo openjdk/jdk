@@ -32,7 +32,7 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ostream.hpp"

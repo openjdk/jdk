@@ -37,7 +37,7 @@
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -540,12 +540,6 @@ address RetData::fixup_ret(int return_bci, MethodData* h_mdo) {
   }
   return mdp;
 }
-
-#ifdef CC_INTERP
-DataLayout* RetData::advance(MethodData *md, int bci) {
-  return (DataLayout*) md->bci_to_dp(bci);
-}
-#endif // CC_INTERP
 
 void RetData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "RetData", extra);

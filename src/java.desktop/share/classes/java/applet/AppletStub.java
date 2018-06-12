@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.applet;
 
 import java.net.URL;
@@ -37,11 +38,8 @@ import java.net.URL;
  * @see         java.applet.Applet#setStub(java.applet.AppletStub)
  * @since       1.0
  *
- * @deprecated  The Applet API is deprecated. See the
- * <a href="package-summary.html"> java.applet package documentation</a>
- * for further information.
+ * @deprecated The Applet API is deprecated, no replacement.
  */
-
 @Deprecated(since = "9")
 public interface AppletStub {
     /**

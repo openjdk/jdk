@@ -27,6 +27,7 @@ import static org.graalvm.compiler.nodeinfo.InputType.Memory;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_2;
 
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -50,13 +51,19 @@ public final class AtomicReadAndAddNode extends AbstractMemoryCheckpoint impleme
     public static final NodeClass<AtomicReadAndAddNode> TYPE = NodeClass.create(AtomicReadAndAddNode.class);
     @Input(Association) AddressNode address;
     @Input ValueNode delta;
+    /**
+     * We explicitly track the kind of this node instead of using {#delta.getStackKind()} to be able
+     * to emit the memory access instruction with the correct number of bits.
+     */
+    private JavaKind valueKind;
 
     protected final LocationIdentity locationIdentity;
 
-    public AtomicReadAndAddNode(AddressNode address, ValueNode delta, LocationIdentity locationIdentity) {
-        super(TYPE, StampFactory.forKind(delta.getStackKind()));
+    public AtomicReadAndAddNode(AddressNode address, ValueNode delta, JavaKind valueKind, LocationIdentity locationIdentity) {
+        super(TYPE, StampFactory.forKind(valueKind));
         this.address = address;
         this.delta = delta;
+        this.valueKind = valueKind;
         this.locationIdentity = locationIdentity;
     }
 
@@ -71,7 +78,7 @@ public final class AtomicReadAndAddNode extends AbstractMemoryCheckpoint impleme
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
-        Value result = gen.getLIRGeneratorTool().emitAtomicReadAndAdd(gen.operand(address), gen.operand(delta));
+        Value result = gen.getLIRGeneratorTool().emitAtomicReadAndAdd(gen.operand(address), gen.getLIRGeneratorTool().getValueKind(valueKind), gen.operand(delta));
         gen.setResult(this, result);
     }
 }

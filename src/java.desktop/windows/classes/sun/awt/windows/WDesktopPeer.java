@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.awt.windows;
 
-
 import java.awt.Desktop.Action;
 import java.awt.EventQueue;
 import java.awt.desktop.SystemEventListener;
@@ -38,9 +37,8 @@ import java.awt.peer.DesktopPeer;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import javax.swing.event.EventListenerList;
-import sun.awt.OSInfo;
 
+import javax.swing.event.EventListenerList;
 
 /**
  * Concrete implementation of the interface {@code DesktopPeer} for
@@ -49,19 +47,15 @@ import sun.awt.OSInfo;
  * @see DesktopPeer
  */
 final class WDesktopPeer implements DesktopPeer {
-    /* Contants for the operation verbs */
+    /* Constants for the operation verbs */
     private static String ACTION_OPEN_VERB = "open";
     private static String ACTION_EDIT_VERB = "edit";
     private static String ACTION_PRINT_VERB = "print";
-
-    private static boolean isEventUserSessionSupported = false;
 
     private static native void init();
 
     WDesktopPeer() {
         init();
-        isEventUserSessionSupported = OSInfo.getWindowsVersion()
-                                        .compareTo(OSInfo.WINDOWS_VISTA) >= 0;
     }
 
     @Override
@@ -75,9 +69,8 @@ final class WDesktopPeer implements DesktopPeer {
             case MOVE_TO_TRASH:
             case APP_SUDDEN_TERMINATION:
             case APP_EVENT_SYSTEM_SLEEP:
-                return true;
             case APP_EVENT_USER_SESSION:
-                return isEventUserSessionSupported;
+                return true;
             default:
                 return false;
         }

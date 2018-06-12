@@ -44,9 +44,6 @@ import javax.print.attribute.standard.*;
 
 public class PrintTextLayout implements Printable {
     static String[] fontnames = {
-        "Lucida Sans",
-        "Lucida Bright",
-        "Lucida Sans Typewriter",
         "SansSerif",
         "Serif",
         "Monospaced",

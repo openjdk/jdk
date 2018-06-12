@@ -1144,6 +1144,8 @@
     FT_Bool       has_outline;
     FT_Bool       is_apple_sbit;
     FT_Bool       is_apple_sbix;
+    FT_Bool       has_CBLC;
+    FT_Bool       has_CBDT;
     FT_Bool       ignore_typographic_family    = FALSE;
     FT_Bool       ignore_typographic_subfamily = FALSE;
 
@@ -1223,6 +1225,13 @@
       if ( error )
         goto Exit;
     }
+
+    has_CBLC = !face->goto_table( face, TTAG_CBLC, stream, 0 );
+    has_CBDT = !face->goto_table( face, TTAG_CBDT, stream, 0 );
+
+    /* Ignore outlines for CBLC/CBDT fonts. */
+    if ( has_CBLC || has_CBDT )
+      has_outline = FALSE;
 
     /* OpenType 1.8.2 introduced limits to this value;    */
     /* however, they make sense for older SFNT fonts also */

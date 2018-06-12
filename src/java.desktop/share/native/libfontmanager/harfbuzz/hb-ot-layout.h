@@ -38,6 +38,7 @@
 HB_BEGIN_DECLS
 
 
+#define HB_OT_TAG_BASE HB_TAG('B','A','S','E')
 #define HB_OT_TAG_GDEF HB_TAG('G','D','E','F')
 #define HB_OT_TAG_GSUB HB_TAG('G','S','U','B')
 #define HB_OT_TAG_GPOS HB_TAG('G','P','O','S')
@@ -314,6 +315,22 @@ hb_ot_layout_get_size_params (hb_face_t    *face,
                               unsigned int *subfamily_name_id, /* OUT.  May be NULL */
                               unsigned int *range_start,       /* OUT.  May be NULL */
                               unsigned int *range_end          /* OUT.  May be NULL */);
+
+
+/*
+ * BASE
+ */
+#if 0
+
+#define HB_OT_TAG_BASE_HANG HB_TAG('h','a','n','g')
+#define HB_OT_TAG_BASE_ICFB HB_TAG('i','c','f','b')
+#define HB_OT_TAG_BASE_ICFT HB_TAG('i','c','f','t')
+#define HB_OT_TAG_BASE_IDEO HB_TAG('i','d','e','o')
+#define HB_OT_TAG_BASE_IDTB HB_TAG('i','d','t','b')
+#define HB_OT_TAG_BASE_MATH HB_TAG('m','a','t','h')
+#define HB_OT_TAG_BASE_ROMN HB_TAG('r','o','m','n')
+
+#endif
 
 
 HB_END_DECLS

@@ -43,16 +43,16 @@
 #define OT_TABLE_END                    }
 #define OT_LABEL_START(Name)            unsigned char Name[
 #define OT_LABEL_END                    ];
-#define OT_BYTE(u8)                     +1/*byte*/
-#define OT_USHORT(u16)                  +2/*bytes*/
+#define OT_UINT8(u8)                    +1/*byte*/
+#define OT_UINT16(u16)                  +2/*bytes*/
 #else
 #undef  OT_MEASURE
 #define OT_TABLE_START                  TABLE_NAME = {
 #define OT_TABLE_END                    };
 #define OT_LABEL_START(Name)            {
 #define OT_LABEL_END                    },
-#define OT_BYTE(u8)                     (u8),
-#define OT_USHORT(u16)                  (unsigned char)((u16)>>8), (unsigned char)((u16)&0xFFu),
+#define OT_UINT8(u8)                    (u8),
+#define OT_UINT16(u16)                  (unsigned char)((u16)>>8), (unsigned char)((u16)&0xFFu),
 #define OT_COUNT(Name, ItemSize)        ((unsigned int) sizeof(((struct TABLE_NAME*)0)->Name) \
                                          / (unsigned int)(ItemSize) \
                                          /* OT_ASSERT it's divisible (and positive). */)
@@ -80,24 +80,24 @@
  */
 
 #define OT_TAG(a,b,c,d) \
-        OT_BYTE(a) OT_BYTE(b) OT_BYTE(c) OT_BYTE(d)
+        OT_UINT8(a) OT_UINT8(b) OT_UINT8(c) OT_UINT8(d)
 
 #define OT_OFFSET(From, To) /* Offset from From to To in bytes */ \
-        OT_USHORT(OT_DISTANCE(From, To))
+        OT_UINT16(OT_DISTANCE(From, To))
 
 #define OT_GLYPHID /* GlyphID */ \
-        OT_USHORT
+        OT_UINT16
 
 #define OT_UARRAY(Name, Items) \
         OT_LABEL_START(Name) \
-        OT_USHORT(OT_COUNT(Name##Data, 2)) \
+        OT_UINT16(OT_COUNT(Name##Data, 2)) \
         OT_LABEL(Name##Data) \
         Items \
         OT_LABEL_END
 
 #define OT_UHEADLESSARRAY(Name, Items) \
         OT_LABEL_START(Name) \
-        OT_USHORT(OT_COUNT(Name##Data, 2) + 1) \
+        OT_UINT16(OT_COUNT(Name##Data, 2) + 1) \
         OT_LABEL(Name##Data) \
         Items \
         OT_LABEL_END
@@ -111,19 +111,19 @@
 
 #define OT_LOOKUP(Name, LookupType, LookupFlag, SubLookupOffsets) \
         OT_LABEL_START(Name) \
-        OT_USHORT(LookupType) \
-        OT_USHORT(LookupFlag) \
+        OT_UINT16(LookupType) \
+        OT_UINT16(LookupFlag) \
         OT_LABEL_END \
         OT_UARRAY(Name##SubLookupOffsetsArray, OT_LIST(SubLookupOffsets))
 
 #define OT_SUBLOOKUP(Name, SubFormat, Items) \
         OT_LABEL_START(Name) \
-        OT_USHORT(SubFormat) \
+        OT_UINT16(SubFormat) \
         Items
 
 #define OT_COVERAGE1(Name, Items) \
         OT_LABEL_START(Name) \
-        OT_USHORT(1) \
+        OT_UINT16(1) \
         OT_LABEL_END \
         OT_UARRAY(Name##Glyphs, OT_LIST(Items))
 
@@ -174,7 +174,7 @@
 /* Table manifest. */
 #define MANIFEST(Items) \
         OT_LABEL_START(manifest) \
-        OT_USHORT(OT_COUNT(manifestData, 6)) \
+        OT_UINT16(OT_COUNT(manifestData, 6)) \
         OT_LABEL(manifestData) \
         Items \
         OT_LABEL_END
@@ -304,8 +304,8 @@ OT_TABLE_END
 #undef OT_TABLE_END
 #undef OT_LABEL_START
 #undef OT_LABEL_END
-#undef OT_BYTE
-#undef OT_USHORT
+#undef OT_UINT8
+#undef OT_UINT16
 #undef OT_DISTANCE
 #undef OT_COUNT
 

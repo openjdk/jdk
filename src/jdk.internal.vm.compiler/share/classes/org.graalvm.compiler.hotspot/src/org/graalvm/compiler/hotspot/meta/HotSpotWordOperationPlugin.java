@@ -45,6 +45,7 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.calc.PointerEqualsNode;
+import org.graalvm.compiler.nodes.extended.GuardingNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.memory.HeapAccess.BarrierType;
@@ -69,13 +70,13 @@ class HotSpotWordOperationPlugin extends WordOperationPlugin {
     }
 
     @Override
-    protected LoadIndexedNode createLoadIndexedNode(ValueNode array, ValueNode index) {
+    protected LoadIndexedNode createLoadIndexedNode(ValueNode array, ValueNode index, GuardingNode boundsCheck) {
         ResolvedJavaType arrayType = StampTool.typeOrNull(array);
         Stamp componentStamp = wordTypes.getWordStamp(arrayType.getComponentType());
         if (componentStamp instanceof MetaspacePointerStamp) {
-            return new LoadIndexedPointerNode(componentStamp, array, index);
+            return new LoadIndexedPointerNode(componentStamp, array, index, boundsCheck);
         } else {
-            return super.createLoadIndexedNode(array, index);
+            return super.createLoadIndexedNode(array, index, boundsCheck);
         }
     }
 

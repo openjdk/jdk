@@ -36,7 +36,7 @@
 #define HB_BUFFER_SCRATCH_FLAG_ARABIC_HAS_STCH HB_BUFFER_SCRATCH_FLAG_COMPLEX0
 
 /* See:
- * https://github.com/behdad/harfbuzz/commit/6e6f82b6f3dde0fc6c3c7d991d9ec6cfff57823d#commitcomment-14248516 */
+ * https://github.com/harfbuzz/harfbuzz/commit/6e6f82b6f3dde0fc6c3c7d991d9ec6cfff57823d#commitcomment-14248516 */
 #define HB_ARABIC_GENERAL_CATEGORY_IS_WORD(gen_cat) \
         (FLAG_UNSAFE (gen_cat) & \
          (FLAG (HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED) | \
@@ -198,7 +198,7 @@ collect_features_arabic (hb_ot_shape_planner_t *plan)
    * pause for Arabic, not other scripts.
    *
    * A pause after calt is required to make KFGQPC Uthmanic Script HAFS
-   * work correctly.  See https://github.com/behdad/harfbuzz/issues/505
+   * work correctly.  See https://github.com/harfbuzz/harfbuzz/issues/505
    */
 
   map->add_gsub_pause (nuke_joiners);
@@ -644,13 +644,15 @@ reorder_marks_arabic (const hb_ot_shape_plan_t *plan,
 {
   hb_glyph_info_t *info = buffer->info;
 
+  DEBUG_MSG (ARABIC, buffer, "Reordering marks from %d to %d", start, end);
+
   unsigned int i = start;
   for (unsigned int cc = 220; cc <= 230; cc += 10)
   {
-    DEBUG_MSG (ARABIC, buffer, "Looking for %d's starting at %d\n", cc, i);
+    DEBUG_MSG (ARABIC, buffer, "Looking for %d's starting at %d", cc, i);
     while (i < end && info_cc(info[i]) < cc)
       i++;
-    DEBUG_MSG (ARABIC, buffer, "Looking for %d's stopped at %d\n", cc, i);
+    DEBUG_MSG (ARABIC, buffer, "Looking for %d's stopped at %d", cc, i);
 
     if (i == end)
       break;
@@ -658,20 +660,17 @@ reorder_marks_arabic (const hb_ot_shape_plan_t *plan,
     if (info_cc(info[i]) > cc)
       continue;
 
-    /* Technically we should also check "info_cc(info[j]) == cc"
-     * in the following loop.  But not doing it is safe; we might
-     * end up moving all the 220 MCMs and 230 MCMs together in one
-     * move and be done. */
     unsigned int j = i;
-    while (j < end && info_is_mcm (info[j]))
+    while (j < end && info_cc(info[j]) == cc && info_is_mcm (info[j]))
       j++;
-    DEBUG_MSG (ARABIC, buffer, "Found %d's from %d to %d\n", cc, i, j);
 
     if (i == j)
       continue;
 
+    DEBUG_MSG (ARABIC, buffer, "Found %d's from %d to %d", cc, i, j);
+
     /* Shift it! */
-    DEBUG_MSG (ARABIC, buffer, "Shifting %d's: %d %d\n", cc, i, j);
+    DEBUG_MSG (ARABIC, buffer, "Shifting %d's: %d %d", cc, i, j);
     hb_glyph_info_t temp[HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS];
     assert (j - i <= ARRAY_LENGTH (temp));
     buffer->merge_clusters (start, j);
@@ -679,7 +678,25 @@ reorder_marks_arabic (const hb_ot_shape_plan_t *plan,
     memmove (&info[start + j - i], &info[start], (i - start) * sizeof (hb_glyph_info_t));
     memmove (&info[start], temp, (j - i) * sizeof (hb_glyph_info_t));
 
-    start += j - i;
+    /* Renumber CC such that the reordered sequence is still sorted.
+     * 22 and 26 are chosen because they are smaller than all Arabic categories,
+     * and are folded back to 220/230 respectively during fallback mark positioning.
+     *
+     * We do this because the CGJ-handling logic in the normalizer relies on
+     * mark sequences having an increasing order even after this reordering.
+     * https://github.com/harfbuzz/harfbuzz/issues/554
+     * This, however, does break some obscure sequences, where the normalizer
+     * might compose a sequence that it should not.  For example, in the seequence
+     * ALEF, HAMZAH, MADDAH, we should NOT try to compose ALEF+MADDAH, but with this
+     * renumbering, we will.
+     */
+    unsigned int new_start = start + j - i;
+    unsigned int new_cc = cc == 220 ? HB_MODIFIED_COMBINING_CLASS_CCC22 : HB_MODIFIED_COMBINING_CLASS_CCC26;
+    while (start < new_start)
+    {
+      _hb_glyph_info_set_modified_combining_class (&info[start], new_cc);
+      start++;
+    }
 
     i = j;
   }

@@ -27,7 +27,7 @@
 # It also contains test-suite configuration information.
 
 # The list of keywords supported in this test suite
-keys=cte_test jcmd nmt regression gc stress metaspace
+keys=cte_test jcmd nmt regression gc stress metaspace headful intermittent
 
 groups=TEST.groups
 
@@ -45,6 +45,8 @@ requires.properties= \
     vm.gc.Serial \
     vm.gc.Parallel \
     vm.gc.ConcMarkSweep \
+    vm.gc.Epsilon \
+    vm.gc.Z \
     vm.jvmci \
     vm.emulatedClient \
     vm.cpu.features \

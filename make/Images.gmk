@@ -90,7 +90,7 @@ endif
 
 $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JDK_MODULES_LIST) $(BASE_RELEASE_FILE)
-	$(ECHO) Creating jdk jimage
+	$(ECHO) Creating jdk image
 	$(RM) -r $(JDK_IMAGE_DIR)
 	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jdk, \
 	    $(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
@@ -101,7 +101,7 @@ $(JDK_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
 
 $(JRE_IMAGE_DIR)/$(JIMAGE_TARGET_FILE): $(JMODS) \
     $(call DependOnVariable, JRE_MODULES_LIST) $(BASE_RELEASE_FILE)
-	$(ECHO) Creating jre jimage
+	$(ECHO) Creating legacy jre image
 	$(RM) -r $(JRE_IMAGE_DIR)
 	$(call ExecuteWithLog, $(SUPPORT_OUTPUTDIR)/images/jre, \
 	    $(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \

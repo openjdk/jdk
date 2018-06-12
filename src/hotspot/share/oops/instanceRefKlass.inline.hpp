@@ -53,13 +53,20 @@ void InstanceRefKlass::do_discovered(oop obj, OopClosureType* closure, Contains&
   }
 }
 
+static inline oop load_referent(oop obj, ReferenceType type) {
+  if (type == REF_PHANTOM) {
+    return HeapAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(java_lang_ref_Reference::referent_addr_raw(obj));
+  } else {
+    return HeapAccess<ON_WEAK_OOP_REF | AS_NO_KEEPALIVE>::oop_load(java_lang_ref_Reference::referent_addr_raw(obj));
+  }
+}
+
 template <typename T, class OopClosureType>
 bool InstanceRefKlass::try_discover(oop obj, ReferenceType type, OopClosureType* closure) {
   ReferenceDiscoverer* rd = closure->ref_discoverer();
   if (rd != NULL) {
-    T referent_oop = RawAccess<>::oop_load((T*)java_lang_ref_Reference::referent_addr_raw(obj));
-    if (!CompressedOops::is_null(referent_oop)) {
-      oop referent = CompressedOops::decode_not_null(referent_oop);
+    oop referent = load_referent(obj, type);
+    if (referent != NULL) {
       if (!referent->is_gc_marked()) {
         // Only try to discover if not yet marked.
         return rd->discover_reference(obj, type);
@@ -179,9 +186,9 @@ void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
 
   log_develop_trace(gc, ref)("InstanceRefKlass %s for obj " PTR_FORMAT, s, p2i(obj));
   log_develop_trace(gc, ref)("     referent_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-      p2i(referent_addr), p2i(referent_addr ? RawAccess<>::oop_load(referent_addr) : (oop)NULL));
+      p2i(referent_addr), p2i((oop)HeapAccess<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>::oop_load_at(obj, java_lang_ref_Reference::referent_offset)));
   log_develop_trace(gc, ref)("     discovered_addr/* " PTR_FORMAT " / " PTR_FORMAT,
-      p2i(discovered_addr), p2i(discovered_addr ? RawAccess<>::oop_load(discovered_addr) : (oop)NULL));
+      p2i(discovered_addr), p2i((oop)HeapAccess<AS_NO_KEEPALIVE>::oop_load(discovered_addr)));
 }
 #endif
 

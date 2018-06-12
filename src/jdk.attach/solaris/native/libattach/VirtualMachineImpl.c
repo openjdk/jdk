@@ -38,6 +38,8 @@
 
 #include "sun_tools_attach_VirtualMachineImpl.h"
 
+#define ROOT_UID 0
+
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
     _result = _cmd; \
@@ -122,11 +124,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
         if (res == 0) {
             char msg[100];
             jboolean isError = JNI_FALSE;
-            if (sb.st_uid != uid) {
+            if (sb.st_uid != uid && uid != ROOT_UID) {
                 snprintf(msg, sizeof(msg),
                     "file should be owned by the current user (which is %d) but is owned by %d", uid, sb.st_uid);
                 isError = JNI_TRUE;
-            } else if (sb.st_gid != gid) {
+            } else if (sb.st_gid != gid && uid != ROOT_UID) {
                 snprintf(msg, sizeof(msg),
                     "file's group should be the current group (which is %d) but the group is %d", gid, sb.st_gid);
                 isError = JNI_TRUE;

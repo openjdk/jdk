@@ -100,7 +100,7 @@ public class JmodNegativeTest {
         jmod("--badOption")
             .assertFailure()
             .resultChecker(r ->
-                assertContains(r.output, "Error: 'badOption' is not a recognized option")
+                assertContains(r.output, "Error: badOption is not a recognized option")
             );
     }
 

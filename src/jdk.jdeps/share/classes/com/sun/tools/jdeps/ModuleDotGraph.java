@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -329,7 +330,7 @@ public class ModuleDotGraph {
 
                 out.format("digraph \"%s\" {%n", name);
                 out.format("  nodesep=.5;%n");
-                out.format("  ranksep=%f;%n", attributes.rankSep());
+                out.format((Locale)null, "  ranksep=%f;%n", attributes.rankSep());
                 out.format("  pencolor=transparent;%n");
                 out.format("  node [shape=plaintext, fontcolor=\"%s\", fontname=\"%s\","
                                 + " fontsize=%d, margin=\".2,.2\"];%n",

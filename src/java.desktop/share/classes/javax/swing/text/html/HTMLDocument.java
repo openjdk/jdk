@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *     &lt;title&gt;An example HTMLDocument&lt;/title&gt;
  *     &lt;style type="text/css"&gt;
  *       div { background-color: silver; }
- *       ul { color: red; }
+ *       ul { color: blue; }
  *     &lt;/style&gt;
  *   &lt;/head&gt;
  *   &lt;body&gt;
@@ -204,7 +204,7 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * <!--insertAfterStart-->
  *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
- *         <ul style="color: red;">
+ *         <ul style="color: blue;">
  *           <li>List Item</li>
  *         </ul>
  *         <p>Paragraph 1</p>
@@ -216,14 +216,14 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *       <div style="background-color: silver;">
  *         <p>Paragraph 1</p>
  *         <p>Paragraph 2</p>
- *         <ul style="color: red;">
+ *         <ul style="color: blue;">
  *           <li>List Item</li>
  *         </ul>
  *       </div>
  *     </td>
  * <!--insertBeforeStart-->
  *     <td style="white-space:nowrap">
- *       <ul style="color: red;">
+ *       <ul style="color: blue;">
  *         <li>List Item</li>
  *       </ul>
  *       <div style="background-color: silver;">
@@ -237,21 +237,21 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  *         <p>Paragraph 1</p>
  *         <p>Paragraph 2</p>
  *       </div>
- *       <ul style="color: red;">
+ *       <ul style="color: blue;">
  *         <li>List Item</li>
  *       </ul>
  *     </td>
  * <!--setInnerHTML-->
  *     <td style="white-space:nowrap">
  *       <div style="background-color: silver;">
- *         <ul style="color: red;">
+ *         <ul style="color: blue;">
  *           <li>List Item</li>
  *         </ul>
  *       </div>
  *     </td>
  * <!--setOuterHTML-->
  *     <td style="white-space:nowrap">
- *       <ul style="color: red;">
+ *       <ul style="color: blue;">
  *         <li>List Item</li>
  *       </ul>
  *     </td>
@@ -1001,16 +1001,16 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * <p>Invoking <code>setInnerHTML(elem, "&lt;ul&gt;&lt;li&gt;")</code>
      * results in the following structure (new elements are <span
-     * style="color: red;">in red</span>).</p>
+     * style="color: blue;">in blue</span>).</p>
      *
      * <pre>
      *     &lt;body&gt;
      *       |
      *     <b>&lt;div&gt;</b>
      *         \
-     *         <span style="color: red;">&lt;ul&gt;</span>
+     *         <span style="color: blue;">&lt;ul&gt;</span>
      *           \
-     *           <span style="color: red;">&lt;li&gt;</span>
+     *           <span style="color: blue;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>Parameter <code>elem</code> must not be a leaf element,
@@ -1085,14 +1085,14 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * <p>Invoking <code>setOuterHTML(elem, "&lt;ul&gt;&lt;li&gt;")</code>
      * results in the following structure (new elements are <span
-     * style="color: red;">in red</span>).</p>
+     * style="color: blue;">in blue</span>).</p>
      *
      * <pre>
      *    &lt;body&gt;
      *      |
-     *     <span style="color: red;">&lt;ul&gt;</span>
+     *     <span style="color: blue;">&lt;ul&gt;</span>
      *       \
-     *       <span style="color: red;">&lt;li&gt;</span>
+     *       <span style="color: blue;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>If either <code>elem</code> or <code>htmlText</code>
@@ -1158,16 +1158,16 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * <p>Invoking <code>insertAfterStart(elem,
      * "&lt;ul&gt;&lt;li&gt;")</code> results in the following structure
-     * (new elements are <span style="color: red;">in red</span>).</p>
+     * (new elements are <span style="color: blue;">in blue</span>).</p>
      *
      * <pre>
      *        &lt;body&gt;
      *          |
      *        <b>&lt;div&gt;</b>
      *       /  |  \
-     *    <span style="color: red;">&lt;ul&gt;</span> &lt;p&gt; &lt;p&gt;
+     *    <span style="color: blue;">&lt;ul&gt;</span> &lt;p&gt; &lt;p&gt;
      *     /
-     *  <span style="color: red;">&lt;li&gt;</span>
+     *  <span style="color: blue;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>Unlike the <code>insertBeforeStart</code> method, new
@@ -1231,16 +1231,16 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * <p>Invoking <code>insertBeforeEnd(elem, "&lt;ul&gt;&lt;li&gt;")</code>
      * results in the following structure (new elements are <span
-     * style="color: red;">in red</span>).</p>
+     * style="color: blue;">in blue</span>).</p>
      *
      * <pre>
      *        &lt;body&gt;
      *          |
      *        <b>&lt;div&gt;</b>
      *       /  |  \
-     *     &lt;p&gt; &lt;p&gt; <span style="color: red;">&lt;ul&gt;</span>
+     *     &lt;p&gt; &lt;p&gt; <span style="color: blue;">&lt;ul&gt;</span>
      *               \
-     *               <span style="color: red;">&lt;li&gt;</span>
+     *               <span style="color: blue;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>Unlike the <code>insertAfterEnd</code> method, new elements
@@ -1301,14 +1301,14 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * <p>Invoking <code>insertBeforeStart(elem,
      * "&lt;ul&gt;&lt;li&gt;")</code> results in the following structure
-     * (new elements are <span style="color: red;">in red</span>).</p>
+     * (new elements are <span style="color: blue;">in blue</span>).</p>
      *
      * <pre>
      *        &lt;body&gt;
      *         /  \
-     *      <span style="color: red;">&lt;ul&gt;</span> <b>&lt;div&gt;</b>
+     *      <span style="color: blue;">&lt;ul&gt;</span> <b>&lt;div&gt;</b>
      *       /    /  \
-     *     <span style="color: red;">&lt;li&gt;</span> &lt;p&gt;  &lt;p&gt;
+     *     <span style="color: blue;">&lt;li&gt;</span> &lt;p&gt;  &lt;p&gt;
      * </pre>
      *
      * <p>Unlike the <code>insertAfterStart</code> method, new
@@ -1362,14 +1362,14 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * <p>Invoking <code>insertAfterEnd(elem, "&lt;ul&gt;&lt;li&gt;")</code>
      * results in the following structure (new elements are <span
-     * style="color: red;">in red</span>).</p>
+     * style="color: blue;">in blue</span>).</p>
      *
      * <pre>
      *        &lt;body&gt;
      *         /  \
-     *      <b>&lt;div&gt;</b> <span style="color: red;">&lt;ul&gt;</span>
+     *      <b>&lt;div&gt;</b> <span style="color: blue;">&lt;ul&gt;</span>
      *       / \    \
-     *     &lt;p&gt; &lt;p&gt;  <span style="color: red;">&lt;li&gt;</span>
+     *     &lt;p&gt; &lt;p&gt;  <span style="color: blue;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>Unlike the <code>insertBeforeEnd</code> method, new elements

@@ -205,7 +205,8 @@ public class Manifest implements Cloneable {
         byte[] lastline = null;
 
         while ((len = fis.readLine(lbuf)) != -1) {
-            if (lbuf[--len] != '\n') {
+            byte c = lbuf[--len];
+            if (c != '\n' && c != '\r') {
                 throw new IOException("manifest line too long");
             }
             if (len > 0 && lbuf[len-1] == '\r') {
@@ -381,13 +382,38 @@ public class Manifest implements Cloneable {
                 }
                 int tpos = pos;
                 int maxpos = tpos + n;
-                while (tpos < maxpos && tbuf[tpos++] != '\n') ;
+                byte c = 0;
+                // jar.spec.newline: CRLF | LF | CR (not followed by LF)
+                while (tpos < maxpos && (c = tbuf[tpos++]) != '\n' && c != '\r');
+                if (c == '\r' && tpos < maxpos && tbuf[tpos] == '\n') {
+                    tpos++;
+                }
                 n = tpos - pos;
                 System.arraycopy(tbuf, pos, b, off, n);
                 off += n;
                 total += n;
                 pos = tpos;
-                if (tbuf[tpos-1] == '\n') {
+                c = tbuf[tpos-1];
+                if (c == '\n') {
+                    break;
+                }
+                if (c == '\r') {
+                    if (count == pos) {
+                        // try to see if there is a trailing LF
+                        fill();
+                        if (pos < count && tbuf[pos] == '\n') {
+                            if (total < len) {
+                                b[off++] = '\n';
+                                total++;
+                            } else {
+                                // we should always have big enough lbuf but
+                                // just in case we don't, replace the last CR
+                                // with LF.
+                                b[off - 1] = '\n';
+                            }
+                            pos++;
+                        }
+                    }
                     break;
                 }
             }

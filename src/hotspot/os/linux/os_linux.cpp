@@ -51,7 +51,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1988,6 +1988,8 @@ void os::print_os_info(outputStream* st) {
 
   os::Linux::print_full_memory_info(st);
 
+  os::Linux::print_proc_sys_info(st);
+
   os::Linux::print_container_info(st);
 }
 
@@ -2117,6 +2119,24 @@ void os::Linux::print_libversion_info(outputStream* st) {
   st->print("libc:");
   st->print("%s ", os::Linux::glibc_version());
   st->print("%s ", os::Linux::libpthread_version());
+  st->cr();
+}
+
+void os::Linux::print_proc_sys_info(outputStream* st) {
+  st->cr();
+  st->print_cr("/proc/sys/kernel/threads-max (system-wide limit on the number of threads):");
+  _print_ascii_file("/proc/sys/kernel/threads-max", st);
+  st->cr();
+  st->cr();
+
+  st->print_cr("/proc/sys/vm/max_map_count (maximum number of memory map areas a process may have):");
+  _print_ascii_file("/proc/sys/vm/max_map_count", st);
+  st->cr();
+  st->cr();
+
+  st->print_cr("/proc/sys/kernel/pid_max (system-wide limit on number of process identifiers):");
+  _print_ascii_file("/proc/sys/kernel/pid_max", st);
+  st->cr();
   st->cr();
 }
 
@@ -3106,7 +3126,10 @@ static address get_stack_commited_bottom(address bottom, size_t size) {
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
   int mincore_return_value;
   const size_t stripe = 1024;  // query this many pages each time
-  unsigned char vec[stripe];
+  unsigned char vec[stripe + 1];
+  // set a guard
+  vec[stripe] = 'X';
+
   const size_t page_sz = os::vm_page_size();
   size_t pages = size / page_sz;
 
@@ -3118,7 +3141,9 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   int loops = (pages + stripe - 1) / stripe;
   int committed_pages = 0;
   address loop_base = start;
-  for (int index = 0; index < loops; index ++) {
+  bool found_range = false;
+
+  for (int index = 0; index < loops && !found_range; index ++) {
     assert(pages > 0, "Nothing to do");
     int pages_to_query = (pages >= stripe) ? stripe : pages;
     pages -= pages_to_query;
@@ -3133,12 +3158,14 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
       return false;
     }
 
+    assert(vec[stripe] == 'X', "overflow guard");
     assert(mincore_return_value == 0, "Range must be valid");
     // Process this stripe
     for (int vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
       if ((vec[vecIdx] & 0x01) == 0) { // not committed
         // End of current contiguous region
         if (committed_start != NULL) {
+          found_range = true;
           break;
         }
       } else { // committed

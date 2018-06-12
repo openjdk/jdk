@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8060467
  * @author filipp.zhinkin@oracle.com, john.coomes@oracle.com
- * @requires vm.gc.ConcMarkSweep
+ * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @summary Run CMS with PLAB resizing disabled and a small OldPLABSize
  * @run main/othervm -XX:+UseConcMarkSweepGC -XX:-ResizePLAB -XX:OldPLABSize=1k -Xmx256m -Xlog:gc=debug DisableResizePLAB
  */

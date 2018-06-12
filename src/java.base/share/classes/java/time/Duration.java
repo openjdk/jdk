@@ -231,7 +231,7 @@ public final class Duration
      * This method allows an arbitrary number of nanoseconds to be passed in.
      * The factory will alter the values of the second and nanosecond in order
      * to ensure that the stored nanosecond is in the range 0 to 999,999,999.
-     * For example, the following will result in the exactly the same duration:
+     * For example, the following will result in exactly the same duration:
      * <pre>
      *  Duration.ofSeconds(3, 1);
      *  Duration.ofSeconds(4, -999_999_999);
@@ -1357,12 +1357,14 @@ public final class Duration
      * Truncating the duration returns a copy of the original with conceptual fields
      * smaller than the specified unit set to zero.
      * For example, truncating with the {@link ChronoUnit#MINUTES MINUTES} unit will
-     * round down to the nearest minute, setting the seconds and nanoseconds to zero.
+     * round down towards zero to the nearest minute, setting the seconds and
+     * nanoseconds to zero.
      * <p>
      * The unit must have a {@linkplain TemporalUnit#getDuration() duration}
      * that divides into the length of a standard day without remainder.
-     * This includes all supplied time units on {@link ChronoUnit} and
-     * {@link ChronoUnit#DAYS DAYS}. Other ChronoUnits throw an exception.
+     * This includes all
+     * {@linkplain ChronoUnit#isTimeBased() time-based units on {@code ChronoUnit}}
+     * and {@link ChronoUnit#DAYS DAYS}. Other ChronoUnits throw an exception.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1388,7 +1390,7 @@ public final class Duration
             throw new UnsupportedTemporalTypeException("Unit must divide into a standard day without remainder");
         }
         long nod = (seconds % LocalTime.SECONDS_PER_DAY) * LocalTime.NANOS_PER_SECOND + nanos;
-        long result = (nod / dur) * dur ;
+        long result = (nod / dur) * dur;
         return plusNanos(result - nod);
     }
 

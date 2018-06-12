@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,20 @@
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -XX:+UseConcMarkSweepGC TestNumWorkerOutput UseConcMarkSweepGC
  * @run main/othervm -XX:+UseG1GC TestNumWorkerOutput UseG1GC
+ */
+
+/*
+ * @test TestNumWorkerOutputCMS
+ * @bug 8165292
+ * @key gc
+ * @comment Graal does not support CMS
+ * @requires vm.gc=="null" & !vm.graal.enabled
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -XX:+UseConcMarkSweepGC TestNumWorkerOutput UseConcMarkSweepGC
  */
 
 import sun.hotspot.WhiteBox;

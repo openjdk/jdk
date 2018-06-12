@@ -233,7 +233,7 @@ var getJibProfilesCommon = function (input, data) {
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64", "solaris-x64",
         "solaris-sparcv9", "windows-x64", "windows-x86",
-        "linux-aarch64", "linux-arm64", "linux-arm-vfp-hflt",
+        "linux-aarch64", "linux-arm32", "linux-arm64", "linux-arm-vfp-hflt",
         "linux-arm-vfp-hflt-dyn"
     ];
 
@@ -272,27 +272,18 @@ var getJibProfilesCommon = function (input, data) {
      */
     common.main_profile_artifacts = function (o) {
         var jdk_subdir = (o.jdk_subdir != null ? o.jdk_subdir : "jdk-" + data.version);
-        var jre_subdir = (o.jre_subdir != null ? o.jre_subdir : "jre-" + data.version);
+        var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
         var pf = o.platform
         return {
             artifacts: {
                 jdk: {
-                    local: "bundles/\\(jdk.*bin.tar.gz\\)",
+                    local: "bundles/\\(jdk.*bin." + jdk_suffix + "\\)",
                     remote: [
-                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin.tar.gz",
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin." + jdk_suffix,
                         "bundles/" + pf + "/\\1"
                     ],
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
-                },
-                jre: {
-                    local: "bundles/\\(jre.*bin.tar.gz\\)",
-                    remote: [
-                        "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin.tar.gz",
-                        "bundles/" + pf + "/\\1"
-                    ],
-                    subdir: jre_subdir,
-                    exploded: "images/jre"
                 },
                 test: {
                     local: "bundles/\\(jdk.*bin-tests.tar.gz\\)",
@@ -319,15 +310,6 @@ var getJibProfilesCommon = function (input, data) {
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
                 },
-                jre_symbols: {
-                    local: "bundles/\\(jre.*bin-symbols.tar.gz\\)",
-                    remote: [
-                        "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin-symbols.tar.gz",
-                        "bundles/" + pf + "/\\1"
-                    ],
-                    subdir: jre_subdir,
-                    exploded: "images/jre"
-                }
             }
         };
     };
@@ -339,27 +321,18 @@ var getJibProfilesCommon = function (input, data) {
      */
     common.debug_profile_artifacts = function (o) {
         var jdk_subdir = "jdk-" + data.version + "/fastdebug";
-        var jre_subdir = "jre-" + data.version + "/fastdebug";
+        var jdk_suffix = (o.jdk_suffix != null ? o.jdk_suffix : "tar.gz");
         var pf = o.platform
         return {
             artifacts: {
                 jdk: {
-                    local: "bundles/\\(jdk.*bin-debug.tar.gz\\)",
+                    local: "bundles/\\(jdk.*bin-debug." + jdk_suffix + "\\)",
                     remote: [
-                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-debug.tar.gz",
+                        "bundles/" + pf + "/jdk-" + data.version + "_" + pf + "_bin-debug." + jdk_suffix,
                         "bundles/" + pf + "/\\1"
                     ],
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
-                },
-                jre: {
-                    local: "bundles/\\(jre.*bin-debug.tar.gz\\)",
-                    remote: [
-                        "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin-debug.tar.gz",
-                        "bundles/" + pf + "/\\1"
-                    ],
-                    subdir: jre_subdir,
-                    exploded: "images/jre"
                 },
                 test: {
                     local: "bundles/\\(jdk.*bin-tests-debug.tar.gz\\)",
@@ -378,15 +351,6 @@ var getJibProfilesCommon = function (input, data) {
                     subdir: jdk_subdir,
                     exploded: "images/jdk"
                 },
-                jre_symbols: {
-                    local: "bundles/\\(jre.*bin-debug-symbols.tar.gz\\)",
-                    remote: [
-                        "bundles/" + pf + "/jre-" + data.version + "_" + pf + "_bin-debug-symbols.tar.gz",
-                        "bundles/" + pf + "/\\1"
-                    ],
-                    subdir: jre_subdir,
-                    exploded: "images/jre"
-                }
             }
         };
     };
@@ -487,6 +451,17 @@ var getJibProfilesProfiles = function (input, common, data) {
                 "--with-jvm-variants=server",
                 "--openjdk-target=aarch64-linux-gnu",
                 "--enable-headless-only"
+            ],
+        },
+
+        "linux-arm32": {
+            target_os: "linux",
+            target_cpu: "arm",
+            build_cpu: "x64",
+            dependencies: ["devkit", "autoconf", "build_devkit", "cups"],
+            configure_args: [
+                "--openjdk-target=arm-linux-gnueabihf", "--with-freetype=bundled",
+                "--with-abi-profile=arm-vfp-hflt", "--disable-warnings-as-errors"
             ],
         },
 
@@ -608,7 +583,6 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             platform: "osx-x64",
             jdk_subdir: "jdk-" + data.version +  ".jdk/Contents/Home",
-            jre_subdir: "jre-" + data.version +  ".jre/Contents/Home"
         },
         "solaris-x64": {
             platform: "solaris-x64",
@@ -618,12 +592,17 @@ var getJibProfilesProfiles = function (input, common, data) {
         },
         "windows-x64": {
             platform: "windows-x64",
+            jdk_suffix: "zip",
         },
         "windows-x86": {
             platform: "windows-x86",
+            jdk_suffix: "zip",
         },
        "linux-aarch64": {
             platform: "linux-aarch64",
+        },
+       "linux-arm32": {
+            platform: "linux-arm32",
         },
        "linux-arm64": {
             platform: "linux-arm64-vfp-hflt",
@@ -713,6 +692,14 @@ var getJibProfilesProfiles = function (input, common, data) {
             "\/jdk-", "/openjdk-",
             replaceAll("\/\\1", "/open\\1",
                        profiles[openName].artifacts["jdk"].remote));
+    });
+
+    // Enable ZGC in linux-x64-open builds
+    [ "linux-x64-open" ].forEach(function (name) {
+        var configureArgs = { configure_args: [ "--with-jvm-features=zgc" ] };
+        var debugName = name + common.debug_suffix;
+        profiles[name] = concatObjects(profiles[name], configureArgs);
+        profiles[debugName] = concatObjects(profiles[debugName], configureArgs);
     });
 
     // Profiles used to run tests. Used in JPRT and Mach 5.
@@ -829,7 +816,11 @@ var getJibProfilesDependencies = function (input, common) {
                     : "gcc7.3.0-Fedora27+1.0"),
         linux_arm: (input.profile != null && input.profile.indexOf("hflt") >= 0
                     ? "gcc-linaro-arm-linux-gnueabihf-raspbian-2012.09-20120921_linux+1.0"
-                    : "arm-linaro-4.7+1.0")
+                    : (input.profile.indexOf("arm32") >= 0
+                       ? "gcc7.3.0-Fedora27+1.0"
+                       : "arm-linaro-4.7+1.0"
+                       )
+                    )
     };
 
     var devkit_platform = (input.target_cpu == "x86"

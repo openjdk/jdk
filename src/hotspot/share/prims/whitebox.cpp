@@ -98,6 +98,7 @@
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
   do {                                                                 \
     JavaThread* THREAD = JavaThread::thread_from_jni_environment(env); \
+    THREAD->clear_pending_jni_exception_check();                       \
     if (HAS_PENDING_EXCEPTION) {                                       \
       return(value);                                                   \
     }                                                                  \
@@ -106,6 +107,7 @@
 #define CHECK_JNI_EXCEPTION(env)                                       \
   do {                                                                 \
     JavaThread* THREAD = JavaThread::thread_from_jni_environment(env); \
+    THREAD->clear_pending_jni_exception_check();                       \
     if (HAS_PENDING_EXCEPTION) {                                       \
       return;                                                          \
     }                                                                  \
@@ -345,7 +347,12 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
     ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
     return !psh->is_in_young(p);
   }
-#endif // INCLUDE_PARALLELGC
+#endif
+#if INCLUDE_ZGC
+  if (UseZGC) {
+    return Universe::heap()->is_in(p);
+  }
+#endif
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   return !gch->is_in_young(p);
 WB_END

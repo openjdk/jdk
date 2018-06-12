@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test TestGCLockerWithCMS
  * @key gc
- * @requires vm.gc.ConcMarkSweep
+ * @requires vm.gc.ConcMarkSweep & !vm.graal.enabled
  * @summary Stress CMS' GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
  * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseConcMarkSweepGC TestGCLockerWithCMS
  */

@@ -400,9 +400,16 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData* class_loader_data_or_null(oop loader);
   static ClassLoaderData* anonymous_class_loader_data(Handle loader);
 
-
+  // Returns Klass* of associated class loader, or NULL if associated loader is <bootstrap>.
+  // Also works if unloading.
   Klass* class_loader_klass() const { return _class_loader_klass; }
+
+  // Returns Name of associated class loader.
+  // Returns NULL if associated class loader is <bootstrap> or if no name has been set for
+  //   this loader.
+  // Also works if unloading.
   Symbol* class_loader_name() const { return _class_loader_name; }
+
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 };
 

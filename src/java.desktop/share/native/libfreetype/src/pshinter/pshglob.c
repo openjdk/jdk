@@ -227,8 +227,8 @@
   }
 
 
-  /* Re-read blue zones from the original fonts and store them into out */
-  /* private structure.  This function re-orders, sanitizes and         */
+  /* Re-read blue zones from the original fonts and store them into our */
+  /* private structure.  This function re-orders, sanitizes, and        */
   /* fuzz-expands the zones as well.                                    */
   static void
   psh_blues_set_zones( PSH_Blues  target,

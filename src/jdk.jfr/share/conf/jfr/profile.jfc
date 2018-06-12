@@ -614,6 +614,25 @@
       <setting name="enabled">true</setting>
     </event>
 
+    <event name="jdk.ZPageAllocation">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">10 ms</setting>
+    </event>
+
+    <event name="jdk.ZThreadPhase">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ZStatisticsCounter">
+      <setting name="threshold">10 ms</setting>
+      <setting name="enabled">true</setting>
+    </event>
+
+    <event name="jdk.ZStatisticsSampler">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">10 ms</setting>
+    </event>
 
 
 

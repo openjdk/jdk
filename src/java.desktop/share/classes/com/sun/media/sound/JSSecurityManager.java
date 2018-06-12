@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package com.sun.media.sound;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -52,16 +52,6 @@ final class JSSecurityManager {
     private JSSecurityManager() {
     }
 
-    /** Checks if the VM currently has a SecurityManager installed.
-     * Note that this may change over time. So the result of this method
-     * should not be cached.
-     *
-     * @return true if a SecurityManger is installed, false otherwise.
-     */
-    private static boolean hasSecurityManager() {
-        return (System.getSecurityManager() != null);
-    }
-
     static void checkRecordPermission() throws SecurityException {
         if(Printer.trace) Printer.trace("JSSecurityManager.checkRecordPermission()");
         SecurityManager sm = System.getSecurityManager();
@@ -70,69 +60,48 @@ final class JSSecurityManager {
         }
     }
 
-    /** Load properties from a file.
-        This method tries to load properties from the filename give into
-        the passed properties object.
-        If the file cannot be found or something else goes wrong,
-        the method silently fails.
-        @param properties The properties bundle to store the values of the
-        properties file.
-        @param filename The filename of the properties file to load. This
-        filename is interpreted as relative to the subdirectory "conf" in
-        the JRE directory.
+    /**
+     * Load properties from a file.
+     * <p>
+     * This method tries to load properties from the filename give into the
+     * passed properties object. If the file cannot be found or something else
+     * goes wrong, the method silently fails.
+     * <p>
+     * If the file referenced in "javax.sound.config.file" property exists and
+     * the user has an access to it, then it will be loaded, otherwise default
+     * configuration file "JAVA_HOME/conf/sound.properties" will be loaded.
+     *
+     * @param  properties the properties bundle to store the values of the
+     *         properties file
      */
-    static void loadProperties(final Properties properties,
-                               final String filename) {
-        if(hasSecurityManager()) {
-            try {
-                // invoke the privileged action using 1.2 security
-                PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
-                        @Override
-                        public Void run() {
-                            loadPropertiesImpl(properties, filename);
-                            return null;
-                        }
-                    };
-                AccessController.doPrivileged(action);
-                if(Printer.debug)Printer.debug("Loaded properties with JDK 1.2 security");
-            } catch (Exception e) {
-                if(Printer.debug)Printer.debug("Exception loading properties with JDK 1.2 security");
-                // try without using JDK 1.2 security
-                loadPropertiesImpl(properties, filename);
+    static void loadProperties(final Properties properties) {
+        final String customFile = AccessController.doPrivileged(
+                (PrivilegedAction<String>) () -> System.getProperty(
+                        "javax.sound.config.file"));
+        if (customFile != null) {
+            if (loadPropertiesImpl(properties, customFile)) {
+                return;
             }
-        } else {
-            // not JDK 1.2 security, assume we already have permission
-            loadPropertiesImpl(properties, filename);
         }
-    }
-
-    private static void loadPropertiesImpl(Properties properties,
-                                           String filename) {
-        if(Printer.trace)Printer.trace(">> JSSecurityManager: loadPropertiesImpl()");
-        String fname = System.getProperty("java.home");
-        try {
-            if (fname == null) {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            final String home = System.getProperty("java.home");
+            if (home == null) {
                 throw new Error("Can't find java.home ??");
             }
-            File f = new File(fname, "conf");
-            f = new File(f, filename);
-            fname = f.getCanonicalPath();
-            InputStream in = new FileInputStream(fname);
-            BufferedInputStream bin = new BufferedInputStream(in);
-            try {
-                properties.load(bin);
-            } finally {
-                if (in != null) {
-                    in.close();
-                }
-            }
-        } catch (Throwable t) {
-            if (Printer.trace) {
-                System.err.println("Could not load properties file \"" + fname + "\"");
-                t.printStackTrace();
-            }
+            loadPropertiesImpl(properties, home, "conf", "sound.properties");
+            return null;
+        });
+    }
+
+    private static boolean loadPropertiesImpl(final Properties properties,
+                                              String first, String... more) {
+        final Path fname = Paths.get(first, more);
+        try (final Reader reader = Files.newBufferedReader(fname)) {
+            properties.load(reader);
+            return true;
+        } catch (final Throwable t) {
+            return false;
         }
-        if(Printer.trace)Printer.trace("<< JSSecurityManager: loadPropertiesImpl() completed");
     }
 
     /** Create a Thread in the current ThreadGroup.

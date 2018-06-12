@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -508,14 +508,19 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
 
   julong was_any_env_enabled = state->thread_event_enable()->_event_enabled.get_bits();
   julong any_env_enabled = 0;
+  // JVMTI_EVENT_FRAME_POP can be disabled (in the case FRAME_POP_BIT is not set),
+  // but we need to set interp_only if some JvmtiEnvThreadState has frame pop set
+  // to clear the request
+  bool has_frame_pops = false;
 
   {
-    // This iteration will include JvmtiEnvThreadStates whoses environments
+    // This iteration will include JvmtiEnvThreadStates whose environments
     // have been disposed.  These JvmtiEnvThreadStates must not be filtered
     // as recompute must be called on them to disable their events,
     JvmtiEnvThreadStateIterator it(state);
     for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
       any_env_enabled |= recompute_env_thread_enabled(ets, state);
+      has_frame_pops |= ets->has_frame_pops();
     }
   }
 
@@ -523,21 +528,21 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
     // mark if event is truly enabled on this thread in any environment
     state->thread_event_enable()->_event_enabled.set_bits(any_env_enabled);
 
-    // compute interp_only mode
-    bool should_be_interp = (any_env_enabled & INTERP_EVENT_BITS) != 0;
-    bool is_now_interp = state->is_interp_only_mode();
-
-    if (should_be_interp != is_now_interp) {
-      if (should_be_interp) {
-        enter_interp_only_mode(state);
-      } else {
-        leave_interp_only_mode(state);
-      }
-    }
-
     // update the JavaThread cached value for thread-specific should_post_on_exceptions value
     bool should_post_on_exceptions = (any_env_enabled & SHOULD_POST_ON_EXCEPTIONS_BITS) != 0;
     state->set_should_post_on_exceptions(should_post_on_exceptions);
+  }
+
+  // compute interp_only mode
+  bool should_be_interp = (any_env_enabled & INTERP_EVENT_BITS) != 0 || has_frame_pops;
+  bool is_now_interp = state->is_interp_only_mode();
+
+  if (should_be_interp != is_now_interp) {
+    if (should_be_interp) {
+      enter_interp_only_mode(state);
+    } else {
+      leave_interp_only_mode(state);
+    }
   }
 
   return any_env_enabled;

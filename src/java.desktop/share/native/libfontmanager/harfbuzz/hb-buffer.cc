@@ -722,6 +722,7 @@ hb_buffer_create (void)
     return hb_buffer_get_empty ();
 
   buffer->max_len = HB_BUFFER_MAX_LEN_DEFAULT;
+  buffer->max_ops = HB_BUFFER_MAX_OPS_DEFAULT;
 
   buffer->reset ();
 
@@ -749,6 +750,7 @@ hb_buffer_get_empty (void)
     HB_BUFFER_REPLACEMENT_CODEPOINT_DEFAULT,
     HB_BUFFER_SCRATCH_FLAG_DEFAULT,
     HB_BUFFER_MAX_LEN_DEFAULT,
+    HB_BUFFER_MAX_OPS_DEFAULT,
 
     HB_BUFFER_CONTENT_TYPE_INVALID,
     HB_SEGMENT_PROPERTIES_DEFAULT,
@@ -1931,7 +1933,7 @@ hb_buffer_diff (hb_buffer_t *buffer,
       result |= HB_BUFFER_DIFF_FLAG_CODEPOINT_MISMATCH;
     if (buf_info->cluster != ref_info->cluster)
       result |= HB_BUFFER_DIFF_FLAG_CLUSTER_MISMATCH;
-    if ((buf_info->mask & HB_GLYPH_FLAG_DEFINED) != (ref_info->mask & HB_GLYPH_FLAG_DEFINED))
+    if ((buf_info->mask & ~ref_info->mask & HB_GLYPH_FLAG_DEFINED))
       result |= HB_BUFFER_DIFF_FLAG_GLYPH_FLAGS_MISMATCH;
     if (contains && ref_info->codepoint == dottedcircle_glyph)
       result |= HB_BUFFER_DIFF_FLAG_DOTTED_CIRCLE_PRESENT;

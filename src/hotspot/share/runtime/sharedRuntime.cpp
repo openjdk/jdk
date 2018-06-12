@@ -76,9 +76,6 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#if INCLUDE_G1GC
-#include "gc/g1/g1ThreadLocalData.hpp"
-#endif // INCLUDE_G1GC
 
 // Shared stub locations
 RuntimeStub*        SharedRuntime::_wrong_method_blob;
@@ -207,26 +204,6 @@ void SharedRuntime::print_ic_miss_histogram() {
   }
 }
 #endif // PRODUCT
-
-#if INCLUDE_G1GC
-
-// G1 write-barrier pre: executed before a pointer store.
-JRT_LEAF(void, SharedRuntime::g1_wb_pre(oopDesc* orig, JavaThread *thread))
-  if (orig == NULL) {
-    assert(false, "should be optimized out");
-    return;
-  }
-  assert(oopDesc::is_oop(orig, true /* ignore mark word */), "Error");
-  // store the original value that was in the field reference
-  G1ThreadLocalData::satb_mark_queue(thread).enqueue(orig);
-JRT_END
-
-// G1 write-barrier post: executed after a pointer store.
-JRT_LEAF(void, SharedRuntime::g1_wb_post(void* card_addr, JavaThread* thread))
-  G1ThreadLocalData::dirty_card_queue(thread).enqueue(card_addr);
-JRT_END
-
-#endif // INCLUDE_G1GC
 
 
 JRT_LEAF(jlong, SharedRuntime::lmul(jlong y, jlong x))
@@ -1105,6 +1082,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
   Bytecode_invoke bytecode(caller, bci);
   int bytecode_index = bytecode.index();
+  bc = bytecode.invoke_code();
 
   methodHandle attached_method = extract_attached_method(vfst);
   if (attached_method.not_null()) {
@@ -1118,6 +1096,11 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
       // Adjust invocation mode according to the attached method.
       switch (bc) {
+        case Bytecodes::_invokevirtual:
+          if (attached_method->method_holder()->is_interface()) {
+            bc = Bytecodes::_invokeinterface;
+          }
+          break;
         case Bytecodes::_invokeinterface:
           if (!attached_method->method_holder()->is_interface()) {
             bc = Bytecodes::_invokevirtual;
@@ -1133,9 +1116,9 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
           break;
       }
     }
-  } else {
-    bc = bytecode.invoke_code();
   }
+
+  assert(bc != Bytecodes::_illegal, "not initialized");
 
   bool has_receiver = bc != Bytecodes::_invokestatic &&
                       bc != Bytecodes::_invokedynamic &&

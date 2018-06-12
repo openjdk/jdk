@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,40 +33,26 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.font.TextAttribute;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.peer.ComponentPeer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.InputStreamReader;
-import java.io.IOException;
-import java.text.AttributedCharacterIterator;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.security.AccessController;
 import java.util.Locale;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentHashMap;
-import sun.awt.AppContext;
+
 import sun.awt.DisplayChangedListener;
-import sun.awt.FontConfiguration;
 import sun.awt.SunDisplayChanger;
-import sun.font.CompositeFontDescriptor;
-import sun.font.Font2D;
 import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.font.FontManagerForSGE;
-import sun.font.NativeFont;
-import java.security.AccessController;
+import sun.java2d.pipe.Region;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -388,5 +374,49 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
         } catch (NumberFormatException ignored) {
             return -1;
         }
+    }
+
+    /**
+     * Returns the graphics configuration which bounds contain the given point.
+     *
+     * @param  current the default configuration which is checked in the first
+     *         place
+     * @param  x the x coordinate of the given point
+     * @param  y the y coordinate of the given point
+     * @return the graphics configuration
+     */
+    public static GraphicsConfiguration getGraphicsConfigurationAtPoint(
+            GraphicsConfiguration current, double x, double y) {
+        if (current.getBounds().contains(x, y)) {
+            return current;
+        }
+        GraphicsEnvironment env = getLocalGraphicsEnvironment();
+        for (GraphicsDevice device : env.getScreenDevices()) {
+            GraphicsConfiguration config = device.getDefaultConfiguration();
+            if (config.getBounds().contains(x, y)) {
+                return config;
+            }
+        }
+        return current;
+    }
+
+    /**
+     * Converts coordinates from the user's space to the device space using
+     * appropriate device transformation.
+     *
+     * @param  x coordinate in the user space
+     * @param  y coordinate in the user space
+     * @return the point which uses device space(pixels)
+     */
+    public static Point convertToDeviceSpace(double x, double y) {
+        GraphicsConfiguration gc = getLocalGraphicsEnvironment()
+                        .getDefaultScreenDevice().getDefaultConfiguration();
+        gc = getGraphicsConfigurationAtPoint(gc, x, y);
+
+        AffineTransform tx = gc.getDefaultTransform();
+        x = Region.clipRound(x * tx.getScaleX());
+        y = Region.clipRound(y * tx.getScaleY());
+
+        return new Point((int) x, (int) y);
     }
 }

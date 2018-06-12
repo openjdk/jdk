@@ -78,7 +78,7 @@ void G1FullGCReferenceProcessingExecutor::execute(STWGCTimer* timer, G1FullGCTra
   G1FullGCMarker* marker = _collector->marker(0);
   G1IsAliveClosure is_alive(_collector->mark_bitmap());
   G1FullKeepAliveClosure keep_alive(marker);
-  ReferenceProcessorPhaseTimes pt(timer, _reference_processor->num_queues());
+  ReferenceProcessorPhaseTimes pt(timer, _reference_processor->max_num_queues());
   AbstractRefProcTaskExecutor* executor = _reference_processor->processing_is_mt() ? this : NULL;
 
   // Process discovered references, use this executor if multi-threaded

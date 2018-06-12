@@ -76,12 +76,8 @@ void hb_sort_r(void *base, size_t nel, size_t width,
 
 
 /* swap a, b iff a>b */
-#ifndef __SUNPRO_CC
 /* __restrict is same as restrict but better support on old machines */
 static int sort_r_cmpswap(char *__restrict a, char *__restrict b, size_t w,
-#else
-static int sort_r_cmpswap(char *a, char *b, size_t w,
-#endif
                           int (*compar)(const void *_a, const void *_b,
                                         void *_arg),
                           void *arg)

@@ -26,13 +26,13 @@ package org.graalvm.compiler.hotspot.aarch64;
 import org.graalvm.compiler.core.common.spi.ForeignCallsProvider;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.graph.Node;
-import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.graalvm.compiler.hotspot.HotSpotGraalRuntimeProvider;
 import org.graalvm.compiler.hotspot.meta.DefaultHotSpotLoweringProvider;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
 import org.graalvm.compiler.hotspot.meta.HotSpotRegistersProvider;
-import org.graalvm.compiler.nodes.calc.FixedBinaryNode;
 import org.graalvm.compiler.nodes.calc.FloatConvertNode;
+import org.graalvm.compiler.nodes.calc.IntegerDivRemNode;
 import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.options.OptionValues;
@@ -62,8 +62,8 @@ public class AArch64HotSpotLoweringProvider extends DefaultHotSpotLoweringProvid
 
     @Override
     public void lower(Node n, LoweringTool tool) {
-        if (n instanceof FixedBinaryNode) {
-            integerArithmeticSnippets.lower((FixedBinaryNode) n, tool);
+        if (n instanceof IntegerDivRemNode) {
+            integerArithmeticSnippets.lower((IntegerDivRemNode) n, tool);
         } else if (n instanceof RemNode) {
             floatArithmeticSnippets.lower((RemNode) n, tool);
         } else if (n instanceof FloatConvertNode) {

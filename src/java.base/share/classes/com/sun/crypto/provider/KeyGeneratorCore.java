@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,16 +111,20 @@ final class KeyGeneratorCore {
         protected HmacSHA2KG(String algoName, int len) {
             core = new KeyGeneratorCore(algoName, len);
         }
+        @Override
         protected void engineInit(SecureRandom random) {
             core.implInit(random);
         }
+        @Override
         protected void engineInit(AlgorithmParameterSpec params,
                 SecureRandom random) throws InvalidAlgorithmParameterException {
             core.implInit(params, random);
         }
+        @Override
         protected void engineInit(int keySize, SecureRandom random) {
             core.implInit(keySize, random);
         }
+        @Override
         protected SecretKey engineGenerateKey() {
             return core.implGenerateKey();
         }
@@ -153,13 +157,16 @@ final class KeyGeneratorCore {
         public RC2KeyGenerator() {
             core = new KeyGeneratorCore("RC2", 128);
         }
+        @Override
         protected void engineInit(SecureRandom random) {
             core.implInit(random);
         }
+        @Override
         protected void engineInit(AlgorithmParameterSpec params,
                 SecureRandom random) throws InvalidAlgorithmParameterException {
             core.implInit(params, random);
         }
+        @Override
         protected void engineInit(int keySize, SecureRandom random) {
             if ((keySize < 40) || (keySize > 1024)) {
                 throw new InvalidParameterException("Key length for RC2"
@@ -167,6 +174,7 @@ final class KeyGeneratorCore {
             }
             core.implInit(keySize, random);
         }
+        @Override
         protected SecretKey engineGenerateKey() {
             return core.implGenerateKey();
         }
@@ -178,13 +186,16 @@ final class KeyGeneratorCore {
         public ARCFOURKeyGenerator() {
             core = new KeyGeneratorCore("ARCFOUR", 128);
         }
+        @Override
         protected void engineInit(SecureRandom random) {
             core.implInit(random);
         }
+        @Override
         protected void engineInit(AlgorithmParameterSpec params,
                 SecureRandom random) throws InvalidAlgorithmParameterException {
             core.implInit(params, random);
         }
+        @Override
         protected void engineInit(int keySize, SecureRandom random) {
             if ((keySize < 40) || (keySize > 1024)) {
                 throw new InvalidParameterException("Key length for ARCFOUR"
@@ -192,9 +203,38 @@ final class KeyGeneratorCore {
             }
             core.implInit(keySize, random);
         }
+        @Override
         protected SecretKey engineGenerateKey() {
             return core.implGenerateKey();
         }
     }
 
+    // nested static class for the ChaCha20 key generator
+    public static final class ChaCha20KeyGenerator extends KeyGeneratorSpi {
+        private final KeyGeneratorCore core;
+        public ChaCha20KeyGenerator() {
+            core = new KeyGeneratorCore("ChaCha20", 256);
+        }
+        @Override
+        protected void engineInit(SecureRandom random) {
+            core.implInit(random);
+        }
+        @Override
+        protected void engineInit(AlgorithmParameterSpec params,
+                SecureRandom random) throws InvalidAlgorithmParameterException {
+            core.implInit(params, random);
+        }
+        @Override
+        protected void engineInit(int keySize, SecureRandom random) {
+            if (keySize != 256) {
+                throw new InvalidParameterException(
+                        "Key length for ChaCha20 must be 256 bits");
+            }
+            core.implInit(keySize, random);
+        }
+        @Override
+        protected SecretKey engineGenerateKey() {
+            return core.implGenerateKey();
+        }
+    }
 }

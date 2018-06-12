@@ -136,7 +136,7 @@ public class TestRTMAbortRatio {
         public void lock(boolean abort) {
             synchronized(monitor) {
                 if (abort) {
-                    Test.UNSAFE.addressSize();
+                    Test.UNSAFE.pageSize();
                 }
             }
         }

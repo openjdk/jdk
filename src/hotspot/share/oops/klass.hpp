@@ -244,7 +244,6 @@ protected:
   void set_java_mirror(Handle m);
 
   oop archived_java_mirror_raw() NOT_CDS_JAVA_HEAP_RETURN_(NULL); // no GC barrier
-  oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(NULL);     // accessor with GC barrier
   void set_archived_java_mirror_raw(oop m) NOT_CDS_JAVA_HEAP_RETURN; // no GC barrier
 
   // Temporary mirror switch used by RedefineClasses

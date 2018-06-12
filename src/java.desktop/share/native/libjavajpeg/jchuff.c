@@ -805,8 +805,11 @@ jpeg_gen_optimal_table (j_compress_ptr cinfo, JHUFF_TBL * htbl, long freq[])
   for (i = MAX_CLEN; i > 16; i--) {
     while (bits[i] > 0) {
       j = i - 2;                /* find length of new prefix to be used */
-      while (bits[j] == 0)
+      while (bits[j] == 0) {
+        if (j == 0)
+          ERREXIT(cinfo, JERR_HUFF_CLEN_OVERFLOW);
         j--;
+      }
 
       bits[i] -= 2;             /* remove two symbols */
       bits[i-1]++;              /* one goes in this length */

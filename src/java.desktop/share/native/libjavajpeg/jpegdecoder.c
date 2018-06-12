@@ -569,11 +569,7 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
   /* select buffered-image mode if it is a progressive JPEG only */
   buffered_mode = cinfo.buffered_image = jpeg_has_multiple_scans(&cinfo);
   grayscale = (cinfo.out_color_space == JCS_GRAYSCALE);
-#ifdef YCCALPHA
-  hasalpha = (cinfo.out_color_space == JCS_RGBA);
-#else
   hasalpha = 0;
-#endif
   /* We can ignore the return value from jpeg_read_header since
    *   (a) suspension is not possible with the stdio data source, and
    *                                    (nor with the Java input source)

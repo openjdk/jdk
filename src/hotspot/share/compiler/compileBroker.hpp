@@ -219,6 +219,8 @@ class CompileBroker: AllStatic {
   static int _total_native_compile_count;
   static int _total_osr_compile_count;
   static int _total_standard_compile_count;
+  static int _total_compiler_stopped_count;
+  static int _total_compiler_restarted_count;
   static int _sum_osr_bytes_compiled;
   static int _sum_standard_bytes_compiled;
   static int _sum_nmethod_size;
@@ -338,7 +340,15 @@ public:
   static bool set_should_compile_new_jobs(jint new_state) {
     // Return success if the current caller set it
     jint old = Atomic::cmpxchg(new_state, &_should_compile_new_jobs, 1-new_state);
-    return (old == (1-new_state));
+    bool success = (old == (1-new_state));
+    if (success) {
+      if (new_state == run_compilation) {
+        _total_compiler_restarted_count++;
+      } else {
+        _total_compiler_stopped_count++;
+      }
+    }
+    return success;
   }
 
   static void disable_compilation_forever() {
@@ -393,18 +403,20 @@ public:
 
   static CompileLog* get_log(CompilerThread* ct);
 
-  static int get_total_compile_count() {          return _total_compile_count; }
-  static int get_total_bailout_count() {          return _total_bailout_count; }
-  static int get_total_invalidated_count() {      return _total_invalidated_count; }
-  static int get_total_native_compile_count() {   return _total_native_compile_count; }
-  static int get_total_osr_compile_count() {      return _total_osr_compile_count; }
-  static int get_total_standard_compile_count() { return _total_standard_compile_count; }
-  static int get_sum_osr_bytes_compiled() {       return _sum_osr_bytes_compiled; }
-  static int get_sum_standard_bytes_compiled() {  return _sum_standard_bytes_compiled; }
-  static int get_sum_nmethod_size() {             return _sum_nmethod_size;}
-  static int get_sum_nmethod_code_size() {        return _sum_nmethod_code_size; }
-  static long get_peak_compilation_time() {       return _peak_compilation_time; }
-  static long get_total_compilation_time() {      return _t_total_compilation.milliseconds(); }
+  static int get_total_compile_count() {            return _total_compile_count; }
+  static int get_total_bailout_count() {            return _total_bailout_count; }
+  static int get_total_invalidated_count() {        return _total_invalidated_count; }
+  static int get_total_native_compile_count() {     return _total_native_compile_count; }
+  static int get_total_osr_compile_count() {        return _total_osr_compile_count; }
+  static int get_total_standard_compile_count() {   return _total_standard_compile_count; }
+  static int get_total_compiler_stopped_count() {   return _total_compiler_stopped_count; }
+  static int get_total_compiler_restarted_count() { return _total_compiler_restarted_count; }
+  static int get_sum_osr_bytes_compiled() {         return _sum_osr_bytes_compiled; }
+  static int get_sum_standard_bytes_compiled() {    return _sum_standard_bytes_compiled; }
+  static int get_sum_nmethod_size() {               return _sum_nmethod_size;}
+  static int get_sum_nmethod_code_size() {          return _sum_nmethod_code_size; }
+  static long get_peak_compilation_time() {         return _peak_compilation_time; }
+  static long get_total_compilation_time() {        return _t_total_compilation.milliseconds(); }
 
   // Log that compilation profiling is skipped because metaspace is full.
   static void log_metaspace_failure();

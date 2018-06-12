@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,7 @@
  * running applets. For example, the applet context could be a Web browser or an
  * applet development environment.
  * <p>
- * The APIs in this package are all deprecated. Alternative technologies such as
- * Java Web Start or installable applications should be used instead.
- * See <a href="http://openjdk.java.net/jeps/289">JEP 289</a> and
- * the Oracle White Paper
- * <a href="http://www.oracle.com/technetwork/java/javase/migratingfromapplets-2872444.pdf">
- * "Migrating from Java Applets to plugin-free Java technologies"</a> for more
- * information.
+ * The APIs in this package are all deprecated without replacement.
  *
  * @since 1.0
  */

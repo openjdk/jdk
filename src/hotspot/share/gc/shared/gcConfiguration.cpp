@@ -43,6 +43,10 @@ GCName GCConfiguration::young_collector() const {
     return ParNew;
   }
 
+  if (UseZGC) {
+    return NA;
+  }
+
   return DefNew;
 }
 
@@ -57,6 +61,10 @@ GCName GCConfiguration::old_collector() const {
 
   if (UseParallelOldGC) {
     return ParallelOld;
+  }
+
+  if (UseZGC) {
+    return Z;
   }
 
   return SerialOld;

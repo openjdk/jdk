@@ -26,7 +26,7 @@
  * @bug 6942326
  * @summary x86 code in string_indexof() could read beyond reserved heap space
  *
- * @run main/othervm/timeout=300 -Xmx32m -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=300 -Xmx128m -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=exclude,compiler.codegen.Test6942326::main
  *      -XX:CompileCommand=exclude,compiler.codegen.Test6942326::test_varsub_indexof
  *      -XX:CompileCommand=exclude,compiler.codegen.Test6942326::test_varstr_indexof
@@ -414,4 +414,3 @@ public class Test6942326 {
         public int indexOf(String str) { return str.indexOf(constr); }
     }
 }
-

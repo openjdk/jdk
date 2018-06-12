@@ -291,7 +291,7 @@ public class Attr extends JCTree.Visitor {
             ((v.flags() & HASINIT) != 0
              ||
              !((base == null ||
-               (base.hasTag(IDENT) && TreeInfo.name(base) == names._this)) &&
+               TreeInfo.isThisQualifier(base)) &&
                isAssignableAsBlankFinal(v, env)))) {
             if (v.isResourceVariable()) { //TWR resource
                 log.error(pos, Errors.TryResourceMayNotBeAssigned(v));
@@ -2562,7 +2562,9 @@ public class Attr extends JCTree.Visitor {
                     Type argType = arityMismatch ?
                             syms.errType :
                             actuals.head;
-                    setSyntheticVariableType(params.head, argType);
+                    if (params.head.isImplicitlyTyped()) {
+                        setSyntheticVariableType(params.head, argType);
+                    }
                     params.head.sym = null;
                     actuals = actuals.isEmpty() ?
                             actuals :

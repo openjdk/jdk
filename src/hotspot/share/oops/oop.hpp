@@ -30,6 +30,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/access.hpp"
 #include "oops/metadata.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
 // oopDesc is the top baseclass for objects classes. The {name}Desc classes describe
@@ -72,7 +73,7 @@ class oopDesc {
 
   inline void release_set_mark(markOop m);
   inline markOop cas_set_mark(markOop new_mark, markOop old_mark);
-  inline markOop cas_set_mark_raw(markOop new_mark, markOop old_mark);
+  inline markOop cas_set_mark_raw(markOop new_mark, markOop old_mark, atomic_memory_order order = memory_order_conservative);
 
   // Used only to re-initialize the mark word (e.g., of promoted
   // objects during a GC) -- requires a valid klass pointer
@@ -259,7 +260,7 @@ class oopDesc {
   inline bool is_forwarded() const;
 
   inline void forward_to(oop p);
-  inline bool cas_forward_to(oop p, markOop compare);
+  inline bool cas_forward_to(oop p, markOop compare, atomic_memory_order order = memory_order_conservative);
 
   // Like "forward_to", but inserts the forwarding pointer atomically.
   // Exactly one thread succeeds in inserting the forwarding pointer, and
@@ -268,6 +269,7 @@ class oopDesc {
   inline oop forward_to_atomic(oop p);
 
   inline oop forwardee() const;
+  inline oop forwardee_acquire() const;
 
   // Age of object during scavenge
   inline uint age() const;

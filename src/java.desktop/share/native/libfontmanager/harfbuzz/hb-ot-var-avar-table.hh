@@ -133,8 +133,8 @@ struct avar
   protected:
   FixedVersion<>version;        /* Version of the avar table
                                  * initially set to 0x00010000u */
-  USHORT        reserved;       /* This field is permanently reserved. Set to 0. */
-  USHORT        axisCount;      /* The number of variation axes in the font. This
+  HBUINT16      reserved;       /* This field is permanently reserved. Set to 0. */
+  HBUINT16      axisCount;      /* The number of variation axes in the font. This
                                  * must be the same number as axisCount in the
                                  * 'fvar' table. */
   SegmentMaps   axisSegmentMapsZ;

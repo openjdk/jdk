@@ -1419,7 +1419,8 @@ class Character implements java.io.Serializable, Comparable<Character> {
                              "YIRADICALS");
 
         /**
-         * Constant for the "Cyrillic Supplementary" Unicode character block.
+         * Constant for the "Cyrillic Supplement" Unicode character block.
+         * This block was previously known as the "Cyrillic Supplementary" block.
          * @since 1.5
          */
         public static final UnicodeBlock CYRILLIC_SUPPLEMENTARY =

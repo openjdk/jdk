@@ -80,6 +80,9 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
     public final boolean foldStableValues = getFlag("FoldStableValues", Boolean.class);
     public final int maxVectorSize = getFlag("MaxVectorSize", Integer.class);
 
+    public final boolean verifyBeforeGC = getFlag("VerifyBeforeGC", Boolean.class);
+    public final boolean verifyAfterGC = getFlag("VerifyAfterGC", Boolean.class);
+
     public final boolean useTLAB = getFlag("UseTLAB", Boolean.class);
     public final boolean useBiasedLocking = getFlag("UseBiasedLocking", Boolean.class);
     public final boolean usePopCountInstruction = getFlag("UsePopCountInstruction", Boolean.class);

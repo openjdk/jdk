@@ -21,13 +21,16 @@
  * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  *
- * Google Author(s): Behdad Esfahbod
+ * Google Author(s): Behdad Esfahbod, Roderick Sheeter
  */
 
 #ifndef HB_OT_HMTX_TABLE_HH
 #define HB_OT_HMTX_TABLE_HH
 
 #include "hb-open-type-private.hh"
+#include "hb-ot-hhea-table.hh"
+#include "hb-ot-os2-table.hh"
+#include "hb-ot-var-hvar-table.hh"
 
 
 namespace OT {
@@ -50,11 +53,9 @@ struct LongMetric
   DEFINE_SIZE_STATIC (4);
 };
 
+template <typename T, typename H>
 struct hmtxvmtx
 {
-  static const hb_tag_t hmtxTag = HB_OT_TAG_hmtx;
-  static const hb_tag_t vmtxTag = HB_OT_TAG_vmtx;
-
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -63,7 +64,228 @@ struct hmtxvmtx
     return_trace (true);
   }
 
-  public:
+
+  inline bool subset_update_header (hb_subset_plan_t *plan,
+                                    unsigned int num_hmetrics) const
+  {
+    hb_blob_t *src_blob = OT::Sanitizer<H> ().sanitize (plan->source->reference_table (H::tableTag));
+    hb_blob_t *dest_blob = hb_blob_copy_writable_or_fail(src_blob);
+    hb_blob_destroy (src_blob);
+
+    if (unlikely (!dest_blob)) {
+      return false;
+    }
+
+    unsigned int length;
+    H *table = (H *) hb_blob_get_data (dest_blob, &length);
+    table->numberOfLongMetrics.set (num_hmetrics);
+
+    bool result = hb_subset_plan_add_table (plan, H::tableTag, dest_blob);
+    hb_blob_destroy (dest_blob);
+
+    return result;
+  }
+
+  inline bool subset (hb_subset_plan_t *plan) const
+  {
+    typename T::accelerator_t _mtx;
+    _mtx.init (plan->source);
+
+    /* All the trailing glyphs with the same advance can use one LongMetric
+     * and just keep LSB */
+    hb_prealloced_array_t<hb_codepoint_t> &gids = plan->gids_to_retain_sorted;
+    unsigned int num_advances = gids.len;
+    unsigned int last_advance = _mtx.get_advance (gids[num_advances - 1]);
+    while (num_advances > 1
+        && last_advance == _mtx.get_advance (gids[num_advances - 2]))
+    {
+      num_advances--;
+    }
+
+    /* alloc the new table */
+    size_t dest_sz = num_advances * 4
+                  + (gids.len - num_advances) * 2;
+    void *dest = (void *) malloc (dest_sz);
+    if (unlikely (!dest))
+    {
+      return false;
+    }
+    DEBUG_MSG(SUBSET, nullptr, "%c%c%c%c in src has %d advances, %d lsbs", HB_UNTAG(T::tableTag), _mtx.num_advances, _mtx.num_metrics - _mtx.num_advances);
+    DEBUG_MSG(SUBSET, nullptr, "%c%c%c%c in dest has %d advances, %d lsbs, %u bytes", HB_UNTAG(T::tableTag), num_advances, gids.len - num_advances, (unsigned int) dest_sz);
+
+    const char *source_table = hb_blob_get_data (_mtx.blob, nullptr);
+    // Copy everything over
+    LongMetric * old_metrics = (LongMetric *) source_table;
+    FWORD *lsbs = (FWORD *) (old_metrics + _mtx.num_advances);
+    char * dest_pos = (char *) dest;
+    for (unsigned int i = 0; i < gids.len; i++)
+    {
+      /* the last metric or the one for gids[i] */
+      LongMetric *src_metric = old_metrics + MIN ((hb_codepoint_t) _mtx.num_advances - 1, gids[i]);
+      if (gids[i] < _mtx.num_advances)
+      {
+        /* src is a LongMetric */
+        if (i < num_advances)
+        {
+          /* dest is a LongMetric, copy it */
+          *((LongMetric *) dest_pos) = *src_metric;
+        }
+        else
+        {
+          /* dest just lsb */
+          *((FWORD *) dest_pos) = src_metric->lsb;
+        }
+      }
+      else
+      {
+        FWORD src_lsb = *(lsbs + gids[i] - _mtx.num_advances);
+        if (i < num_advances)
+        {
+          /* dest needs a full LongMetric */
+          LongMetric *metric = (LongMetric *)dest_pos;
+          metric->advance = src_metric->advance;
+          metric->lsb = src_lsb;
+        }
+        else
+        {
+          /* dest just needs an lsb */
+          *((FWORD *) dest_pos) = src_lsb;
+        }
+      }
+      dest_pos += (i < num_advances ? 4 : 2);
+    }
+    _mtx.fini ();
+
+    // Amend header num hmetrics
+    if (unlikely (!subset_update_header (plan, num_advances)))
+    {
+      free (dest);
+      return false;
+    }
+
+    hb_blob_t *result = hb_blob_create ((const char *)dest,
+                                        dest_sz,
+                                        HB_MEMORY_MODE_READONLY,
+                                        dest,
+                                        free);
+    bool success = hb_subset_plan_add_table (plan, T::tableTag, result);
+    hb_blob_destroy (result);
+    return success;
+  }
+
+  struct accelerator_t
+  {
+    friend struct hmtxvmtx;
+
+    inline void init (hb_face_t *face,
+                      unsigned int default_advance_ = 0)
+    {
+      default_advance = default_advance_ ? default_advance_ : hb_face_get_upem (face);
+
+      bool got_font_extents = false;
+      if (T::os2Tag)
+      {
+        hb_blob_t *os2_blob = Sanitizer<os2> ().sanitize (face->reference_table (T::os2Tag));
+        const os2 *os2_table = Sanitizer<os2>::lock_instance (os2_blob);
+#define USE_TYPO_METRICS (1u<<7)
+        if (0 != (os2_table->fsSelection & USE_TYPO_METRICS))
+        {
+          ascender = os2_table->sTypoAscender;
+          descender = os2_table->sTypoDescender;
+          line_gap = os2_table->sTypoLineGap;
+          got_font_extents = (ascender | descender) != 0;
+        }
+        hb_blob_destroy (os2_blob);
+      }
+
+      hb_blob_t *_hea_blob = Sanitizer<H> ().sanitize (face->reference_table (H::tableTag));
+      const H *_hea_table = Sanitizer<H>::lock_instance (_hea_blob);
+      num_advances = _hea_table->numberOfLongMetrics;
+      if (!got_font_extents)
+      {
+        ascender = _hea_table->ascender;
+        descender = _hea_table->descender;
+        line_gap = _hea_table->lineGap;
+        got_font_extents = (ascender | descender) != 0;
+      }
+      hb_blob_destroy (_hea_blob);
+
+      has_font_extents = got_font_extents;
+
+      blob = Sanitizer<hmtxvmtx> ().sanitize (face->reference_table (T::tableTag));
+
+      /* Cap num_metrics() and num_advances() based on table length. */
+      unsigned int len = hb_blob_get_length (blob);
+      if (unlikely (num_advances * 4 > len))
+        num_advances = len / 4;
+      num_metrics = num_advances + (len - 4 * num_advances) / 2;
+
+      /* We MUST set num_metrics to zero if num_advances is zero.
+       * Our get_advance() depends on that. */
+      if (unlikely (!num_advances))
+      {
+        num_metrics = num_advances = 0;
+        hb_blob_destroy (blob);
+        blob = hb_blob_get_empty ();
+      }
+      table = Sanitizer<hmtxvmtx>::lock_instance (blob);
+
+      var_blob = Sanitizer<HVARVVAR> ().sanitize (face->reference_table (T::variationsTag));
+      var_table = Sanitizer<HVARVVAR>::lock_instance (var_blob);
+    }
+
+    inline void fini (void)
+    {
+      hb_blob_destroy (blob);
+      hb_blob_destroy (var_blob);
+    }
+
+    inline unsigned int get_advance (hb_codepoint_t  glyph) const
+    {
+      if (unlikely (glyph >= num_metrics))
+      {
+        /* If num_metrics is zero, it means we don't have the metrics table
+         * for this direction: return default advance.  Otherwise, it means that the
+         * glyph index is out of bound: return zero. */
+        if (num_metrics)
+          return 0;
+        else
+          return default_advance;
+      }
+
+      return table->longMetric[MIN (glyph, (uint32_t) num_advances - 1)].advance;
+    }
+
+    inline unsigned int get_advance (hb_codepoint_t  glyph,
+                                     hb_font_t      *font) const
+    {
+      unsigned int advance = get_advance (glyph);
+      if (likely(glyph < num_metrics))
+      {
+        advance += (font->num_coords ? var_table->get_advance_var (glyph, font->coords, font->num_coords) : 0); // TODO Optimize?!
+      }
+      return advance;
+    }
+
+    public:
+    bool has_font_extents;
+    unsigned short ascender;
+    unsigned short descender;
+    unsigned short line_gap;
+
+    protected:
+    unsigned int num_metrics;
+    unsigned int num_advances;
+    unsigned int default_advance;
+
+    private:
+    const hmtxvmtx *table;
+    hb_blob_t *blob;
+    const HVARVVAR *var_table;
+    hb_blob_t *var_blob;
+  };
+
+  protected:
   LongMetric    longMetric[VAR];        /* Paired advance width and leading
                                          * bearing values for each glyph. The
                                          * value numOfHMetrics comes from
@@ -72,7 +294,7 @@ struct hmtxvmtx
                                          * be in the array, but that entry is
                                          * required. The last entry applies to
                                          * all subsequent glyphs. */
-  FWORD         leadingBearingX[VAR];   /* Here the advance is assumed
+/*FWORD         leadingBearingX[VAR];*/ /* Here the advance is assumed
                                          * to be the same as the advance
                                          * for the last entry above. The
                                          * number of entries in this array is
@@ -86,14 +308,18 @@ struct hmtxvmtx
                                          * font to vary the side bearing
                                          * values for each glyph. */
   public:
-  DEFINE_SIZE_ARRAY2 (0, longMetric, leadingBearingX);
+  DEFINE_SIZE_ARRAY (0, longMetric);
 };
 
-struct hmtx : hmtxvmtx {
+struct hmtx : hmtxvmtx<hmtx, hhea> {
   static const hb_tag_t tableTag        = HB_OT_TAG_hmtx;
+  static const hb_tag_t variationsTag   = HB_OT_TAG_HVAR;
+  static const hb_tag_t os2Tag          = HB_OT_TAG_os2;
 };
-struct vmtx : hmtxvmtx {
+struct vmtx : hmtxvmtx<vmtx, vhea> {
   static const hb_tag_t tableTag        = HB_OT_TAG_vmtx;
+  static const hb_tag_t variationsTag   = HB_OT_TAG_VVAR;
+  static const hb_tag_t os2Tag          = HB_TAG_NONE;
 };
 
 } /* namespace OT */

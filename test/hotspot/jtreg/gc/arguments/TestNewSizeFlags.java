@@ -26,6 +26,7 @@
  * @key gc
  * @bug 8025166
  * @summary Verify that young gen size conforms values specified by NewSize, MaxNewSize and Xmn options
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

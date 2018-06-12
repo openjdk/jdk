@@ -606,7 +606,7 @@ abstract class GraphProtocol<Graph, Node, NodeClass, Edges, Block, ResolvedJavaM
                             throw new IOException(ex);
                         }
                         if (uri == null) {
-                            throw new IOException("No URI for " + loc);
+                            continue;
                         }
                         String l = findLocationLanguage(loc);
                         if (l == null) {

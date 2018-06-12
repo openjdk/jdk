@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.FileDescriptor;
 import java.util.Set;
 import java.util.HashSet;
 import sun.net.ext.ExtendedSocketOptions;
+import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
 
 /*
  * On Unix systems we simply delegate to native methods.
@@ -90,7 +91,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     protected Set<SocketOption<?>> supportedOptions() {
         HashSet<SocketOption<?>> options = new HashSet<>(super.supportedOptions());
-        addExtSocketOptions(extendedOptions.options(), options);
+        addExtSocketOptions(ExtendedSocketOptions.options(SOCK_STREAM), options);
         return options;
     }
 

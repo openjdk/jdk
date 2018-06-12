@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -56,13 +56,12 @@
 package jdk.internal.joptsimple;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.StringTokenizer;
 
 import static java.util.Collections.*;
+import static java.util.Objects.*;
 
-import static jdk.internal.joptsimple.internal.Objects.*;
 import static jdk.internal.joptsimple.internal.Reflection.*;
 import static jdk.internal.joptsimple.internal.Strings.*;
 
@@ -88,12 +87,13 @@ import static jdk.internal.joptsimple.internal.Strings.*;
 public abstract class ArgumentAcceptingOptionSpec<V> extends AbstractOptionSpec<V> {
     private static final char NIL_VALUE_SEPARATOR = '\u0000';
 
-    private boolean optionRequired;
     private final boolean argumentRequired;
+    private final List<V> defaultValues = new ArrayList<>();
+
+    private boolean optionRequired;
     private ValueConverter<V> converter;
     private String argumentDescription = "";
     private String valueSeparator = String.valueOf( NIL_VALUE_SEPARATOR );
-    private final List<V> defaultValues = new ArrayList<V>();
 
     ArgumentAcceptingOptionSpec( String option, boolean argumentRequired ) {
         super( option );
@@ -101,7 +101,7 @@ public abstract class ArgumentAcceptingOptionSpec<V> extends AbstractOptionSpec<
         this.argumentRequired = argumentRequired;
     }
 
-    ArgumentAcceptingOptionSpec( Collection<String> options, boolean argumentRequired, String description ) {
+    ArgumentAcceptingOptionSpec( List<String> options, boolean argumentRequired, String description ) {
         super( options, description );
 
         this.argumentRequired = argumentRequired;
@@ -182,7 +182,7 @@ public abstract class ArgumentAcceptingOptionSpec<V> extends AbstractOptionSpec<
      *   </code>
      * </pre>
      *
-     * <p>Then {@code options.valuesOf( "z" )} would yield the list {@code [foo, bar, baz, fizz, buzz]}.</p>
+     * <p>Then <code>options.valuesOf( "z" )</code> would yield the list {@code [foo, bar, baz, fizz, buzz]}.</p>
      *
      * <p>You cannot use Unicode U+0000 as the separator.</p>
      *
@@ -211,7 +211,7 @@ public abstract class ArgumentAcceptingOptionSpec<V> extends AbstractOptionSpec<
      *   </code>
      * </pre>
      *
-     * <p>Then {@code options.valuesOf( "z" )} would yield the list {@code [foo, bar, baz, fizz, buzz]}.</p>
+     * <p>Then <code>options.valuesOf( "z" )</code> would yield the list {@code [foo, bar, baz, fizz, buzz]}.</p>
      *
      * <p>You cannot use Unicode U+0000 in the separator.</p>
      *
@@ -236,8 +236,9 @@ public abstract class ArgumentAcceptingOptionSpec<V> extends AbstractOptionSpec<
      * @throws NullPointerException if {@code value}, {@code values}, or any elements of {@code values} are
      * {@code null}
      */
-    @SuppressWarnings("unchecked")
-    public ArgumentAcceptingOptionSpec<V> defaultsTo( V value, V... values ) {
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    public final ArgumentAcceptingOptionSpec<V> defaultsTo( V value, V... values ) {
         addDefaultValue( value );
         defaultsTo( values );
 
@@ -275,7 +276,7 @@ public abstract class ArgumentAcceptingOptionSpec<V> extends AbstractOptionSpec<
     }
 
     private void addDefaultValue( V value ) {
-        ensureNotNull( value );
+        requireNonNull( value );
         defaultValues.add( value );
     }
 
@@ -283,7 +284,7 @@ public abstract class ArgumentAcceptingOptionSpec<V> extends AbstractOptionSpec<
     final void handleOption( OptionParser parser, ArgumentList arguments, OptionSet detectedOptions,
         String detectedArgument ) {
 
-        if ( isNullOrEmpty( detectedArgument ) )
+        if ( detectedArgument == null )
             detectOptionArgument( parser, arguments, detectedOptions );
         else
             addArguments( detectedOptions, detectedArgument );
@@ -314,8 +315,7 @@ public abstract class ArgumentAcceptingOptionSpec<V> extends AbstractOptionSpec<
             while ( lexer.hasMoreTokens() )
                 convert( lexer.nextToken() );
             return true;
-        }
-        catch ( OptionException ignored ) {
+        } catch ( OptionException ignored ) {
             return false;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,17 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @compile test-classes/Hello.java
- * @run main/timeout=240 CommandLineFlagCombo
+ * @run main/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. CommandLineFlagCombo
  */
 
 import jdk.test.lib.BuildHelper;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
+
+import sun.hotspot.code.Compiler;
 
 public class CommandLineFlagCombo {
 
@@ -120,6 +124,11 @@ public class CommandLineFlagCombo {
         if (!BuildHelper.isCommercialBuild() && testEntry.equals("-XX:+FlightRecorder"))
         {
             System.out.println("Test case not applicable on non-commercial builds");
+            return true;
+        }
+        if (Compiler.isGraalEnabled() && testEntry.equals("-XX:+UseConcMarkSweepGC"))
+        {
+            System.out.println("Graal does not support CMS");
             return true;
         }
 

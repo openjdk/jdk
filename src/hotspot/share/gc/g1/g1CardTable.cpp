@@ -28,7 +28,7 @@
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 
 bool G1CardTable::mark_card_deferred(size_t card_index) {
   jbyte val = _byte_map[card_index];

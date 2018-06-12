@@ -1,0 +1,2 @@
+java.lang.ClassCastException: jit.t.t113.kid1 cannot be cast to jit.t.t113.kid2
+        at jit.t.t113.t113.main(t113.java:59)

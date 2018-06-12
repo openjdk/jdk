@@ -29,6 +29,7 @@
  *
  *  @author Severin Gehwolf <sgehwolf@redhat.com>
  *
+ *  @requires vm.gc != "Z"
  *  @library ..
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g OomDebugTest.java

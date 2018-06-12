@@ -26,7 +26,7 @@
  * @bug 7199742
  * @summary A lot of C2 OSR compilations of the same method's bci
  *
- * @run main/othervm -Xmx32m -Xbatch compiler.c2.Test7199742
+ * @run main/othervm -Xmx128m -Xbatch compiler.c2.Test7199742
  */
 
 package compiler.c2;
@@ -54,4 +54,3 @@ public class Test7199742 {
         return v;
     }
 }
-

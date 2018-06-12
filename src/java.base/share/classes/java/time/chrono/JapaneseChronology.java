@@ -459,38 +459,38 @@ public final class JapaneseChronology extends AbstractChronology implements Seri
         return era.getPrivateEra().getSinceDate().getYear() + yearOfEra - 1;
     }
 
-     private ChronoLocalDate resolveYMD(JapaneseEra era, int yoe, Map<TemporalField,Long> fieldValues, ResolverStyle resolverStyle) {
-         fieldValues.remove(ERA);
-         fieldValues.remove(YEAR_OF_ERA);
-         if (resolverStyle == ResolverStyle.LENIENT) {
-             int y = prolepticYearLenient(era, yoe);
-             long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
-             long days = Math.subtractExact(fieldValues.remove(DAY_OF_MONTH), 1);
-             return date(y, 1, 1).plus(months, MONTHS).plus(days, DAYS);
-         }
-         int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
-         int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
-         if (resolverStyle == ResolverStyle.SMART) {  // previous valid
-             if (yoe < 1) {
-                 throw new DateTimeException("Invalid YearOfEra: " + yoe);
-             }
-             int y = prolepticYearLenient(era, yoe);
-             JapaneseDate result;
-             try {
-                 result = date(y, moy, dom);
-             } catch (DateTimeException ex) {
-                 result = date(y, moy, 1).with(TemporalAdjusters.lastDayOfMonth());
-             }
-             // handle the era being changed
-             // only allow if the new date is in the same Jan-Dec as the era change
-             // determine by ensuring either original yoe or result yoe is 1
-             if (result.getEra() != era && result.get(YEAR_OF_ERA) > 1 && yoe > 1) {
-                 throw new DateTimeException("Invalid YearOfEra for Era: " + era + " " + yoe);
-             }
-             return result;
-         }
-         return date(era, yoe, moy, dom);
-     }
+    private ChronoLocalDate resolveYMD(JapaneseEra era, int yoe, Map<TemporalField,Long> fieldValues, ResolverStyle resolverStyle) {
+        fieldValues.remove(ERA);
+        fieldValues.remove(YEAR_OF_ERA);
+        if (resolverStyle == ResolverStyle.LENIENT) {
+            int y = prolepticYearLenient(era, yoe);
+            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+            long days = Math.subtractExact(fieldValues.remove(DAY_OF_MONTH), 1);
+            return date(y, 1, 1).plus(months, MONTHS).plus(days, DAYS);
+        }
+        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
+        int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
+        if (resolverStyle == ResolverStyle.SMART) {  // previous valid
+            if (yoe < 1) {
+                throw new DateTimeException("Invalid YearOfEra: " + yoe);
+            }
+            int y = prolepticYearLenient(era, yoe);
+            JapaneseDate result;
+            try {
+                result = date(y, moy, dom);
+            } catch (DateTimeException ex) {
+                result = date(y, moy, 1).with(TemporalAdjusters.lastDayOfMonth());
+            }
+            // handle the era being changed
+            // only allow if the new date is in the same Jan-Dec as the era change
+            // determine by ensuring either original yoe or result yoe is 1
+            if (result.getEra() != era && result.get(YEAR_OF_ERA) > 1 && yoe > 1) {
+                throw new DateTimeException("Invalid YearOfEra for Era: " + era + " " + yoe);
+            }
+            return result;
+        }
+        return date(era, yoe, moy, dom);
+    }
 
     private ChronoLocalDate resolveYD(JapaneseEra era, int yoe, Map <TemporalField,Long> fieldValues, ResolverStyle resolverStyle) {
         fieldValues.remove(ERA);

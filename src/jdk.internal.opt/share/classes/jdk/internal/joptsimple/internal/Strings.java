@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -56,7 +56,6 @@
 package jdk.internal.joptsimple.internal;
 
 import java.util.Iterator;
-import java.util.List;
 
 import static java.lang.System.*;
 import static java.util.Arrays.*;
@@ -66,7 +65,6 @@ import static java.util.Arrays.*;
  */
 public final class Strings {
     public static final String EMPTY = "";
-    public static final String SINGLE_QUOTE = "'";
     public static final String LINE_SEPARATOR = getProperty( "line.separator" );
 
     private Strings() {
@@ -96,7 +94,7 @@ public final class Strings {
      * @return {@code true} if the target string is null or empty
      */
     public static boolean isNullOrEmpty( String target ) {
-        return target == null || EMPTY.equals( target );
+        return target == null || target.isEmpty();
     }
 
 
@@ -132,7 +130,7 @@ public final class Strings {
      * @param separator the separator
      * @return the joined string
      */
-    public static String join( List<String> pieces, String separator ) {
+    public static String join( Iterable<String> pieces, String separator ) {
         StringBuilder buffer = new StringBuilder();
 
         for ( Iterator<String> iter = pieces.iterator(); iter.hasNext(); ) {

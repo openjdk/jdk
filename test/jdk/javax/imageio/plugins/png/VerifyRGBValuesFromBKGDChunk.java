@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6574555
+ * @bug     6574555 5109146
  * @summary Test verifies that PNGImageWriter encodes the R, G, B
  *          values of bKGD chunk properly.
  * @run     main VerifyRGBValuesFromBKGDChunk
@@ -37,6 +37,7 @@ import javax.imageio.ImageWriter;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
+import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.IIOImage;
@@ -48,30 +49,42 @@ import java.io.InputStream;
 
 public class VerifyRGBValuesFromBKGDChunk {
 
-    public static void main(String[] args) throws IOException {
-        int width = 1;
-        int height = 1;
-        BufferedImage img = new
-            BufferedImage(width, height, BufferedImage.TYPE_INT_BGR);
-        Iterator<ImageWriter> iterWriter =
-            ImageIO.getImageWritersBySuffix("png");
-        ImageWriter writer = iterWriter.next();
+    private static IIOMetadata encodeMetadata;
+    private static ImageWriter writer;
+    private static ImageReader reader;
+    private static BufferedImage img;
+    private static ImageWriteParam param;
+    private static boolean nativeBKGDFail, standardBKGDFail;
+    private static IIOMetadataNode bKGD_RGBNode;
+    private static final String BKGDRED = "100";
+    private static final String BKGDGREEN = "150";
+    private static final String BKGDBLUE = "200";
 
-        ImageWriteParam param = writer.getDefaultWriteParam();
+    private static void mergeStandardMetadata() throws IIOInvalidTreeException {
+        IIOMetadataNode background_rgb = new IIOMetadataNode("BackgroundColor");
+
+        background_rgb.setAttribute("red", BKGDRED);
+        background_rgb.setAttribute("green", BKGDGREEN);
+        background_rgb.setAttribute("blue", BKGDBLUE);
+
+        IIOMetadataNode chroma = new IIOMetadataNode("Chroma");
+        chroma.appendChild(background_rgb);
+        IIOMetadataNode encodeRoot = new IIOMetadataNode("javax_imageio_1.0");
+        encodeRoot.appendChild(chroma);
+
         ImageTypeSpecifier specifier =
             ImageTypeSpecifier.
                 createFromBufferedImageType(BufferedImage.TYPE_INT_BGR);
-        IIOMetadata encodeMetadata =
-            writer.getDefaultImageMetadata(specifier, param);
+        encodeMetadata = writer.getDefaultImageMetadata(specifier, param);
+        encodeMetadata.mergeTree("javax_imageio_1.0", encodeRoot);
+    }
 
-        // Write png image with bKGD chunk
+    private static void mergeNativeMetadata() throws IIOInvalidTreeException {
         IIOMetadataNode bKGD_rgb = new IIOMetadataNode("bKGD_RGB");
-        String red = "100";
-        String green = "150";
-        String blue = "200";
-        bKGD_rgb.setAttribute("red", red);
-        bKGD_rgb.setAttribute("green", green);
-        bKGD_rgb.setAttribute("blue", blue);
+
+        bKGD_rgb.setAttribute("red", BKGDRED);
+        bKGD_rgb.setAttribute("green", BKGDGREEN);
+        bKGD_rgb.setAttribute("blue", BKGDBLUE);
 
         IIOMetadataNode bKGD = new IIOMetadataNode("bKGD");
         bKGD.appendChild(bKGD_rgb);
@@ -79,15 +92,20 @@ public class VerifyRGBValuesFromBKGDChunk {
             new IIOMetadataNode("javax_imageio_png_1.0");
         encodeRoot.appendChild(bKGD);
 
+        ImageTypeSpecifier specifier =
+            ImageTypeSpecifier.
+                createFromBufferedImageType(BufferedImage.TYPE_INT_BGR);
+        encodeMetadata = writer.getDefaultImageMetadata(specifier, param);
         encodeMetadata.mergeTree("javax_imageio_png_1.0", encodeRoot);
+    }
 
+    private static void writeAndReadMetadata() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageOutputStream ios = ImageIO.createImageOutputStream(baos);
         writer.setOutput(ios);
 
         writer.write(encodeMetadata,
                      new IIOImage(img, null, encodeMetadata), param);
-        writer.dispose();
 
         baos.flush();
         byte[] imageByteArray = baos.toByteArray();
@@ -96,24 +114,63 @@ public class VerifyRGBValuesFromBKGDChunk {
         // Get bKGD chunk from image and verify the values
         InputStream input= new ByteArrayInputStream(imageByteArray);
         ImageInputStream iis = ImageIO.createImageInputStream(input);
-        Iterator<ImageReader> iterReader =
-            ImageIO.getImageReadersBySuffix("png");
-        ImageReader reader = iterReader.next();
         reader.setInput(iis, false, false);
 
         IIOMetadata decodeMetadata = reader.getImageMetadata(0);
         IIOMetadataNode decodeRoot =
             (IIOMetadataNode) decodeMetadata.
                 getAsTree("javax_imageio_png_1.0");
-        bKGD_rgb = (IIOMetadataNode)
+        bKGD_RGBNode = (IIOMetadataNode)
             decodeRoot.getElementsByTagName("bKGD_RGB").item(0);
+    }
+
+    private static boolean verifyRGBValues() {
+        return (!(BKGDRED.equals(bKGD_RGBNode.getAttribute("red")) &&
+                  BKGDGREEN.equals(bKGD_RGBNode.getAttribute("green")) &&
+                  BKGDBLUE.equals(bKGD_RGBNode.getAttribute("blue"))));
+    }
+
+    private static void VerifyNativeRGBValuesFromBKGDChunk()
+        throws IOException {
+
+        mergeNativeMetadata();
+        writeAndReadMetadata();
+        nativeBKGDFail = verifyRGBValues();
+    }
+
+    private static void VerifyStandardRGBValuesFromBKGDChunk()
+        throws IOException {
+
+        mergeStandardMetadata();
+        writeAndReadMetadata();
+        standardBKGDFail = verifyRGBValues();
+    }
+
+    public static void main(String[] args) throws IOException {
+        int width = 1;
+        int height = 1;
+        img = new BufferedImage(width, height, BufferedImage.TYPE_INT_BGR);
+        Iterator<ImageWriter> iterWriter =
+            ImageIO.getImageWritersBySuffix("png");
+        writer = iterWriter.next();
+
+        param = writer.getDefaultWriteParam();
+
+        Iterator<ImageReader> iterReader =
+            ImageIO.getImageReadersBySuffix("png");
+        reader = iterReader.next();
+        // Verify bKGD RGB values after merging metadata using native tree
+        VerifyNativeRGBValuesFromBKGDChunk();
+
+        // Verify bKGD RGB values after merging metadata using standard tree
+        VerifyStandardRGBValuesFromBKGDChunk();
+
+        writer.dispose();
         reader.dispose();
 
-        if (!(red.equals(bKGD_rgb.getAttribute("red")) &&
-              green.equals(bKGD_rgb.getAttribute("green")) &&
-              blue.equals(bKGD_rgb.getAttribute("blue")))) {
+        if (nativeBKGDFail || standardBKGDFail) {
             throw new RuntimeException("bKGD RGB values are not stored" +
-            " properly");
+                " properly");
         }
     }
 }

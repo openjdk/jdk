@@ -172,6 +172,9 @@ static int  KnownVMIndex(const char* name);
 static void FreeKnownVMs();
 static jboolean IsWildCardEnabled();
 
+
+#define SOURCE_LAUNCHER_MAIN_ENTRY "jdk.compiler/com.sun.tools.javac.launcher.Main"
+
 /*
  * This reports error.  VM will not be created and no usage is printed.
  */
@@ -214,7 +217,7 @@ static jlong initialHeapSize    = 0;  /* inital heap size */
  * Entry point.
  */
 JNIEXPORT int JNICALL
-JLI_Launch(int argc, char ** argv,              /* main argc, argc */
+JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         int jargc, const char** jargv,          /* java args */
         int appclassc, const char** appclassv,  /* app classpath */
         const char* fullversion,                /* full version defined */
@@ -317,8 +320,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     /* Parse command line options; if the return value of
      * ParseArguments is false, the program should exit.
      */
-    if (!ParseArguments(&argc, &argv, &mode, &what, &ret, jrepath))
-    {
+    if (!ParseArguments(&argc, &argv, &mode, &what, &ret, jrepath)) {
         return(ret);
     }
 
@@ -585,7 +587,8 @@ IsLauncherOption(const char* name) {
     return IsClassPathOption(name) ||
            IsLauncherMainOption(name) ||
            JLI_StrCmp(name, "--describe-module") == 0 ||
-           JLI_StrCmp(name, "-d") == 0;
+           JLI_StrCmp(name, "-d") == 0 ||
+           JLI_StrCmp(name, "--source") == 0;
 }
 
 /*
@@ -624,6 +627,29 @@ jboolean
 IsWhiteSpaceOption(const char* name) {
     return IsModuleOption(name) ||
            IsLauncherOption(name);
+}
+
+/*
+ * Check if it is OK to set the mode.
+ * If the mode was previously set, and should not be changed,
+ * a fatal error is reported.
+ */
+static int
+checkMode(int mode, int newMode, const char *arg) {
+    if (mode == LM_SOURCE) {
+        JLI_ReportErrorMessage(ARG_ERROR14, arg);
+        exit(1);
+    }
+    return newMode;
+}
+
+/*
+ * Test if an arg identifies a source file.
+ */
+jboolean
+IsSourceFile(const char *arg) {
+    struct stat st;
+    return (JLI_HasSuffix(arg, ".java") && stat(arg, &st) == 0);
 }
 
 /*
@@ -1230,7 +1256,8 @@ GetOpt(int *pargc, char ***pargv, char **poption, char **pvalue) {
         value = equals+1;
         if (JLI_StrCCmp(arg, "--describe-module=") == 0 ||
             JLI_StrCCmp(arg, "--module=") == 0 ||
-            JLI_StrCCmp(arg, "--class-path=") == 0) {
+            JLI_StrCCmp(arg, "--class-path=") == 0||
+            JLI_StrCCmp(arg, "--source=") == 0) {
             kind = LAUNCHER_OPTION_WITH_ARGUMENT;
         } else {
             kind = VM_LONG_OPTION;
@@ -1274,16 +1301,27 @@ ParseArguments(int *pargc, char ***pargv,
  */
         if (JLI_StrCmp(arg, "-jar") == 0) {
             ARG_CHECK(argc, ARG_ERROR2, arg);
-            mode = LM_JAR;
+            mode = checkMode(mode, LM_JAR, arg);
         } else if (JLI_StrCmp(arg, "--module") == 0 ||
                    JLI_StrCCmp(arg, "--module=") == 0 ||
                    JLI_StrCmp(arg, "-m") == 0) {
             REPORT_ERROR (has_arg, ARG_ERROR5, arg);
             SetMainModule(value);
-            mode = LM_MODULE;
+            mode = checkMode(mode, LM_MODULE, arg);
             if (has_arg) {
                *pwhat = value;
                 break;
+            }
+        } else if (JLI_StrCmp(arg, "--source") == 0 ||
+                   JLI_StrCCmp(arg, "--source=") == 0) {
+            REPORT_ERROR (has_arg, ARG_ERROR13, arg);
+            mode = LM_SOURCE;
+            if (has_arg) {
+                const char *prop = "-Djdk.internal.javac.source=";
+                size_t size = JLI_StrLen(prop) + JLI_StrLen(value) + 1;
+                char *propValue = (char *)JLI_MemAlloc(size);
+                JLI_Snprintf(propValue, size, "%s%s", prop, value);
+                AddOption(propValue, NULL);
             }
         } else if (JLI_StrCmp(arg, "--class-path") == 0 ||
                    JLI_StrCCmp(arg, "--class-path=") == 0 ||
@@ -1435,12 +1473,25 @@ ParseArguments(int *pargc, char ***pargv,
         if (!_have_classpath) {
             SetClassPath(".");
         }
-        mode = LM_CLASS;
+        mode = IsSourceFile(arg) ? LM_SOURCE : LM_CLASS;
+    } else if (mode == LM_CLASS && IsSourceFile(arg)) {
+        /* override LM_CLASS mode if given a source file */
+        mode = LM_SOURCE;
     }
 
-    if (argc >= 0) {
-        *pargc = argc;
-        *pargv = argv;
+    if (mode == LM_SOURCE) {
+        AddOption("--add-modules=ALL-DEFAULT", NULL);
+        *pwhat = SOURCE_LAUNCHER_MAIN_ENTRY;
+        // adjust (argc, argv) so that the name of the source file
+        // is included in the args passed to the source launcher
+        // main entry class
+        *pargc = argc + 1;
+        *pargv = argv - 1;
+    } else {
+        if (argc >= 0) {
+            *pargc = argc;
+            *pargv = argv;
+        }
     }
 
     *pmode = mode;

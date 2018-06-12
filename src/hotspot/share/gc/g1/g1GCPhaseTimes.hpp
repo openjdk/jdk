@@ -373,9 +373,13 @@ class G1EvacPhaseWithTrimTimeTracker : public StackObj {
 
   Tickspan& _total_time;
   Tickspan& _trim_time;
+
+  bool _stopped;
 public:
   G1EvacPhaseWithTrimTimeTracker(G1ParScanThreadState* pss, Tickspan& total_time, Tickspan& trim_time);
   ~G1EvacPhaseWithTrimTimeTracker();
+
+  void stop();
 };
 
 class G1GCParPhaseTimesTracker : public CHeapObj<mtGC> {

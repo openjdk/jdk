@@ -29,19 +29,6 @@ $(eval $(call IncludeCustomExtension, hotspot/lib/Lib-jdk.hotspot.agent.gmk))
 
 ################################################################################
 
-SA_TOPDIR := $(TOPDIR)/src/jdk.hotspot.agent
-
-SA_SRC += \
-    $(SA_TOPDIR)/share/native/libsaproc \
-    $(SA_TOPDIR)/$(OPENJDK_TARGET_OS)/native/libsaproc \
-    #
-
-SA_INCLUDES := \
-    $(addprefix -I, $(SA_SRC)) \
-    -I$(SUPPORT_OUTPUTDIR)/headers/jdk.hotspot.agent \
-    -I$(TOPDIR)/src/hotspot/os/$(OPENJDK_TARGET_OS) \
-    #
-
 ifeq ($(OPENJDK_TARGET_OS), linux)
   SA_CFLAGS := -D_FILE_OFFSET_BITS=64
 
@@ -68,9 +55,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     DISABLED_WARNINGS_microsoft := 4267, \
     DISABLED_WARNINGS_gcc := sign-compare, \
     DISABLED_WARNINGS_CXX_solstudio := truncwarn unknownpragma, \
-    SRC := $(SA_SRC), \
-    CFLAGS := $(CFLAGS_JDKLIB) $(SA_INCLUDES) $(SA_CFLAGS) $(SA_CUSTOM_CFLAGS), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_INCLUDES) $(SA_CFLAGS) $(SA_CXXFLAGS), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(SA_CFLAGS), \
+    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_CFLAGS) $(SA_CXXFLAGS), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(SA_LDFLAGS), \
     LIBS_linux := -lthread_db $(LIBDL), \
     LIBS_solaris := -ldl -ldemangle -lthread -lproc, \

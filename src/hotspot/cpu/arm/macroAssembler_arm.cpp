@@ -36,6 +36,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -1366,9 +1367,12 @@ void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Regi
   // Bump total bytes allocated by this thread
   Label done;
 
-  ldr(tmp, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
+  // Borrow the Rthread for alloc counter
+  Register Ralloc = Rthread;
+  add(Ralloc, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
+  ldr(tmp, Address(Ralloc));
   adds(tmp, tmp, size_in_bytes);
-  str(tmp, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())), cc);
+  str(tmp, Address(Ralloc), cc);
   b(done, cc);
 
   // Increment the high word and store single-copy atomically (that is an unlikely scenario on typical embedded systems as it means >4GB has been allocated)
@@ -1386,14 +1390,17 @@ void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Regi
   }
   push(RegisterSet(low, high));
 
-  ldrd(low, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
+  ldrd(low, Address(Ralloc));
   adds(low, low, size_in_bytes);
   adc(high, high, 0);
-  strd(low, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
+  strd(low, Address(Ralloc));
 
   pop(RegisterSet(low, high));
 
   bind(done);
+
+  // Unborrow the Rthread
+  sub(Rthread, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
 #endif // AARCH64
 }
 
@@ -2133,7 +2140,7 @@ void MacroAssembler::resolve_jobject(Register value,
   b(done);
   bind(not_weak);
   // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_ROOT | IN_CONCURRENT_ROOT,
+  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
                  Address(value, 0), value, tmp1, tmp2, noreg);
   verify_oop(value);
   bind(done);
@@ -2700,6 +2707,7 @@ void MacroAssembler::store_heap_oop_null(Address obj, Register new_val, Register
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Address src, Register dst, Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
@@ -2711,6 +2719,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);

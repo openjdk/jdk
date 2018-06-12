@@ -58,10 +58,6 @@ public final class FontUtilities {
 
     public static boolean isWindows;
 
-    public static boolean isOpenJDK;
-
-    static final String LUCIDA_FILE_NAME = "LucidaSansRegular.ttf";
-
     private static boolean debugFonts = false;
     private static PlatformLogger logger = null;
     private static boolean logging;
@@ -110,14 +106,6 @@ public final class FontUtilities {
                     useJDKScaler = false;
                 }
                 isWindows = osName.startsWith("Windows");
-                String jreLibDirName = System.getProperty("java.home", "")
-                                                      + File.separator + "lib";
-                String jreFontDirName =
-                        jreLibDirName + File.separator + "fonts";
-                File lucidaFile = new File(jreFontDirName + File.separator
-                                           + LUCIDA_FILE_NAME);
-                isOpenJDK = !lucidaFile.exists();
-
                 String debugLevel =
                     System.getProperty("sun.java2d.debugfonts");
 

@@ -1545,6 +1545,9 @@ public final class IntegerStamp extends PrimitiveStamp {
 
                         @Override
                         public Stamp invertStamp(int inputBits, int resultBits, Stamp outStamp) {
+                            if (outStamp.isEmpty()) {
+                                return StampFactory.forInteger(inputBits).empty();
+                            }
                             IntegerStamp stamp = (IntegerStamp) outStamp;
                             long mask = CodeUtil.mask(inputBits);
                             return StampFactory.forIntegerWithMask(inputBits, stamp.lowerBound(), stamp.upperBound(), stamp.downMask() & mask, stamp.upMask() & mask);

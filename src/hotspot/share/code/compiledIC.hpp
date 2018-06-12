@@ -358,7 +358,7 @@ public:
   virtual address destination() const = 0;
 
   // Clean static call (will force resolving on next use)
-  void set_to_clean();
+  void set_to_clean(bool in_use = true);
 
   // Set state. The entry must be the same, as computed by compute_entry.
   // Computation and setting is split up, since the actions are separate during

@@ -68,3 +68,9 @@ java/util/concurrent/tck/JSR166TestCase.java                            8187486 
 java/lang/ref/OOMEInReferenceHandler.java                               8196611   generic-all
 java/lang/Runtime/exec/LotsOfOutput.java                                8196611   generic-all
 java/util/concurrent/ScheduledThreadPoolExecutor/BasicCancelTest.java   8196611   generic-all
+
+# Next JFR tests fail with Graal. Assuming 8193210.
+jdk/jfr/event/compiler/TestCodeSweeper.java              8193210   generic-all
+jdk/jfr/event/compiler/TestCompilerInlining.java         8193210   generic-all
+jdk/jfr/event/compiler/TestCompilerPhase.java            8193210   generic-all
+

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4131628 4664607 7025314 8023700 7198273 8025633 8026567 8081854 8150188 8151743 8196027 8182765
- *           8196200
+ *           8196200 8196202
  * @summary  Make sure the Next/Prev Class links iterate through all types.
  *           Make sure the navagation is 2 columns, not 3.
  * @author   jamieh
@@ -56,6 +56,7 @@ public class TestNavigation extends JavadocTester {
     void test(Path ignore) {
         javadoc("-d", "out",
                 "-overview", testSrc("overview.html"),
+                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -112,6 +113,7 @@ public class TestNavigation extends JavadocTester {
         javadoc("-d", "out-html4",
                 "-html4",
                 "-overview", testSrc("overview.html"),
+                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -150,6 +152,7 @@ public class TestNavigation extends JavadocTester {
     void test1(Path ignore) {
         javadoc("-d", "out-1",
                 "-html5",
+                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -182,6 +185,7 @@ public class TestNavigation extends JavadocTester {
     void test2(Path ignore) {
         javadoc("-d", "out-2",
                 "-nonavbar",
+                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -213,6 +217,7 @@ public class TestNavigation extends JavadocTester {
         javadoc("-d", "out-3",
                 "-html5",
                 "-nonavbar",
+                "--frames",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);

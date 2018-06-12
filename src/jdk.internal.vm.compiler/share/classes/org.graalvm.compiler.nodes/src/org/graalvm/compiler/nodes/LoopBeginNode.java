@@ -25,6 +25,7 @@ package org.graalvm.compiler.nodes;
 import static org.graalvm.compiler.graph.iterators.NodePredicates.isNotA;
 
 import org.graalvm.compiler.core.common.type.IntegerStamp;
+import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.graph.IterableNodeType;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.graph.NodeClass;
@@ -310,13 +311,16 @@ public final class LoopBeginNode extends AbstractMergeNode implements IterableNo
         return loopEnds().first();
     }
 
+    @SuppressWarnings("try")
     public void removeExits() {
         for (LoopExitNode loopexit : loopExits().snapshot()) {
-            loopexit.removeProxies();
-            FrameState loopStateAfter = loopexit.stateAfter();
-            graph().replaceFixedWithFixed(loopexit, graph().add(new BeginNode()));
-            if (loopStateAfter != null) {
-                GraphUtil.tryKillUnused(loopStateAfter);
+            try (DebugCloseable position = graph().withNodeSourcePosition(loopexit)) {
+                loopexit.removeProxies();
+                FrameState loopStateAfter = loopexit.stateAfter();
+                graph().replaceFixedWithFixed(loopexit, graph().add(new BeginNode()));
+                if (loopStateAfter != null) {
+                    GraphUtil.tryKillUnused(loopStateAfter);
+                }
             }
         }
     }

@@ -111,7 +111,7 @@ import sun.security.jca.*;
  * encryption with a given key. When IVs are repeated for GCM
  * encryption, such usages are subject to forgery attacks. Thus, after
  * each encryption operation using GCM mode, callers should re-initialize
- * the cipher objects with GCM parameters which has a different IV value.
+ * the cipher objects with GCM parameters which have a different IV value.
  * <pre>
  *     GCMParameterSpec s = ...;
  *     cipher.init(..., s);
@@ -131,6 +131,13 @@ import sun.security.jca.*;
  *     ...
  *
  * </pre>
+ * The ChaCha20 and ChaCha20-Poly1305 algorithms have a similar requirement
+ * for unique nonces with a given key.  After each encryption or decryption
+ * operation, callers should re-initialize their ChaCha20 or ChaCha20-Poly1305
+ * ciphers with parameters that specify a different nonce value.  Please
+ * see <a href="https://tools.ietf.org/html/rfc7539">RFC 7539</a> for more
+ * information on the ChaCha20 and ChaCha20-Poly1305 algorithms.
+ * <p>
  * Every implementation of the Java platform is required to support
  * the following standard {@code Cipher} transformations with the keysizes
  * in parentheses:

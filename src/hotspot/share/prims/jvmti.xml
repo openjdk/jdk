@@ -1799,10 +1799,10 @@ jvmtiEnv *jvmti;
     <function id="StopThread" num="7">
       <synopsis>Stop Thread</synopsis>
       <description>
-	Send the specified asynchronous exception to the specified thread
-	(similar to <code>java.lang.Thread.stop</code>).
+	Send the specified asynchronous exception to the specified thread.
 	Normally, this function is used to kill the specified thread with an
-	instance of the exception <code>ThreadDeath</code>.
+	instance of the exception <code>ThreadDeath</code>, similar to
+        <code>java.lang.Thread.stop</code>.
       </description>
       <origin>jvmdi</origin>
       <capabilities>

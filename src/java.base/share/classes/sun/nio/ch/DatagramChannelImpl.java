@@ -57,6 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
+import static sun.net.ext.ExtendedSocketOptions.SOCK_DGRAM;
 
 /**
  * An implementation of DatagramChannels.
@@ -334,7 +335,7 @@ class DatagramChannelImpl
             set.add(StandardSocketOptions.IP_MULTICAST_IF);
             set.add(StandardSocketOptions.IP_MULTICAST_TTL);
             set.add(StandardSocketOptions.IP_MULTICAST_LOOP);
-            set.addAll(ExtendedSocketOptions.getInstance().options());
+            set.addAll(ExtendedSocketOptions.options(SOCK_DGRAM));
             return Collections.unmodifiableSet(set);
         }
     }

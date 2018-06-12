@@ -170,21 +170,23 @@ elapsedTimer CompileBroker::_t_standard_compilation;
 elapsedTimer CompileBroker::_t_invalidated_compilation;
 elapsedTimer CompileBroker::_t_bailedout_compilation;
 
-int CompileBroker::_total_bailout_count          = 0;
-int CompileBroker::_total_invalidated_count      = 0;
-int CompileBroker::_total_compile_count          = 0;
-int CompileBroker::_total_osr_compile_count      = 0;
-int CompileBroker::_total_standard_compile_count = 0;
+int CompileBroker::_total_bailout_count            = 0;
+int CompileBroker::_total_invalidated_count        = 0;
+int CompileBroker::_total_compile_count            = 0;
+int CompileBroker::_total_osr_compile_count        = 0;
+int CompileBroker::_total_standard_compile_count   = 0;
+int CompileBroker::_total_compiler_stopped_count   = 0;
+int CompileBroker::_total_compiler_restarted_count = 0;
 
-int CompileBroker::_sum_osr_bytes_compiled       = 0;
-int CompileBroker::_sum_standard_bytes_compiled  = 0;
-int CompileBroker::_sum_nmethod_size             = 0;
-int CompileBroker::_sum_nmethod_code_size        = 0;
+int CompileBroker::_sum_osr_bytes_compiled         = 0;
+int CompileBroker::_sum_standard_bytes_compiled    = 0;
+int CompileBroker::_sum_nmethod_size               = 0;
+int CompileBroker::_sum_nmethod_code_size          = 0;
 
-long CompileBroker::_peak_compilation_time       = 0;
+long CompileBroker::_peak_compilation_time         = 0;
 
-CompileQueue* CompileBroker::_c2_compile_queue   = NULL;
-CompileQueue* CompileBroker::_c1_compile_queue   = NULL;
+CompileQueue* CompileBroker::_c2_compile_queue     = NULL;
+CompileQueue* CompileBroker::_c1_compile_queue     = NULL;
 
 
 

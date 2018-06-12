@@ -70,6 +70,29 @@ typedef LONG hb_atomic_int_impl_t;
 #define hb_atomic_ptr_impl_cmpexch(P,O,N)       (InterlockedCompareExchangePointer ((void **) (P), (void *) (N), (void *) (O)) == (void *) (O))
 
 
+#elif !defined(HB_NO_MT) && defined(HAVE_INTEL_ATOMIC_PRIMITIVES)
+
+typedef int hb_atomic_int_impl_t;
+#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
+#define hb_atomic_int_impl_add(AI, V)           __sync_fetch_and_add (&(AI), (V))
+
+#define hb_atomic_ptr_impl_get(P)               (void *) (__sync_synchronize (), *(P))
+#define hb_atomic_ptr_impl_cmpexch(P,O,N)       __sync_bool_compare_and_swap ((P), (O), (N))
+
+
+#elif !defined(HB_NO_MT) && defined(HAVE_SOLARIS_ATOMIC_OPS)
+
+#include <atomic.h>
+#include <mbarrier.h>
+
+typedef unsigned int hb_atomic_int_impl_t;
+#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
+#define hb_atomic_int_impl_add(AI, V)           ( ({__machine_rw_barrier ();}), atomic_add_int_nv (&(AI), (V)) - (V))
+
+#define hb_atomic_ptr_impl_get(P)               ( ({__machine_rw_barrier ();}), (void *) *(P))
+#define hb_atomic_ptr_impl_cmpexch(P,O,N)       ( ({__machine_rw_barrier ();}), atomic_cas_ptr ((void **) (P), (void *) (O), (void *) (N)) == (void *) (O) ? true : false)
+
+
 #elif !defined(HB_NO_MT) && defined(__APPLE__)
 
 #include <libkern/OSAtomic.h>
@@ -94,29 +117,6 @@ typedef int32_t hb_atomic_int_impl_t;
 #define hb_atomic_ptr_impl_cmpexch(P,O,N)       OSAtomicCompareAndSwap32Barrier ((int32_t) (void *) (O), (int32_t) (void *) (N), (int32_t*) (P))
 #endif
 #endif
-
-
-#elif !defined(HB_NO_MT) && defined(HAVE_INTEL_ATOMIC_PRIMITIVES)
-
-typedef int hb_atomic_int_impl_t;
-#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
-#define hb_atomic_int_impl_add(AI, V)           __sync_fetch_and_add (&(AI), (V))
-
-#define hb_atomic_ptr_impl_get(P)               (void *) (__sync_synchronize (), *(P))
-#define hb_atomic_ptr_impl_cmpexch(P,O,N)       __sync_bool_compare_and_swap ((P), (O), (N))
-
-
-#elif !defined(HB_NO_MT) && defined(HAVE_SOLARIS_ATOMIC_OPS)
-
-#include <atomic.h>
-#include <mbarrier.h>
-
-typedef unsigned int hb_atomic_int_impl_t;
-#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
-#define hb_atomic_int_impl_add(AI, V)           ( ({__machine_rw_barrier ();}), atomic_add_int_nv (&(AI), (V)) - (V))
-
-#define hb_atomic_ptr_impl_get(P)               ( ({__machine_rw_barrier ();}), (void *) *(P))
-#define hb_atomic_ptr_impl_cmpexch(P,O,N)       ( ({__machine_rw_barrier ();}), atomic_cas_ptr ((void **) (P), (void *) (O), (void *) (N)) == (void *) (O) ? true : false)
 
 
 #elif !defined(HB_NO_MT) && defined(_AIX) && defined(__IBMCPP__)

@@ -524,6 +524,7 @@ hb_script_get_horizontal_direction (hb_script_t script)
     case HB_SCRIPT_PSALTER_PAHLAVI:
 
     /* Unicode-8.0 additions */
+    case HB_SCRIPT_HATRAN:
     case HB_SCRIPT_OLD_HUNGARIAN:
 
     /* Unicode-9.0 additions */
@@ -784,9 +785,9 @@ parse_bool (const char **pp, const char *end, uint32_t *pv)
     (*pp)++;
 
   /* CSS allows on/off as aliases 1/0. */
-  if (*pp - p == 2 || 0 == strncmp (p, "on", 2))
+  if (*pp - p == 2 && 0 == strncmp (p, "on", 2))
     *pv = 1;
-  else if (*pp - p == 3 || 0 == strncmp (p, "off", 2))
+  else if (*pp - p == 3 && 0 == strncmp (p, "off", 3))
     *pv = 0;
   else
     return false;
@@ -878,7 +879,7 @@ parse_feature_value_postfix (const char **pp, const char *end, hb_feature_t *fea
                    parse_bool (pp, end, &feature->value);
   /* CSS doesn't use equal-sign between tag and value.
    * If there was an equal-sign, then there *must* be a value.
-   * A value without an eqaul-sign is ok, but not required. */
+   * A value without an equal-sign is ok, but not required. */
   return !had_equal || had_value;
 }
 

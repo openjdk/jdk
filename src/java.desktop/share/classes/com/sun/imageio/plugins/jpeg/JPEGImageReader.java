@@ -933,21 +933,6 @@ public class JPEGImageReader extends ImageReader {
         case JPEG.JCS_RGB:
             list.add(raw);
             list.add(getImageType(JPEG.JCS_GRAYSCALE));
-            list.add(getImageType(JPEG.JCS_YCC));
-            break;
-        case JPEG.JCS_RGBA:
-            list.add(raw);
-            break;
-        case JPEG.JCS_YCC:
-            if (raw != null) {  // Might be null if PYCC.pf not installed
-                list.add(raw);
-                list.add(getImageType(JPEG.JCS_RGB));
-            }
-            break;
-        case JPEG.JCS_YCCA:
-            if (raw != null) {  // Might be null if PYCC.pf not installed
-                list.add(raw);
-            }
             break;
         case JPEG.JCS_YCbCr:
             // As there is no YCbCr ColorSpace, we can't support
@@ -972,12 +957,6 @@ public class JPEGImageReader extends ImageReader {
             }
 
             list.add(getImageType(JPEG.JCS_GRAYSCALE));
-            list.add(getImageType(JPEG.JCS_YCC));
-            break;
-        case JPEG.JCS_YCbCrA:  // Default is to convert to RGBA
-            // As there is no YCbCr ColorSpace, we can't support
-            // the raw type.
-            list.add(getImageType(JPEG.JCS_RGBA));
             break;
         }
 
@@ -1063,36 +1042,6 @@ public class JPEGImageReader extends ImageReader {
                 convert = new ColorConvertOp(JPEG.JCS.sRGB, cs, null);
             } else if (csType != ColorSpace.TYPE_RGB) {
                 throw new IIOException("Incompatible color conversion");
-            }
-            break;
-        case JPEG.JCS_RGBA:
-            // No conversions available; image must be RGBA
-            if ((csType != ColorSpace.TYPE_RGB) ||
-                (cm.getNumComponents() != numComponents)) {
-                throw new IIOException("Incompatible color conversion");
-            }
-            break;
-        case JPEG.JCS_YCC:
-            {
-                ColorSpace YCC = JPEG.JCS.getYCC();
-                if (YCC == null) { // We can't do YCC at all
-                    throw new IIOException("Incompatible color conversion");
-                }
-                if ((cs != YCC) &&
-                    (cm.getNumComponents() == numComponents)) {
-                    convert = new ColorConvertOp(YCC, cs, null);
-                }
-            }
-            break;
-        case JPEG.JCS_YCCA:
-            {
-                ColorSpace YCC = JPEG.JCS.getYCC();
-                // No conversions available; image must be YCCA
-                if ((YCC == null) || // We can't do YCC at all
-                    (cs != YCC) ||
-                    (cm.getNumComponents() != numComponents)) {
-                    throw new IIOException("Incompatible color conversion");
-                }
             }
             break;
         default:
@@ -1929,36 +1878,6 @@ class ImageTypeProducer {
                         DataBuffer.TYPE_BYTE,
                         false,
                         false);
-            case JPEG.JCS_RGBA:
-                return ImageTypeSpecifier.createPacked(JPEG.JCS.sRGB,
-                        0xff000000,
-                        0x00ff0000,
-                        0x0000ff00,
-                        0x000000ff,
-                        DataBuffer.TYPE_INT,
-                        false);
-            case JPEG.JCS_YCC:
-                if (JPEG.JCS.getYCC() != null) {
-                    return ImageTypeSpecifier.createInterleaved(
-                            JPEG.JCS.getYCC(),
-                        JPEG.bandOffsets[2],
-                        DataBuffer.TYPE_BYTE,
-                        false,
-                        false);
-                } else {
-                    return null;
-                }
-            case JPEG.JCS_YCCA:
-                if (JPEG.JCS.getYCC() != null) {
-                    return ImageTypeSpecifier.createInterleaved(
-                            JPEG.JCS.getYCC(),
-                        JPEG.bandOffsets[3],
-                        DataBuffer.TYPE_BYTE,
-                        true,
-                        false);
-                } else {
-                    return null;
-                }
             default:
                 return null;
         }

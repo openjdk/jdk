@@ -108,13 +108,8 @@ Java_java_net_SocketOutputStream_socketWrite0(JNIEnv *env, jobject this,
                     loff += n;
                     continue;
                 }
-                if (errno == ECONNRESET) {
-                    JNU_ThrowByName(env, "sun/net/ConnectionResetException",
-                        "Connection reset");
-                } else {
-                    JNU_ThrowByNameWithMessageAndLastError
-                        (env, "java/net/SocketException", "Write failed");
-                }
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, "java/net/SocketException", "Write failed");
                 if (bufP != BUF) {
                     free(bufP);
                 }

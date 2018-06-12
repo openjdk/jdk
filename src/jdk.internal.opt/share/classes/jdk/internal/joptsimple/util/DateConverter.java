@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -59,9 +59,11 @@ import java.text.DateFormat;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import jdk.internal.joptsimple.ValueConversionException;
 import jdk.internal.joptsimple.ValueConverter;
+import jdk.internal.joptsimple.internal.Messages;
 
 /**
  * Converts values to {@link Date}s using a {@link DateFormat} object.
@@ -121,10 +123,22 @@ public class DateConverter implements ValueConverter<Date> {
     }
 
     private String message( String value ) {
-        String message = "Value [" + value + "] does not match date/time pattern";
-        if ( formatter instanceof SimpleDateFormat )
-            message += " [" + ( (SimpleDateFormat) formatter ).toPattern() + ']';
+        String key;
+        Object[] arguments;
 
-        return message;
+        if ( formatter instanceof SimpleDateFormat ) {
+            key = "with.pattern.message";
+            arguments = new Object[] { value, ( (SimpleDateFormat) formatter ).toPattern() };
+        } else {
+            key = "without.pattern.message";
+            arguments = new Object[] { value };
+        }
+
+        return Messages.message(
+            Locale.getDefault(),
+            "jdk.internal.joptsimple.ExceptionMessages",
+            DateConverter.class,
+            key,
+            arguments );
     }
 }

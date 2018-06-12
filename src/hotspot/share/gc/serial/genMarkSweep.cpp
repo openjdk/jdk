@@ -208,7 +208,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     GCTraceTime(Debug, gc, phases) tm_m("Reference Processing", gc_timer());
 
     ref_processor()->setup_policy(clear_all_softrefs);
-    ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->num_queues());
+    ReferenceProcessorPhaseTimes pt(_gc_timer, ref_processor()->max_num_queues());
     const ReferenceProcessorStats& stats =
       ref_processor()->process_discovered_references(
         &is_alive, &keep_alive, &follow_stack_closure, NULL, &pt);
@@ -228,7 +228,7 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", gc_timer());
 
     // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(&is_alive, gc_timer());
+    bool purged_class = SystemDictionary::do_unloading(gc_timer());
 
     // Unload nmethods.
     CodeCache::do_unloading(&is_alive, purged_class);

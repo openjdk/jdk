@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
@@ -66,10 +67,13 @@ import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.ValuePhiNode;
+import org.graalvm.compiler.nodes.ValueProxyNode;
 import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
+import org.graalvm.compiler.nodes.spi.ArrayLengthProvider.FindLengthMode;
 import org.graalvm.compiler.nodes.spi.LimitedValueProxy;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
@@ -664,28 +668,71 @@ public class GraphUtil {
     }
 
     /**
-     * Looks for an {@link ArrayLengthProvider} while iterating through all {@link ValueProxy
-     * ValueProxies}.
+     * Returns the length of the array described by the value parameter, or null if it is not
+     * available. Details of the different modes are documented in {@link FindLengthMode}.
      *
      * @param value The start value.
+     * @param mode The mode as documented in {@link FindLengthMode}.
      * @return The array length if one was found, or null otherwise.
      */
-    public static ValueNode arrayLength(ValueNode value) {
+    public static ValueNode arrayLength(ValueNode value, ArrayLengthProvider.FindLengthMode mode) {
+        Objects.requireNonNull(mode);
+
         ValueNode current = value;
         do {
+            /*
+             * PiArrayNode implements ArrayLengthProvider and ValueProxy. We want to treat it as an
+             * ArrayLengthProvider, therefore we check this case first.
+             */
             if (current instanceof ArrayLengthProvider) {
-                ValueNode length = ((ArrayLengthProvider) current).length();
-                if (length != null) {
-                    return length;
+                return ((ArrayLengthProvider) current).findLength(mode);
+
+            } else if (current instanceof ValuePhiNode) {
+                return phiArrayLength((ValuePhiNode) current, mode);
+
+            } else if (current instanceof ValueProxyNode) {
+                ValueProxyNode proxy = (ValueProxyNode) current;
+                ValueNode length = arrayLength(proxy.getOriginalNode(), mode);
+                if (mode == ArrayLengthProvider.FindLengthMode.CANONICALIZE_READ && length != null && !length.isConstant()) {
+                    length = new ValueProxyNode(length, proxy.proxyPoint());
                 }
-            }
-            if (current instanceof ValueProxy) {
+                return length;
+
+            } else if (current instanceof ValueProxy) {
+                /* Written as a loop instead of a recursive call to reduce recursion depth. */
                 current = ((ValueProxy) current).getOriginalNode();
+
             } else {
-                break;
+                return null;
             }
         } while (true);
-        return null;
+    }
+
+    private static ValueNode phiArrayLength(ValuePhiNode phi, ArrayLengthProvider.FindLengthMode mode) {
+        if (phi.merge() instanceof LoopBeginNode) {
+            /* Avoid cycle detection by not processing phi functions that could introduce cycles. */
+            return null;
+        }
+
+        ValueNode singleLength = null;
+        for (int i = 0; i < phi.values().count(); i++) {
+            ValueNode input = phi.values().get(i);
+            ValueNode length = arrayLength(input, mode);
+            if (length == null) {
+                return null;
+            }
+            assert length.stamp(NodeView.DEFAULT).getStackKind() == JavaKind.Int;
+
+            if (i == 0) {
+                assert singleLength == null;
+                singleLength = length;
+            } else if (singleLength == length) {
+                /* Nothing to do, still having a single length. */
+            } else {
+                return null;
+            }
+        }
+        return singleLength;
     }
 
     /**
@@ -1006,7 +1053,7 @@ public class GraphUtil {
         } else {
             /* The source array is not virtualized, emit index loads. */
             for (int i = 0; i < readLength; i++) {
-                LoadIndexedNode load = new LoadIndexedNode(null, sourceAlias, ConstantNode.forInt(i + fromInt, graph), elementKind);
+                LoadIndexedNode load = new LoadIndexedNode(null, sourceAlias, ConstantNode.forInt(i + fromInt, graph), null, elementKind);
                 tool.addNode(load);
                 newEntryState[i] = load;
             }

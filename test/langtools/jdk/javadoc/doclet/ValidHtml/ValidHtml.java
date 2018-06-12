@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4275630 4749453 4625400 4753048 4415270 8074521 8182765
+ * @bug 4275630 4749453 4625400 4753048 4415270 8074521 8182765 8196202
  * @summary  Generated HTML is invalid with frames.
  *           Displays unnecessary horizontal scroll bars.
  *           Missing whitespace in DOCTYPE declaration
@@ -49,6 +49,7 @@ public class ValidHtml extends JavadocTester {
                     "-doctitle", "Document Title",
                     "-windowtitle", "Window Title",
                     "-use",
+                    "--frames",
                     "-overview", testSrc("overview.html"),
                     "-sourcepath", testSrc,
                     "p1", "p2");
@@ -72,6 +73,7 @@ public class ValidHtml extends JavadocTester {
                 "-doctitle", "Document Title",
                 "-windowtitle", "Window Title",
                 "-use",
+                "--frames",
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "p1", "p2");

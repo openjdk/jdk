@@ -377,7 +377,8 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         int len;
         while ((len = is.readLine(lbuf)) != -1) {
             boolean lineContinued = false;
-            if (lbuf[--len] != '\n') {
+            byte c = lbuf[--len];
+            if (c != '\n' && c != '\r') {
                 throw new IOException("line too long");
             }
             if (len > 0 && lbuf[len-1] == '\r') {

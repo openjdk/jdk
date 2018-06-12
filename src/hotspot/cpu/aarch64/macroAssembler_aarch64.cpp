@@ -37,6 +37,7 @@
 #include "compiler/disassembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_aarch64.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.hpp"
@@ -2112,7 +2113,6 @@ void MacroAssembler::verify_heapbase(const char* msg) {
 #endif
 
 void MacroAssembler::resolve_jobject(Register value, Register thread, Register tmp) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   Label done, not_weak;
   cbz(value, done);           // Use NULL as-is.
 
@@ -2120,15 +2120,15 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
   tbz(r0, 0, not_weak);    // Test for jweak tag.
 
   // Resolve jweak.
-  bs->load_at(this, IN_ROOT | ON_PHANTOM_OOP_REF, T_OBJECT,
-                    value, Address(value, -JNIHandles::weak_tag_value), tmp, thread);
+  access_load_at(T_OBJECT, IN_ROOT | ON_PHANTOM_OOP_REF, value,
+                 Address(value, -JNIHandles::weak_tag_value), tmp, thread);
   verify_oop(value);
   b(done);
 
   bind(not_weak);
   // Resolve (untagged) jobject.
-  bs->load_at(this, IN_ROOT | IN_CONCURRENT_ROOT, T_OBJECT,
-                    value, Address(value, 0), tmp, thread);
+  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT, value, Address(value, 0), tmp,
+                 thread);
   verify_oop(value);
   bind(done);
 }
@@ -3663,9 +3663,8 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 // ((OopHandle)result).resolve();
 void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // OopHandle::resolve is an indirection.
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(this, IN_ROOT | IN_CONCURRENT_ROOT, T_OBJECT,
-                    result, Address(result, 0), tmp, rthread);
+  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
+                 result, Address(result, 0), tmp, noreg);
 }
 
 void MacroAssembler::load_mirror(Register dst, Register method, Register tmp) {
@@ -3983,6 +3982,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Register dst, Address src,
                                     Register tmp1, Register thread_tmp) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
@@ -3995,6 +3995,7 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address dst, Register src,
                                      Register tmp1, Register thread_tmp) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, dst, src, tmp1, thread_tmp);

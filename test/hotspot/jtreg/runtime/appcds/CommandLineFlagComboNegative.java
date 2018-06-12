@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ public class CommandLineFlagComboNegative {
                 "Class data sharing is inconsistent with other specified options", 1) );
             testTable.add( new TestVector("-XX:+UseCompressedClassPointers", "-XX:-UseCompressedClassPointers",
                 "Class data sharing is inconsistent with other specified options", 1) );
+            testTable.add( new TestVector("-XX:-UseAppCDS", "-XX:+UseAppCDS",
+                "Ignoring obsolete option UseAppCDS; AppCDS is automatically enabled", 0) );
         }
     }
 

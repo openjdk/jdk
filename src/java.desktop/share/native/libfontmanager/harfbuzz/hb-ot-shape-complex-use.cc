@@ -262,7 +262,7 @@ setup_masks_use (const hb_ot_shape_plan_t *plan,
   unsigned int count = buffer->len;
   hb_glyph_info_t *info = buffer->info;
   for (unsigned int i = 0; i < count; i++)
-    info[i].use_category() = hb_use_get_categories (info[i].codepoint);
+    info[i].use_category() = hb_use_get_category (info[i].codepoint);
 }
 
 static void
@@ -505,7 +505,7 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
   hb_glyph_info_t dottedcircle = {0};
   if (!font->get_nominal_glyph (0x25CCu, &dottedcircle.codepoint))
     return;
-  dottedcircle.use_category() = hb_use_get_categories (0x25CC);
+  dottedcircle.use_category() = hb_use_get_category (0x25CC);
 
   buffer->clear_output ();
 

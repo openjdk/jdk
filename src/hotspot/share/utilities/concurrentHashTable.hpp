@@ -484,6 +484,9 @@ class ConcurrentHashTable : public CHeapObj<F> {
   void statistics_to(Thread* thread, VALUE_SIZE_FUNC& vs_f, outputStream* st,
                      const char* table_name);
 
+  // Moves all nodes from this table to to_cht
+  bool try_move_nodes_to(Thread* thread, ConcurrentHashTable<VALUE, CONFIG, F>* to_cht);
+
   // This is a Curiously Recurring Template Pattern (CRPT) interface for the
   // specialization.
   struct BaseConfig {

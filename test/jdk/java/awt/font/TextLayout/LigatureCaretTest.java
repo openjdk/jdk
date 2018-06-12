@@ -35,6 +35,7 @@ import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextLayout;
 import java.awt.font.TextHitInfo;
@@ -51,18 +52,26 @@ public class LigatureCaretTest {
 
     public static void main(String[] args) {
 
-        //testBidiWithNumbers();
+        testBidiWithNumbers();
         testLamAlef();
         System.out.println("LigatureCaretTest PASSED");
     }
 
-    // These values are for TextLayout constructors
-    private static final Hashtable map = new Hashtable();
-    static {
-      map.put(TextAttribute.FONT, new Font("Lucida Sans", Font.PLAIN, 24));
-    }
     private static final FontRenderContext frc =
                                 new FontRenderContext(null, false, false);
+
+    private static Font getFontForText(String s) {
+        GraphicsEnvironment ge =
+           GraphicsEnvironment.getLocalGraphicsEnvironment();
+        Font[] fonts = ge.getAllFonts();
+
+        for (Font f : fonts) {
+           if (f.canDisplayUpTo(s) == -1) {
+               return f.deriveFont(Font.PLAIN, 24);
+           }
+        }
+        return null;
+    }
 
     /**
      * Caret through text mixed-direction text and check the results.
@@ -72,6 +81,13 @@ public class LigatureCaretTest {
     public static void testBidiWithNumbers() {
 
         String bidiWithNumbers = "abc\u05D0\u05D1\u05D2123abc";
+        Font font = getFontForText(bidiWithNumbers);
+        if (font == null) {
+            return;
+        }
+        Hashtable map = new Hashtable();
+        map.put(TextAttribute.FONT, font);
+
         // visual order for the text:
         // abc123<gimel><bet><aleph>abc
 
@@ -115,6 +131,13 @@ public class LigatureCaretTest {
         // lam-alef form a mandantory ligature.
         final String lamAlef = "\u0644\u0627";
         final String ltrText = "abcd";
+
+        Font font = getFontForText(lamAlef+ltrText);
+        if (font == null) {
+            return;
+        }
+        Hashtable map = new Hashtable();
+        map.put(TextAttribute.FONT, font);
 
         // Create a TextLayout with just a lam-alef sequence.  There
         // should only be two valid caret positions:  one at

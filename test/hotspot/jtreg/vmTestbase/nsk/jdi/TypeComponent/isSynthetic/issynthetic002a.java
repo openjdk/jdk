@@ -51,7 +51,11 @@ public class issynthetic002a {
     }
 }
 
-class issynthetic002aClassToCheck {
+interface issynthetic002aClassToCheckIntf<T> {
+    T test(T t);
+}
+
+class issynthetic002aClassToCheck implements issynthetic002aClassToCheckIntf<String> {
     // Not-synthetic methods
 
     // User class and interface
@@ -178,26 +182,13 @@ class issynthetic002aClassToCheck {
     private      Inter[]   MEP1(Inter[] E)   { return E; };
     private      Inter[][] MEP2(Inter[][] E) { return E; };
 
-    // Synthetic methods
 
-    private int i;
-    private String s;
-
-    class NestedClass {
-        boolean MS(String str) {
-            // Method uses private variable s from ClassToCheck,
-            // so two synthetic methods must appear in ClassToCheck
-
-            s = s + "NestedClass";
-            return s.equals(str);
-        };
-
-        boolean Mi(int j) {
-            // Method uses private variable i from ClassToCheck,
-            // so two synthetic methods must appear in ClassToCheck
-
-            i = i + 1;
-            return (i == j);
-        };
+   // The implementation of the parametrized interface issynthetic002aClassToCheckIntf
+   // triggers the compiler to create the synthetic bridge method
+   // "test(Ljava/lang/Object;)Ljava/lang/Object;".
+    public String test(String s) {
+        return s;
     }
+
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Unit test for Calendar.Builder.
  */
 
+import java.time.LocalDateTime;
 import java.util.*;
 import static java.util.Calendar.*;
 
@@ -132,7 +133,11 @@ public class BuilderTest {
                 .setFields(YEAR, 1, DAY_OF_YEAR, 1).build();
             expected = Calendar.getInstance(jaJPJP);
             expected.clear();
-            expected.set(1, JANUARY, 8);
+            if (LocalDateTime.now().isBefore(LocalDateTime.of(2019, 5, 1, 0, 0))) {
+                expected.set(1, JANUARY, 8);
+            } else {
+                expected.set(1, MAY, 1);
+            }
             check(cal, expected);
             // setLocale
             calb = builder();

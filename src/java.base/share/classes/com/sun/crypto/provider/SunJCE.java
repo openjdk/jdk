@@ -57,6 +57,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  *
  * - ARCFOUR (RC4 compatible)
  *
+ * - ChaCha20 (Stream cipher only and in AEAD mode with Poly1305)
+ *
  * - Cipher modes ECB, CBC, CFB, OFB, PCBC, CTR, and CTS for all block ciphers
  *   and mode GCM for AES cipher
  *
@@ -77,7 +79,7 @@ public final class SunJCE extends Provider {
 
     private static final String info = "SunJCE Provider " +
     "(implements RSA, DES, Triple DES, AES, Blowfish, ARCFOUR, RC2, PBE, "
-    + "Diffie-Hellman, HMAC)";
+    + "Diffie-Hellman, HMAC, ChaCha20)";
 
     private static final String OID_PKCS12_RC4_128 = "1.2.840.113549.1.12.1.1";
     private static final String OID_PKCS12_RC4_40 = "1.2.840.113549.1.12.1.2";
@@ -336,6 +338,15 @@ public final class SunJCE extends Provider {
                     put("Cipher.ARCFOUR SupportedPaddings", "NOPADDING");
                     put("Cipher.ARCFOUR SupportedKeyFormats", "RAW");
 
+                    put("Cipher.ChaCha20",
+                        "com.sun.crypto.provider.ChaCha20Cipher$ChaCha20Only");
+                    put("Cipher.ChaCha20 SupportedKeyFormats", "RAW");
+                    put("Cipher.ChaCha20-Poly1305",
+                        "com.sun.crypto.provider.ChaCha20Cipher$ChaCha20Poly1305");
+                    put("Cipher.ChaCha20-Poly1305 SupportedKeyFormats", "RAW");
+                    put("Alg.Alias.Cipher.1.2.840.113549.1.9.16.3.18", "ChaCha20-Poly1305");
+                    put("Alg.Alias.Cipher.OID.1.2.840.113549.1.9.16.3.18", "ChaCha20-Poly1305");
+
                     /*
                      * Key(pair) Generator engines
                      */
@@ -360,6 +371,10 @@ public final class SunJCE extends Provider {
                         "com.sun.crypto.provider.KeyGeneratorCore$" +
                         "ARCFOURKeyGenerator");
                     put("Alg.Alias.KeyGenerator.RC4", "ARCFOUR");
+
+                    put("KeyGenerator.ChaCha20",
+                        "com.sun.crypto.provider.KeyGeneratorCore$" +
+                        "ChaCha20KeyGenerator");
 
                     put("KeyGenerator.HmacMD5",
                         "com.sun.crypto.provider.HmacMD5KeyGenerator");
@@ -540,6 +555,9 @@ public final class SunJCE extends Provider {
 
                     put("AlgorithmParameters.OAEP",
                         "com.sun.crypto.provider.OAEPParameters");
+
+                    put("AlgorithmParameters.ChaCha20-Poly1305",
+                        "com.sun.crypto.provider.ChaCha20Poly1305Parameters");
 
                     /*
                      * Key factories

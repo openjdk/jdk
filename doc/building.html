@@ -505,7 +505,7 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30</code></pre>
 <ul>
 <li><code>hotspot</code> - Build all of hotspot (but only hotspot)</li>
 <li><code>hotspot-&lt;variant&gt;</code> - Build just the specified jvm variant</li>
-<li><code>images</code> or <code>product-images</code> - Build the JRE and JDK images</li>
+<li><code>images</code> or <code>product-images</code> - Build the JDK image</li>
 <li><code>docs</code> or <code>docs-image</code> - Build the documentation image</li>
 <li><code>test-image</code> - Build the test image</li>
 <li><code>all</code> or <code>all-images</code> - Build all images (product, docs and test)</li>
@@ -639,7 +639,7 @@ cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</c
 <p>OpenJDK contains two different ports for the aarch64 platform, one is the original aarch64 port from the <a href="http://openjdk.java.net/projects/aarch64-port">AArch64 Port Project</a> and one is a 64-bit version of the Oracle contributed ARM port. When targeting aarch64, by the default the original aarch64 port is used. To select the Oracle ARM 64 port, use <code>--with-cpu-port=arm64</code>. Also set the corresponding value (<code>aarch64</code> or <code>arm64</code>) to --with-abi-profile, to ensure a consistent build.</p>
 <h3 id="verifying-the-build">Verifying the Build</h3>
 <p>The build will end up in a directory named like <code>build/linux-arm-normal-server-release</code>.</p>
-<p>Inside this build output directory, the <code>images/jdk</code> and <code>images/jre</code> will contain the newly built JDK and JRE, respectively, for your <em>target</em> system.</p>
+<p>Inside this build output directory, the <code>images/jdk</code> will contain the newly built JDK, for your <em>target</em> system.</p>
 <p>Copy these folders to your <em>target</em> system. Then you can run e.g. <code>images/jdk/bin/java -version</code>.</p>
 <h2 id="build-performance">Build Performance</h2>
 <p>Building OpenJDK requires a lot of horsepower. Some of the build tools can be adjusted to utilize more or less of resources such as parallel threads and memory. The <code>configure</code> script analyzes your system and selects reasonable values for such options based on your hardware. If you encounter resource problems, such as out of memory conditions, you can modify the detected values with:</p>

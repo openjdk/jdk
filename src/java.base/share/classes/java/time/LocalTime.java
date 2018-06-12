@@ -356,14 +356,14 @@ public final class LocalTime
      * @return the local time, not null
      * @since 9
      */
-     public static LocalTime ofInstant(Instant instant, ZoneId zone) {
-         Objects.requireNonNull(instant, "instant");
-         Objects.requireNonNull(zone, "zone");
-         ZoneOffset offset = zone.getRules().getOffset(instant);
-         long localSecond = instant.getEpochSecond() + offset.getTotalSeconds();
-         int secsOfDay = Math.floorMod(localSecond, SECONDS_PER_DAY);
-         return ofNanoOfDay(secsOfDay * NANOS_PER_SECOND + instant.getNano());
-     }
+    public static LocalTime ofInstant(Instant instant, ZoneId zone) {
+        Objects.requireNonNull(instant, "instant");
+        Objects.requireNonNull(zone, "zone");
+        ZoneOffset offset = zone.getRules().getOffset(instant);
+        long localSecond = instant.getEpochSecond() + offset.getTotalSeconds();
+        int secsOfDay = Math.floorMod(localSecond, SECONDS_PER_DAY);
+        return ofNanoOfDay(secsOfDay * NANOS_PER_SECOND + instant.getNano());
+    }
 
     //-----------------------------------------------------------------------
     /**

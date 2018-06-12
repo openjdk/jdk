@@ -116,12 +116,14 @@ public abstract class LoopTransformations {
         Position firstPosition = successors.next();
         AbstractBeginNode originalLoopBegin = BeginNode.begin(originalLoop.entryPoint());
         firstPosition.set(newControlSplit, originalLoopBegin);
+        originalLoopBegin.setNodeSourcePosition(firstPosition.get(firstNode).getNodeSourcePosition());
 
         while (successors.hasNext()) {
             Position position = successors.next();
             // create a new loop duplicate and connect it.
             LoopFragmentWhole duplicateLoop = originalLoop.duplicate();
             AbstractBeginNode newBegin = BeginNode.begin(duplicateLoop.entryPoint());
+            newBegin.setNodeSourcePosition(position.get(firstNode).getNodeSourcePosition());
             position.set(newControlSplit, newBegin);
 
             // For each cloned ControlSplitNode, simplify the proper path

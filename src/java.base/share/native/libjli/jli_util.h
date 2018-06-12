@@ -51,7 +51,8 @@ JLI_StringDup(const char *s1);
 JNIEXPORT void JNICALL
 JLI_MemFree(void *ptr);
 
-int   JLI_StrCCmp(const char *s1, const char* s2);
+int   JLI_StrCCmp(const char *s1, const char *s2);
+jboolean   JLI_HasSuffix(const char *s1, const char *s2);
 
 typedef struct {
     char *arg;
@@ -158,7 +159,7 @@ JNIEXPORT void JNICALL
 JLI_InitArgProcessing(jboolean hasJavaArgs, jboolean disableArgFile);
 
 JNIEXPORT JLI_List JNICALL
-JLI_PreprocessArg(const char *arg);
+JLI_PreprocessArg(const char *arg, jboolean expandSourceOpt);
 
 JNIEXPORT jboolean JNICALL
 JLI_AddArgsFromEnvVar(JLI_List args, const char *var_name);

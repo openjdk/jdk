@@ -1300,35 +1300,10 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         THIS_JDK="$THIS/install/jdk"
         OTHER_JDK="$OTHER/install/jdk"
         echo "Selecting install images for JDK compare"
-        if [ -d "$THIS/install/jre" ] && [ -d "$OTHER/install/jre" ]; then
-            THIS_JRE="$THIS/install/jre"
-            OTHER_JRE="$OTHER/install/jre"
-            echo "Also selecting install images for JRE compare"
-        else
-            echo "No install JRE image found"
-        fi
-    elif [ -d "$THIS/images/jdk" ] && [ -d "$OTHER/deploy/images/jdk" ]; then
-        THIS_JDK="$THIS/images/jdk"
-        OTHER_JDK="$OTHER/deploy/images/jdk"
-        echo "Selecting deploy images for JDK compare"
-        if [ -d "$THIS/images/jre" ] && [ -d "$OTHER/deploy/images/jre" ]; then
-            THIS_JRE="$THIS/images/jre"
-            OTHER_JRE="$OTHER/deploy/images/jre"
-            echo "Selecting deploy images for JRE compare"
-        else
-            echo "No deploy JRE image found"
-        fi
     elif [ -d "$THIS/images/jdk" ] && [ -d "$OTHER/images/jdk" ]; then
         THIS_JDK="$THIS/images/jdk"
         OTHER_JDK="$OTHER/images/jdk"
         echo "Selecting normal images for JDK compare"
-        if [ -d "$THIS/images/jre" ] && [ -d "$OTHER/images/jre" ]; then
-            THIS_JRE="$THIS/images/jre"
-            OTHER_JRE="$OTHER/images/jre"
-            echo "Selecting normal images for JRE compare"
-        else
-            echo "No normal JRE image found"
-        fi
     elif [ -d "$(ls -d $THIS/licensee-src/build/*/images/jdk 2> /dev/null)" ] \
         && [ -d "$(ls -d $OTHER/licensee-src/build/*/images/jdk 2> /dev/null)" ]
     then
@@ -1341,9 +1316,7 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         THIS="$(ls -d $THIS/licensee-src/build/*)"
         OTHER="$(ls -d $OTHER/licensee-src/build/*)"
         THIS_JDK="$THIS/images/jdk"
-        THIS_JRE="$THIS/images/jre"
         OTHER_JDK="$OTHER/images/jdk"
-        OTHER_JRE="$OTHER/images/jre"
         # Rewrite the path to tools that are used from the build
         JIMAGE="$(echo "$JIMAGE" | $SED "s|$OLD_THIS|$THIS|g")"
         JAVAP="$(echo "$JAVAP" | $SED "s|$OLD_THIS|$THIS|g")"
@@ -1358,17 +1331,13 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
 	     && [ -d "$OTHER/images/jdk-bundle" -o -d "$OTHER/deploy/images/jdk-bundle" ]; then
 	if [ -d "$THIS/deploy/images/jdk-bundle" ]; then
             THIS_JDK_BUNDLE="$THIS/deploy/images/jdk-bundle"
-            THIS_JRE_BUNDLE="$THIS/deploy/images/jre-bundle"
 	else
             THIS_JDK_BUNDLE="$THIS/images/jdk-bundle"
-            THIS_JRE_BUNDLE="$THIS/images/jre-bundle"
 	fi
 	if [ -d "$OTHER/deploy/images/jdk-bundle" ]; then
             OTHER_JDK_BUNDLE="$OTHER/deploy/images/jdk-bundle"
-            OTHER_JRE_BUNDLE="$OTHER/deploy/images/jre-bundle"
 	else
             OTHER_JDK_BUNDLE="$OTHER/images/jdk-bundle"
-            OTHER_JRE_BUNDLE="$OTHER/images/jre-bundle"
 	fi
         echo "Also comparing jdk macosx bundles"
         echo "  $THIS_JDK_BUNDLE"
@@ -1457,22 +1426,12 @@ if [ "$CMP_NAMES" = "true" ]; then
         echo -n "JDK "
         compare_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
-    if [ -n "$THIS_JRE" ] && [ -n "$OTHER_JRE" ]; then
-        echo -n "JRE "
-        compare_dirs $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
-        echo -n "JRE "
-        compare_files $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
-    fi
     if [ -n "$THIS_JDK_BUNDLE" ] && [ -n "$OTHER_JDK_BUNDLE" ]; then
         echo -n "JDK Bundle "
         compare_dirs $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
-        echo -n "JRE Bundle "
-        compare_dirs $THIS_JRE_BUNDLE $OTHER_JRE_BUNDLE $COMPARE_ROOT/jre-bundle
 
         echo -n "JDK Bundle "
         compare_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
-        echo -n "JRE Bundle "
-        compare_files $THIS_JRE_BUNDLE $OTHER_JRE_BUNDLE $COMPARE_ROOT/jre-bundle
     fi
     if [ -n "$THIS_DOCS" ] && [ -n "$OTHER_DOCS" ]; then
         echo -n "Docs "
@@ -1538,15 +1497,9 @@ if [ "$CMP_GENERAL" = "true" ]; then
         echo -n "JDK "
         compare_general_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
-    if [ -n "$THIS_JRE" ] && [ -n "$OTHER_JRE" ]; then
-        echo -n "JRE "
-        compare_general_files $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
-    fi
     if [ -n "$THIS_JDK_BUNDLE" ] && [ -n "$OTHER_JDK_BUNDLE" ]; then
         echo -n "JDK Bundle "
         compare_general_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
-        echo -n "JRE Bundle "
-        compare_general_files $THIS_JRE_BUNDLE $OTHER_JRE_BUNDLE $COMPARE_ROOT/jre-bundle
     fi
     if [ -n "$THIS_DOCS" ] && [ -n "$OTHER_DOCS" ]; then
         echo -n "Docs "
@@ -1615,10 +1568,6 @@ if [ "$CMP_PERMS" = "true" ]; then
         echo -n "JDK "
         compare_permissions $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
-    if [ -n "$THIS_JRE" ] && [ -n "$OTHER_JRE" ]; then
-        echo -n "JRE "
-        compare_permissions $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
-    fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
         compare_permissions $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
@@ -1637,15 +1586,9 @@ if [ "$CMP_TYPES" = "true" ]; then
         echo -n "JDK "
         compare_file_types $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
-    if [ -n "$THIS_JRE" ] && [ -n "$OTHER_JRE" ]; then
-        echo -n "JRE "
-        compare_file_types $THIS_JRE $OTHER_JRE $COMPARE_ROOT/jre
-    fi
     if [ -n "$THIS_JDK_BUNDLE" ] && [ -n "$OTHER_JDK_BUNDLE" ]; then
         echo -n "JDK Bundle "
         compare_file_types $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
-        echo -n "JRE Bundle "
-        compare_file_types $THIS_JRE_BUNDLE $OTHER_JRE_BUNDLE $COMPARE_ROOT/jre-bundle
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
         compare_file_types $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir

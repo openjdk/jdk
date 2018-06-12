@@ -1257,15 +1257,19 @@ public class Lower extends TreeTranslator {
     ClassSymbol accessConstructorTag() {
         ClassSymbol topClass = currentClass.outermostClass();
         ModuleSymbol topModle = topClass.packge().modle;
-        Name flatname = names.fromString("" + topClass.getQualifiedName() +
-                                         target.syntheticNameChar() +
-                                         "1");
-        ClassSymbol ctag = chk.getCompiled(topModle, flatname);
-        if (ctag == null)
-            ctag = makeEmptyClass(STATIC | SYNTHETIC, topClass).sym;
-        // keep a record of all tags, to verify that all are generated as required
-        accessConstrTags = accessConstrTags.prepend(ctag);
-        return ctag;
+        for (int i = 1; ; i++) {
+            Name flatname = names.fromString("" + topClass.getQualifiedName() +
+                                            target.syntheticNameChar() +
+                                            i);
+            ClassSymbol ctag = chk.getCompiled(topModle, flatname);
+            if (ctag == null)
+                ctag = makeEmptyClass(STATIC | SYNTHETIC, topClass).sym;
+            else if (!ctag.isAnonymous())
+                continue;
+            // keep a record of all tags, to verify that all are generated as required
+            accessConstrTags = accessConstrTags.prepend(ctag);
+            return ctag;
+        }
     }
 
     /** Add all required access methods for a private symbol to enclosing class.

@@ -26,13 +26,12 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.aarch64.AArch64Assembler;
+import org.graalvm.compiler.asm.aarch64.AArch64Assembler.ShiftType;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.lir.LIRInstructionClass;
 import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
 
-import jdk.vm.ci.aarch64.AArch64.CPUFeature;
-import jdk.vm.ci.aarch64.AArch64.Flag;
 import jdk.vm.ci.aarch64.AArch64Kind;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
@@ -76,15 +75,15 @@ public class AArch64AtomicMove {
             Register address = asRegister(addressValue);
             Register result = asRegister(resultValue);
             Register newVal = asRegister(newValue);
-             if (masm.supports(CPUFeature.LSE) || masm.isFlagSet(Flag.UseLSE)) {
+            if (AArch64LIRFlagsVersioned.useLSE(masm)) {
                 Register expected = asRegister(expectedValue);
                 masm.mov(size, result, expected);
-                masm.cas(size, expected, newVal, address, true /*acquire*/, true /*release*/);
+                masm.cas(size, expected, newVal, address, true /* acquire */, true /* release */);
                 AArch64Compare.gpCompare(masm, resultValue, expectedValue);
             } else {
-                // We could avoid using a scratch register here, by reusing resultValue for the stlxr
-                // success flag and issue a mov resultValue, expectedValue in case of success before
-                // returning.
+                // We could avoid using a scratch register here, by reusing resultValue for the
+                // stlxr success flag and issue a mov resultValue, expectedValue in case of success
+                // before returning.
                 Register scratch = asRegister(scratchValue);
                 Label retry = new Label();
                 Label fail = new Label();
@@ -96,6 +95,61 @@ public class AArch64AtomicMove {
                 // if scratch == 0 then write successful, else retry.
                 masm.cbnz(32, scratch, retry);
                 masm.bind(fail);
+            }
+        }
+    }
+
+    /**
+     * Load (Read) and Add instruction. Does the following atomically: <code>
+     *  ATOMIC_READ_AND_ADD(addend, result, address):
+     *    result = *address
+     *    *address = result + addend
+     *    return result
+     * </code>
+     */
+    @Opcode("ATOMIC_READ_AND_ADD")
+    public static final class AtomicReadAndAddOp extends AArch64LIRInstruction {
+        public static final LIRInstructionClass<AtomicReadAndAddOp> TYPE = LIRInstructionClass.create(AtomicReadAndAddOp.class);
+
+        private final AArch64Kind accessKind;
+
+        @Def protected AllocatableValue resultValue;
+        @Alive protected AllocatableValue addressValue;
+        @Alive protected Value deltaValue;
+        @Temp protected AllocatableValue scratchValue1;
+        @Temp protected AllocatableValue scratchValue2;
+
+        public AtomicReadAndAddOp(AArch64Kind kind, AllocatableValue result, AllocatableValue address, Value delta, AllocatableValue scratch1, AllocatableValue scratch2) {
+            super(TYPE);
+            this.accessKind = kind;
+            this.resultValue = result;
+            this.addressValue = address;
+            this.deltaValue = delta;
+            this.scratchValue1 = scratch1;
+            this.scratchValue2 = scratch2;
+        }
+
+        @Override
+        public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
+            assert accessKind.isInteger();
+            final int size = accessKind.getSizeInBytes() * Byte.SIZE;
+
+            Register address = asRegister(addressValue);
+            Register delta = asRegister(deltaValue);
+            Register result = asRegister(resultValue);
+
+            if (AArch64LIRFlagsVersioned.useLSE(masm)) {
+                masm.ldadd(size, delta, result, address, true, true);
+            } else {
+                Register scratch1 = asRegister(scratchValue1);
+                Register scratch2 = asRegister(scratchValue2);
+                Label retry = new Label();
+                masm.bind(retry);
+                masm.ldaxr(size, result, address);
+                masm.add(size, scratch1, result, delta, ShiftType.LSL, 0);
+                masm.stlxr(size, scratch2, scratch1, address);
+                // if scratch2 == 0 then write successful, else retry
+                masm.cbnz(32, scratch2, retry);
             }
         }
     }

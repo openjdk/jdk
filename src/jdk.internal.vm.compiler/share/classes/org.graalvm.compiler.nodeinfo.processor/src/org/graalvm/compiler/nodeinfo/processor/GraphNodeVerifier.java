@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import static javax.lang.model.element.Modifier.TRANSIENT;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -42,17 +41,16 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+
+import org.graalvm.compiler.processor.AbstractProcessor;
 
 /**
  * Verifies static constraints on nodes.
  */
 public class GraphNodeVerifier {
 
-    private final GraphNodeProcessor env;
-    private final Types types;
-    private final Elements elements;
+    private final AbstractProcessor processor;
 
     // Checkstyle: stop
     private final TypeElement Input;
@@ -67,12 +65,8 @@ public class GraphNodeVerifier {
 
     // Checkstyle: resume
 
-    public GraphNodeVerifier(GraphNodeProcessor processor) {
-        this.env = processor;
-
-        this.types = processor.getProcessingEnv().getTypeUtils();
-        this.elements = processor.getProcessingEnv().getElementUtils();
-
+    public GraphNodeVerifier(AbstractProcessor processor) {
+        this.processor = processor;
         this.Input = getTypeElement("org.graalvm.compiler.graph.Node.Input");
         this.OptionalInput = getTypeElement("org.graalvm.compiler.graph.Node.OptionalInput");
         this.Successor = getTypeElement("org.graalvm.compiler.graph.Node.Successor");
@@ -88,11 +82,7 @@ public class GraphNodeVerifier {
      * @throw {@link NoClassDefFoundError} if a type element does not exist for {@code name}
      */
     public TypeElement getTypeElement(String name) {
-        TypeElement typeElement = elements.getTypeElement(name);
-        if (typeElement == null) {
-            throw new NoClassDefFoundError(name);
-        }
-        return typeElement;
+        return processor.getTypeElement(name);
     }
 
     public TypeElement getTypeElement(Class<?> cls) {
@@ -103,11 +93,8 @@ public class GraphNodeVerifier {
         return getTypeElement(name).asType();
     }
 
-    public ProcessingEnvironment getProcessingEnv() {
-        return env.getProcessingEnv();
-    }
-
     public boolean isAssignableWithErasure(Element from, Element to) {
+        Types types = processor.env().getTypeUtils();
         TypeMirror fromType = types.erasure(from.asType());
         TypeMirror toType = types.erasure(to.asType());
         return types.isAssignable(fromType, toType);
@@ -204,12 +191,12 @@ public class GraphNodeVerifier {
     }
 
     private boolean sameType(TypeMirror type1, TypeMirror type2) {
-        return env.getProcessingEnv().getTypeUtils().isSameType(type1, type2);
+        return processor.env().getTypeUtils().isSameType(type1, type2);
     }
 
     private TypeElement getSuperType(TypeElement element) {
         if (element.getSuperclass() != null) {
-            return (TypeElement) env.getProcessingEnv().getTypeUtils().asElement(element.getSuperclass());
+            return processor.asTypeElement(element.getSuperclass());
         }
         return null;
     }

@@ -333,12 +333,12 @@ public class Object {
      * by being <em>notified</em> or <em>interrupted</em>, or until a
      * certain amount of real time has elapsed.
      * <p>
-     * In all respects, this method behaves as if {@code wait(timeout, 0)}
+     * In all respects, this method behaves as if {@code wait(timeoutMillis, 0)}
      * had been called. See the specification of the {@link #wait(long, int)} method
      * for details.
      *
-     * @param  timeout the maximum time to wait, in milliseconds
-     * @throws IllegalArgumentException if the value of {@code timeout} is negative
+     * @param  timeoutMillis the maximum time to wait, in milliseconds
+     * @throws IllegalArgumentException if {@code timeoutMillis} is negative
      * @throws IllegalMonitorStateException if the current thread is not
      *         the owner of the object's monitor
      * @throws InterruptedException if any thread interrupted the current thread before or
@@ -349,7 +349,7 @@ public class Object {
      * @see    #wait()
      * @see    #wait(long, int)
      */
-    public final native void wait(long timeout) throws InterruptedException;
+    public final native void wait(long timeoutMillis) throws InterruptedException;
 
     /**
      * Causes the current thread to wait until it is awakened, typically
@@ -378,7 +378,7 @@ public class Object {
      * thread <var>T</var>.
      * <li>The specified amount of real time has elapsed, more or less.
      * The amount of real time, in nanoseconds, is given by the expression
-     * {@code 1000000 * timeout + nanos}. If {@code timeout} and {@code nanos}
+     * {@code 1000000 * timeoutMillis + nanos}. If {@code timeoutMillis} and {@code nanos}
      * are both zero, then real time is not taken into consideration and the
      * thread waits until awakened by one of the other causes.
      * <li>Thread <var>T</var> is awakened spuriously. (See below.)
@@ -423,17 +423,17 @@ public class Object {
      * <pre>{@code
      *     synchronized (obj) {
      *         while (<condition does not hold> and <timeout not exceeded>) {
-     *             long timeout = ... ; // recompute timeout values
+     *             long timeoutMillis = ... ; // recompute timeout values
      *             int nanos = ... ;
-     *             obj.wait(timeout, nanos);
+     *             obj.wait(timeoutMillis, nanos);
      *         }
      *         ... // Perform action appropriate to condition or timeout
      *     }
      * }</pre>
      *
-     * @param  timeout the maximum time to wait, in milliseconds
+     * @param  timeoutMillis the maximum time to wait, in milliseconds
      * @param  nanos   additional time, in nanoseconds, in the range range 0-999999 inclusive
-     * @throws IllegalArgumentException if the value of {@code timeout} is negative,
+     * @throws IllegalArgumentException if {@code timeoutMillis} is negative,
      *         or if the value of {@code nanos} is out of range
      * @throws IllegalMonitorStateException if the current thread is not
      *         the owner of the object's monitor
@@ -445,9 +445,9 @@ public class Object {
      * @see    #wait()
      * @see    #wait(long)
      */
-    public final void wait(long timeout, int nanos) throws InterruptedException {
-        if (timeout < 0) {
-            throw new IllegalArgumentException("timeout value is negative");
+    public final void wait(long timeoutMillis, int nanos) throws InterruptedException {
+        if (timeoutMillis < 0) {
+            throw new IllegalArgumentException("timeoutMillis value is negative");
         }
 
         if (nanos < 0 || nanos > 999999) {
@@ -456,10 +456,10 @@ public class Object {
         }
 
         if (nanos > 0) {
-            timeout++;
+            timeoutMillis++;
         }
 
-        wait(timeout);
+        wait(timeoutMillis);
     }
 
     /**

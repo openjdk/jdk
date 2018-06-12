@@ -129,24 +129,35 @@ hb_set_symmetric_difference (hb_set_t       *set,
 HB_EXTERN unsigned int
 hb_set_get_population (const hb_set_t *set);
 
-/* Returns -1 if set empty. */
+/* Returns HB_SET_VALUE_INVALID if set empty. */
 HB_EXTERN hb_codepoint_t
 hb_set_get_min (const hb_set_t *set);
 
-/* Returns -1 if set empty. */
+/* Returns HB_SET_VALUE_INVALID if set empty. */
 HB_EXTERN hb_codepoint_t
 hb_set_get_max (const hb_set_t *set);
 
-/* Pass -1 in to get started. */
+/* Pass HB_SET_VALUE_INVALID in to get started. */
 HB_EXTERN hb_bool_t
 hb_set_next (const hb_set_t *set,
              hb_codepoint_t *codepoint);
 
-/* Pass -1 for first and last to get started. */
+/* Pass HB_SET_VALUE_INVALID in to get started. */
+HB_EXTERN hb_bool_t
+hb_set_previous (const hb_set_t *set,
+                 hb_codepoint_t *codepoint);
+
+/* Pass HB_SET_VALUE_INVALID for first and last to get started. */
 HB_EXTERN hb_bool_t
 hb_set_next_range (const hb_set_t *set,
                    hb_codepoint_t *first,
                    hb_codepoint_t *last);
+
+/* Pass HB_SET_VALUE_INVALID for first and last to get started. */
+HB_EXTERN hb_bool_t
+hb_set_previous_range (const hb_set_t *set,
+                       hb_codepoint_t *first,
+                       hb_codepoint_t *last);
 
 
 HB_END_DECLS

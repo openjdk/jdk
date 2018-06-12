@@ -337,6 +337,7 @@ public:
 
 class CodeBuffer: public StackObj {
   friend class CodeSection;
+  friend class StubCodeGenerator;
 
  private:
   // CodeBuffers must be allocated on the stack except for a single

@@ -230,11 +230,12 @@ enum LaunchMode {               // cf. sun.launcher.LauncherHelper
     LM_UNKNOWN = 0,
     LM_CLASS,
     LM_JAR,
-    LM_MODULE
+    LM_MODULE,
+    LM_SOURCE
 };
 
 static const char *launchModeNames[]
-    = { "Unknown", "Main class", "JAR file", "Module" };
+    = { "Unknown", "Main class", "JAR file", "Module", "Source" };
 
 typedef struct {
     int    argc;

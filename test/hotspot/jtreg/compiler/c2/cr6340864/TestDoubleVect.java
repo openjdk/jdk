@@ -26,7 +26,7 @@
  * @bug 6340864
  * @summary Implement vectorization optimizations in hotspot-server
  *
- * @run main/othervm/timeout=400 -Xbatch -Xmx64m compiler.c2.cr6340864.TestDoubleVect
+ * @run main/othervm/timeout=400 -Xbatch -Xmx128m compiler.c2.cr6340864.TestDoubleVect
  */
 
 package compiler.c2.cr6340864;

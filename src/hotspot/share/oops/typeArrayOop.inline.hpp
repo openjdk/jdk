@@ -90,92 +90,92 @@ inline jdouble* typeArrayOopDesc::double_at_addr(int which) const {
 }
 
 inline jbyte typeArrayOopDesc::byte_at(int which) const {
-  ptrdiff_t offset = element_offset<jbyte>(T_BYTE, which);
+  ptrdiff_t offset = element_offset<jbyte>(which);
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::byte_at_put(int which, jbyte contents) {
-  ptrdiff_t offset = element_offset<jbyte>(T_BYTE, which);
+  ptrdiff_t offset = element_offset<jbyte>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
 inline jboolean typeArrayOopDesc::bool_at(int which) const {
-  ptrdiff_t offset = element_offset<jboolean>(T_BOOLEAN, which);
+  ptrdiff_t offset = element_offset<jboolean>(which);
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::bool_at_put(int which, jboolean contents) {
-  ptrdiff_t offset = element_offset<jboolean>(T_BOOLEAN, which);
+  ptrdiff_t offset = element_offset<jboolean>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, jboolean(contents & 1));
 }
 
 inline jchar typeArrayOopDesc::char_at(int which) const {
-  ptrdiff_t offset = element_offset<jchar>(T_CHAR, which);
+  ptrdiff_t offset = element_offset<jchar>(which);
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::char_at_put(int which, jchar contents) {
-  ptrdiff_t offset = element_offset<jchar>(T_CHAR, which);
+  ptrdiff_t offset = element_offset<jchar>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
 inline jint typeArrayOopDesc::int_at(int which) const {
-  ptrdiff_t offset = element_offset<jint>(T_INT, which);
+  ptrdiff_t offset = element_offset<jint>(which);
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::int_at_put(int which, jint contents) {
-  ptrdiff_t offset = element_offset<jint>(T_INT, which);
+  ptrdiff_t offset = element_offset<jint>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
 inline jshort typeArrayOopDesc::short_at(int which) const {
-  ptrdiff_t offset = element_offset<jshort>(T_SHORT, which);
+  ptrdiff_t offset = element_offset<jshort>(which);
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::short_at_put(int which, jshort contents) {
-  ptrdiff_t offset = element_offset<jshort>(T_SHORT, which);
+  ptrdiff_t offset = element_offset<jshort>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
 inline jushort typeArrayOopDesc::ushort_at(int which) const {
-  ptrdiff_t offset = element_offset<jushort>(T_SHORT, which);
+  ptrdiff_t offset = element_offset<jushort>(which);
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::ushort_at_put(int which, jushort contents) {
-  ptrdiff_t offset = element_offset<jushort>(T_SHORT, which);
+  ptrdiff_t offset = element_offset<jushort>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
 inline jlong typeArrayOopDesc::long_at(int which) const {
-  ptrdiff_t offset = element_offset<jlong>(T_LONG, which);
+  ptrdiff_t offset = element_offset<jlong>(which);
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::long_at_put(int which, jlong contents) {
-  ptrdiff_t offset = element_offset<jlong>(T_LONG, which);
+  ptrdiff_t offset = element_offset<jlong>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
 inline jfloat typeArrayOopDesc::float_at(int which) const {
-  ptrdiff_t offset = element_offset<jfloat>(T_FLOAT, which);
+  ptrdiff_t offset = element_offset<jfloat>(which);
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::float_at_put(int which, jfloat contents) {
-  ptrdiff_t offset = element_offset<jfloat>(T_FLOAT, which);
+  ptrdiff_t offset = element_offset<jfloat>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
 inline jdouble typeArrayOopDesc::double_at(int which) const {
-  ptrdiff_t offset = element_offset<jdouble>(T_DOUBLE, which);
+  ptrdiff_t offset = element_offset<jdouble>(which);
   return HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::double_at_put(int which, jdouble contents) {
-  ptrdiff_t offset = element_offset<jdouble>(T_DOUBLE, which);
+  ptrdiff_t offset = element_offset<jdouble>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
 inline jbyte typeArrayOopDesc::byte_at_acquire(int which) const {
-  ptrdiff_t offset = element_offset<jbyte>(T_BYTE, which);
+  ptrdiff_t offset = element_offset<jbyte>(which);
   return HeapAccess<MO_ACQUIRE | IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::release_byte_at_put(int which, jbyte contents) {
-  ptrdiff_t offset = element_offset<jbyte>(T_BYTE, which);
+  ptrdiff_t offset = element_offset<jbyte>(which);
   HeapAccess<MO_RELEASE | IN_HEAP_ARRAY>::store_at(as_oop(), offset, contents);
 }
 
@@ -184,20 +184,20 @@ inline void typeArrayOopDesc::release_byte_at_put(int which, jbyte contents) {
 // casting
 #ifdef _LP64
 inline Symbol* typeArrayOopDesc::symbol_at(int which) const {
-  ptrdiff_t offset = element_offset<jlong>(T_LONG, which);
+  ptrdiff_t offset = element_offset<jlong>(which);
   return (Symbol*)(jlong) HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::symbol_at_put(int which, Symbol* contents) {
-  ptrdiff_t offset = element_offset<jlong>(T_LONG, which);
+  ptrdiff_t offset = element_offset<jlong>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, (jlong)contents);
 }
 #else
 inline Symbol* typeArrayOopDesc::symbol_at(int which) const {
-  ptrdiff_t offset = element_offset<jint>(T_INT, which);
+  ptrdiff_t offset = element_offset<jint>(which);
   return (Symbol*)(jint) HeapAccess<IN_HEAP_ARRAY>::load_at(as_oop(), offset);
 }
 inline void typeArrayOopDesc::symbol_at_put(int which, Symbol* contents) {
-  ptrdiff_t offset = element_offset<jint>(T_INT, which);
+  ptrdiff_t offset = element_offset<jint>(which);
   HeapAccess<IN_HEAP_ARRAY>::store_at(as_oop(), offset, (jint)contents);
 }
 #endif // _LP64

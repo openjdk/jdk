@@ -148,6 +148,36 @@ public class TreeInfo {
         }
     }
 
+    /** Is this tree a 'this' identifier?
+     */
+    public static boolean isThisQualifier(JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isThisQualifier(skipParens(tree));
+            case IDENT: {
+                JCIdent id = (JCIdent)tree;
+                return id.name == id.name.table.names._this;
+            }
+            default:
+                return false;
+        }
+    }
+
+    /** Is this tree an identifier, possibly qualified by 'this'?
+     */
+    public static boolean isIdentOrThisDotIdent(JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isIdentOrThisDotIdent(skipParens(tree));
+            case IDENT:
+                return true;
+            case SELECT:
+                return isThisQualifier(((JCFieldAccess)tree).selected);
+            default:
+                return false;
+        }
+    }
+
     /** Is this a call to super?
      */
     public static boolean isSuperCall(JCTree tree) {

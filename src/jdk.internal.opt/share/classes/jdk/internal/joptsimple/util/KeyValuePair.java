@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -60,7 +60,7 @@ import static jdk.internal.joptsimple.internal.Strings.*;
 /**
  * <p>A simple string key/string value pair.</p>
  *
- * <p>This is useful as an argument type for options whose values take on the form <kbd>key=value</kbd>, such as JVM
+ * <p>This is useful as an argument type for options whose values take on the form {@code key=value}, such as JVM
  * command line system properties.</p>
  *
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
@@ -75,7 +75,7 @@ public final class KeyValuePair {
     }
 
     /**
-     * Parses a string assumed to be of the form <kbd>key=value</kbd> into its parts.
+     * Parses a string assumed to be of the form {@code key=value} into its parts.
      *
      * @param asString key-value string
      * @return a key-value pair
@@ -84,7 +84,7 @@ public final class KeyValuePair {
     public static KeyValuePair valueOf( String asString ) {
         int equalsIndex = asString.indexOf( '=' );
         if ( equalsIndex == -1 )
-            return new KeyValuePair( asString, EMPTY );
+            return new KeyValuePair( asString, null );
 
         String aKey = asString.substring( 0, equalsIndex );
         String aValue = equalsIndex == asString.length() - 1 ? EMPTY : asString.substring( equalsIndex + 1 );

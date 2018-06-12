@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,24 @@ public class TestPrintReferences {
   public static void checkLogValue(OutputAnalyzer out) {
     output = out.getStdout();
 
+    String patternString = gcLogTimeRegex + indent(0) +
+                           referenceProcessing + ": " + "[0-9]+[.,][0-9]+";
+    Matcher m = Pattern.compile(patternString).matcher(output);
+    if (m.find()) {
+        int start = m.start();
+        int end = output.length();
+        // If there's another concurrent Reference Processing log, ignore it.
+        if (m.find()) {
+            end = m.start();
+        }
+        if (start != -1) {
+            output = output.substring(start, end);
+            checkTrimmedLogValue();
+        }
+     }
+  }
+
+  public static void checkTrimmedLogValue() {
     BigDecimal refProcTime = getTimeValue(referenceProcessing, 0);
 
     BigDecimal sumOfSubPhasesTime = checkPhaseTime(softReference);

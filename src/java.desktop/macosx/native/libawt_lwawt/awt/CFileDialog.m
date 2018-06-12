@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@
 canChooseDirectories:(BOOL)inChooseDirectories
              withEnv:(JNIEnv*)env;
 {
-    if (self == [super init]) {
+  if (self = [super init]) {
         fHasFileFilter = inHasFilter;
         fFileDialog = JNFNewGlobalRef(env, inDialog);
         fDirectory = inPath;
@@ -92,7 +92,7 @@ canChooseDirectories:(BOOL)inChooseDirectories
 - (void)safeSaveOrLoad {
     NSSavePanel *thePanel = nil;
 
-    /* 
+    /*
      * 8013553: turns off extension hiding for the native file dialog.
      * This way is used because setExtensionHidden(NO) doesn't work
      * as expected.

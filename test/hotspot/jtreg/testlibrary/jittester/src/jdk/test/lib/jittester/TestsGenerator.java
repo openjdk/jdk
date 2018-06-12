@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
 public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
+    private static final int DEFAULT_JTREG_TIMEOUT = 120;
     protected static final String JAVA_BIN = getJavaPath();
     protected static final String JAVAC = Paths.get(JAVA_BIN, "javac").toString();
     protected static final String JAVA = Paths.get(JAVA_BIN, "java").toString();
@@ -73,15 +74,17 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
         pb.redirectError(new File(name + ".err"));
         pb.redirectOutput(new File(name + ".out"));
         Process process = pb.start();
-        if (process.waitFor(Automatic.MINUTES_TO_WAIT, TimeUnit.MINUTES)) {
-            try (FileWriter file = new FileWriter(name + ".exit")) {
-                file.write(Integer.toString(process.exitValue()));
+        try {
+            if (process.waitFor(DEFAULT_JTREG_TIMEOUT, TimeUnit.SECONDS)) {
+                try (FileWriter file = new FileWriter(name + ".exit")) {
+                    file.write(Integer.toString(process.exitValue()));
+                }
+                return process.exitValue();
             }
-            return process.exitValue();
-        } else {
+        } finally {
             process.destroyForcibly();
-            return -1;
         }
+        return -1;
     }
 
     protected static void compilePrinter() {

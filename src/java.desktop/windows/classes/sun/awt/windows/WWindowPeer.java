@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ import sun.awt.SunToolkit;
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.Win32GraphicsEnvironment;
+import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.pipe.Region;
-import sun.swing.SwingUtilities2;
 import sun.util.logging.PlatformLogger;
 
 public class WWindowPeer extends WPanelPeer implements WindowPeer,
@@ -659,7 +659,8 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
          int cx = x + width / 2;
          int cy = y + height / 2;
          GraphicsConfiguration current = getGraphicsConfiguration();
-         GraphicsConfiguration other = SwingUtilities2.getGraphicsConfigurationAtPoint(current, cx, cy);
+         GraphicsConfiguration other = SunGraphicsEnvironment
+                 .getGraphicsConfigurationAtPoint(current, cx, cy);
          if (!current.equals(other)) {
              AffineTransform tx = other.getDefaultTransform();
              double otherScaleX = tx.getScaleX();

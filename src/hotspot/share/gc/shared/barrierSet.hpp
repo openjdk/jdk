@@ -103,17 +103,17 @@ protected:
   ~BarrierSet() { }
 
   template <class BarrierSetAssemblerT>
-  BarrierSetAssembler* make_barrier_set_assembler() {
+  static BarrierSetAssembler* make_barrier_set_assembler() {
     return NOT_ZERO(new BarrierSetAssemblerT()) ZERO_ONLY(NULL);
   }
 
   template <class BarrierSetC1T>
-  BarrierSetC1* make_barrier_set_c1() {
+  static BarrierSetC1* make_barrier_set_c1() {
     return COMPILER1_PRESENT(new BarrierSetC1T()) NOT_COMPILER1(NULL);
   }
 
   template <class BarrierSetC2T>
-  BarrierSetC2* make_barrier_set_c2() {
+  static BarrierSetC2* make_barrier_set_c2() {
     return COMPILER2_PRESENT(new BarrierSetC2T()) NOT_COMPILER2(NULL);
   }
 
@@ -213,8 +213,12 @@ public:
     }
 
     template <typename T>
-    static void arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
-      Raw::arraycopy(src_obj, dst_obj, src, dst, length);
+    static void arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                  arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                  size_t length) {
+      Raw::arraycopy(src_obj, src_offset_in_bytes, src_raw,
+                     dst_obj, dst_offset_in_bytes, dst_raw,
+                     length);
     }
 
     // Heap oop accesses. These accessors get resolved when
@@ -257,8 +261,12 @@ public:
     }
 
     template <typename T>
-    static bool oop_arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
-      return Raw::oop_arraycopy(src_obj, dst_obj, src, dst, length);
+    static bool oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                                      arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                                      size_t length) {
+      return Raw::oop_arraycopy(src_obj, src_offset_in_bytes, src_raw,
+                                dst_obj, dst_offset_in_bytes, dst_raw,
+                                length);
     }
 
     // Off-heap oop accesses. These accessors get resolved when

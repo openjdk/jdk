@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static jdk.internal.vm.compiler.word.LocationIdentity.any;
 
 import java.lang.ref.Reference;
+import java.util.EnumMap;
 
 import org.graalvm.compiler.api.directives.GraalDirectives;
 import org.graalvm.compiler.core.common.CompressEncoding;
@@ -49,6 +50,7 @@ import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
+import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
@@ -91,8 +93,8 @@ import org.graalvm.compiler.hotspot.replacements.UnsafeLoadSnippets;
 import org.graalvm.compiler.hotspot.replacements.WriteBarrierSnippets;
 import org.graalvm.compiler.hotspot.replacements.aot.ResolveConstantSnippets;
 import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopyNode;
-import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopyWithSlowPathNode;
 import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopySnippets;
+import org.graalvm.compiler.hotspot.replacements.arraycopy.ArrayCopyWithSlowPathNode;
 import org.graalvm.compiler.hotspot.replacements.profiling.ProfileSnippets;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
@@ -118,6 +120,7 @@ import org.graalvm.compiler.nodes.calc.RemNode;
 import org.graalvm.compiler.nodes.debug.StringToBytesNode;
 import org.graalvm.compiler.nodes.debug.VerifyHeapNode;
 import org.graalvm.compiler.nodes.extended.BytecodeExceptionNode;
+import org.graalvm.compiler.nodes.extended.BytecodeExceptionNode.BytecodeExceptionKind;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
 import org.graalvm.compiler.nodes.extended.GetClassNode;
 import org.graalvm.compiler.nodes.extended.GuardedUnsafeLoadNode;
@@ -207,7 +210,7 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
         instanceofSnippets = new InstanceOfSnippets.Templates(options, factories, runtime, providers, target);
         newObjectSnippets = new NewObjectSnippets.Templates(options, factories, runtime, providers, target, config);
         monitorSnippets = new MonitorSnippets.Templates(options, factories, runtime, providers, target, config.useFastLocking);
-        writeBarrierSnippets = new WriteBarrierSnippets.Templates(options, factories, runtime, providers, target, config.useCompressedOops ? config.getOopEncoding() : null);
+        writeBarrierSnippets = new WriteBarrierSnippets.Templates(options, factories, runtime, providers, target, config);
         exceptionObjectSnippets = new LoadExceptionObjectSnippets.Templates(options, factories, providers, target);
         unsafeLoadSnippets = new UnsafeLoadSnippets.Templates(options, factories, providers, target);
         assertionSnippets = new AssertionSnippets.Templates(options, factories, providers, target);
@@ -223,162 +226,165 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
     }
 
     @Override
+    @SuppressWarnings("try")
     public void lower(Node n, LoweringTool tool) {
         StructuredGraph graph = (StructuredGraph) n.graph();
-        if (n instanceof Invoke) {
-            lowerInvoke((Invoke) n, tool, graph);
-        } else if (n instanceof LoadMethodNode) {
-            lowerLoadMethodNode((LoadMethodNode) n);
-        } else if (n instanceof GetClassNode) {
-            lowerGetClassNode((GetClassNode) n, tool, graph);
-        } else if (n instanceof StoreHubNode) {
-            lowerStoreHubNode((StoreHubNode) n, graph);
-        } else if (n instanceof OSRStartNode) {
-            lowerOSRStartNode((OSRStartNode) n);
-        } else if (n instanceof BytecodeExceptionNode) {
-            lowerBytecodeExceptionNode((BytecodeExceptionNode) n);
-        } else if (n instanceof InstanceOfNode) {
-            InstanceOfNode instanceOfNode = (InstanceOfNode) n;
-            if (graph.getGuardsStage().areDeoptsFixed()) {
-                instanceofSnippets.lower(instanceOfNode, tool);
-            } else {
-                if (instanceOfNode.allowsNull()) {
-                    ValueNode object = instanceOfNode.getValue();
-                    LogicNode newTypeCheck = graph.addOrUniqueWithInputs(InstanceOfNode.create(instanceOfNode.type(), object, instanceOfNode.profile(), instanceOfNode.getAnchor()));
-                    LogicNode newNode = LogicNode.or(graph.unique(IsNullNode.create(object)), newTypeCheck, GraalDirectives.UNLIKELY_PROBABILITY);
-                    instanceOfNode.replaceAndDelete(newNode);
+        try (DebugCloseable context = n.withNodeSourcePosition()) {
+            if (n instanceof Invoke) {
+                lowerInvoke((Invoke) n, tool, graph);
+            } else if (n instanceof LoadMethodNode) {
+                lowerLoadMethodNode((LoadMethodNode) n);
+            } else if (n instanceof GetClassNode) {
+                lowerGetClassNode((GetClassNode) n, tool, graph);
+            } else if (n instanceof StoreHubNode) {
+                lowerStoreHubNode((StoreHubNode) n, graph);
+            } else if (n instanceof OSRStartNode) {
+                lowerOSRStartNode((OSRStartNode) n);
+            } else if (n instanceof BytecodeExceptionNode) {
+                lowerBytecodeExceptionNode((BytecodeExceptionNode) n);
+            } else if (n instanceof InstanceOfNode) {
+                InstanceOfNode instanceOfNode = (InstanceOfNode) n;
+                if (graph.getGuardsStage().areDeoptsFixed()) {
+                    instanceofSnippets.lower(instanceOfNode, tool);
+                } else {
+                    if (instanceOfNode.allowsNull()) {
+                        ValueNode object = instanceOfNode.getValue();
+                        LogicNode newTypeCheck = graph.addOrUniqueWithInputs(InstanceOfNode.create(instanceOfNode.type(), object, instanceOfNode.profile(), instanceOfNode.getAnchor()));
+                        LogicNode newNode = LogicNode.or(graph.unique(IsNullNode.create(object)), newTypeCheck, GraalDirectives.UNLIKELY_PROBABILITY);
+                        instanceOfNode.replaceAndDelete(newNode);
+                    }
                 }
-            }
-        } else if (n instanceof InstanceOfDynamicNode) {
-            InstanceOfDynamicNode instanceOfDynamicNode = (InstanceOfDynamicNode) n;
-            if (graph.getGuardsStage().areDeoptsFixed()) {
-                instanceofSnippets.lower(instanceOfDynamicNode, tool);
-            } else {
-                ValueNode mirror = instanceOfDynamicNode.getMirrorOrHub();
-                if (mirror.stamp(NodeView.DEFAULT).getStackKind() == JavaKind.Object) {
-                    ClassGetHubNode classGetHub = graph.unique(new ClassGetHubNode(mirror));
-                    instanceOfDynamicNode.setMirror(classGetHub);
-                }
+            } else if (n instanceof InstanceOfDynamicNode) {
+                InstanceOfDynamicNode instanceOfDynamicNode = (InstanceOfDynamicNode) n;
+                if (graph.getGuardsStage().areDeoptsFixed()) {
+                    instanceofSnippets.lower(instanceOfDynamicNode, tool);
+                } else {
+                    ValueNode mirror = instanceOfDynamicNode.getMirrorOrHub();
+                    if (mirror.stamp(NodeView.DEFAULT).getStackKind() == JavaKind.Object) {
+                        ClassGetHubNode classGetHub = graph.unique(new ClassGetHubNode(mirror));
+                        instanceOfDynamicNode.setMirror(classGetHub);
+                    }
 
-                if (instanceOfDynamicNode.allowsNull()) {
-                    ValueNode object = instanceOfDynamicNode.getObject();
-                    LogicNode newTypeCheck = graph.addOrUniqueWithInputs(
-                                    InstanceOfDynamicNode.create(graph.getAssumptions(), tool.getConstantReflection(), instanceOfDynamicNode.getMirrorOrHub(), object, false));
-                    LogicNode newNode = LogicNode.or(graph.unique(IsNullNode.create(object)), newTypeCheck, GraalDirectives.UNLIKELY_PROBABILITY);
-                    instanceOfDynamicNode.replaceAndDelete(newNode);
+                    if (instanceOfDynamicNode.allowsNull()) {
+                        ValueNode object = instanceOfDynamicNode.getObject();
+                        LogicNode newTypeCheck = graph.addOrUniqueWithInputs(
+                                        InstanceOfDynamicNode.create(graph.getAssumptions(), tool.getConstantReflection(), instanceOfDynamicNode.getMirrorOrHub(), object, false));
+                        LogicNode newNode = LogicNode.or(graph.unique(IsNullNode.create(object)), newTypeCheck, GraalDirectives.UNLIKELY_PROBABILITY);
+                        instanceOfDynamicNode.replaceAndDelete(newNode);
+                    }
                 }
+            } else if (n instanceof ClassIsAssignableFromNode) {
+                if (graph.getGuardsStage().areDeoptsFixed()) {
+                    instanceofSnippets.lower((ClassIsAssignableFromNode) n, tool);
+                }
+            } else if (n instanceof NewInstanceNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    newObjectSnippets.lower((NewInstanceNode) n, registers, tool);
+                }
+            } else if (n instanceof DynamicNewInstanceNode) {
+                DynamicNewInstanceNode newInstanceNode = (DynamicNewInstanceNode) n;
+                if (newInstanceNode.getClassClass() == null) {
+                    JavaConstant classClassMirror = constantReflection.forObject(Class.class);
+                    ConstantNode classClass = ConstantNode.forConstant(classClassMirror, tool.getMetaAccess(), graph);
+                    newInstanceNode.setClassClass(classClass);
+                }
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    newObjectSnippets.lower(newInstanceNode, registers, tool);
+                }
+            } else if (n instanceof NewArrayNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    newObjectSnippets.lower((NewArrayNode) n, registers, tool);
+                }
+            } else if (n instanceof DynamicNewArrayNode) {
+                DynamicNewArrayNode dynamicNewArrayNode = (DynamicNewArrayNode) n;
+                if (dynamicNewArrayNode.getVoidClass() == null) {
+                    JavaConstant voidClassMirror = constantReflection.forObject(void.class);
+                    ConstantNode voidClass = ConstantNode.forConstant(voidClassMirror, tool.getMetaAccess(), graph);
+                    dynamicNewArrayNode.setVoidClass(voidClass);
+                }
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    newObjectSnippets.lower(dynamicNewArrayNode, registers, tool);
+                }
+            } else if (n instanceof VerifyHeapNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    newObjectSnippets.lower((VerifyHeapNode) n, registers, tool);
+                }
+            } else if (n instanceof RawMonitorEnterNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    monitorSnippets.lower((RawMonitorEnterNode) n, registers, tool);
+                }
+            } else if (n instanceof MonitorExitNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    monitorSnippets.lower((MonitorExitNode) n, registers, tool);
+                }
+            } else if (n instanceof ArrayCopyNode) {
+                arraycopySnippets.lower((ArrayCopyNode) n, tool);
+            } else if (n instanceof ArrayCopyWithSlowPathNode) {
+                arraycopySnippets.lower((ArrayCopyWithSlowPathNode) n, tool);
+            } else if (n instanceof G1PreWriteBarrier) {
+                writeBarrierSnippets.lower((G1PreWriteBarrier) n, registers, tool);
+            } else if (n instanceof G1PostWriteBarrier) {
+                writeBarrierSnippets.lower((G1PostWriteBarrier) n, registers, tool);
+            } else if (n instanceof G1ReferentFieldReadBarrier) {
+                writeBarrierSnippets.lower((G1ReferentFieldReadBarrier) n, registers, tool);
+            } else if (n instanceof SerialWriteBarrier) {
+                writeBarrierSnippets.lower((SerialWriteBarrier) n, tool);
+            } else if (n instanceof SerialArrayRangeWriteBarrier) {
+                writeBarrierSnippets.lower((SerialArrayRangeWriteBarrier) n, tool);
+            } else if (n instanceof G1ArrayRangePreWriteBarrier) {
+                writeBarrierSnippets.lower((G1ArrayRangePreWriteBarrier) n, registers, tool);
+            } else if (n instanceof G1ArrayRangePostWriteBarrier) {
+                writeBarrierSnippets.lower((G1ArrayRangePostWriteBarrier) n, registers, tool);
+            } else if (n instanceof NewMultiArrayNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    newObjectSnippets.lower((NewMultiArrayNode) n, tool);
+                }
+            } else if (n instanceof LoadExceptionObjectNode) {
+                exceptionObjectSnippets.lower((LoadExceptionObjectNode) n, registers, tool);
+            } else if (n instanceof AssertionNode) {
+                assertionSnippets.lower((AssertionNode) n, tool);
+            } else if (n instanceof StringToBytesNode) {
+                if (graph.getGuardsStage().areDeoptsFixed()) {
+                    stringToBytesSnippets.lower((StringToBytesNode) n, tool);
+                }
+            } else if (n instanceof IntegerDivRemNode) {
+                // Nothing to do for division nodes. The HotSpot signal handler catches divisions by
+                // zero and the MIN_VALUE / -1 cases.
+            } else if (n instanceof AbstractDeoptimizeNode || n instanceof UnwindNode || n instanceof RemNode || n instanceof SafepointNode) {
+                /* No lowering, we generate LIR directly for these nodes. */
+            } else if (n instanceof ClassGetHubNode) {
+                lowerClassGetHubNode((ClassGetHubNode) n, tool);
+            } else if (n instanceof HubGetClassNode) {
+                lowerHubGetClassNode((HubGetClassNode) n, tool);
+            } else if (n instanceof KlassLayoutHelperNode) {
+                lowerKlassLayoutHelperNode((KlassLayoutHelperNode) n, tool);
+            } else if (n instanceof ComputeObjectAddressNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    lowerComputeObjectAddressNode((ComputeObjectAddressNode) n);
+                }
+            } else if (n instanceof IdentityHashCodeNode) {
+                hashCodeSnippets.lower((IdentityHashCodeNode) n, tool);
+            } else if (n instanceof ResolveDynamicConstantNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    resolveConstantSnippets.lower((ResolveDynamicConstantNode) n, tool);
+                }
+            } else if (n instanceof ResolveConstantNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    resolveConstantSnippets.lower((ResolveConstantNode) n, tool);
+                }
+            } else if (n instanceof ResolveMethodAndLoadCountersNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    resolveConstantSnippets.lower((ResolveMethodAndLoadCountersNode) n, tool);
+                }
+            } else if (n instanceof InitializeKlassNode) {
+                if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
+                    resolveConstantSnippets.lower((InitializeKlassNode) n, tool);
+                }
+            } else if (n instanceof ProfileNode) {
+                profileSnippets.lower((ProfileNode) n, tool);
+            } else {
+                super.lower(n, tool);
             }
-        } else if (n instanceof ClassIsAssignableFromNode) {
-            if (graph.getGuardsStage().areDeoptsFixed()) {
-                instanceofSnippets.lower((ClassIsAssignableFromNode) n, tool);
-            }
-        } else if (n instanceof NewInstanceNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                newObjectSnippets.lower((NewInstanceNode) n, registers, tool);
-            }
-        } else if (n instanceof DynamicNewInstanceNode) {
-            DynamicNewInstanceNode newInstanceNode = (DynamicNewInstanceNode) n;
-            if (newInstanceNode.getClassClass() == null) {
-                JavaConstant classClassMirror = constantReflection.forObject(Class.class);
-                ConstantNode classClass = ConstantNode.forConstant(classClassMirror, tool.getMetaAccess(), graph);
-                newInstanceNode.setClassClass(classClass);
-            }
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                newObjectSnippets.lower(newInstanceNode, registers, tool);
-            }
-        } else if (n instanceof NewArrayNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                newObjectSnippets.lower((NewArrayNode) n, registers, tool);
-            }
-        } else if (n instanceof DynamicNewArrayNode) {
-            DynamicNewArrayNode dynamicNewArrayNode = (DynamicNewArrayNode) n;
-            if (dynamicNewArrayNode.getVoidClass() == null) {
-                JavaConstant voidClassMirror = constantReflection.forObject(void.class);
-                ConstantNode voidClass = ConstantNode.forConstant(voidClassMirror, tool.getMetaAccess(), graph);
-                dynamicNewArrayNode.setVoidClass(voidClass);
-            }
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                newObjectSnippets.lower(dynamicNewArrayNode, registers, tool);
-            }
-        } else if (n instanceof VerifyHeapNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                newObjectSnippets.lower((VerifyHeapNode) n, registers, tool);
-            }
-        } else if (n instanceof RawMonitorEnterNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                monitorSnippets.lower((RawMonitorEnterNode) n, registers, tool);
-            }
-        } else if (n instanceof MonitorExitNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                monitorSnippets.lower((MonitorExitNode) n, registers, tool);
-            }
-        } else if (n instanceof ArrayCopyNode) {
-            arraycopySnippets.lower((ArrayCopyNode) n, tool);
-        } else if (n instanceof ArrayCopyWithSlowPathNode) {
-            arraycopySnippets.lower((ArrayCopyWithSlowPathNode) n, tool);
-        } else if (n instanceof G1PreWriteBarrier) {
-            writeBarrierSnippets.lower((G1PreWriteBarrier) n, registers, tool);
-        } else if (n instanceof G1PostWriteBarrier) {
-            writeBarrierSnippets.lower((G1PostWriteBarrier) n, registers, tool);
-        } else if (n instanceof G1ReferentFieldReadBarrier) {
-            writeBarrierSnippets.lower((G1ReferentFieldReadBarrier) n, registers, tool);
-        } else if (n instanceof SerialWriteBarrier) {
-            writeBarrierSnippets.lower((SerialWriteBarrier) n, tool);
-        } else if (n instanceof SerialArrayRangeWriteBarrier) {
-            writeBarrierSnippets.lower((SerialArrayRangeWriteBarrier) n, tool);
-        } else if (n instanceof G1ArrayRangePreWriteBarrier) {
-            writeBarrierSnippets.lower((G1ArrayRangePreWriteBarrier) n, registers, tool);
-        } else if (n instanceof G1ArrayRangePostWriteBarrier) {
-            writeBarrierSnippets.lower((G1ArrayRangePostWriteBarrier) n, registers, tool);
-        } else if (n instanceof NewMultiArrayNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                newObjectSnippets.lower((NewMultiArrayNode) n, tool);
-            }
-        } else if (n instanceof LoadExceptionObjectNode) {
-            exceptionObjectSnippets.lower((LoadExceptionObjectNode) n, registers, tool);
-        } else if (n instanceof AssertionNode) {
-            assertionSnippets.lower((AssertionNode) n, tool);
-        } else if (n instanceof StringToBytesNode) {
-            if (graph.getGuardsStage().areDeoptsFixed()) {
-                stringToBytesSnippets.lower((StringToBytesNode) n, tool);
-            }
-        } else if (n instanceof IntegerDivRemNode) {
-            // Nothing to do for division nodes. The HotSpot signal handler catches divisions by
-            // zero and the MIN_VALUE / -1 cases.
-        } else if (n instanceof AbstractDeoptimizeNode || n instanceof UnwindNode || n instanceof RemNode || n instanceof SafepointNode) {
-            /* No lowering, we generate LIR directly for these nodes. */
-        } else if (n instanceof ClassGetHubNode) {
-            lowerClassGetHubNode((ClassGetHubNode) n, tool);
-        } else if (n instanceof HubGetClassNode) {
-            lowerHubGetClassNode((HubGetClassNode) n, tool);
-        } else if (n instanceof KlassLayoutHelperNode) {
-            lowerKlassLayoutHelperNode((KlassLayoutHelperNode) n, tool);
-        } else if (n instanceof ComputeObjectAddressNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                lowerComputeObjectAddressNode((ComputeObjectAddressNode) n);
-            }
-        } else if (n instanceof IdentityHashCodeNode) {
-            hashCodeSnippets.lower((IdentityHashCodeNode) n, tool);
-        } else if (n instanceof ResolveDynamicConstantNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                resolveConstantSnippets.lower((ResolveDynamicConstantNode) n, tool);
-            }
-        } else if (n instanceof ResolveConstantNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                resolveConstantSnippets.lower((ResolveConstantNode) n, tool);
-            }
-        } else if (n instanceof ResolveMethodAndLoadCountersNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                resolveConstantSnippets.lower((ResolveMethodAndLoadCountersNode) n, tool);
-            }
-        } else if (n instanceof InitializeKlassNode) {
-            if (graph.getGuardsStage().areFrameStatesAtDeopts()) {
-                resolveConstantSnippets.lower((InitializeKlassNode) n, tool);
-            }
-        } else if (n instanceof ProfileNode) {
-            profileSnippets.lower((ProfileNode) n, tool);
-        } else {
-            super.lower(n, tool);
         }
     }
 
@@ -635,59 +641,53 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
     }
 
     static final class Exceptions {
-        protected static final ArrayIndexOutOfBoundsException cachedArrayIndexOutOfBoundsException;
-        protected static final NullPointerException cachedNullPointerException;
+        protected static final EnumMap<BytecodeExceptionKind, RuntimeException> cachedExceptions;
 
         static {
-            cachedArrayIndexOutOfBoundsException = new ArrayIndexOutOfBoundsException();
-            cachedArrayIndexOutOfBoundsException.setStackTrace(new StackTraceElement[0]);
-            cachedNullPointerException = new NullPointerException();
-            cachedNullPointerException.setStackTrace(new StackTraceElement[0]);
+            cachedExceptions = new EnumMap<>(BytecodeExceptionKind.class);
+            cachedExceptions.put(BytecodeExceptionKind.NULL_POINTER, clearStackTrace(new NullPointerException()));
+            cachedExceptions.put(BytecodeExceptionKind.OUT_OF_BOUNDS, clearStackTrace(new ArrayIndexOutOfBoundsException()));
+            cachedExceptions.put(BytecodeExceptionKind.CLASS_CAST, clearStackTrace(new ClassCastException()));
+            cachedExceptions.put(BytecodeExceptionKind.ARRAY_STORE, clearStackTrace(new ArrayStoreException()));
+            cachedExceptions.put(BytecodeExceptionKind.DIVISION_BY_ZERO, clearStackTrace(new ArithmeticException()));
+        }
+
+        private static RuntimeException clearStackTrace(RuntimeException ex) {
+            ex.setStackTrace(new StackTraceElement[0]);
+            return ex;
         }
     }
 
     public static final class RuntimeCalls {
-        public static final ForeignCallDescriptor CREATE_ARRAY_STORE_EXCEPTION = new ForeignCallDescriptor("createArrayStoreException", ArrayStoreException.class, Object.class);
-        public static final ForeignCallDescriptor CREATE_CLASS_CAST_EXCEPTION = new ForeignCallDescriptor("createClassCastException", ClassCastException.class, Object.class, KlassPointer.class);
-        public static final ForeignCallDescriptor CREATE_NULL_POINTER_EXCEPTION = new ForeignCallDescriptor("createNullPointerException", NullPointerException.class);
-        public static final ForeignCallDescriptor CREATE_OUT_OF_BOUNDS_EXCEPTION = new ForeignCallDescriptor("createOutOfBoundsException", ArrayIndexOutOfBoundsException.class, int.class);
+        public static final EnumMap<BytecodeExceptionKind, ForeignCallDescriptor> runtimeCalls;
+
+        static {
+            runtimeCalls = new EnumMap<>(BytecodeExceptionKind.class);
+            runtimeCalls.put(BytecodeExceptionKind.ARRAY_STORE, new ForeignCallDescriptor("createArrayStoreException", ArrayStoreException.class, Object.class));
+            runtimeCalls.put(BytecodeExceptionKind.CLASS_CAST, new ForeignCallDescriptor("createClassCastException", ClassCastException.class, Object.class, KlassPointer.class));
+            runtimeCalls.put(BytecodeExceptionKind.NULL_POINTER, new ForeignCallDescriptor("createNullPointerException", NullPointerException.class));
+            runtimeCalls.put(BytecodeExceptionKind.OUT_OF_BOUNDS, new ForeignCallDescriptor("createOutOfBoundsException", ArrayIndexOutOfBoundsException.class, int.class, int.class));
+            runtimeCalls.put(BytecodeExceptionKind.DIVISION_BY_ZERO, new ForeignCallDescriptor("createDivisionByZeroException", ArithmeticException.class));
+        }
     }
 
-    private boolean throwCachedException(BytecodeExceptionNode node) {
-        Throwable exception;
-        if (node.getExceptionClass() == NullPointerException.class) {
-            exception = Exceptions.cachedNullPointerException;
-        } else if (node.getExceptionClass() == ArrayIndexOutOfBoundsException.class) {
-            exception = Exceptions.cachedArrayIndexOutOfBoundsException;
-        } else {
-            return false;
-        }
+    private void throwCachedException(BytecodeExceptionNode node) {
+        Throwable exception = Exceptions.cachedExceptions.get(node.getExceptionKind());
+        assert exception != null;
 
         StructuredGraph graph = node.graph();
         FloatingNode exceptionNode = ConstantNode.forConstant(constantReflection.forObject(exception), metaAccess, graph);
         graph.replaceFixedWithFloating(node, exceptionNode);
-        return true;
     }
 
     private void lowerBytecodeExceptionNode(BytecodeExceptionNode node) {
         if (OmitHotExceptionStacktrace.getValue(node.getOptions())) {
-            if (throwCachedException(node)) {
-                return;
-            }
+            throwCachedException(node);
+            return;
         }
 
-        ForeignCallDescriptor descriptor;
-        if (node.getExceptionClass() == NullPointerException.class) {
-            descriptor = RuntimeCalls.CREATE_NULL_POINTER_EXCEPTION;
-        } else if (node.getExceptionClass() == ArrayIndexOutOfBoundsException.class) {
-            descriptor = RuntimeCalls.CREATE_OUT_OF_BOUNDS_EXCEPTION;
-        } else if (node.getExceptionClass() == ArrayStoreException.class) {
-            descriptor = RuntimeCalls.CREATE_ARRAY_STORE_EXCEPTION;
-        } else if (node.getExceptionClass() == ClassCastException.class) {
-            descriptor = RuntimeCalls.CREATE_CLASS_CAST_EXCEPTION;
-        } else {
-            throw GraalError.shouldNotReachHere();
-        }
+        ForeignCallDescriptor descriptor = RuntimeCalls.runtimeCalls.get(node.getExceptionKind());
+        assert descriptor != null;
 
         StructuredGraph graph = node.graph();
         ForeignCallNode foreignCallNode = graph.add(new ForeignCallNode(foreignCalls, descriptor, node.stamp(NodeView.DEFAULT), node.getArguments()));

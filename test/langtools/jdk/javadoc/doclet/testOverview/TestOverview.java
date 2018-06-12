@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8173302 8182765
+ * @bug 8173302 8182765 8196202
  * @summary make sure the overview-summary and module-summary pages don't
  *          don't have the See link, and the overview is copied correctly.
  * @library ../lib
@@ -45,6 +45,7 @@ public class TestOverview extends JavadocTester {
                     "-doctitle", "Document Title",
                     "-windowtitle", "Window Title",
                     "-overview", testSrc("overview.html"),
+                    "--frames",
                     "-sourcepath", testSrc("src"),
                     "p1", "p2");
         checkExit(Exit.OK);
@@ -58,6 +59,7 @@ public class TestOverview extends JavadocTester {
                 "-doctitle", "Document Title",
                 "-windowtitle", "Window Title",
                 "-overview", testSrc("overview.html"),
+                "--frames",
                 "-sourcepath", testSrc("src"),
                 "p1", "p2");
         checkExit(Exit.OK);
@@ -70,6 +72,7 @@ public class TestOverview extends JavadocTester {
                     "-doctitle", "Document Title",
                     "-windowtitle", "Window Title",
                     "-overview", testSrc("overview.html"),
+                    "--frames",
                     "-sourcepath", testSrc("msrc"),
                     "p1", "p2");
         checkExit(Exit.OK);
@@ -83,6 +86,7 @@ public class TestOverview extends JavadocTester {
                 "-doctitle", "Document Title",
                 "-windowtitle", "Window Title",
                 "-overview", testSrc("overview.html"),
+                "--frames",
                 "-sourcepath", testSrc("msrc"),
                 "p1", "p2");
         checkExit(Exit.OK);

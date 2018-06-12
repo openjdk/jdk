@@ -553,6 +553,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "CheckEndorsedAndExtDirs",       JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferThrSuspendLoopCount",      JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "DeferPollingPageLoopCount",     JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "TraceScavenge",                 JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "SharedReadWriteSize",           JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
@@ -1265,9 +1266,13 @@ bool Arguments::process_argument(const char* arg,
     char stripped_argname[BUFLEN+1]; // +1 for '\0'
     jio_snprintf(stripped_argname, arg_len+1, "%s", argname); // +1 for '\0'
     if (is_obsolete_flag(stripped_argname, &since)) {
-      char version[256];
-      since.to_string(version, sizeof(version));
-      warning("Ignoring option %s; support was removed in %s", stripped_argname, version);
+      if (strcmp(stripped_argname, "UseAppCDS") != 0) {
+        char version[256];
+        since.to_string(version, sizeof(version));
+        warning("Ignoring option %s; support was removed in %s", stripped_argname, version);
+      } else {
+        warning("Ignoring obsolete option UseAppCDS; AppCDS is automatically enabled");
+      }
       return true;
     }
 #ifndef PRODUCT
@@ -3365,16 +3370,16 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
   UNSUPPORTED_OPTION(TieredCompilation);
 #endif
 
+  if (!check_vm_args_consistency()) {
+    return JNI_ERR;
+  }
+
 #if INCLUDE_JVMCI
   if (EnableJVMCI &&
       !create_numbered_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
     return JNI_ENOMEM;
   }
 #endif
-
-  if (!check_vm_args_consistency()) {
-    return JNI_ERR;
-  }
 
 #if INCLUDE_JVMCI
   if (UseJVMCICompiler) {
@@ -4444,6 +4449,18 @@ void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, c
   }
 
   PropertyList_add(plist, k, v, writeable == WriteableProperty, internal == InternalProperty);
+}
+
+// Update existing property with new value.
+void Arguments::PropertyList_update_value(SystemProperty* plist, const char* k, const char* v) {
+  SystemProperty* prop;
+  for (prop = plist; prop != NULL; prop = prop->next()) {
+    if (strcmp(k, prop->key()) == 0) {
+        prop->set_value(v);
+        return;
+    }
+  }
+  assert(false, "invalid property");
 }
 
 // Copies src into buf, replacing "%%" with "%" and "%p" with pid
