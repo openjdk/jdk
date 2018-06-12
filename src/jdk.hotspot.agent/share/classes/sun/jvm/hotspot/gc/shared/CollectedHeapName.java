@@ -36,6 +36,7 @@ public class CollectedHeapName {
   public static final CollectedHeapName CMS = new CollectedHeapName("CMS");
   public static final CollectedHeapName G1 = new CollectedHeapName("G1");
   public static final CollectedHeapName EPSILON = new CollectedHeapName("Epsilon");
+  public static final CollectedHeapName Z = new CollectedHeapName("Z");
 
   public String toString() {
     return name;

@@ -50,6 +50,9 @@
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/vmStructs_serial.hpp"
 #endif
+#if INCLUDE_ZGC
+#include "gc/z/vmStructs_z.hpp"
+#endif
 
 #define VM_STRUCTS_GC(nonstatic_field,                                                                                               \
                       volatile_nonstatic_field,                                                                                      \
@@ -70,6 +73,10 @@
   SERIALGC_ONLY(VM_STRUCTS_SERIALGC(nonstatic_field,                                                                                 \
                                     volatile_nonstatic_field,                                                                        \
                                     static_field))                                                                                   \
+  ZGC_ONLY(VM_STRUCTS_ZGC(nonstatic_field,                                                                                           \
+                          volatile_nonstatic_field,                                                                                  \
+                          static_field))                                                                                             \
+                                                                                                                                     \
   /**********************************************************************************/                                               \
   /* Generation and Space hierarchies                                               */                                               \
   /**********************************************************************************/                                               \
@@ -171,6 +178,10 @@
   SERIALGC_ONLY(VM_TYPES_SERIALGC(declare_type,                           \
                                   declare_toplevel_type,                  \
                                   declare_integer_type))                  \
+  ZGC_ONLY(VM_TYPES_ZGC(declare_type,                                     \
+                        declare_toplevel_type,                            \
+                        declare_integer_type))                            \
+                                                                          \
   /******************************************/                            \
   /* Generation and space hierarchies       */                            \
   /* (needed for run-time type information) */                            \
@@ -242,6 +253,8 @@
                                               declare_constant_with_value)) \
   SERIALGC_ONLY(VM_INT_CONSTANTS_SERIALGC(declare_constant,                 \
                                           declare_constant_with_value))     \
+  ZGC_ONLY(VM_INT_CONSTANTS_ZGC(declare_constant,                           \
+                                declare_constant_with_value))               \
                                                                             \
   /********************************************/                            \
   /* Generation and Space Hierarchy Constants */                            \
@@ -285,5 +298,7 @@
   declare_constant(Generation::LogOfGenGrain)                               \
   declare_constant(Generation::GenGrain)                                    \
 
+#define VM_LONG_CONSTANTS_GC(declare_constant)                              \
+  ZGC_ONLY(VM_LONG_CONSTANTS_ZGC(declare_constant))
 
 #endif // SHARE_GC_SHARED_VMSTRUCTS_GC_HPP

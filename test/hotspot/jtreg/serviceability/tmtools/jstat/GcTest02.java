@@ -28,6 +28,7 @@
  *          test forces debuggee application eat ~70% of heap and runs jstat.
  *          jstat should show actual usage of old gen (OC/OU ~= old gen usage).
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
+ * @requires vm.gc != "Z"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library ../share

@@ -164,7 +164,7 @@ public class Oop {
       tty.print("null");
     } else {
       obj.printValueOn(tty);
-      tty.print(" @ " + obj.getHandle());
+      tty.print(" @ " + VM.getVM().getUniverse().heap().oopAddressDescription(obj.getHandle()));
     }
   }
 

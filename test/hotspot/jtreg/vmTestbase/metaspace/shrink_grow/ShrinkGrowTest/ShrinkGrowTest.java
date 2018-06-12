@@ -27,6 +27,7 @@
  *
  * @summary converted from VM Testbase metaspace/shrink_grow/ShrinkGrowTest.
  *
+ * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm

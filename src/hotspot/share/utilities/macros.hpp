@@ -221,7 +221,25 @@
 #define NOT_SERIALGC_RETURN_(code) { return code; }
 #endif // INCLUDE_SERIALGC
 
-#if INCLUDE_CMSGC || INCLUDE_EPSILONGC || INCLUDE_G1GC || INCLUDE_PARALLELGC
+#ifndef INCLUDE_ZGC
+#define INCLUDE_ZGC 1
+#endif // INCLUDE_ZGC
+
+#if INCLUDE_ZGC
+#define ZGC_ONLY(x) x
+#define ZGC_ONLY_ARG(arg) arg,
+#define NOT_ZGC(x)
+#define NOT_ZGC_RETURN        /* next token must be ; */
+#define NOT_ZGC_RETURN_(code) /* next token must be ; */
+#else
+#define ZGC_ONLY(x)
+#define ZGC_ONLY_ARG(arg)
+#define NOT_ZGC(x) x
+#define NOT_ZGC_RETURN        {}
+#define NOT_ZGC_RETURN_(code) { return code; }
+#endif // INCLUDE_ZGC
+
+#if INCLUDE_CMSGC || INCLUDE_EPSILONGC || INCLUDE_G1GC || INCLUDE_PARALLELGC || INCLUDE_ZGC
 #define INCLUDE_NOT_ONLY_SERIALGC 1
 #else
 #define INCLUDE_NOT_ONLY_SERIALGC 0

@@ -25,6 +25,7 @@
  * @test
  * @bug     4858522 6191542
  * @summary Basic unit test of OperatingSystemMXBean.getCommittedVirtualMemorySize()
+ * @requires vm.gc != "Z"
  * @author  Steve Bohne
  */
 

@@ -29,6 +29,9 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stackValue.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zBarrier.inline.hpp"
+#endif
 
 StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv) {
   if (sv->is_location()) {
@@ -119,6 +122,13 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
          val = (oop)NULL;
       }
 #endif
+#if INCLUDE_ZGC
+      // Deoptimization must make sure all oop have passed load barrier
+      if (UseZGC) {
+        val = ZBarrier::load_barrier_on_oop_field_preloaded((oop*)value_addr, val);
+      }
+#endif
+
       Handle h(Thread::current(), val); // Wrap a handle around the oop
       return new StackValue(h);
     }

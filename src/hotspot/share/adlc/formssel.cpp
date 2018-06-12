@@ -2282,6 +2282,9 @@ bool OperandForm::is_bound_register() const {
   if (strcmp(name, "RegD") == 0) size = 2;
   if (strcmp(name, "RegL") == 0) size = 2;
   if (strcmp(name, "RegN") == 0) size = 1;
+  if (strcmp(name, "VecX") == 0) size = 4;
+  if (strcmp(name, "VecY") == 0) size = 8;
+  if (strcmp(name, "VecZ") == 0) size = 16;
   if (strcmp(name, "RegP") == 0) size = globalAD->get_preproc_def("_LP64") ? 2 : 1;
   if (size == 0) {
     return false;
@@ -3509,6 +3512,7 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "ClearArray",
     "GetAndSetB", "GetAndSetS", "GetAndAddI", "GetAndSetI", "GetAndSetP",
     "GetAndAddB", "GetAndAddS", "GetAndAddL", "GetAndSetL", "GetAndSetN",
+    "LoadBarrierSlowReg", "LoadBarrierWeakSlowReg"
   };
   int cnt = sizeof(needs_ideal_memory_list)/sizeof(char*);
   if( strcmp(_opType,"PrefetchAllocation")==0 )

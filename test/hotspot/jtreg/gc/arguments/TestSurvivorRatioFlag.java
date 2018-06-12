@@ -25,6 +25,7 @@
  * @test TestSurvivorRatioFlag
  * @key gc
  * @summary Verify that actual survivor ratio is equal to specified SurvivorRatio value
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

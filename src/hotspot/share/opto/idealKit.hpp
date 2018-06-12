@@ -242,13 +242,13 @@ class IdealKit: public StackObj {
                 int adr_idx);
 
   // Trivial call
-  void make_leaf_call(const TypeFunc *slow_call_type,
-                      address slow_call,
-                      const char *leaf_name,
-                      Node* parm0,
-                      Node* parm1 = NULL,
-                      Node* parm2 = NULL,
-                      Node* parm3 = NULL);
+  Node* make_leaf_call(const TypeFunc *slow_call_type,
+                       address slow_call,
+                       const char *leaf_name,
+                       Node* parm0,
+                       Node* parm1 = NULL,
+                       Node* parm2 = NULL,
+                       Node* parm3 = NULL);
 
   void make_leaf_call_no_fp(const TypeFunc *slow_call_type,
                             address slow_call,

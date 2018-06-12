@@ -27,6 +27,7 @@ import utils.*;
  * @test
  * @summary Test checks the consistency of the output
  * displayed with jstat -gccapacity.
+ * @requires vm.gc != "Z"
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library ../share

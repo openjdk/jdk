@@ -30,6 +30,7 @@ import jdk.test.lib.JDKToolFinder;
  * @test
  * @key metaspace jcmd
  * @summary Test the VM.metaspace command
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -26,6 +26,7 @@
  * @bug 8031323
  * @summary Verify that objects promoted from survivor space to tenured space
  *          during full GC are not aligned to SurvivorAlignmentInBytes value.
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

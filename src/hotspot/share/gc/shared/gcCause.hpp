@@ -78,6 +78,12 @@ class GCCause : public AllStatic {
 
     _dcmd_gc_run,
 
+    _z_timer,
+    _z_warmup,
+    _z_allocation_rate,
+    _z_allocation_stall,
+    _z_proactive,
+
     _last_gc_cause
   };
 

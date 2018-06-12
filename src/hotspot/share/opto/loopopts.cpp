@@ -40,6 +40,10 @@
 #include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/c2/zBarrierSetC2.hpp"
+#endif
 
 //=============================================================================
 //------------------------------split_thru_phi---------------------------------
@@ -1126,11 +1130,11 @@ bool PhaseIdealLoop::can_split_if(Node *n_ctrl) {
 // Do the real work in a non-recursive function.  CFG hackery wants to be
 // in the post-order, so it can dirty the I-DOM info and not use the dirtied
 // info.
-void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
+void PhaseIdealLoop::split_if_with_blocks_post(Node *n, bool last_round) {
 
   // Cloning Cmp through Phi's involves the split-if transform.
   // FastLock is not used by an If
-  if (n->is_Cmp() && !n->is_FastLock()) {
+  if (n->is_Cmp() && !n->is_FastLock() && !last_round) {
     Node *n_ctrl = get_ctrl(n);
     // Determine if the Node has inputs from some local Phi.
     // Returns the block to clone thru.
@@ -1377,12 +1381,18 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
       get_loop(get_ctrl(n)) == get_loop(get_ctrl(n->in(1))) ) {
     _igvn.replace_node( n, n->in(1) );
   }
+
+#if INCLUDE_ZGC
+  if (UseZGC) {
+    ZBarrierSetC2::loop_optimize_gc_barrier(this, n, last_round);
+  }
+#endif
 }
 
 //------------------------------split_if_with_blocks---------------------------
 // Check for aggressive application of 'split-if' optimization,
 // using basic block level info.
-void PhaseIdealLoop::split_if_with_blocks( VectorSet &visited, Node_Stack &nstack ) {
+void PhaseIdealLoop::split_if_with_blocks(VectorSet &visited, Node_Stack &nstack, bool last_round) {
   Node *n = C->root();
   visited.set(n->_idx); // first, mark node as visited
   // Do pre-visit work for root
@@ -1407,7 +1417,7 @@ void PhaseIdealLoop::split_if_with_blocks( VectorSet &visited, Node_Stack &nstac
       // All of n's children have been processed, complete post-processing.
       if (cnt != 0 && !n->is_Con()) {
         assert(has_node(n), "no dead nodes");
-        split_if_with_blocks_post( n );
+        split_if_with_blocks_post( n, last_round );
       }
       if (nstack.is_empty()) {
         // Finished all nodes on stack.

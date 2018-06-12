@@ -35,6 +35,9 @@
 #if INCLUDE_SERIALGC
 #include "gc/serial/serial_specialized_oop_closures.hpp"
 #endif
+#if INCLUDE_ZGC
+#include "gc/z/z_specialized_oop_closures.hpp"
+#endif
 
 // The following OopClosure types get specialized versions of
 // "oop_oop_iterate" that invoke the closures' do_oop methods
@@ -67,7 +70,8 @@ class OopsInGenClosure;
   SERIALGC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(f))       \
      CMSGC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f))      \
       G1GC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f))       \
-      G1GC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(f))
+      G1GC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1FULL(f))   \
+       ZGC_ONLY(SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_Z(f))
 
 // We separate these out, because sometime the general one has
 // a different definition from the specialized ones, and sometimes it

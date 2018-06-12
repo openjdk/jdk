@@ -54,7 +54,8 @@ public class OopField extends Field {
     if (!isVMField() && !obj.isInstance() && !obj.isArray()) {
       throw new InternalError(obj.toString());
     }
-    return obj.getHandle().getOopHandleAt(getOffset());
+
+    return VM.getVM().getUniverse().heap().oop_load_at(obj.getHandle(), getOffset());
   }
 
   public Oop getValue(VMObject obj) {
