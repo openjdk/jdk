@@ -529,20 +529,19 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   Handle module_handle(THREAD, ((module_entry != NULL) ? module_entry->module() : (oop)NULL));
 
   if (this->has_raw_archived_mirror()) {
+    ResourceMark rm;
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
     if (MetaspaceShared::open_archive_heap_region_mapped()) {
-      oop m = archived_java_mirror();
-      log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-      if (m != NULL) {
-        // mirror is archived, restore
-        assert(MetaspaceShared::is_archive_object(m), "must be archived mirror object");
-        Handle m_h(THREAD, m);
-        java_lang_Class::restore_archived_mirror(this, m_h, loader, module_handle, protection_domain, CHECK);
+      bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
+                                                              protection_domain,
+                                                              CHECK);
+      if (present) {
         return;
       }
     }
 
     // No archived mirror data
+    log_debug(cds, mirror)("No archived mirror data for %s", external_name());
     _java_mirror = NULL;
     this->clear_has_raw_archived_mirror();
   }
@@ -558,16 +557,8 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
 #if INCLUDE_CDS_JAVA_HEAP
 // Used at CDS dump time to access the archived mirror. No GC barrier.
 oop Klass::archived_java_mirror_raw() {
-  assert(DumpSharedSpaces, "called only during runtime");
   assert(has_raw_archived_mirror(), "must have raw archived mirror");
   return CompressedOops::decode(_archived_mirror);
-}
-
-// Used at CDS runtime to get the archived mirror from shared class. Uses GC barrier.
-oop Klass::archived_java_mirror() {
-  assert(UseSharedSpaces, "UseSharedSpaces expected.");
-  assert(has_raw_archived_mirror(), "must have raw archived mirror");
-  return RootAccess<IN_ARCHIVE_ROOT>::oop_load(&_archived_mirror);
 }
 
 // No GC barrier

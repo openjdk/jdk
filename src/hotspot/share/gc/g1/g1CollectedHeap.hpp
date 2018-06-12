@@ -699,6 +699,8 @@ public:
   // mapping failed, with the same non-overlapping and sorted MemRegion array.
   void dealloc_archive_regions(MemRegion* range, size_t count);
 
+  oop materialize_archived_object(oop obj);
+
 private:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).

@@ -1910,6 +1910,11 @@ oop MetaspaceShared::archive_heap_object(oop obj, Thread* THREAD) {
   return archived_oop;
 }
 
+oop MetaspaceShared::materialize_archived_object(oop obj) {
+  assert(obj != NULL, "sanity");
+  return G1CollectedHeap::heap()->materialize_archived_object(obj);
+}
+
 void MetaspaceShared::archive_klass_objects(Thread* THREAD) {
   int i;
   for (i = 0; i < _global_klass_objects->length(); i++) {
@@ -1980,7 +1985,7 @@ public:
              "Archived heap object is not allowed");
       assert(MetaspaceShared::open_archive_heap_region_mapped(),
              "Open archive heap region is not mapped");
-      RootAccess<IN_ARCHIVE_ROOT>::oop_store(p, CompressedOops::decode_not_null(o));
+      *p = CompressedOops::decode_not_null(o);
     }
   }
 
