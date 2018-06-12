@@ -59,6 +59,9 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zGlobals.hpp"
+#endif
 
 // JvmtiTagHashmapEntry
 //
@@ -178,6 +181,8 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
 
   // hash a given key (oop) with the specified size
   static unsigned int hash(oop key, int size) {
+    ZGC_ONLY(assert(ZAddressMetadataShift >= sizeof(unsigned int) * BitsPerByte, "cast removes the metadata bits");)
+
     // shift right to get better distribution (as these bits will be zero
     // with aligned addresses)
     unsigned int addr = (unsigned int)(cast_from_oop<intptr_t>(key));

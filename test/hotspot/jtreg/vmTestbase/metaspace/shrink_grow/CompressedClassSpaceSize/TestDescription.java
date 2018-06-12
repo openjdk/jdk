@@ -29,6 +29,7 @@
  * VM Testbase keywords: [monitoring, quarantine]
  * VM Testbase comments: JDK-8058967
  *
+ * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm

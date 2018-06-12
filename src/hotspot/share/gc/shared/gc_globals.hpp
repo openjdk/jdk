@@ -29,6 +29,9 @@
 #if INCLUDE_CMSGC
 #include "gc/cms/cms_globals.hpp"
 #endif
+#if INCLUDE_EPSILONGC
+#include "gc/epsilon/epsilon_globals.hpp"
+#endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1_globals.hpp"
 #endif
@@ -37,6 +40,9 @@
 #endif
 #if INCLUDE_SERIALGC
 #include "gc/serial/serial_globals.hpp"
+#endif
+#if INCLUDE_ZGC
+#include "gc/z/z_globals.hpp"
 #endif
 
 #define GC_FLAGS(develop,                                                   \
@@ -55,6 +61,22 @@
                  writeable)                                                 \
                                                                             \
   CMSGC_ONLY(GC_CMS_FLAGS(                                                  \
+    develop,                                                                \
+    develop_pd,                                                             \
+    product,                                                                \
+    product_pd,                                                             \
+    diagnostic,                                                             \
+    diagnostic_pd,                                                          \
+    experimental,                                                           \
+    notproduct,                                                             \
+    manageable,                                                             \
+    product_rw,                                                             \
+    lp64_product,                                                           \
+    range,                                                                  \
+    constraint,                                                             \
+    writeable))                                                             \
+                                                                            \
+  EPSILONGC_ONLY(GC_EPSILON_FLAGS(                                          \
     develop,                                                                \
     develop_pd,                                                             \
     product,                                                                \
@@ -118,6 +140,22 @@
     constraint,                                                             \
     writeable))                                                             \
                                                                             \
+  ZGC_ONLY(GC_Z_FLAGS(                                                      \
+    develop,                                                                \
+    develop_pd,                                                             \
+    product,                                                                \
+    product_pd,                                                             \
+    diagnostic,                                                             \
+    diagnostic_pd,                                                          \
+    experimental,                                                           \
+    notproduct,                                                             \
+    manageable,                                                             \
+    product_rw,                                                             \
+    lp64_product,                                                           \
+    range,                                                                  \
+    constraint,                                                             \
+    writeable))                                                             \
+                                                                            \
   /* gc */                                                                  \
                                                                             \
   product(bool, UseConcMarkSweepGC, false,                                  \
@@ -134,6 +172,12 @@
                                                                             \
   product(bool, UseParallelOldGC, false,                                    \
           "Use the Parallel Old garbage collector")                         \
+                                                                            \
+  experimental(bool, UseEpsilonGC, false,                                   \
+          "Use the Epsilon (no-op) garbage collector")                      \
+                                                                            \
+  experimental(bool, UseZGC, false,                                         \
+          "Use the Z garbage collector")                                    \
                                                                             \
   product(uint, ParallelGCThreads, 0,                                       \
           "Number of parallel threads parallel gc will use")                \

@@ -27,6 +27,7 @@
 
 // Build a big enum of class names to give them dense integer indices
 #define macro(x) Op_##x,
+#define optionalmacro(x) macro(x)
 enum Opcodes {
   Op_Node = 0,
   macro(Set)                    // Instruction selection match rule
@@ -47,6 +48,7 @@ enum Opcodes {
   _last_opcode
 };
 #undef macro
+#undef optionalmacro
 
 // Table of names, indexed by Opcode
 extern const char *NodeClassNames[];

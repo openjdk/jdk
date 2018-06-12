@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -755,6 +755,7 @@ public abstract class CipherSpi {
             return 0;
         }
         int outLenNeeded = engineGetOutputSize(inLen);
+
         if (output.remaining() < outLenNeeded) {
             throw new ShortBufferException("Need at least " + outLenNeeded
                 + " bytes of space in output buffer");
@@ -762,98 +763,77 @@ public abstract class CipherSpi {
 
         boolean a1 = input.hasArray();
         boolean a2 = output.hasArray();
+        int total = 0;
+        byte[] inArray, outArray;
+        if (a2) { // output has an accessible byte[]
+            outArray = output.array();
+            int outPos = output.position();
+            int outOfs = output.arrayOffset() + outPos;
 
-        if (a1 && a2) {
-            byte[] inArray = input.array();
-            int inOfs = input.arrayOffset() + inPos;
-            byte[] outArray = output.array();
-            int outPos = output.position();
-            int outOfs = output.arrayOffset() + outPos;
-            int n;
-            if (isUpdate) {
-                n = engineUpdate(inArray, inOfs, inLen, outArray, outOfs);
-            } else {
-                n = engineDoFinal(inArray, inOfs, inLen, outArray, outOfs);
-            }
-            input.position(inLimit);
-            output.position(outPos + n);
-            return n;
-        } else if (!a1 && a2) {
-            int outPos = output.position();
-            byte[] outArray = output.array();
-            int outOfs = output.arrayOffset() + outPos;
-            byte[] inArray = new byte[getTempArraySize(inLen)];
-            int total = 0;
-            do {
-                int chunk = Math.min(inLen, inArray.length);
-                if (chunk > 0) {
-                    input.get(inArray, 0, chunk);
-                }
-                int n;
-                if (isUpdate || (inLen != chunk)) {
-                    n = engineUpdate(inArray, 0, chunk, outArray, outOfs);
-                } else {
-                    n = engineDoFinal(inArray, 0, chunk, outArray, outOfs);
-                }
-                total += n;
-                outOfs += n;
-                inLen -= chunk;
-            } while (inLen > 0);
-            output.position(outPos + total);
-            return total;
-        } else { // output is not backed by an accessible byte[]
-            byte[] inArray;
-            int inOfs;
-            if (a1) {
+            if (a1) { // input also has an accessible byte[]
                 inArray = input.array();
-                inOfs = input.arrayOffset() + inPos;
-            } else {
-                inArray = new byte[getTempArraySize(inLen)];
-                inOfs = 0;
-            }
-            byte[] outArray = new byte[getTempArraySize(outLenNeeded)];
-            int outSize = outArray.length;
-            int total = 0;
-            boolean resized = false;
-            do {
-                int chunk =
-                    Math.min(inLen, (outSize == 0? inArray.length : outSize));
-                if (!a1 && !resized && chunk > 0) {
-                    input.get(inArray, 0, chunk);
-                    inOfs = 0;
+                int inOfs = input.arrayOffset() + inPos;
+                if (isUpdate) {
+                    total = engineUpdate(inArray, inOfs, inLen, outArray, outOfs);
+                } else {
+                    total = engineDoFinal(inArray, inOfs, inLen, outArray, outOfs);
                 }
-                try {
-                    int n;
-                    if (isUpdate || (inLen != chunk)) {
-                        n = engineUpdate(inArray, inOfs, chunk, outArray, 0);
-                    } else {
-                        n = engineDoFinal(inArray, inOfs, chunk, outArray, 0);
-                    }
-                    resized = false;
-                    inOfs += chunk;
-                    inLen -= chunk;
-                    if (n > 0) {
-                        output.put(outArray, 0, n);
-                        total += n;
-                    }
-                } catch (ShortBufferException e) {
-                    if (resized) {
-                        // we just resized the output buffer, but it still
-                        // did not work. Bug in the provider, abort
-                        throw (ProviderException)new ProviderException
-                            ("Could not determine buffer size").initCause(e);
-                    }
-                    // output buffer is too small, realloc and try again
-                    resized = true;
-                    outSize = engineGetOutputSize(chunk);
-                    outArray = new byte[outSize];
-                }
-            } while (inLen > 0);
-            if (a1) {
                 input.position(inLimit);
+            } else { // input does not have accessible byte[]
+                inArray = new byte[getTempArraySize(inLen)];
+                do {
+                    int chunk = Math.min(inLen, inArray.length);
+                    if (chunk > 0) {
+                        input.get(inArray, 0, chunk);
+                    }
+                    int n;
+                    if (isUpdate || (inLen > chunk)) {
+                        n = engineUpdate(inArray, 0, chunk, outArray, outOfs);
+                    } else {
+                        n = engineDoFinal(inArray, 0, chunk, outArray, outOfs);
+                    }
+                    total += n;
+                    outOfs += n;
+                    inLen -= chunk;
+                } while (inLen > 0);
             }
-            return total;
+            output.position(outPos + total);
+        } else { // output does not have an accessible byte[]
+            if (a1) { // but input has an accessible byte[]
+                inArray = input.array();
+                int inOfs = input.arrayOffset() + inPos;
+                if (isUpdate) {
+                    outArray = engineUpdate(inArray, inOfs, inLen);
+                } else {
+                    outArray = engineDoFinal(inArray, inOfs, inLen);
+                }
+                input.position(inLimit);
+                if (outArray != null && outArray.length != 0) {
+                    output.put(outArray);
+                    total = outArray.length;
+                }
+            } else { // input also does not have an accessible byte[]
+                inArray = new byte[getTempArraySize(inLen)];
+                do {
+                    int chunk = Math.min(inLen, inArray.length);
+                    if (chunk > 0) {
+                        input.get(inArray, 0, chunk);
+                    }
+                    int n;
+                    if (isUpdate || (inLen > chunk)) {
+                        outArray = engineUpdate(inArray, 0, chunk);
+                    } else {
+                        outArray = engineDoFinal(inArray, 0, chunk);
+                    }
+                    if (outArray != null && outArray.length != 0) {
+                        output.put(outArray);
+                        total += outArray.length;
+                    }
+                    inLen -= chunk;
+                } while (inLen > 0);
+            }
         }
+        return total;
     }
 
     /**

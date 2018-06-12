@@ -229,6 +229,7 @@ class Metaspace : public AllStatic {
 // Manages the metaspace portion belonging to a class loader
 class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   friend class CollectedHeap; // For expand_and_allocate()
+  friend class ZCollectedHeap; // For expand_and_allocate()
   friend class Metaspace;
   friend class MetaspaceUtils;
   friend class metaspace::PrintCLDMetaspaceInfoClosure;

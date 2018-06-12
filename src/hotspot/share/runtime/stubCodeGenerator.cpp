@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
 }
 
 StubCodeGenerator::~StubCodeGenerator() {
-  if (_print_code) {
+  if (PRODUCT_ONLY(_print_code) NOT_PRODUCT(true)) {
     CodeBuffer* cbuf = _masm->code();
     CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
     if (blob != NULL) {
@@ -86,9 +86,19 @@ void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
 
 void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
   if (_print_code) {
+    CodeStrings cs;
+    ptrdiff_t offset = 0;
+#ifndef PRODUCT
+    // Find the code strings in the outer CodeBuffer.
+    CodeBuffer *outer_cbuf = _masm->code_section()->outer();
+    cs = outer_cbuf->strings();
+    // The offset from the start of the outer CodeBuffer to the start
+    // of this stub.
+    offset = cdesc->begin() - outer_cbuf->insts()->start();
+#endif
     cdesc->print();
     tty->cr();
-    Disassembler::decode(cdesc->begin(), cdesc->end());
+    Disassembler::decode(cdesc->begin(), cdesc->end(), NULL, cs, offset);
     tty->cr();
   }
 }

@@ -36,6 +36,7 @@ import jdk.test.lib.dcmd.JMXExecutor;
 /*
  * @test
  * @summary Test of diagnostic command GC.run
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler

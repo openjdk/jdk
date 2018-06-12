@@ -51,6 +51,7 @@
  *         create references of all possible types to single object, ObjectReference.referringObjects should return only
  *         referrers with supported type(Strong, PhantomReference, SoftReference, WeakReference)
  *
+ * @requires vm.gc != "Z"
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
@@ -150,6 +151,11 @@ public class referringObjects001 extends HeapwalkingDebugger {
             expectedInstanceCount = createInstanceCount;
         else
             expectedInstanceCount = 0;
+
+        // Note! This test is broken, in the sense that it incorrectly assumes
+        // that no GC can happen before it walks the heap. In practice, it seems
+        // to only affect this test when using ZGC. However, this test will also
+        // fail when using other GCs if an explicit GC is done here.
 
         checkDebugeeAnswer_instanceCounts(className, expectedInstanceCount, objectsToFilter);
         checkDebugeeAnswer_instances_referringObjects(objectsToFilter, className, expectedInstanceCount, includedInReferrersCount, referrerCount);

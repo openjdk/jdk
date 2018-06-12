@@ -858,7 +858,12 @@ ifeq ($(DEBUG_LEVEL), fastdebug)
 else ifneq ($(DEBUG_LEVEL), release)
   DEBUG_PART := -$(DEBUG_LEVEL)
 endif
-JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART).tar.gz
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  JDK_BUNDLE_EXTENSION := zip
+else
+  JDK_BUNDLE_EXTENSION := tar.gz
+endif
+JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
 JDK_SYMBOLS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART)-symbols.tar.gz
 TEST_DEMOS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests-demos$(DEBUG_PART).tar.gz
 TEST_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests$(DEBUG_PART).tar.gz

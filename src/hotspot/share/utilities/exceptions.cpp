@@ -37,6 +37,7 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -149,6 +150,10 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
 
   if (h_exception->is_a(SystemDictionary::OutOfMemoryError_klass())) {
     count_out_of_memory_exceptions(h_exception);
+  }
+
+  if (h_exception->is_a(SystemDictionary::LinkageError_klass())) {
+    Atomic::inc(&_linkage_errors);
   }
 
   assert(h_exception->is_a(SystemDictionary::Throwable_klass()), "exception is not a subclass of java/lang/Throwable");
@@ -425,6 +430,7 @@ void Exceptions::wrap_dynamic_exception(Thread* THREAD) {
 
 // Exception counting for hs_err file
 volatile int Exceptions::_stack_overflow_errors = 0;
+volatile int Exceptions::_linkage_errors = 0;
 volatile int Exceptions::_out_of_memory_error_java_heap_errors = 0;
 volatile int Exceptions::_out_of_memory_error_metaspace_errors = 0;
 volatile int Exceptions::_out_of_memory_error_class_metaspace_errors = 0;
@@ -457,6 +463,9 @@ void Exceptions::print_exception_counts_on_error(outputStream* st) {
   print_oom_count(st, "class_metaspace_errors", _out_of_memory_error_class_metaspace_errors);
   if (_stack_overflow_errors > 0) {
     st->print_cr("StackOverflowErrors=%d", _stack_overflow_errors);
+  }
+  if (_linkage_errors > 0) {
+    st->print_cr("LinkageErrors=%d", _linkage_errors);
   }
 }
 

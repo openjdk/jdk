@@ -62,21 +62,6 @@ it succeeded. The code to ensure this would be quite complex.</li>
 </ol>
 In sum, it just isn't practical.
 <hr>
-<h3>What about <code>Thread.stop(Throwable)</code>?</h3>
-<p>In addition to all of the problems noted above, this method may
-be used to generate exceptions that its target thread is unprepared
-to handle (including checked exceptions that the thread could not
-possibly throw, were it not for this method). For example, the
-following method is behaviorally identical to Java's
-<code>throw</code> operation, but circumvents the compiler's
-attempts to guarantee that the calling method has declared all of
-the checked exceptions that it may throw:</p>
-<pre>
-    static void sneakyThrow(Throwable t) {
-        Thread.currentThread().stop(t);
-    }
-</pre>
-<hr>
 <h3>What should I use instead of <code>Thread.stop</code>?</h3>
 <p>Most uses of <code>stop</code> should be replaced by code that
 simply modifies some variable to indicate that the target thread
@@ -339,13 +324,6 @@ If the <code>stop</code> method calls <code>Thread.interrupt</code>, as
 described above, it needn't call <code>notify</code> as well, but it
 still must be synchronized. This ensures that the target thread
 won't miss an interrupt due to a race condition.
-<hr>
-<h3>What about <code>Thread.destroy</code>?</h3>
-<code>Thread.destroy</code> was never implemented and has been
-deprecated. If it were implemented, it would be deadlock-prone in
-the manner of <code>Thread.suspend</code>. (In fact, it is roughly
-equivalent to <code>Thread.suspend</code> without the possibility
-of a subsequent <code>Thread.resume</code>.)
 <p><!-- Body text ends here --></p>
 </body>
 </html>

@@ -178,14 +178,13 @@ NOT_AIX( private: )
   class AllocateList {
     const Block* _head;
     const Block* _tail;
-    const AllocateEntry& (*_get_entry)(const Block& block);
 
     // Noncopyable.
     AllocateList(const AllocateList&);
     AllocateList& operator=(const AllocateList&);
 
   public:
-    AllocateList(const AllocateEntry& (*get_entry)(const Block& block));
+    AllocateList();
     ~AllocateList();
 
     Block* head();

@@ -323,7 +323,7 @@ void Runtime1::initialize_pd() {
 
 
 // target: the entry point of the method that creates and posts the exception oop
-// has_argument: true if the exception needs arguments (passed in r22 and r23)
+// has_argument: true if the exception needs arguments (passed in rscratch1 and rscratch2)
 
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
   // make a frame and preserve the caller's caller-save registers
@@ -332,7 +332,9 @@ OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address targe
   if (!has_argument) {
     call_offset = __ call_RT(noreg, noreg, target);
   } else {
-    call_offset = __ call_RT(noreg, noreg, target, r22, r23);
+    __ mov(c_rarg1, rscratch1);
+    __ mov(c_rarg2, rscratch2);
+    call_offset = __ call_RT(noreg, noreg, target);
   }
   OopMapSet* oop_maps = new OopMapSet();
   oop_maps->add_gc_map(call_offset, oop_map);

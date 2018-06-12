@@ -75,6 +75,14 @@ public abstract class CollectedHeap extends VMObject {
 
   public abstract CollectedHeapName kind();
 
+  public String oopAddressDescription(OopHandle handle) {
+      return handle.toString();
+  }
+
+  public OopHandle oop_load_at(OopHandle handle, long offset) {
+      return handle.getOopHandleAt(offset);
+  }
+
   public void print() { printOn(System.out); }
   public void printOn(PrintStream tty) {
     MemRegion mr = reservedRegion();

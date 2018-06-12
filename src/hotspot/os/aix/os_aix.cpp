@@ -899,8 +899,12 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // guard pages might not fit on the tiny stack created.
   int ret = pthread_attr_setstacksize(&attr, stack_size);
   if (ret != 0) {
-    log_warning(os, thread)("The thread stack size specified is invalid: " SIZE_FORMAT "k",
+    log_warning(os, thread)("The %sthread stack size specified is invalid: " SIZE_FORMAT "k",
+                            (thr_type == compiler_thread) ? "compiler " : ((thr_type == java_thread) ? "" : "VM "),
                             stack_size / K);
+    thread->set_osthread(NULL);
+    delete osthread;
+    return false;
   }
 
   // Save some cycles and a page by disabling OS guard pages where we have our own

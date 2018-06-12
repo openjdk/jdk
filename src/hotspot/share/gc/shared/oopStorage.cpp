@@ -52,9 +52,7 @@ OopStorage::AllocateEntry::~AllocateEntry() {
   assert(_next == NULL, "deleting attached block");
 }
 
-OopStorage::AllocateList::AllocateList(const AllocateEntry& (*get_entry)(const Block& block)) :
-  _head(NULL), _tail(NULL), _get_entry(get_entry)
-{}
+OopStorage::AllocateList::AllocateList() : _head(NULL), _tail(NULL) {}
 
 OopStorage::AllocateList::~AllocateList() {
   // ~OopStorage() empties its lists before destroying them.
@@ -68,8 +66,8 @@ void OopStorage::AllocateList::push_front(const Block& block) {
     assert(_tail == NULL, "invariant");
     _head = _tail = &block;
   } else {
-    _get_entry(block)._next = old;
-    _get_entry(*old)._prev = &block;
+    block.allocate_entry()._next = old;
+    old->allocate_entry()._prev = &block;
     _head = &block;
   }
 }
@@ -80,14 +78,14 @@ void OopStorage::AllocateList::push_back(const Block& block) {
     assert(_head == NULL, "invariant");
     _head = _tail = &block;
   } else {
-    _get_entry(*old)._next = &block;
-    _get_entry(block)._prev = old;
+    old->allocate_entry()._next = &block;
+    block.allocate_entry()._prev = old;
     _tail = &block;
   }
 }
 
 void OopStorage::AllocateList::unlink(const Block& block) {
-  const AllocateEntry& block_entry = _get_entry(block);
+  const AllocateEntry& block_entry = block.allocate_entry();
   const Block* prev_blk = block_entry._prev;
   const Block* next_blk = block_entry._next;
   block_entry._prev = NULL;
@@ -98,15 +96,15 @@ void OopStorage::AllocateList::unlink(const Block& block) {
     _head = _tail = NULL;
   } else if (prev_blk == NULL) {
     assert(_head == &block, "invariant");
-    _get_entry(*next_blk)._prev = NULL;
+    next_blk->allocate_entry()._prev = NULL;
     _head = next_blk;
   } else if (next_blk == NULL) {
     assert(_tail == &block, "invariant");
-    _get_entry(*prev_blk)._next = NULL;
+    prev_blk->allocate_entry()._next = NULL;
     _tail = prev_blk;
   } else {
-    _get_entry(*next_blk)._prev = prev_blk;
-    _get_entry(*prev_blk)._next = next_blk;
+    next_blk->allocate_entry()._prev = prev_blk;
+    prev_blk->allocate_entry()._next = next_blk;
   }
 }
 
@@ -230,10 +228,6 @@ OopStorage::Block::~Block() {
   // might help catch bugs.  Volatile to prevent dead-store elimination.
   const_cast<uintx volatile&>(_allocated_bitmask) = 0;
   const_cast<OopStorage* volatile&>(_owner) = NULL;
-}
-
-const OopStorage::AllocateEntry& OopStorage::Block::get_allocate_entry(const Block& block) {
-  return block._allocate_entry;
 }
 
 size_t OopStorage::Block::allocation_size() {
@@ -769,7 +763,7 @@ OopStorage::OopStorage(const char* name,
                        Mutex* active_mutex) :
   _name(dup_name(name)),
   _active_array(ActiveArray::create(initial_active_array_size)),
-  _allocate_list(&Block::get_allocate_entry),
+  _allocate_list(),
   _deferred_updates(NULL),
   _allocate_mutex(allocate_mutex),
   _active_mutex(active_mutex),
