@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,15 +325,15 @@ static NSObject *sAttributeNamesLOCK = nil;
         }
 
         JavaComponentAccessibility *child = [self createWithParent:parent accessible:jchild role:childJavaRole index:childIndex withEnv:env withView:parent->fView];
-        
+
         (*env)->DeleteLocalRef(env, jchild);
         (*env)->DeleteLocalRef(env, jchildJavaRole);
-        
+
         [children addObject:child];
         childIndex++;
     }
     (*env)->DeleteLocalRef(env, jchildrenAndRoles);
-    
+
     return children;
 }
 
@@ -646,6 +646,9 @@ static NSObject *sAttributeNamesLOCK = nil;
         }
         // The above set of attributes is immutable per role, but some objects, if
         // they are the child of a list, need to add the selected and index attributes.
+        if ([self accessibilityIsIgnored]) {
+            return names;
+        }
         id myParent = [self accessibilityParentAttribute];
         if ([myParent isKindOfClass:[JavaComponentAccessibility class]]) {
             NSString *parentRole = [(JavaComponentAccessibility *)myParent javaRole];
@@ -1060,7 +1063,7 @@ static NSObject *sAttributeNamesLOCK = nil;
                                     sjc_CAccessibility,
                                     "requestSelection",
                                     "(Ljavax/accessibility/Accessible;Ljava/awt/Component;)V" );
-    
+
     if ([(NSNumber*)value boolValue]) {
         JNIEnv* env = [ThreadUtilities getJNIEnv];
         JNFCallStaticVoidMethod(env, jm_requestSelection, fAccessible, fComponent); // AWT_THREADING Safe (AWTRunLoop)
@@ -1167,7 +1170,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     // Need to handle popupmenus differently.
     //
     // At least for now don't handle combo box menus.
-    // This may change when later fixing issues which currently 
+    // This may change when later fixing issues which currently
     // exist for combo boxes, but for now the following is only
     // for JPopupMenus, not for combobox menus.
     id parent = [self parent];
@@ -1349,7 +1352,7 @@ static NSObject *sAttributeNamesLOCK = nil;
     NSWindow* hostWindow = [[self->fView window] retain];
     jobject focused = JNFCallStaticObjectMethod(env, jm_getFocusOwner, fComponent); // AWT_THREADING Safe (AWTRunLoop)
     [hostWindow release];
-    
+
     if (focused != NULL) {
         if (JNFIsInstanceOf(env, focused, &sjc_Accessible)) {
             value = [JavaComponentAccessibility createWithAccessible:focused withEnv:env withView:fView];
