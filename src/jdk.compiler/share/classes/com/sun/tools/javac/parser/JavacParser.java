@@ -1702,6 +1702,7 @@ public class JavacParser implements Parser {
             }
             for (JCVariableDecl param: params) {
                 if (param.vartype != null && isRestrictedLocalVarTypeName(param.vartype)) {
+                    param.startPos = TreeInfo.getStartPos(param.vartype);
                     param.vartype = null;
                 }
             }
