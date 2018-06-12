@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,6 @@ public class PlainRead {
         if (wb.isContainerized()) {
             System.out.println("Inside a cgroup, testing...");
             isContainer(output);
-        } else {
-            System.out.println("Not in a cgroup, testing...");
-            isNotContainer(output);
         }
     }
 }
