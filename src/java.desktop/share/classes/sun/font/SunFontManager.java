@@ -132,10 +132,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      public static final int FONTFORMAT_NONE = -1;
      public static final int FONTFORMAT_TRUETYPE = 0;
      public static final int FONTFORMAT_TYPE1 = 1;
-     public static final int FONTFORMAT_T2K = 2;
-     public static final int FONTFORMAT_TTC = 3;
-     public static final int FONTFORMAT_COMPOSITE = 4;
-     public static final int FONTFORMAT_NATIVE = 5;
+     public static final int FONTFORMAT_TTC = 2;
+     public static final int FONTFORMAT_COMPOSITE = 3;
+     public static final int FONTFORMAT_NATIVE = 4;
 
      /* Pool of 20 font file channels chosen because some UTF-8 locale
       * composite fonts can use up to 16 platform fonts (including the
@@ -353,7 +352,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                          * handle two fonts of the same name, so the JRE one
                          * must be the first one registered. Pass "true" to
                          * registerFonts method as on-screen these JRE fonts
-                         * always go through the T2K rasteriser.
+                         * always go through the JDK rasteriser.
                          */
                         if (FontUtilities.isLinux) {
                             /* Linux font configuration uses these fonts */

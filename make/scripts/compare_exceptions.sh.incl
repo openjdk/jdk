@@ -179,7 +179,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ];
       ./lib/libsplashscreen.so
       ./lib/libsunec.so
       ./lib/libsunwjdga.so
-      ./lib/libt2k.so
       ./lib/libunpack.so
       ./lib/libverify.so
       ./lib/libzip.so
@@ -290,7 +289,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
       ./lib/libsplashscreen.so
       ./lib/libsunec.so
       ./lib/libsunwjdga.so
-      ./lib/libt2k.so
       ./lib/libunpack.so
       ./lib/libverify.so
       ./lib/libzip.so

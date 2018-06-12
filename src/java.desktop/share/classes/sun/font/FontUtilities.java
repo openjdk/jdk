@@ -52,10 +52,6 @@ public final class FontUtilities {
 
     public static boolean useJDKScaler;
 
-    public static boolean useT2K;
-    // useLegacy is a short-term debugging transition aid.
-    public static boolean useLegacy;
-
     public static boolean isWindows;
 
     private static boolean debugFonts = false;
@@ -76,33 +72,16 @@ public final class FontUtilities {
 
                 isMacOSX = osName.contains("OS X"); // TODO: MacOSX
 
-                /* Support a value of "t2k" as meaning use the JDK internal
-                 * scaler over the platform scaler whether or not t2k is
-                 * actually available.
-                 * This can be considered transitional support for some
-                 * level of compatibility, as in it avoids the native scaler
-                 * as before but cannot guarantee rendering equivalence
-                 * with T2K.
-                 * It will also use t2k instead of freetype if t2k is
-                 * available - this is the same as before.
-                 * The new value of "jdk" means even if t2k is available,
-                 * the decision as to whether to use that or freetype is
-                 * not affected by this setting.
+                /* If set to "jdk", use the JDK's scaler rather than
+                 * the platform one. This may be a no-op on platforms where
+                 * JDK has been configured so that it always relies on the
+                 * platform scaler. The principal case where it has an
+                 * effect is that on Windows, 2D will never use GDI.
                  */
                 String scalerStr = System.getProperty("sun.java2d.font.scaler");
                 if (scalerStr != null) {
-                    useT2K = "t2k".equals(scalerStr);
-                    if (useT2K) {
-                        System.out.println("WARNING: t2k will be removed in JDK 11.");
-                    }
-                    useLegacy = "legacy".equals(scalerStr);
-                    if (useLegacy) {
-                        System.out.println("WARNING: legacy behavior will be removed in JDK 11.");
-                    }
-                    useJDKScaler = useT2K || "jdk".equals(scalerStr);
+                    useJDKScaler = "jdk".equals(scalerStr);
                 } else {
-                    useT2K = false;
-                    useLegacy = false;
                     useJDKScaler = false;
                 }
                 isWindows = osName.startsWith("Windows");
