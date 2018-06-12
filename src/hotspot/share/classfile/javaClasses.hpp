@@ -229,8 +229,9 @@ class java_lang_Class : AllStatic {
   static oop  archive_mirror(Klass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static oop  process_archived_mirror(Klass* k, oop mirror, oop archived_mirror, Thread *THREAD)
                                       NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  static void restore_archived_mirror(Klass *k, Handle mirror, Handle class_loader, Handle module,
-                                      Handle protection_domain, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static bool restore_archived_mirror(Klass *k, Handle class_loader, Handle module,
+                                      Handle protection_domain,
+                                      TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static void fixup_module_field(Klass* k, Handle module);
 
@@ -1483,7 +1484,7 @@ class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
  private:
   static int  _owner_offset;
  public:
-  static void initialize(TRAPS);
+  static void compute_offsets();
   static oop  get_owner_threadObj(oop obj);
 };
 

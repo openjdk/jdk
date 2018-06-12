@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4905786 6259611 8162363
+ * @bug      4905786 6259611 8162363 8196202
  * @summary  Make sure that headings use the TH tag instead of the TD tag.
  * @author   jamieh
  * @library ../lib
@@ -62,6 +62,7 @@ public class TestHeadings extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "-header", "Test Files",
                 "pkg1", "pkg2");
         checkExit(Exit.OK);

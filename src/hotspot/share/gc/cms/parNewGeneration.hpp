@@ -29,6 +29,7 @@
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -236,6 +237,7 @@ class ParNewGenTask: public AbstractGangTask {
   HeapWord*                    _young_old_boundary;
   class ParScanThreadStateSet* _state_set;
   StrongRootsScope*            _strong_roots_scope;
+  OopStorage::ParState<false, false> _par_state_string;
 
 public:
   ParNewGenTask(ParNewGeneration*      young_gen,

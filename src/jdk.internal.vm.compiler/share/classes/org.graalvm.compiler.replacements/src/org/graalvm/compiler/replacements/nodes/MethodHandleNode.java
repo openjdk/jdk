@@ -333,7 +333,7 @@ public final class MethodHandleNode extends MacroStateSplitNode implements Simpl
                             FixedGuardNode fixedGuard = adder.add(new FixedGuardNode(inst, reason, action, speculation, false));
                             guard = fixedGuard;
                         } else {
-                            GuardNode newGuard = adder.add(new GuardNode(inst, guardAnchor, reason, action, false, speculation));
+                            GuardNode newGuard = adder.add(new GuardNode(inst, guardAnchor, reason, action, false, speculation, null));
                             adder.add(new ValueAnchorNode(newGuard));
                             guard = newGuard;
                         }

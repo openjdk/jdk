@@ -21,6 +21,8 @@
  * questions.
  */
 
+import sun.hotspot.code.Compiler;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
@@ -34,10 +36,25 @@ import jdk.test.lib.process.OutputAnalyzer;
 /*
  * @test
  * @summary Test the 'universe' command of jhsdb clhsdb.
+ * @requires vm.gc != "Z"
  * @bug 8190307
  * @library /test/lib
  * @build jdk.test.lib.apps.*
- * @run main/othervm TestUniverse
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestUniverse withoutZ
+ */
+
+/*
+ * @test
+ * @summary Test the 'universe' command of jhsdb clhsdb.
+ * @requires vm.gc == "Z"
+ * @bug 8190307
+ * @library /test/lib
+ * @build jdk.test.lib.apps.*
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestUniverse withZ
  */
 
 public class TestUniverse {
@@ -80,6 +97,9 @@ public class TestUniverse {
             p.destroyForcibly();
             throw new Error("Problem awaiting the child process: " + ie, ie);
         }
+        if (gc.contains("UseZGC")) {
+            output.shouldContain("ZHeap");
+        }
 
         output.shouldHaveExitValue(0);
         System.out.println(output.getOutput());
@@ -102,13 +122,19 @@ public class TestUniverse {
             output.shouldContain("PSYoungGen");
             output.shouldContain("eden");
         }
-
+        if (gc.contains("UseEpsilonGC")) {
+            output.shouldContain("Epsilon heap");
+            output.shouldContain("reserved");
+            output.shouldContain("committed");
+            output.shouldContain("used");
+        }
     }
 
     public static void test(String gc) throws Exception {
         LingeredApp app = null;
         try {
             List<String> vmArgs = new ArrayList<String>();
+            vmArgs.add("-XX:+UnlockExperimentalVMOptions"); // unlock experimental GCs
             vmArgs.add(gc);
             app = LingeredApp.startApp(vmArgs);
             System.out.println ("Started LingeredApp with the GC option " + gc +
@@ -132,7 +158,13 @@ public class TestUniverse {
             test("-XX:+UseG1GC");
             test("-XX:+UseParallelGC");
             test("-XX:+UseSerialGC");
-            test("-XX:+UseConcMarkSweepGC");
+            if (!Compiler.isGraalEnabled()) { // Graal does not support all GCs
+                test("-XX:+UseConcMarkSweepGC");
+                if (args[0].equals("withZ")) {
+                    test("-XX:+UseZGC");
+                }
+            }
+            test("-XX:+UseEpsilonGC");
         } catch (Exception e) {
             throw new Error("Test failed with " + e);
         }

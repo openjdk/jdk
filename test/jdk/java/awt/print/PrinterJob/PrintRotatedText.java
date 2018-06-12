@@ -44,7 +44,7 @@ import java.awt.geom.*;
 import java.awt.print.*;
 
 public class PrintRotatedText extends Frame implements ActionListener {
- static String fontname="Lucida Sans Regular"; // our font
+ static String fontname=Font.SERIF;
  private TextCanvas c;
 
  public static void main(String args[]) {

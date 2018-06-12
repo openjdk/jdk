@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/thread.inline.hpp"
 
 static const u1* const MUTEX_CLAIM = NULL;

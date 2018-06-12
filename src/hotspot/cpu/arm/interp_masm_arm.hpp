@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define CPU_ARM_VM_INTERP_MASM_ARM_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 #include "prims/jvmtiExport.hpp"

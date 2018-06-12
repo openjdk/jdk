@@ -22,10 +22,11 @@
  */
 
 /* @test
- * @bug 8073400 8198412
+ * @bug 8073400 8198412 8204126
  * @summary Some Monospaced logical fonts have a different width
  * @author Dmitry Markov
  * @run main MonospacedGlyphWidthTest
+ * @requires (os.family == "windows" | os.family == "mac")
  */
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;

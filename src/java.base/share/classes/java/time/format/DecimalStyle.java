@@ -216,7 +216,6 @@ public final class DecimalStyle {
      *
      * @param zeroDigit  the character for zero
      * @return  a copy with a new character that represents zero, not null
-
      */
     public DecimalStyle withZeroDigit(char zeroDigit) {
         if (zeroDigit == this.zeroDigit) {

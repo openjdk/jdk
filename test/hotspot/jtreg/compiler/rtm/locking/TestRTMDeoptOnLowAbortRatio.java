@@ -140,7 +140,7 @@ public class TestRTMDeoptOnLowAbortRatio {
         public void forceAbort(boolean abort) {
             synchronized(monitor) {
                 if (abort) {
-                    Test.UNSAFE.addressSize();
+                    Test.UNSAFE.pageSize();
                 }
             }
         }

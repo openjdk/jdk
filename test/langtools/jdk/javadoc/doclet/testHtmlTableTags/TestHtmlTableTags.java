@@ -50,6 +50,7 @@ public class TestHtmlTableTags extends JavadocTester {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
 
@@ -64,6 +65,7 @@ public class TestHtmlTableTags extends JavadocTester {
                 "-html4",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg1", "pkg2");
         checkExit(Exit.OK);
 

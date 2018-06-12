@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,11 @@ static POINT *TransformPoly(jint *xpoints, jint *ypoints,
         *pNpoints = outpoints;
     }
     if (outpoints > POLYTEMPSIZE) {
-        pPoints = (POINT *) SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(POINT), outpoints);
+        try {
+            pPoints = (POINT *) SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(POINT), outpoints);
+        } catch (const std::bad_alloc&) {
+            return NULL;
+        }
     }
     BOOL isempty = fixend;
     for (int i = 0; i < npoints; i++) {

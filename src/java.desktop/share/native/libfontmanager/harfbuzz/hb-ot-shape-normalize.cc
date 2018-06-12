@@ -345,9 +345,8 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
       if (_hb_glyph_info_get_modified_combining_class (&buffer->info[end]) == 0)
         break;
 
-    /* We are going to do a O(n^2).  Only do this if the sequence is short,
-     * but not too short ;). */
-    if (end - i < 2 || end - i > HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS) {
+    /* We are going to do a O(n^2).  Only do this if the sequence is short. */
+    if (end - i > HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS) {
       i = end;
       continue;
     }
@@ -373,13 +372,11 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
   buffer->clear_output ();
   count = buffer->len;
   unsigned int starter = 0;
-  bool combine = true;
   buffer->next_glyph ();
   while (buffer->idx < count && !buffer->in_error)
   {
     hb_codepoint_t composed, glyph;
-    if (combine &&
-        /* We don't try to compose a non-mark character with it's preceding starter.
+    if (/* We don't try to compose a non-mark character with it's preceding starter.
          * This is both an optimization to avoid trying to compose every two neighboring
          * glyphs in most scripts AND a desired feature for Hangul.  Apparently Hangul
          * fonts are not designed to mix-and-match pre-composed syllables and Jamo. */
@@ -410,22 +407,27 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
 
         continue;
       }
-      else if (/* We sometimes custom-tailor the sorted order of marks. In that case, stop
-                * trying to combine as soon as combining-class drops. */
-               starter < buffer->out_len - 1 &&
-               info_cc (buffer->prev()) > info_cc (buffer->cur()))
-        combine = false;
     }
 
     /* Blocked, or doesn't compose. */
     buffer->next_glyph ();
 
     if (info_cc (buffer->prev()) == 0)
-    {
       starter = buffer->out_len - 1;
-      combine = true;
-    }
   }
   buffer->swap_buffers ();
 
+  if (buffer->scratch_flags & HB_BUFFER_SCRATCH_FLAG_HAS_CGJ)
+  {
+    /* For all CGJ, check if it prevented any reordering at all.
+     * If it did NOT, then make it skippable.
+     * https://github.com/harfbuzz/harfbuzz/issues/554
+     */
+    for (unsigned int i = 1; i + 1 < buffer->len; i++)
+      if (buffer->info[i].codepoint == 0x034Fu/*CGJ*/ &&
+          info_cc(buffer->info[i-1]) <= info_cc(buffer->info[i+1]))
+      {
+        _hb_glyph_info_unhide (&buffer->info[i]);
+      }
+  }
 }

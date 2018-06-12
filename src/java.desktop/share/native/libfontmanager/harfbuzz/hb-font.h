@@ -456,7 +456,7 @@ hb_font_get_glyph_from_name (hb_font_t *font,
 /* high-level funcs, with fallback */
 
 /* Calls either hb_font_get_nominal_glyph() if variation_selector is 0,
- * otherwise callse hb_font_get_variation_glyph(). */
+ * otherwise calls hb_font_get_variation_glyph(). */
 HB_EXTERN hb_bool_t
 hb_font_get_glyph (hb_font_t *font,
                    hb_codepoint_t unicode, hb_codepoint_t variation_selector,

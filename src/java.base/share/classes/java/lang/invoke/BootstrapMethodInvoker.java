@@ -134,6 +134,8 @@ final class BootstrapMethodInvoker {
                     String recipe = (String)argv[0];
                     Object[] shiftedArgs = Arrays.copyOfRange(argv, 1, argv.length);
                     result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, recipe, shiftedArgs);
+                } else if (isLambdaMetafactoryAltMetafactoryBSM(bsmType)) {
+                    result = (CallSite)bootstrapMethod.invokeExact(caller, name, (MethodType)type, argv);
                 } else {
                     switch (argv.length) {
                         case 0:
@@ -286,6 +288,9 @@ final class BootstrapMethodInvoker {
     private static final MethodType LMF_INDY_MT = MethodType.methodType(CallSite.class,
             Lookup.class, String.class, MethodType.class, MethodType.class, MethodHandle.class, MethodType.class);
 
+    private static final MethodType LMF_ALT_MT = MethodType.methodType(CallSite.class,
+            Lookup.class, String.class, MethodType.class, Object[].class);
+
     private static final MethodType LMF_CONDY_MT = MethodType.methodType(Object.class,
             Lookup.class, String.class, Class.class, MethodType.class, MethodHandle.class, MethodType.class);
 
@@ -317,6 +322,15 @@ final class BootstrapMethodInvoker {
      */
     private static boolean isLambdaMetafactoryIndyBSM(MethodType bsmType) {
         return bsmType == LMF_INDY_MT;
+    }
+
+    /**
+     * @return true iff the BSM method type exactly matches
+     *         {@see java.lang.invoke.LambdaMetafactory#altMetafactory(
+     *          MethodHandles.Lookup,String,MethodType,Object[])}
+     */
+    private static boolean isLambdaMetafactoryAltMetafactoryBSM(MethodType bsmType) {
+        return bsmType == LMF_ALT_MT;
     }
 
     /** The JVM produces java.lang.Integer values to box

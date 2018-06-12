@@ -38,6 +38,8 @@ enum GCName {
   ConcurrentMarkSweep,
   G1Old,
   G1Full,
+  Z,
+  NA,
   GCNameEndSentinel
 };
 
@@ -55,6 +57,8 @@ class GCNameHelper {
       case ConcurrentMarkSweep: return "ConcurrentMarkSweep";
       case G1Old: return "G1Old";
       case G1Full: return "G1Full";
+      case Z: return "Z";
+      case NA: return "N/A";
       default: ShouldNotReachHere(); return NULL;
     }
   }

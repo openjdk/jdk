@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,28 @@
 
 package sun.applet;
 
-import java.lang.NullPointerException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.SocketPermission;
-import java.net.URLConnection;
-import java.net.MalformedURLException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
-import java.io.BufferedInputStream;
 import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.NoSuchElementException;
-import java.security.AccessController;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.URLConnection;
 import java.security.AccessControlContext;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
+import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.NoSuchElementException;
+
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.net.www.ParseUtil;
@@ -151,13 +148,10 @@ public class AppletClassLoader extends URLClassLoader {
         try {
             return super.loadClass(name, resolve);
         } catch (ClassNotFoundException e) {
-            //printError(name, e.getException());
             throw e;
         } catch (RuntimeException e) {
-            //printError(name, e);
             throw e;
         } catch (Error e) {
-            //printError(name, e);
             throw e;
         }
     }
@@ -824,30 +818,6 @@ public     void grab() {
     Boolean isJDK12Target(Class<?> clazz)
     {
         return jdk12AppletInfo.get(clazz.toString());
-    }
-
-    private static AppletMessageHandler mh =
-        new AppletMessageHandler("appletclassloader");
-
-    /*
-     * Prints a class loading error message.
-     */
-    private static void printError(String name, Throwable e) {
-        String s = null;
-        if (e == null) {
-            s = mh.getMessage("filenotfound", name);
-        } else if (e instanceof IOException) {
-            s = mh.getMessage("fileioexception", name);
-        } else if (e instanceof ClassFormatError) {
-            s = mh.getMessage("fileformat", name);
-        } else if (e instanceof ThreadDeath) {
-            s = mh.getMessage("filedeath", name);
-        } else if (e instanceof Error) {
-            s = mh.getMessage("fileerror", e.toString(), name);
-        }
-        if (s != null) {
-            System.err.println(s);
-        }
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,32 @@
  * questions.
  */
 
-#include "sun_awt_X11_XlibWrapper.h"
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
-#include <X11/Xutil.h>
-#include <X11/Xos.h>
-#include <X11/Xatom.h>
-#include <X11/extensions/Xdbe.h>
-#include <X11/extensions/shape.h>
-#include <string.h>
-#include <stdlib.h>
-#include <X11/Sunkeysym.h>
-
-#include <jni.h>
-#include <jni_util.h>
-#include <jlong.h>
-#include <sizecalc.h>
-
-#include <awt.h>
-#include <awt_util.h>
-#include <jvm.h>
-
-#include <Region.h>
+#include "awt.h"
+#include "awt_util.h"
+#include "jni.h"
+#include "jlong.h"
+#include "Region.h"
+#include "sizecalc.h"
 #include "utility/rect.h"
 
+#include "sun_awt_X11_XlibWrapper.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <X11/extensions/Xdbe.h>
+#include <X11/extensions/shape.h>
+#include <X11/keysym.h>
+#include <X11/Sunkeysym.h>
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <X11/XKBlib.h>
+#include <X11/Xos.h>
+#include <X11/Xutil.h>
+
+#if defined(AIX)
+#undef X_HAVE_UTF8_STRING
+extern Bool statusWindowEventHandler(XEvent event);
+#endif
 
 // From XWindow.c
 extern KeySym keycodeToKeysym(Display *display, KeyCode keycode, int index);
@@ -288,7 +289,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_ScreenCount
     return ScreenCount((Display *) jlong_to_ptr(display));
 }
 
-
 /*
  * Class:     XlibWrapper
  * Method:    XCreateWindow
@@ -303,7 +303,6 @@ JNIEXPORT jlong JNICALL Java_sun_awt_X11_XlibWrapper_XCreateWindow
     return  XCreateWindow((Display *) jlong_to_ptr(display),(Window) window, x, y, w, h,
               border_width, depth, wclass, (Visual *) jlong_to_ptr(visual),
               valuemask, (XSetWindowAttributes *) jlong_to_ptr(attributes));
-
 }
 
 /*
@@ -320,7 +319,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XConvertCase
                          (jlong_to_ptr(keysym_uppercase)));
 }
 
-
 /*
  * Class:     XlibWrapper
  * Method:    XMapWindow
@@ -331,7 +329,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XMapWindow
 {
     AWT_CHECK_HAVE_LOCK();
     XMapWindow( (Display *)jlong_to_ptr(display),(Window) window);
-
 }
 
 /*
@@ -344,7 +341,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XMapRaised
 {
     AWT_CHECK_HAVE_LOCK();
     XMapRaised( (Display *)jlong_to_ptr(display),(Window) window);
-
 }
 
 /*
@@ -355,10 +351,8 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XMapRaised
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XRaiseWindow
 (JNIEnv *env, jclass clazz, jlong display, jlong window)
 {
-
     AWT_CHECK_HAVE_LOCK();
     XRaiseWindow( (Display *)jlong_to_ptr(display),(Window) window);
-
 }
 
 /*
@@ -369,10 +363,8 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XRaiseWindow
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XLowerWindow
 (JNIEnv *env, jclass clazz, jlong display, jlong window)
 {
-
     AWT_CHECK_HAVE_LOCK();
     XLowerWindow( (Display *)jlong_to_ptr(display),(Window) window);
-
 }
 
 /*
@@ -383,10 +375,8 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XLowerWindow
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XRestackWindows
 (JNIEnv *env, jclass clazz, jlong display, jlong windows, jint length)
 {
-
     AWT_CHECK_HAVE_LOCK();
     XRestackWindows( (Display *) jlong_to_ptr(display), (Window *) jlong_to_ptr(windows), length);
-
 }
 
 /*
@@ -411,11 +401,10 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XConfigureWindow
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSetInputFocus
 (JNIEnv *env, jclass clazz, jlong display, jlong window)
 {
-
     AWT_CHECK_HAVE_LOCK();
     XSetInputFocus( (Display *)jlong_to_ptr(display),(Window) window, RevertToPointerRoot, CurrentTime);
-
 }
+
 /*
  * Class:     XlibWrapper
  * Method:    XSetInputFocus2
@@ -424,10 +413,8 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSetInputFocus
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSetInputFocus2
 (JNIEnv *env, jclass clazz, jlong display, jlong window, jlong time)
 {
-
     AWT_CHECK_HAVE_LOCK();
     XSetInputFocus( (Display *)jlong_to_ptr(display),(Window) window, RevertToPointerRoot, time);
-
 }
 
 /*
@@ -438,14 +425,12 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSetInputFocus2
 JNIEXPORT jlong JNICALL Java_sun_awt_X11_XlibWrapper_XGetInputFocus
 (JNIEnv *env, jclass clazz, jlong display)
 {
-
     Window focusOwner;
     int revert_to;
     AWT_CHECK_HAVE_LOCK_RETURN(0);
     XGetInputFocus( (Display *)jlong_to_ptr(display), &focusOwner, &revert_to);
     return focusOwner;
 }
-
 
 /*
  * Class:     XlibWrapper
@@ -525,8 +510,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XUnmapWindow
 
 }
 
-
-
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSelectInput
 (JNIEnv *env, jclass clazz, jlong display, jlong window, jlong mask)
 {
@@ -543,6 +526,7 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XkbSelectEvents
                    (unsigned long)bits_to_change,
                    (unsigned long)values_for_bits);
 }
+
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XkbSelectEventDetails
 (JNIEnv *env, jclass clazz, jlong display, jlong device, jlong event_type,
               jlong bits_to_change, jlong values_for_bits)
@@ -553,6 +537,7 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XkbSelectEventDetails
                    (unsigned long)bits_to_change,
                    (unsigned long)values_for_bits);
 }
+
 JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XkbQueryExtension
 (JNIEnv *env, jclass clazz, jlong display, jlong opcode_rtrn, jlong event_rtrn,
               jlong error_rtrn, jlong major_in_out, jlong minor_in_out)
@@ -567,6 +552,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XkbQueryExtension
                                (int *) jlong_to_ptr(minor_in_out));
     return status ? JNI_TRUE : JNI_FALSE;
 }
+
 JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XkbLibraryVersion
 (JNIEnv *env, jclass clazz, jlong lib_major_in_out, jlong lib_minor_in_out)
 {
@@ -587,6 +573,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_X11_XlibWrapper_XkbGetMap
                               (unsigned int) which,
                               (unsigned int) device_spec);
 }
+
 JNIEXPORT jlong JNICALL Java_sun_awt_X11_XlibWrapper_XkbGetUpdatedMap
 (JNIEnv *env, jclass clazz, jlong display, jlong which, jlong xkb)
 {
@@ -626,8 +613,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XkbSetDetectableAutoRepeat
  * Method:    XNextEvent
  * Signature: (JJ)V
  */
-
-
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XNextEvent
 (JNIEnv *env, jclass clazz, jlong display, jlong ptr)
 {
@@ -640,7 +625,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XNextEvent
  * Method:    XMaskEvent
  * Signature: (JJJ)V
  */
-
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XMaskEvent
   (JNIEnv *env, jclass clazz, jlong display, jlong event_mask, jlong event_return)
 {
@@ -653,7 +637,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XMaskEvent
  * Method:    XWindowEvent
  * Signature: (JJJJ)V
  */
-
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XWindowEvent
   (JNIEnv *env, jclass clazz, jlong display, jlong window, jlong event_mask, jlong event_return)
 {
@@ -670,6 +653,11 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XFilterEvent
 (JNIEnv *env, jclass clazz, jlong ptr, jlong window)
 {
     AWT_CHECK_HAVE_LOCK_RETURN(JNI_FALSE);
+#if defined(AIX)
+    if (True == statusWindowEventHandler(*((XEvent *)(uintptr_t)ptr))) {
+        return (jboolean)True;
+    }
+#endif
     return (jboolean) XFilterEvent((XEvent *) jlong_to_ptr(ptr), (Window) window);
 }
 
@@ -727,19 +715,15 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XPeekEvent
     XPeekEvent((Display *) jlong_to_ptr(display),jlong_to_ptr(ptr));
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    XMoveResizeWindow
  * Signature: (JJIIII)V
  */
-
 JNIEXPORT void JNICALL  Java_sun_awt_X11_XlibWrapper_XMoveResizeWindow
 (JNIEnv *env, jclass clazz, jlong display, jlong window, jint x , jint y , jint width, jint height) {
-
     AWT_CHECK_HAVE_LOCK();
     XMoveResizeWindow( (Display *) jlong_to_ptr(display), (Window) window, x, y, width, height);
-
 }
 
 /*
@@ -747,10 +731,8 @@ JNIEXPORT void JNICALL  Java_sun_awt_X11_XlibWrapper_XMoveResizeWindow
  * Method:    XResizeWindow
  * Signature: (JJII)V
  */
-
 JNIEXPORT void JNICALL  Java_sun_awt_X11_XlibWrapper_XResizeWindow
-(JNIEnv *env, jclass clazz, jlong display, jlong window, jint width, jint height)
-{
+(JNIEnv *env, jclass clazz, jlong display, jlong window, jint width, jint height) {
     AWT_CHECK_HAVE_LOCK();
     XResizeWindow( (Display *) jlong_to_ptr(display),(Window) window,width,height);
 }
@@ -760,10 +742,8 @@ JNIEXPORT void JNICALL  Java_sun_awt_X11_XlibWrapper_XResizeWindow
  * Method:    XMoveWindow
  * Signature: (JJII)V
  */
-
 JNIEXPORT void JNICALL  Java_sun_awt_X11_XlibWrapper_XMoveWindow
-(JNIEnv *env, jclass clazz, jlong display, jlong window, jint width, jint height)
-{
+(JNIEnv *env, jclass clazz, jlong display, jlong window, jint width, jint height) {
     AWT_CHECK_HAVE_LOCK();
     XMoveWindow( (Display *) jlong_to_ptr(display),(Window) window,width,height);
 }
@@ -774,13 +754,10 @@ JNIEXPORT void JNICALL  Java_sun_awt_X11_XlibWrapper_XMoveWindow
  * Method:    XSetWindowBackground
  * Signature: (JJJ)V
  */
-
 JNIEXPORT void JNICALL  Java_sun_awt_X11_XlibWrapper_XSetWindowBackground
 (JNIEnv *env, jclass clazz, jlong display, jlong window, jlong background_pixel) {
-
     AWT_CHECK_HAVE_LOCK();
     XSetWindowBackground((Display *) jlong_to_ptr(display),window,background_pixel);
-
 }
 
 
@@ -803,10 +780,8 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XFlush
  */
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSync
 (JNIEnv *env, jclass clazz, jlong display, jint discard) {
-
     AWT_CHECK_HAVE_LOCK();
     XSync((Display *) jlong_to_ptr(display), discard);
-
 }
 
 JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XTranslateCoordinates
@@ -855,7 +830,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_SetProperty
         cname = "";
     }
 
-
     AWT_CHECK_HAVE_LOCK();
 
 #ifdef X_HAVE_UTF8_STRING
@@ -865,7 +839,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_SetProperty
     status = XmbTextListToTextProperty((Display *)jlong_to_ptr(display), &cname, 1,
                                        XStdICCTextStyle, &tp);
 #endif
-
 
     if (status == Success || status > 0) {
         XChangeProperty((Display *)jlong_to_ptr(display), window, atom, tp.encoding, tp.format, PropModeReplace, tp.value, tp.nitems);
@@ -1005,7 +978,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XCreateFontCursor
     return XCreateFontCursor((Display *) jlong_to_ptr(display), (int) shape);
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    XCreatePixmapCursor
@@ -1018,7 +990,6 @@ JNIEXPORT jlong JNICALL Java_sun_awt_X11_XlibWrapper_XCreatePixmapCursor
     return (jlong) XCreatePixmapCursor((Display *) jlong_to_ptr(display), (Pixmap) source, (Pixmap) mask,
                                        (XColor *) jlong_to_ptr(fore), (XColor *) jlong_to_ptr(back), x, y);
 }
-
 
 /*
  * Class:     sun_awt_X11_XlibWrapper
@@ -1037,7 +1008,6 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XQueryBestCursor
     if (status == 0) return JNI_FALSE;
     else return JNI_TRUE;
 }
-
 
 /*
  * Class:     sun_awt_X11_XlibWrapper
@@ -1083,7 +1053,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XChangeWindowAttributes
     XChangeWindowAttributes((Display *) jlong_to_ptr(display), (Window) window, (unsigned long) valuemask,
                             (XSetWindowAttributes *) jlong_to_ptr(attributes));
 }
-
 
 /*
  * Class:     sun_awt_X11_XlibWrapper
@@ -1181,7 +1150,6 @@ JNIEXPORT jstring JNICALL Java_sun_awt_X11_XlibWrapper_XGetDefault
     }
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    getScreenOfWindow
@@ -1253,7 +1221,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_awt_X11_XlibWrapper_getStringBytes
     return res;
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    ServerVendor
@@ -1265,6 +1232,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_X11_XlibWrapper_ServerVendor
     AWT_CHECK_HAVE_LOCK_RETURN(NULL);
     return JNU_NewStringPlatform(env, ServerVendor((Display*)jlong_to_ptr(display)));
 }
+
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    VendorRelease
@@ -1276,6 +1244,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_VendorRelease
     AWT_CHECK_HAVE_LOCK_RETURN(0);
     return VendorRelease((Display*)jlong_to_ptr(display));
 }
+
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    IsXsunKPBehavior
@@ -1308,7 +1277,6 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsXsunKPBehavior
         }
     }
 }
-
 
 JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsSunKeyboard
 (JNIEnv *env, jclass clazz, jlong display)
@@ -1407,7 +1375,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_CallErrorHandler
     return (*(XErrorHandler)jlong_to_ptr(handler))((Display*) jlong_to_ptr(display), (XErrorEvent*) jlong_to_ptr(event_ptr));
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    PrintXErrorEvent
@@ -1431,7 +1398,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_PrintXErrorEvent
     }
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    XInternAtoms
@@ -1451,8 +1417,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XInternAtoms
     return status;
 }
 
-
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    XGetWindowAttributes
@@ -1467,7 +1431,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XGetWindowAttributes
     status =  XGetWindowAttributes((Display*)jlong_to_ptr(display), window, (XWindowAttributes*) jlong_to_ptr(attr_ptr));
     return status;
 }
-
 
 /*
  * Class:     sun_awt_X11_XlibWrapper
@@ -1489,7 +1452,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XGetGeometry
                           (unsigned int *)jlong_to_ptr(depth_return));
     return status;
 }
-
 
 /*
  * Class:     sun_awt_X11_XlibWrapper
@@ -1546,7 +1508,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XSendEvent
                       (XEvent*) jlong_to_ptr(event));
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    XQueryTree
@@ -1564,7 +1525,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XQueryTree
                       (unsigned int*) jlong_to_ptr(nchildren_return));
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    memcpy
@@ -1575,7 +1535,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_memcpy
 {
     memcpy(jlong_to_ptr(dest_ptr), jlong_to_ptr(src_ptr), length);
 }
-
 
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSetMinMaxHints
 (JNIEnv *env, jclass clazz, jlong display, jlong window, jint x, jint y, jint width, jint height, jlong flags) {
@@ -1594,7 +1553,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSetMinMaxHints
     XSetWMNormalHints((Display*) jlong_to_ptr(display), window, hints);
     XFree(hints);
 }
-
 
 JNIEXPORT jlong JNICALL Java_sun_awt_X11_XlibWrapper_XGetVisualInfo
 (JNIEnv *env, jclass clazz, jlong display, jlong vinfo_mask, jlong vinfo_template,
@@ -1626,7 +1584,6 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XBell
     XBell((Display*)jlong_to_ptr(display), percent);
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    XAllocColor
@@ -1643,7 +1600,6 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_XAllocColor
     else return JNI_TRUE;
 }
 
-
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    XCreateBitmapFromData
@@ -1656,7 +1612,6 @@ JNIEXPORT jlong JNICALL Java_sun_awt_X11_XlibWrapper_XCreateBitmapFromData
     return (jlong) XCreateBitmapFromData((Display *) jlong_to_ptr(display), (Drawable) drawable,
                                          (char *) jlong_to_ptr(data), width, height);
 }
-
 
 /*
  * Class:     sun_awt_X11_XlibWrapper
@@ -1772,6 +1727,7 @@ Java_sun_awt_X11_XlibWrapper_XCreatePixmap(JNIEnv *env, jclass clazz, jlong disp
     AWT_CHECK_HAVE_LOCK_RETURN(0);
     return XCreatePixmap((Display*)jlong_to_ptr(display), (Drawable)drawable, width, height, depth);
 }
+
 JNIEXPORT jlong JNICALL
 Java_sun_awt_X11_XlibWrapper_XCreateImage
   (JNIEnv *env, jclass clazz, jlong display, jlong visual_ptr,
@@ -1783,6 +1739,7 @@ Java_sun_awt_X11_XlibWrapper_XCreateImage
                 depth, format, offset, (char*) jlong_to_ptr(data),
                 width, height, bitmap_pad, bytes_per_line));
 }
+
 JNIEXPORT jlong JNICALL
 Java_sun_awt_X11_XlibWrapper_XCreateGC
   (JNIEnv *env, jclass clazz, jlong display, jlong drawable,
@@ -1806,6 +1763,7 @@ Java_sun_awt_X11_XlibWrapper_XDestroyImage(JNIEnv *env, jclass clazz, jlong imag
     img->data = NULL;
     XDestroyImage(img);
 }
+
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XlibWrapper_XPutImage(JNIEnv *env, jclass clazz, jlong display, jlong drawable, jlong gc, jlong image, jint src_x, jint src_y, jint dest_x, jint dest_y, jint width, jint height)
 {
@@ -1813,18 +1771,21 @@ Java_sun_awt_X11_XlibWrapper_XPutImage(JNIEnv *env, jclass clazz, jlong display,
     XPutImage((Display*)jlong_to_ptr(display), (Drawable)drawable, (GC) jlong_to_ptr(gc), (XImage*) jlong_to_ptr(image), src_x, src_y,
               dest_x, dest_y, width, height);
 }
+
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XlibWrapper_XFreeGC(JNIEnv *env, jclass clazz, jlong display, jlong gc)
 {
     AWT_CHECK_HAVE_LOCK();
     XFreeGC((Display*) jlong_to_ptr(display), (GC) jlong_to_ptr(gc));
 }
+
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XlibWrapper_XSetWindowBackgroundPixmap(JNIEnv *env, jclass clazz, jlong display, jlong window, jlong pixmap)
 {
     AWT_CHECK_HAVE_LOCK();
     XSetWindowBackgroundPixmap((Display*) jlong_to_ptr(display), (Window)window, (Pixmap)pixmap);
 }
+
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XlibWrapper_XClearWindow(JNIEnv *env, jclass clazz, jlong display, jlong window)
 {
@@ -1922,7 +1883,6 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XdbeSwapBuffers
 JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XQueryKeymap
 (JNIEnv *env, jclass clazz, jlong display, jlong vector)
 {
-
     AWT_CHECK_HAVE_LOCK();
     XQueryKeymap( (Display *) jlong_to_ptr(display), (char *) jlong_to_ptr(vector));
 }
@@ -1961,6 +1921,7 @@ Java_sun_awt_X11_XlibWrapper_XkbGetEffectiveGroup(JNIEnv *env, jclass clazz,
 //    printf("-------------------------------------^^^^\n");
     return (jint)(sr.group);
 }
+
 JNIEXPORT jlong JNICALL
 Java_sun_awt_X11_XlibWrapper_XkbKeycodeToKeysym(JNIEnv *env, jclass clazz,
                                               jlong display, jint keycode,
@@ -1989,6 +1950,7 @@ Java_sun_awt_X11_XlibWrapper_XFreeModifiermap(JNIEnv *env, jclass clazz,
     AWT_CHECK_HAVE_LOCK();
     XFreeModifiermap((XModifierKeymap*) jlong_to_ptr(keymap));
 }
+
 /*
  * Class:     sun_awt_X11_XlibWrapper
  * Method:    XRefreshKeyboardMapping
@@ -2034,7 +1996,6 @@ secondary_loop_event(Display* dpy, XEvent* event, XPointer xawt_root_window) {
             ) ? True : False;
 }
 
-
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11_XlibWrapper_XNextSecondaryLoopEvent(JNIEnv *env, jclass clazz,
                                                      jlong display, jlong ptr) {
@@ -2062,7 +2023,6 @@ Java_sun_awt_X11_XlibWrapper_ExitSecondaryLoop(JNIEnv *env, jclass clazz) {
     exitSecondaryLoop = True;
     AWT_NOTIFY_ALL();
 }
-/*******************************************************************************/
 
 JNIEXPORT jobjectArray JNICALL
 Java_sun_awt_X11_XlibWrapper_XTextPropertyToStringList(JNIEnv *env,
@@ -2180,7 +2140,6 @@ Java_sun_awt_X11_XlibWrapper_XTextPropertyToStringList(JNIEnv *env,
     XFreeStringList(strings);
     return ret;
 }
-
 
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XlibWrapper_XPutBackEvent(JNIEnv *env,

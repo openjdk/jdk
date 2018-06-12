@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -746,7 +746,8 @@ public abstract class Scope {
         }
 
         protected Scope finalizeSingleScope(Scope impScope) {
-            if (impScope instanceof FilterImportScope && impScope.owner.kind == Kind.TYP) {
+            if (impScope instanceof FilterImportScope && impScope.owner.kind == Kind.TYP &&
+                ((FilterImportScope) impScope).isStaticallyImported()) {
                 WriteableScope finalized = WriteableScope.create(impScope.owner);
 
                 for (Symbol sym : impScope.getSymbols()) {
@@ -973,6 +974,10 @@ public abstract class Scope {
 
         @Override
         public boolean isStaticallyImported(Symbol byName) {
+            return isStaticallyImported();
+        }
+
+        public boolean isStaticallyImported() {
             return imp.staticImport;
         }
 

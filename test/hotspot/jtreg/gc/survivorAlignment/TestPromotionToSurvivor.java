@@ -26,6 +26,7 @@
  * @bug 8031323
  * @summary Verify that objects promoted from eden space to survivor space after
  *          minor GC are aligned to SurvivorAlignmentInBytes.
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -111,7 +111,14 @@ interface GraphPrinter extends Closeable, JavaConstantFormatter {
         SnippetReflectionProvider snippetReflection = getSnippetReflectionProvider();
         if (snippetReflection != null) {
             if (constant.getJavaKind() == JavaKind.Object) {
-                Object obj = snippetReflection.asObject(Object.class, constant);
+                Object obj = null;
+                /*
+                 * Ignore any exceptions on unknown JavaConstant implementations in debugging code.
+                 */
+                try {
+                    obj = snippetReflection.asObject(Object.class, constant);
+                } catch (Throwable ex) {
+                }
                 if (obj != null) {
                     return GraphPrinter.constantToString(obj);
                 }

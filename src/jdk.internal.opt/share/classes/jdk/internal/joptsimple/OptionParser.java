@@ -31,7 +31,7 @@
  *
  * The MIT License
  *
- * Copyright (c) 2004-2014 Paul R. Holser, Jr.
+ * Copyright (c) 2004-2015 Paul R. Holser, Jr.
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -55,18 +55,16 @@
 
 package jdk.internal.joptsimple;
 
-import jdk.internal.joptsimple.internal.AbbreviationMap;
-import jdk.internal.joptsimple.util.KeyValuePair;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
+import jdk.internal.joptsimple.internal.AbbreviationMap;
+import jdk.internal.joptsimple.internal.SimpleOptionNameMap;
+import jdk.internal.joptsimple.internal.OptionNameMap;
+import jdk.internal.joptsimple.util.KeyValuePair;
 
 import static java.util.Collections.*;
 import static jdk.internal.joptsimple.OptionException.*;
@@ -80,57 +78,58 @@ import static jdk.internal.joptsimple.ParserRules.*;
  * <p>This parser supports short options and long options.</p>
  *
  * <ul>
- *   <li><dfn>Short options</dfn> begin with a single hyphen ("<kbd>-</kbd>") followed by a single letter or digit,
- *   or question mark ("<kbd>?</kbd>"), or dot ("<kbd>.</kbd>").</li>
+ *   <li><dfn>Short options</dfn> begin with a single hyphen ("{@code -}") followed by a single letter or digit,
+ *   or question mark ("{@code ?}"), or dot ("{@code .}"), or underscore ("{@code _}").</li>
  *
  *   <li>Short options can accept single arguments. The argument can be made required or optional. The option's
  *   argument can occur:
  *     <ul>
- *       <li>in the slot after the option, as in <kbd>-d /tmp</kbd></li>
- *       <li>right up against the option, as in <kbd>-d/tmp</kbd></li>
- *       <li>right up against the option separated by an equals sign (<kbd>"="</kbd>), as in <kbd>-d=/tmp</kbd></li>
+ *       <li>in the slot after the option, as in {@code -d /tmp}</li>
+ *       <li>right up against the option, as in {@code -d/tmp}</li>
+ *       <li>right up against the option separated by an equals sign ({@code "="}), as in {@code -d=/tmp}</li>
  *     </ul>
  *   To specify <em>n</em> arguments for an option, specify the option <em>n</em> times, once for each argument,
- *   as in <kbd>-d /tmp -d /var -d /opt</kbd>; or, when using the
+ *   as in {@code -d /tmp -d /var -d /opt}; or, when using the
  *   {@linkplain ArgumentAcceptingOptionSpec#withValuesSeparatedBy(char) "separated values"} clause of the "fluent
  *   interface" (see below), give multiple values separated by a given character as a single argument to the
  *   option.</li>
  *
- *   <li>Short options can be clustered, so that <kbd>-abc</kbd> is treated as <kbd>-a -b -c</kbd>. If a short option
+ *   <li>Short options can be clustered, so that {@code -abc} is treated as {@code -a -b -c}. If a short option
  *   in the cluster can accept an argument, the remaining characters are interpreted as the argument for that
  *   option.</li>
  *
- *   <li>An argument consisting only of two hyphens (<kbd>"--"</kbd>) signals that the remaining arguments are to be
+ *   <li>An argument consisting only of two hyphens ({@code "--"}) signals that the remaining arguments are to be
  *   treated as non-options.</li>
  *
  *   <li>An argument consisting only of a single hyphen is considered a non-option argument (though it can be an
  *   argument of an option). Many Unix programs treat single hyphens as stand-ins for the standard input or standard
  *   output streams.</li>
  *
- *   <li><dfn>Long options</dfn> begin with two hyphens (<kbd>"--"</kbd>), followed by multiple letters, digits,
+ *   <li><dfn>Long options</dfn> begin with two hyphens ({@code "--"}), followed by multiple letters, digits,
  *   hyphens, question marks, or dots. A hyphen cannot be the first character of a long option specification when
  *   configuring the parser.</li>
  *
- *   <li>You can abbreviate long options, so long as the abbreviation is unique.</li>
+ *   <li>You can abbreviate long options, so long as the abbreviation is unique. Suppress this behavior if
+ *   you wish using {@linkplain OptionParser#OptionParser(boolean) this constructor}.</li>
  *
  *   <li>Long options can accept single arguments.  The argument can be made required or optional.  The option's
  *   argument can occur:
  *     <ul>
- *       <li>in the slot after the option, as in <kbd>--directory /tmp</kbd></li>
- *       <li>right up against the option separated by an equals sign (<kbd>"="</kbd>), as in
- *       <kbd>--directory=/tmp</kbd>
+ *       <li>in the slot after the option, as in {@code --directory /tmp}</li>
+ *       <li>right up against the option separated by an equals sign ({@code "="}), as in
+ *       {@code --directory=/tmp}
  *     </ul>
  *   Specify multiple arguments for a long option in the same manner as for short options (see above).</li>
  *
- *   <li>You can use a single hyphen (<kbd>"-"</kbd>) instead of a double hyphen (<kbd>"--"</kbd>) for a long
+ *   <li>You can use a single hyphen ({@code "-"}) instead of a double hyphen ({@code "--"}) for a long
  *   option.</li>
  *
- *   <li>The option <kbd>-W</kbd> is reserved.  If you tell the parser to {@linkplain
+ *   <li>The option {@code -W} is reserved.  If you tell the parser to {@linkplain
  *   #recognizeAlternativeLongOptions(boolean) recognize alternative long options}, then it will treat, for example,
- *   <kbd>-W foo=bar</kbd> as the long option <kbd>foo</kbd> with argument <kbd>bar</kbd>, as though you had written
- *   <kbd>--foo=bar</kbd>.</li>
+ *   {@code -W foo=bar} as the long option {@code foo} with argument {@code bar}, as though you had written
+ *   {@code --foo=bar}.</li>
  *
- *   <li>You can specify <kbd>-W</kbd> as a valid short option, or use it as an abbreviation for a long option, but
+ *   <li>You can specify {@code -W} as a valid short option, or use it as an abbreviation for a long option, but
  *   {@linkplain #recognizeAlternativeLongOptions(boolean) recognizing alternative long options} will always supersede
  *   this behavior.</li>
  *
@@ -148,15 +147,15 @@ import static jdk.internal.joptsimple.ParserRules.*;
  *     parser.accepts( "2" );
  *     OptionSet options = parser.parse( "-a", "-2" );
  *   </code></pre>
- *   In this case, the option set contains <kbd>"a"</kbd> with argument <kbd>-2</kbd>, not both <kbd>"a"</kbd> and
- *   <kbd>"2"</kbd>. Swapping the elements in the <em>args</em> array gives the latter.</li>
+ *   In this case, the option set contains {@code "a"} with argument {@code -2}, not both {@code "a"} and
+ *   {@code "2"}. Swapping the elements in the <em>args</em> array gives the latter.</li>
  * </ul>
  *
  * <p>There are two ways to tell the parser what options to recognize:</p>
  *
  * <ol>
  *   <li>A "fluent interface"-style API for specifying options, available since version 2. Sentences in this fluent
- *   interface language begin with a call to {@link #accepts(String) accepts} or {@link #acceptsAll(Collection)
+ *   interface language begin with a call to {@link #accepts(String) accepts} or {@link #acceptsAll(List)
  *   acceptsAll} methods; calls on the ensuing chain of objects describe whether the options can take an argument,
  *   whether the argument is required or optional, to what type arguments of the options should be converted if any,
  *   etc. Since version 3, these calls return an instance of {@link OptionSpec}, which can subsequently be used to
@@ -169,28 +168,28 @@ import static jdk.internal.joptsimple.ParserRules.*;
  *     <ul>
  *       <li>Any letter or digit is treated as an option character.</li>
  *
- *       <li>An option character can be immediately followed by an asterisk (*) to indicate that the option is a
- *       "help" option.</li>
+ *       <li>An option character can be immediately followed by an asterisk ({@code *)} to indicate that
+ *       the option is a "help" option.</li>
  *
- *       <li>If an option character (with possible trailing asterisk) is followed by a single colon (<kbd>":"</kbd>),
+ *       <li>If an option character (with possible trailing asterisk) is followed by a single colon ({@code ":"}),
  *       then the option requires an argument.</li>
  *
- *       <li>If an option character (with possible trailing asterisk) is followed by two colons (<kbd>"::"</kbd>),
+ *       <li>If an option character (with possible trailing asterisk) is followed by two colons ({@code "::"}),
  *       then the option accepts an optional argument.</li>
  *
  *       <li>Otherwise, the option character accepts no argument.</li>
  *
- *       <li>If the option specification string begins with a plus sign (<kbd>"+"</kbd>), the parser will behave
+ *       <li>If the option specification string begins with a plus sign ({@code "+" }), the parser will behave
  *       "POSIX-ly correct".</li>
  *
- *       <li>If the option specification string contains the sequence <kbd>"W;"</kbd> (capital W followed by a
+ *       <li>If the option specification string contains the sequence {@code "W;"} (capital W followed by a
  *       semicolon), the parser will recognize the alternative form of long options.</li>
  *     </ul>
  *   </li>
  * </ol>
  *
- * <p>Each of the options in a list of options given to {@link #acceptsAll(Collection) acceptsAll} is treated as a
- * synonym of the others.  For example:
+ * <p>Each of the options in a list of options given to {@link #acceptsAll(List) acceptsAll} is treated as a
+ * synonym of the others.  For example:</p>
  *   <pre>
  *     <code>
  *     OptionParser parser = new OptionParser();
@@ -198,14 +197,14 @@ import static jdk.internal.joptsimple.ParserRules.*;
  *     OptionSet options = parser.parse( "-w" );
  *     </code>
  *   </pre>
- * In this case, <code>options.{@link OptionSet#has(String) has}</code> would answer {@code true} when given arguments
- * <kbd>"w"</kbd>, <kbd>"interactive"</kbd>, and <kbd>"confirmation"</kbd>. The {@link OptionSet} would give the same
+ * <p>In this case, <code>options.{@link OptionSet#has(String) has}</code> would answer {@code true} when given arguments
+ * {@code "w"}, {@code "interactive"}, and {@code "confirmation"}. The {@link OptionSet} would give the same
  * responses to these arguments for its other methods as well.</p>
  *
  * <p>By default, as with GNU {@code getopt()}, the parser allows intermixing of options and non-options. If, however,
  * the parser has been created to be "POSIX-ly correct", then the first argument that does not look lexically like an
  * option, and is not a required argument of a preceding option, signals the end of options. You can still bind
- * optional arguments to their options using the abutting (for short options) or <kbd>=</kbd> syntax.</p>
+ * optional arguments to their options using the abutting (for short options) or {@code =} syntax.</p>
  *
  * <p>Unlike GNU {@code getopt()}, this parser does not honor the environment variable {@code POSIXLY_CORRECT}.
  * "POSIX-ly correct" parsers are configured by either:</p>
@@ -214,16 +213,20 @@ import static jdk.internal.joptsimple.ParserRules.*;
  *   <li>using the method {@link #posixlyCorrect(boolean)}, or</li>
  *
  *   <li>using the {@linkplain #OptionParser(String) constructor} with an argument whose first character is a plus sign
- *   (<kbd>"+"</kbd>)</li>
+ *   ({@code "+"})</li>
  * </ol>
  *
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  * @see <a href="http://www.gnu.org/software/libc/manual">The GNU C Library</a>
  */
 public class OptionParser implements OptionDeclarer {
-    private final AbbreviationMap<AbstractOptionSpec<?>> recognizedOptions;
-    private final Map<Collection<String>, Set<OptionSpec<?>>> requiredIf;
-    private final Map<Collection<String>, Set<OptionSpec<?>>> requiredUnless;
+    private final OptionNameMap<AbstractOptionSpec<?>> recognizedOptions;
+    private final ArrayList<AbstractOptionSpec<?>> trainingOrder;
+    private final Map<List<String>, Set<OptionSpec<?>>> requiredIf;
+    private final Map<List<String>, Set<OptionSpec<?>>> requiredUnless;
+    private final Map<List<String>, Set<OptionSpec<?>>> availableIf;
+    private final Map<List<String>, Set<OptionSpec<?>>> availableUnless;
+
     private OptionParserState state;
     private boolean posixlyCorrect;
     private boolean allowsUnrecognizedOptions;
@@ -234,10 +237,27 @@ public class OptionParser implements OptionDeclarer {
      * behavior.
      */
     public OptionParser() {
-        recognizedOptions = new AbbreviationMap<AbstractOptionSpec<?>>();
-        requiredIf = new HashMap<Collection<String>, Set<OptionSpec<?>>>();
-        requiredUnless = new HashMap<Collection<String>, Set<OptionSpec<?>>>();
+        this(true);
+    }
+
+    /**
+     * Creates an option parser that initially recognizes no options, and does not exhibit "POSIX-ly correct"
+     * behavior.
+     *
+     * @param allowAbbreviations whether unambiguous abbreviations of long options should be recognized
+     * by the parser
+     */
+    public OptionParser( boolean allowAbbreviations ) {
+        trainingOrder = new ArrayList<>();
+        requiredIf = new HashMap<>();
+        requiredUnless = new HashMap<>();
+        availableIf = new HashMap<>();
+        availableUnless = new HashMap<>();
         state = moreOptions( false );
+
+        recognizedOptions = allowAbbreviations
+            ? new AbbreviationMap<AbstractOptionSpec<?>>()
+            : new SimpleOptionNameMap<AbstractOptionSpec<?>>();
 
         recognize( new NonOptionArgumentSpec<String>() );
     }
@@ -266,11 +286,11 @@ public class OptionParser implements OptionDeclarer {
         return acceptsAll( singletonList( option ), description );
     }
 
-    public OptionSpecBuilder acceptsAll( Collection<String> options ) {
+    public OptionSpecBuilder acceptsAll( List<String> options ) {
         return acceptsAll( options, "" );
     }
 
-    public OptionSpecBuilder acceptsAll( Collection<String> options, String description ) {
+    public OptionSpecBuilder acceptsAll( List<String> options, String description ) {
         if ( options.isEmpty() )
             throw new IllegalArgumentException( "need at least one option" );
 
@@ -280,7 +300,7 @@ public class OptionParser implements OptionDeclarer {
     }
 
     public NonOptionArgumentSpec<String> nonOptions() {
-        NonOptionArgumentSpec<String> spec = new NonOptionArgumentSpec<String>();
+        NonOptionArgumentSpec<String> spec = new NonOptionArgumentSpec<>();
 
         recognize( spec );
 
@@ -288,7 +308,7 @@ public class OptionParser implements OptionDeclarer {
     }
 
     public NonOptionArgumentSpec<String> nonOptions( String description ) {
-        NonOptionArgumentSpec<String> spec = new NonOptionArgumentSpec<String>( description );
+        NonOptionArgumentSpec<String> spec = new NonOptionArgumentSpec<>( description );
 
         recognize( spec );
 
@@ -321,6 +341,7 @@ public class OptionParser implements OptionDeclarer {
 
     void recognize( AbstractOptionSpec<?> spec ) {
         recognizedOptions.putAll( spec.options(), spec );
+        trainingOrder.add( spec );
     }
 
     /**
@@ -348,7 +369,7 @@ public class OptionParser implements OptionDeclarer {
      * @see #printHelpOn(OutputStream)
      */
     public void printHelpOn( Writer sink ) throws IOException {
-        sink.write( helpFormatter.format( recognizedOptions.toJavaUtilMap() ) );
+        sink.write( helpFormatter.format( _recognizedOptions() ) );
         sink.flush();
     }
 
@@ -366,15 +387,29 @@ public class OptionParser implements OptionDeclarer {
     }
 
     /**
-     * Retrieves all the options which have been configured for the parser.
+     * Retrieves all options-spec pairings which have been configured for the parser in the same order as declared
+     * during training. Option flags for specs are alphabetized by {@link OptionSpec#options()}; only the order of the
+     * specs is preserved.
      *
-     * @return a {@link Map} containing all the configured options and their corresponding {@link OptionSpec}
+     * (Note: prior to 4.7 the order was alphabetical across all options regardless of spec.)
+     *
+     * @return a map containing all the configured options and their corresponding {@link OptionSpec}
+     * @since 4.6
      */
     public Map<String, OptionSpec<?>> recognizedOptions() {
-        return new HashMap<String, OptionSpec<?>>( recognizedOptions.toJavaUtilMap() );
+        return new LinkedHashMap<String, OptionSpec<?>>( _recognizedOptions() );
     }
 
-    /**
+    private Map<String, AbstractOptionSpec<?>> _recognizedOptions() {
+        Map<String, AbstractOptionSpec<?>> options = new LinkedHashMap<>();
+        for ( AbstractOptionSpec<?> spec : trainingOrder ) {
+            for ( String option : spec.options() )
+                options.put( option, spec );
+        }
+        return options;
+    }
+
+   /**
      * Parses the given command line arguments according to the option specifications given to the parser.
      *
      * @param arguments arguments to parse
@@ -393,43 +428,87 @@ public class OptionParser implements OptionDeclarer {
         reset();
 
         ensureRequiredOptions( detected );
+        ensureAllowedOptions( detected );
 
         return detected;
     }
 
+    /**
+     * Mandates mutual exclusiveness for the options built by the specified builders.
+     *
+     * @param specs descriptors for options that should be mutually exclusive on a command line.
+     * @throws NullPointerException if {@code specs} is {@code null}
+     */
+    public void mutuallyExclusive( OptionSpecBuilder... specs ) {
+        for ( int i = 0; i < specs.length; i++ ) {
+            for ( int j = 0; j < specs.length; j++ ) {
+                if ( i != j )
+                    specs[i].availableUnless( specs[j] );
+            }
+        }
+    }
+
     private void ensureRequiredOptions( OptionSet options ) {
-        Collection<String> missingRequiredOptions = missingRequiredOptions( options );
+        List<AbstractOptionSpec<?>> missingRequiredOptions = missingRequiredOptions(options);
         boolean helpOptionPresent = isHelpOptionPresent( options );
 
         if ( !missingRequiredOptions.isEmpty() && !helpOptionPresent )
-            throw new MissingRequiredOptionException( missingRequiredOptions );
+            throw new MissingRequiredOptionsException( missingRequiredOptions );
     }
 
-    private Collection<String> missingRequiredOptions( OptionSet options ) {
-        Collection<String> missingRequiredOptions = new HashSet<String>();
+    private void ensureAllowedOptions( OptionSet options ) {
+        List<AbstractOptionSpec<?>> forbiddenOptions = unavailableOptions( options );
+        boolean helpOptionPresent = isHelpOptionPresent( options );
+
+        if ( !forbiddenOptions.isEmpty() && !helpOptionPresent )
+            throw new UnavailableOptionException( forbiddenOptions );
+    }
+
+    private List<AbstractOptionSpec<?>> missingRequiredOptions( OptionSet options ) {
+        List<AbstractOptionSpec<?>> missingRequiredOptions = new ArrayList<>();
 
         for ( AbstractOptionSpec<?> each : recognizedOptions.toJavaUtilMap().values() ) {
             if ( each.isRequired() && !options.has( each ) )
-                missingRequiredOptions.addAll( each.options() );
+                missingRequiredOptions.add(each);
         }
 
-        for ( Map.Entry<Collection<String>, Set<OptionSpec<?>>> eachEntry : requiredIf.entrySet() ) {
-            AbstractOptionSpec<?> required = specFor( eachEntry.getKey().iterator().next() );
+        for ( Map.Entry<List<String>, Set<OptionSpec<?>>> each : requiredIf.entrySet() ) {
+            AbstractOptionSpec<?> required = specFor( each.getKey().iterator().next() );
 
-            if ( optionsHasAnyOf( options, eachEntry.getValue() ) && !options.has( required ) ) {
-                missingRequiredOptions.addAll( required.options() );
-            }
+            if ( optionsHasAnyOf( options, each.getValue() ) && !options.has( required ) )
+                missingRequiredOptions.add( required );
         }
 
-        for ( Map.Entry<Collection<String>, Set<OptionSpec<?>>> eachEntry : requiredUnless.entrySet() ) {
-            AbstractOptionSpec<?> required = specFor( eachEntry.getKey().iterator().next() );
+        for ( Map.Entry<List<String>, Set<OptionSpec<?>>> each : requiredUnless.entrySet() ) {
+            AbstractOptionSpec<?> required = specFor(each.getKey().iterator().next());
 
-            if ( !optionsHasAnyOf( options, eachEntry.getValue() ) && !options.has( required ) ) {
-                missingRequiredOptions.addAll( required.options() );
-            }
+            if ( !optionsHasAnyOf( options, each.getValue() ) && !options.has( required ) )
+                missingRequiredOptions.add( required );
         }
 
         return missingRequiredOptions;
+    }
+
+    private List<AbstractOptionSpec<?>> unavailableOptions(OptionSet options) {
+        List<AbstractOptionSpec<?>> unavailableOptions = new ArrayList<>();
+
+        for ( Map.Entry<List<String>, Set<OptionSpec<?>>> eachEntry : availableIf.entrySet() ) {
+            AbstractOptionSpec<?> forbidden = specFor( eachEntry.getKey().iterator().next() );
+
+            if ( !optionsHasAnyOf( options, eachEntry.getValue() ) && options.has( forbidden ) ) {
+                unavailableOptions.add(forbidden);
+            }
+        }
+
+        for ( Map.Entry<List<String>, Set<OptionSpec<?>>> eachEntry : availableUnless.entrySet() ) {
+            AbstractOptionSpec<?> forbidden = specFor( eachEntry.getKey().iterator().next() );
+
+            if ( optionsHasAnyOf( options, eachEntry.getValue() ) && options.has( forbidden ) ) {
+                unavailableOptions.add(forbidden);
+            }
+        }
+
+        return unavailableOptions;
     }
 
     private boolean optionsHasAnyOf( OptionSet options, Collection<OptionSpec<?>> specs ) {
@@ -443,12 +522,14 @@ public class OptionParser implements OptionDeclarer {
 
     private boolean isHelpOptionPresent( OptionSet options ) {
         boolean helpOptionPresent = false;
+
         for ( AbstractOptionSpec<?> each : recognizedOptions.toJavaUtilMap().values() ) {
             if ( each.isForHelp() && options.has( each ) ) {
                 helpOptionPresent = true;
                 break;
             }
         }
+
         return helpOptionPresent;
     }
 
@@ -505,24 +586,40 @@ public class OptionParser implements OptionDeclarer {
         return recognizedOptions.contains( option );
     }
 
-    void requiredIf( Collection<String> precedentSynonyms, String required ) {
+    void requiredIf( List<String> precedentSynonyms, String required ) {
         requiredIf( precedentSynonyms, specFor( required ) );
     }
 
-    void requiredIf( Collection<String> precedentSynonyms, OptionSpec<?> required ) {
-        putRequiredOption( precedentSynonyms, required, requiredIf );
+    void requiredIf( List<String> precedentSynonyms, OptionSpec<?> required ) {
+        putDependentOption( precedentSynonyms, required, requiredIf );
     }
 
-    void requiredUnless( Collection<String> precedentSynonyms, String required ) {
+    void requiredUnless( List<String> precedentSynonyms, String required ) {
         requiredUnless( precedentSynonyms, specFor( required ) );
     }
 
-    void requiredUnless( Collection<String> precedentSynonyms, OptionSpec<?> required ) {
-        putRequiredOption( precedentSynonyms, required, requiredUnless );
+    void requiredUnless( List<String> precedentSynonyms, OptionSpec<?> required ) {
+        putDependentOption( precedentSynonyms, required, requiredUnless );
     }
 
-    private void putRequiredOption( Collection<String> precedentSynonyms, OptionSpec<?> required,
-        Map<Collection<String>, Set<OptionSpec<?>>> target ) {
+    void availableIf( List<String> precedentSynonyms, String available ) {
+        availableIf( precedentSynonyms, specFor( available ) );
+    }
+
+    void availableIf( List<String> precedentSynonyms, OptionSpec<?> available) {
+        putDependentOption( precedentSynonyms, available, availableIf );
+    }
+
+    void availableUnless( List<String> precedentSynonyms, String available ) {
+        availableUnless( precedentSynonyms, specFor( available ) );
+    }
+
+    void availableUnless( List<String> precedentSynonyms, OptionSpec<?> available ) {
+        putDependentOption( precedentSynonyms, available, availableUnless );
+    }
+
+    private void putDependentOption( List<String> precedentSynonyms, OptionSpec<?> required,
+        Map<List<String>, Set<OptionSpec<?>>> target ) {
 
         for ( String each : precedentSynonyms ) {
             AbstractOptionSpec<?> spec = specFor( each );
@@ -532,7 +629,7 @@ public class OptionParser implements OptionDeclarer {
 
         Set<OptionSpec<?>> associated = target.get( precedentSynonyms );
         if ( associated == null ) {
-            associated = new HashSet<OptionSpec<?>>();
+            associated = new HashSet<>();
             target.put( precedentSynonyms, associated );
         }
 

@@ -1997,8 +1997,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         )
     )
     (Command Stop=10
-        "Stops the thread with an asynchronous exception, as if done by "
-        "java.lang.Thread.stop "
+        "Stops the thread with an asynchronous exception. "
         (Out
             (threadObject thread "The thread object ID. ")
             (object throwable "Asynchronous exception. This object must "

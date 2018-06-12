@@ -490,7 +490,7 @@ GDIWindowSurfaceData_GetOpsNoSetup(JNIEnv *env, jobject sData)
 JNIEXPORT AwtComponent * JNICALL
 GDIWindowSurfaceData_GetComp(JNIEnv *env, GDIWinSDOps *wsdo)
 {
-    PDATA pData;
+    PDATA pData = NULL;
     jobject localObj = env->NewLocalRef(wsdo->peer);
 
     if (localObj == NULL || (pData = JNI_GET_PDATA(localObj)) == NULL) {

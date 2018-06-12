@@ -2391,31 +2391,18 @@ public class Flow {
         }
 
         public void visitAssign(JCAssign tree) {
-            JCTree lhs = TreeInfo.skipParens(tree.lhs);
-            if (!isIdentOrThisDotIdent(lhs))
-                scanExpr(lhs);
+            if (!TreeInfo.isIdentOrThisDotIdent(tree.lhs))
+                scanExpr(tree.lhs);
             scanExpr(tree.rhs);
-            letInit(lhs);
-        }
-        private boolean isIdentOrThisDotIdent(JCTree lhs) {
-            if (lhs.hasTag(IDENT))
-                return true;
-            if (!lhs.hasTag(SELECT))
-                return false;
-
-            JCFieldAccess fa = (JCFieldAccess)lhs;
-            return fa.selected.hasTag(IDENT) &&
-                   ((JCIdent)fa.selected).name == names._this;
+            letInit(tree.lhs);
         }
 
         // check fields accessed through this.<field> are definitely
         // assigned before reading their value
         public void visitSelect(JCFieldAccess tree) {
             super.visitSelect(tree);
-            JCTree sel = TreeInfo.skipParens(tree.selected);
             if (enforceThisDotInit &&
-                    sel.hasTag(IDENT) &&
-                    ((JCIdent)sel).name == names._this &&
+                    TreeInfo.isThisQualifier(tree.selected) &&
                     tree.sym.kind == VAR) {
                 checkInit(tree.pos(), (VarSymbol)tree.sym);
             }

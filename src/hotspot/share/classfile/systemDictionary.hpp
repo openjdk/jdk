@@ -199,6 +199,9 @@ class OopStorage;
   do_klass(StackFrameInfo_klass,                        java_lang_StackFrameInfo,                  Opt                 ) \
   do_klass(LiveStackFrameInfo_klass,                    java_lang_LiveStackFrameInfo,              Opt                 ) \
                                                                                                                          \
+  /* support for stack dump lock analysis */                                                                             \
+  do_klass(java_util_concurrent_locks_AbstractOwnableSynchronizer_klass, java_util_concurrent_locks_AbstractOwnableSynchronizer, Pre ) \
+                                                                                                                         \
   /* Preload boxing klasses */                                                                                           \
   do_klass(Boolean_klass,                               java_lang_Boolean,                         Pre                 ) \
   do_klass(Character_klass,                             java_lang_Character,                       Pre                 ) \
@@ -357,14 +360,9 @@ public:
 
   // Garbage collection support
 
-  // This method applies "blk->do_oop" to all the pointers to "system"
-  // classes and loaders.
-  static void always_strong_oops_do(OopClosure* blk);
-
   // Unload (that is, break root links to) all unmarked classes and
   // loaders.  Returns "true" iff something was unloaded.
-  static bool do_unloading(BoolObjectClosure* is_alive,
-                           GCTimer* gc_timer,
+  static bool do_unloading(GCTimer* gc_timer,
                            bool do_cleaning = true);
 
   // Used by DumpSharedSpaces only to remove classes that failed verification
@@ -374,7 +372,6 @@ public:
 
   // Applies "f->do_oop" to all root oops in the system dictionary.
   static void oops_do(OopClosure* f);
-  static void roots_oops_do(OopClosure* strong, OopClosure* weak);
 
   // System loader lock
   static oop system_loader_lock()           { return _system_loader_lock_obj; }
@@ -454,12 +451,6 @@ public:
     return check_klass(_box_klasses[t]);
   }
   static BasicType box_klass_type(Klass* k);  // inverse of box_klass
-
-  // methods returning lazily loaded klasses
-  // The corresponding method to load the class must be called before calling them.
-  static InstanceKlass* abstract_ownable_synchronizer_klass() { return check_klass(_abstract_ownable_synchronizer_klass); }
-
-  static void load_abstract_ownable_synchronizer_klass(TRAPS);
 
 protected:
   // Returns the class loader data to be used when looking up/updating the
@@ -734,9 +725,6 @@ protected:
 
   // Variables holding commonly used klasses (preloaded)
   static InstanceKlass* _well_known_klasses[];
-
-  // Lazily loaded klasses
-  static InstanceKlass* volatile _abstract_ownable_synchronizer_klass;
 
   // table of box klasses (int_klass, etc.)
   static InstanceKlass* _box_klasses[T_VOID+1];

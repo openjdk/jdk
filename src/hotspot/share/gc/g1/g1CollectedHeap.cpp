@@ -69,6 +69,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
@@ -77,6 +78,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -86,7 +88,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/orderAccess.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
@@ -820,6 +822,18 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
                               HeapRegion::GrainWords * HeapWordSize * uncommitted_regions);
   }
   decrease_used(size_used);
+}
+
+oop G1CollectedHeap::materialize_archived_object(oop obj) {
+  assert(obj != NULL, "archived obj is NULL");
+  assert(MetaspaceShared::is_archive_object(obj), "must be archived object");
+
+  // Loading an archived object makes it strongly reachable. If it is
+  // loaded during concurrent marking, it must be enqueued to the SATB
+  // queue, shading the previously white object gray.
+  G1BarrierSet::enqueue(obj);
+
+  return obj;
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
@@ -3218,6 +3232,7 @@ class G1StringAndSymbolCleaningTask : public AbstractGangTask {
 private:
   BoolObjectClosure* _is_alive;
   G1StringDedupUnlinkOrOopsDoClosure _dedup_closure;
+  OopStorage::ParState<false /* concurrent */, false /* const */> _par_state_string;
 
   int _initial_string_table_size;
   int _initial_symbol_table_size;
@@ -3237,24 +3252,19 @@ public:
     AbstractGangTask("String/Symbol Unlinking"),
     _is_alive(is_alive),
     _dedup_closure(is_alive, NULL, false),
+    _par_state_string(StringTable::weak_storage()),
     _process_strings(process_strings), _strings_processed(0), _strings_removed(0),
     _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0),
     _process_string_dedup(process_string_dedup) {
 
-    _initial_string_table_size = StringTable::the_table()->table_size();
+    _initial_string_table_size = (int) StringTable::the_table()->table_size();
     _initial_symbol_table_size = SymbolTable::the_table()->table_size();
-    if (process_strings) {
-      StringTable::clear_parallel_claimed_index();
-    }
     if (process_symbols) {
       SymbolTable::clear_parallel_claimed_index();
     }
   }
 
   ~G1StringAndSymbolCleaningTask() {
-    guarantee(!_process_strings || StringTable::parallel_claimed_index() >= _initial_string_table_size,
-              "claim value %d after unlink less than initial string table size %d",
-              StringTable::parallel_claimed_index(), _initial_string_table_size);
     guarantee(!_process_symbols || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
               "claim value %d after unlink less than initial symbol table size %d",
               SymbolTable::parallel_claimed_index(), _initial_symbol_table_size);
@@ -3273,7 +3283,7 @@ public:
     int symbols_processed = 0;
     int symbols_removed = 0;
     if (_process_strings) {
-      StringTable::possibly_parallel_unlink(_is_alive, &strings_processed, &strings_removed);
+      StringTable::possibly_parallel_unlink(&_par_state_string, _is_alive, &strings_processed, &strings_removed);
       Atomic::add(strings_processed, &_strings_processed);
       Atomic::add(strings_removed, &_strings_removed);
     }
@@ -3355,7 +3365,7 @@ private:
       add_to_postponed_list(nm);
     }
 
-    // Mark that this thread has been cleaned/unloaded.
+    // Mark that this nmethod has been cleaned/unloaded.
     // After this call, it will be safe to ask if this nmethod was unloaded or not.
     nm->set_unloading_clock(CompiledMethod::global_unloading_clock());
   }

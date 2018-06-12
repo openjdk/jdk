@@ -106,7 +106,7 @@ public final class CommonHelper {
 
     public static void waitForSystemCurrentMillisToChange() {
         long t = System.currentTimeMillis();
-        while (t != System.currentTimeMillis()) {
+        while (t == System.currentTimeMillis()) {
             try {
                 Thread.sleep(2);
             } catch (InterruptedException e) {

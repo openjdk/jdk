@@ -29,16 +29,13 @@ include LibCommon.gmk
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBUNPACK, \
     NAME := unpack, \
-    SRC := $(TOPDIR)/src/jdk.pack/share/native/libunpack \
-        $(TOPDIR)/src/jdk.pack/share/native/common-unpack, \
+    EXTRA_SRC := common-unpack, \
     TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CXXFLAGS_JDKLIB) \
-        -DNO_ZLIB -DUNPACK_JNI -DFULL \
-        -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
-        -I$(TOPDIR)/src/jdk.pack/share/native/common-unpack \
-        $(LIBJAVA_HEADER_FLAGS), \
+        -DNO_ZLIB -DUNPACK_JNI -DFULL, \
     CFLAGS_release := -DPRODUCT, \
+    EXTRA_HEADER_DIRS := $(call GetJavaHeaderDir, java.base), \
     DISABLED_WARNINGS_gcc := implicit-fallthrough, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

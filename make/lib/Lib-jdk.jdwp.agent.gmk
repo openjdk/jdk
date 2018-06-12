@@ -27,21 +27,14 @@ include LibCommon.gmk
 
 ################################################################################
 
-LIBDT_SOCKET_SRC := $(TOPDIR)/src/jdk.jdwp.agent/share/native/libdt_socket \
-    $(TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_TYPE)/native/libdt_socket
-LIBDT_SOCKET_CPPFLAGS := \
-    $(addprefix -I, $(LIBDT_SOCKET_SRC)) \
-    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
-    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp \
-    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/include \
-    #
-
 $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SOCKET, \
     NAME := dt_socket, \
-    SRC := $(LIBDT_SOCKET_SRC), \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
         $(LIBDT_SOCKET_CPPFLAGS), \
+    EXTRA_HEADER_DIRS := \
+        include \
+        libjdwp/export, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_linux := -lpthread, \
@@ -56,21 +49,14 @@ TARGETS += $(BUILD_LIBDT_SOCKET)
 
 ################################################################################
 
-LIBJDWP_SRC := $(TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp \
-    $(TOPDIR)/src/jdk.jdwp.agent/$(OPENJDK_TARGET_OS_TYPE)/native/libjdwp
-LIBJDWP_CPPFLAGS := \
-    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/libjdwp/export \
-    -I$(TOPDIR)/src/jdk.jdwp.agent/share/native/include \
-    $(addprefix -I, $(LIBJDWP_SRC))
-
 # JDWP_LOGGING causes log messages to be compiled into the library.
 $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     NAME := jdwp, \
-    SRC := $(LIBJDWP_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) -DJDWP_LOGGING \
-        $(LIBJDWP_CPPFLAGS) \
-        -I$(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent, \
+    CFLAGS := $(CFLAGS_JDKLIB) -DJDWP_LOGGING, \
+    EXTRA_HEADER_DIRS := \
+      include \
+      libjdwp/export, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \

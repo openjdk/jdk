@@ -46,7 +46,7 @@ class XAbortProvoker extends AbortProvoker {
     @Override
     public void forceAbort() {
         synchronized(monitor) {
-            XAbortProvoker.field = UNSAFE.addressSize();
+            XAbortProvoker.field = UNSAFE.pageSize();
         }
     }
 
@@ -54,7 +54,7 @@ class XAbortProvoker extends AbortProvoker {
     public String[] getMethodsToCompileNames() {
         return new String[] {
                 getMethodWithLockName(),
-                Unsafe.class.getName() + "::addressSize"
+                Unsafe.class.getName() + "::pageSize"
         };
     }
 }

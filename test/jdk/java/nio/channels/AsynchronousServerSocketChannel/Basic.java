@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test
  * @bug 4607272 6842687
  * @summary Unit test for AsynchronousServerSocketChannel
+ * @modules jdk.net
  * @run main/timeout=180 Basic
  */
 
@@ -31,10 +32,14 @@ import java.nio.channels.*;
 import java.net.*;
 import static java.net.StandardSocketOptions.*;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+import static jdk.net.ExtendedSocketOptions.TCP_KEEPCOUNT;
+import static jdk.net.ExtendedSocketOptions.TCP_KEEPIDLE;
+import static jdk.net.ExtendedSocketOptions.TCP_KEEPINTERVAL;
 
 public class Basic {
 
@@ -165,6 +170,16 @@ public class Basic {
                 checkOption(ch, SO_REUSEPORT, true);
                 ch.setOption(SO_REUSEPORT, false);
                 checkOption(ch, SO_REUSEPORT, false);
+            }
+            List<? extends SocketOption> extOptions = List.of(TCP_KEEPCOUNT,
+                    TCP_KEEPIDLE, TCP_KEEPINTERVAL);
+            if (options.containsAll(extOptions)) {
+                ch.setOption(TCP_KEEPIDLE, 1234);
+                checkOption(ch, TCP_KEEPIDLE, 1234);
+                ch.setOption(TCP_KEEPINTERVAL, 123);
+                checkOption(ch, TCP_KEEPINTERVAL, 123);
+                ch.setOption(TCP_KEEPCOUNT, 7);
+                checkOption(ch, TCP_KEEPCOUNT, 7);
             }
         } finally {
             ch.close();

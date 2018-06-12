@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,9 @@ import com.sun.media.sound.JDK13Services;
  * Both system properties and a properties file are considered. The
  * "sound.properties" properties file is read from an implementation-specific
  * location (typically it is the {@code conf} directory in the Java installation
- * directory). If a property exists both as a system property and in the
+ * directory). The optional "javax.sound.config.file" system property can be
+ * used to specify the properties file that will be read as the initial
+ * configuration. If a property exists both as a system property and in the
  * properties file, the system property takes precedence. If none is specified,
  * a suitable default is chosen among the available devices. The syntax of the
  * properties file is specified in

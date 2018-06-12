@@ -30,6 +30,7 @@ import jdk.test.lib.JDKToolFinder;
  * @test
  * @key metaspace jcmd
  * @summary Test the VM.metaspace command
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -73,7 +74,7 @@ public class PrintMetaspaceDcmd {
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "show-loaders"});
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
-        output.shouldMatch("ClassLoaderData.*for <bootloader>");
+        output.shouldMatch("CLD.*<bootstrap>");
 
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "by-chunktype"});
         output = new OutputAnalyzer(pb.start());

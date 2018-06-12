@@ -30,7 +30,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#define DEBUG 1
+//#define DEBUG 1
 
 // number of mouse buttons supported
 extern int gNumberOfButtons;

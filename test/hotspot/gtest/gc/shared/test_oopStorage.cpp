@@ -1203,7 +1203,7 @@ const void* const OopStorageBlockCollectionTest::_pseudo_owner[] = {};
 class OopStorageAllocateListTest : public OopStorageBlockCollectionTest {};
 
 TEST_F(OopStorageAllocateListTest, empty_list) {
-  AllocateList list(&OopBlock::get_allocate_entry);
+  AllocateList list;
 
   EXPECT_TRUE(is_list_empty(list));
   EXPECT_EQ(NULL_BLOCK, list.head());
@@ -1212,7 +1212,7 @@ TEST_F(OopStorageAllocateListTest, empty_list) {
 }
 
 TEST_F(OopStorageAllocateListTest, push_back) {
-  AllocateList list(&OopBlock::get_allocate_entry);
+  AllocateList list;
 
   for (size_t i = 0; i < nvalues; ++i) {
     list.push_back(*values[i]);
@@ -1242,7 +1242,7 @@ TEST_F(OopStorageAllocateListTest, push_back) {
 }
 
 TEST_F(OopStorageAllocateListTest, push_front) {
-  AllocateList list(&OopBlock::get_allocate_entry);
+  AllocateList list;
 
   for (size_t i = 0; i < nvalues; ++i) {
     list.push_front(*values[i]);
@@ -1273,7 +1273,7 @@ TEST_F(OopStorageAllocateListTest, push_front) {
 
 class OopStorageAllocateListTestWithList : public OopStorageAllocateListTest {
 public:
-  OopStorageAllocateListTestWithList() : list(&OopBlock::get_allocate_entry) {
+  OopStorageAllocateListTestWithList() : list() {
     for (size_t i = 0; i < nvalues; ++i) {
       list.push_back(*values[i]);
     }
@@ -1345,7 +1345,7 @@ TEST_F(OopStorageAllocateListTestWithList, unlink_middle) {
 }
 
 TEST_F(OopStorageAllocateListTest, single) {
-  AllocateList list(&OopBlock::get_allocate_entry);
+  AllocateList list;
 
   list.push_back(*values[0]);
   EXPECT_EQ(NULL_BLOCK, list.next(*values[0]));

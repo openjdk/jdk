@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, SAP and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +35,7 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap)
   : DCmdWithParser(output, heap)
   , _basic("basic", "Prints a basic summary (does not need a safepoint).", "BOOLEAN", false, "false")
   , _show_loaders("show-loaders", "Shows usage by class loader.", "BOOLEAN", false, "false")
+  , _show_classes("show-classes", "If show-loaders is set, shows loaded classes for each loader.", "BOOLEAN", false, "false")
   , _by_chunktype("by-chunktype", "Break down numbers by chunk type.", "BOOLEAN", false, "false")
   , _by_spacetype("by-spacetype", "Break down numbers by loader type.", "BOOLEAN", false, "false")
   , _show_vslist("vslist", "Shows details about the underlying virtual space.", "BOOLEAN", false, "false")
@@ -44,6 +46,7 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap)
 {
   _dcmdparser.add_dcmd_option(&_basic);
   _dcmdparser.add_dcmd_option(&_show_loaders);
+  _dcmdparser.add_dcmd_option(&_show_classes);
   _dcmdparser.add_dcmd_option(&_by_chunktype);
   _dcmdparser.add_dcmd_option(&_by_spacetype);
   _dcmdparser.add_dcmd_option(&_show_vslist);
@@ -87,6 +90,7 @@ void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
     // Full mode. Requires safepoint.
     int flags = 0;
     if (_show_loaders.value())         flags |= MetaspaceUtils::rf_show_loaders;
+    if (_show_classes.value())         flags |= MetaspaceUtils::rf_show_classes;
     if (_by_chunktype.value())         flags |= MetaspaceUtils::rf_break_down_by_chunktype;
     if (_by_spacetype.value())         flags |= MetaspaceUtils::rf_break_down_by_spacetype;
     if (_show_vslist.value())          flags |= MetaspaceUtils::rf_show_vslist;

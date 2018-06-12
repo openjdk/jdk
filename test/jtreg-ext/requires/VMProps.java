@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import sun.hotspot.code.Compiler;
 import sun.hotspot.cpuinfo.CPUInfo;
 import sun.hotspot.gc.GC;
 import sun.hotspot.WhiteBox;
@@ -80,6 +81,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.graal.enabled", isGraalEnabled());
         map.put("docker.support", dockerSupport());
         vmGC(map); // vm.gc.X = true/false
+        vmOptFinalFlags(map);
 
         VMProps.dump(map);
         return map;
@@ -236,6 +238,25 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * Selected final flag.
+     * @param map - property-value pairs
+     * @param flagName - flag name
+     */
+    private void vmOptFinalFlag(Map<String, String> map, String flagName) {
+        String value = WB.getBooleanVMFlag(flagName) ? "true" : "false";
+        map.put("vm.opt.final." + flagName, value);
+    }
+
+    /**
+     * Selected sets of final flags.
+     * @param map -property-value pairs
+     */
+    protected void vmOptFinalFlags(Map<String, String> map) {
+        vmOptFinalFlag(map, "ClassUnloading");
+        vmOptFinalFlag(map, "UseCompressedOops");
+    }
+
+    /**
      * @return true if VM runs RTM supported OS and false otherwise.
      */
     protected String vmRTMOS() {
@@ -260,9 +281,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if VM runs RTM supported CPU and false otherwise.
      */
     protected String vmRTMCPU() {
-        boolean vmRTMCPU = (Platform.isPPC() ? CPUInfo.hasFeature("tcheck") : CPUInfo.hasFeature("rtm"));
-
-        return "" + vmRTMCPU;
+        return "" + CPUInfo.hasFeature("rtm");
     }
 
     /**
@@ -326,33 +345,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if Graal is used as JIT compiler.
      */
     protected String isGraalEnabled() {
-        // Graal is enabled if following conditions are true:
-        // - we are not in Interpreter mode
-        // - UseJVMCICompiler flag is true
-        // - jvmci.Compiler variable is equal to 'graal'
-        // - TieredCompilation is not used or TieredStopAtLevel is greater than 3
-
-        Boolean useCompiler = WB.getBooleanVMFlag("UseCompiler");
-        if (useCompiler == null || !useCompiler)
-            return "false";
-
-        Boolean useJvmciComp = WB.getBooleanVMFlag("UseJVMCICompiler");
-        if (useJvmciComp == null || !useJvmciComp)
-            return "false";
-
-        // This check might be redundant but let's keep it for now.
-        String jvmciCompiler = System.getProperty("jvmci.Compiler");
-        if (jvmciCompiler == null || !jvmciCompiler.equals("graal")) {
-            return "false";
-        }
-
-        Boolean tieredCompilation = WB.getBooleanVMFlag("TieredCompilation");
-        Long compLevel = WB.getIntxVMFlag("TieredStopAtLevel");
-        // if TieredCompilation is enabled and compilation level is <= 3 then no Graal is used
-        if (tieredCompilation != null && tieredCompilation && compLevel != null && compLevel <= 3)
-            return "false";
-
-        return "true";
+        return Compiler.isGraalEnabled() ? "true" : "false";
     }
 
 

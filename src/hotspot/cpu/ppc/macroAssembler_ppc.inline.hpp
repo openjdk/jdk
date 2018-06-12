@@ -32,6 +32,7 @@
 #include "code/codeCache.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "oops/accessDecorators.hpp"
 #include "runtime/safepointMechanism.hpp"
 
 inline bool MacroAssembler::is_ld_largeoffset(address a) {
@@ -332,6 +333,7 @@ inline void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorat
                          ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bool as_raw = (decorators & AS_RAW) != 0;
+  decorators = AccessInternal::decorator_fixup(decorators);
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type,
                                       base, ind_or_offs, val,
@@ -349,6 +351,7 @@ inline void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorato
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_HEAP_ARRAY | IN_ROOT | OOP_NOT_NULL |
                          ON_PHANTOM_OOP_REF | ON_WEAK_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type,

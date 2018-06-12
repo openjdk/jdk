@@ -58,7 +58,7 @@
  *
  *   - In the future, we should add constructors to create fonts in font space?
  *
- *   - FT_Load_Glyph() is exteremely costly.  Do something about it?
+ *   - FT_Load_Glyph() is extremely costly.  Do something about it?
  */
 
 
@@ -635,15 +635,27 @@ hb_ft_font_changed (hb_font_t *font)
     {
       if (!FT_Get_Var_Blend_Coordinates (ft_face, mm_var->num_axis, ft_coords))
       {
-        for (unsigned int i = 0; i < mm_var->num_axis; ++i)
-          coords[i] = ft_coords[i] >>= 2;
+        bool nonzero = false;
 
-        hb_font_set_var_coords_normalized (font, coords, mm_var->num_axis);
+        for (unsigned int i = 0; i < mm_var->num_axis; ++i)
+         {
+          coords[i] = ft_coords[i] >>= 2;
+          nonzero = nonzero || coords[i];
+         }
+
+        if (nonzero)
+          hb_font_set_var_coords_normalized (font, coords, mm_var->num_axis);
+        else
+          hb_font_set_var_coords_normalized (font, nullptr, 0);
       }
     }
     free (coords);
     free (ft_coords);
+#ifdef HAVE_FT_DONE_MM_VAR
+    FT_Done_MM_Var (ft_face->glyph->library, mm_var);
+#else
     free (mm_var);
+#endif
   }
 #endif
 }
@@ -747,6 +759,7 @@ hb_ft_font_set_funcs (hb_font_t *font)
     FT_Set_Transform (ft_face, &matrix, nullptr);
   }
 
+#ifdef HAVE_FT_SET_VAR_BLEND_COORDINATES
   unsigned int num_coords;
   const int *coords = hb_font_get_var_coords_normalized (font, &num_coords);
   if (num_coords)
@@ -760,6 +773,7 @@ hb_ft_font_set_funcs (hb_font_t *font)
       free (ft_coords);
     }
   }
+#endif
 
   ft_face->generic.data = blob;
   ft_face->generic.finalizer = (FT_Generic_Finalizer) _release_blob;

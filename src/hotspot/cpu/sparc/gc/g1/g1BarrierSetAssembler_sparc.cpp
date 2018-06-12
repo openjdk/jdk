@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -68,8 +69,8 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     }
     __ mov(addr->after_save(), O0);
     // Get the count into O1
-    address slowpath = UseCompressedOops ? CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_pre_narrow_oop_entry)
-                                         : CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_pre_oop_entry);
+    address slowpath = UseCompressedOops ? CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry)
+                                         : CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_oop_entry);
     __ call(slowpath);
     __ delayed()->mov(count->after_save(), O1);
     if (addr->is_global()) {
@@ -90,7 +91,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   // Get some new fresh output registers.
   __ save_frame(0);
   __ mov(addr->after_save(), O0);
-  __ call(CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_post_entry));
+  __ call(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_post_entry));
   __ delayed()->mov(count->after_save(), O1);
   __ restore();
 }
@@ -368,12 +369,10 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Register
 
   G1BarrierSet* bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
 
-  if (G1RSBarrierRegionFilter) {
-    __ xor3(store_addr, new_val, tmp);
-    __ srlx(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
+  __ xor3(store_addr, new_val, tmp);
+  __ srlx(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
 
-    __ cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
-  }
+  __ cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
 
   // If the "store_addr" register is an "in" or "local" register, move it to
   // a scratch reg so we can pass it as an argument.

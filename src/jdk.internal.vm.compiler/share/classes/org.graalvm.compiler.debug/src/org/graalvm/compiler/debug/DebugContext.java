@@ -96,7 +96,7 @@ public final class DebugContext implements AutoCloseable {
      */
     boolean metricsEnabled;
 
-    DebugConfig currentConfig;
+    DebugConfigImpl currentConfig;
     ScopeImpl currentScope;
     CloseableCounter currentTimer;
     CloseableCounter currentMemUseTracker;
@@ -739,6 +739,19 @@ public final class DebugContext implements AutoCloseable {
     }
 
     /**
+     * Create an unnamed scope that appends some context to the current scope.
+     *
+     * @param context an object to be appended to the {@linkplain #context() current} debug context
+     */
+    public DebugContext.Scope withContext(Object context) throws Throwable {
+        if (currentScope != null) {
+            return enterScope("", null, context);
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Creates and enters a new debug scope which will be disjoint from the current debug scope.
      * <p>
      * It is recommended to use the try-with-resource statement for managing entering and leaving
@@ -787,7 +800,7 @@ public final class DebugContext implements AutoCloseable {
     class DisabledScope implements DebugContext.Scope {
         final boolean savedMetricsEnabled;
         final ScopeImpl savedScope;
-        final DebugConfig savedConfig;
+        final DebugConfigImpl savedConfig;
 
         DisabledScope() {
             this.savedMetricsEnabled = metricsEnabled;

@@ -91,35 +91,41 @@ oop_atomic_xchg_in_heap(oop new_value, T* addr) {
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline bool ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT>::
-oop_arraycopy_in_heap(arrayOop src_obj, arrayOop dst_obj, T* src, T* dst, size_t length) {
+oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
+                      arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
+                      size_t length) {
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
+
+  src_raw = arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw);
+  dst_raw = arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw);
 
   if (!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) {
     // Optimized covariant case
-    bs->write_ref_array_pre(dst, length,
+    bs->write_ref_array_pre(dst_raw, length,
                             HasDecorator<decorators, AS_DEST_NOT_INITIALIZED>::value);
-    Raw::oop_arraycopy(src_obj, dst_obj, src, dst, length);
-    bs->write_ref_array((HeapWord*)dst, length);
+    Raw::oop_arraycopy(NULL, 0, src_raw, NULL, 0, dst_raw, length);
+    bs->write_ref_array((HeapWord*)dst_raw, length);
   } else {
+    assert(dst_obj != NULL, "better have an actual oop");
     Klass* bound = objArrayOop(dst_obj)->element_klass();
-    T* from = src;
+    T* from = const_cast<T*>(src_raw);
     T* end = from + length;
-    for (T* p = dst; from < end; from++, p++) {
+    for (T* p = dst_raw; from < end; from++, p++) {
       T element = *from;
       if (oopDesc::is_instanceof_or_null(CompressedOops::decode(element), bound)) {
         bs->template write_ref_field_pre<decorators>(p);
         *p = element;
       } else {
         // We must do a barrier to cover the partial copy.
-        const size_t pd = pointer_delta(p, dst, (size_t)heapOopSize);
+        const size_t pd = pointer_delta(p, dst_raw, (size_t)heapOopSize);
         // pointer delta is scaled to number of elements (length field in
         // objArrayOop) which we assume is 32 bit.
         assert(pd == (size_t)(int)pd, "length field overflow");
-        bs->write_ref_array((HeapWord*)dst, pd);
+        bs->write_ref_array((HeapWord*)dst_raw, pd);
         return false;
       }
     }
-    bs->write_ref_array((HeapWord*)dst, length);
+    bs->write_ref_array((HeapWord*)dst_raw, length);
   }
   return true;
 }

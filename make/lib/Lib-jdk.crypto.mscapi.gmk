@@ -29,14 +29,10 @@ include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
-  LIBSUNMSCAPI_SRC := $(TOPDIR)/src/jdk.crypto.mscapi/$(OPENJDK_TARGET_OS_TYPE)/native/libsunmscapi
-
   $(eval $(call SetupJdkLibrary, BUILD_LIBSUNMSCAPI, \
       NAME := sunmscapi, \
-      SRC := $(LIBSUNMSCAPI_SRC), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          -I$(LIBSUNMSCAPI_SRC), \
+      CFLAGS := $(CFLAGS_JDKLIB), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := crypt32.lib advapi32.lib, \

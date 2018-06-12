@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8190003 8196201
+ * @bug 8190003 8196201 8196202
  * @summary Special characters in group names should be escaped
  * @library /tools/lib ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -58,6 +58,7 @@ public class TestGroupName extends JavadocTester {
                 "package p3; public class C3 { }");
 
         javadoc("-d", base.resolve("out").toString(),
+                "--frames",
                 "-sourcepath", src.toString(),
                 "-group", "abc < & > def", "p1",
                 "p1", "p2", "p3");
@@ -90,6 +91,7 @@ public class TestGroupName extends JavadocTester {
                 "package pc3; public class CC3 { }");
 
         javadoc("-d", base.resolve("out").toString(),
+                "--frames",
                 "--module-source-path", src.toString(),
                 "-group", "abc < & > def", "ma",
                 "--module", "ma,mb,mc");

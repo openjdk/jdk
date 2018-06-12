@@ -30,6 +30,13 @@
 #include "jni_util.h"
 #include "nativeCrypto.h"
 #include "nativeFunc.h"
+#include "com_oracle_security_ucrypto_NativeCipher.h"
+#include "com_oracle_security_ucrypto_NativeDigest.h"
+#include "com_oracle_security_ucrypto_NativeKey.h"
+#include "com_oracle_security_ucrypto_NativeKey.h"
+#include "com_oracle_security_ucrypto_NativeRSACipher.h"
+#include "com_oracle_security_ucrypto_NativeRSASignature.h"
+#include "com_oracle_security_ucrypto_UcryptoProvider.h"
 
 /*
  * Dumps out byte array in hex with and name and length info

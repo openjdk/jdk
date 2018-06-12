@@ -320,7 +320,8 @@ private:
   void log_reflist_counts(DiscoveredList ref_lists[], uint num_active_queues) PRODUCT_RETURN;
 
   // Balances reference queues.
-  void balance_queues(DiscoveredList ref_lists[]);
+  void balance_queues(DiscoveredList refs_lists[]);
+  bool need_balance_queues(DiscoveredList refs_lists[]);
 
   // Update (advance) the soft ref master clock field.
   void update_soft_ref_master_clock();

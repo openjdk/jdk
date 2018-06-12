@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
 
 package sun.awt.windows;
 
-import java.awt.*;
+import java.awt.GraphicsDevice;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.peer.RobotPeer;
+
+import sun.java2d.SunGraphicsEnvironment;
 
 final class WRobotPeer extends WObjectPeer implements RobotPeer
 {
@@ -48,7 +52,8 @@ final class WRobotPeer extends WObjectPeer implements RobotPeer
     public native void mouseMoveImpl(int x, int y);
     @Override
     public void mouseMove(int x, int y) {
-        mouseMoveImpl(x, y);
+        Point point = SunGraphicsEnvironment.convertToDeviceSpace(x, y);
+        mouseMoveImpl(point.x, point.y);
     }
     @Override
     public native void mousePress(int buttons);

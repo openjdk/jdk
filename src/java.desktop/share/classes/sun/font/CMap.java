@@ -191,7 +191,7 @@ abstract class CMap {
                  * The primary purpose of these mappings was to facilitate
                  * display of symbol chars etc in composite fonts, however
                  * this is not needed as all these code points are covered
-                 * by Lucida Sans Regular.
+                 * by some other platform symbol font.
                  * Commenting this out reduces the role of these two files
                  * (assuming that they continue to be used in font.properties)
                  * to just one of contributing to the overall composite

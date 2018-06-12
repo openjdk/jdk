@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #import "CMenuBar.h"
 #import "CMenu.h"
 #import "ThreadUtilities.h"
+#import "ApplicationDelegate.h"
 
 #import "sun_lwawt_macosx_CMenuBar.h"
 
@@ -100,6 +101,10 @@ static BOOL sSetupHelpMenu = NO;
         [CMenuBar clearMenuBarExcludingAppleMenu_OnAppKitThread:YES];
         return;
     }
+
+#ifdef DEBUG
+    NSLog(@"activating menu bar: %@", menubar);
+#endif
 
     @synchronized([CMenuBar class]) {
         sActiveMenuBar = menubar;
@@ -184,12 +189,30 @@ static BOOL sSetupHelpMenu = NO;
 -(void) deactivate {
     AWT_ASSERT_APPKIT_THREAD;
 
+    BOOL isDeactivated = NO;
     @synchronized([CMenuBar class]) {
-        sActiveMenuBar = nil;
+        if (sActiveMenuBar == self) {
+            sActiveMenuBar = nil;
+            isDeactivated = YES;
+        }
     }
 
-    @synchronized(self) {
-        fModallyDisabled = NO;
+    if (isDeactivated) {
+#ifdef DEBUG
+        NSLog(@"deactivating menu bar: %@", self);
+#endif
+
+        @synchronized(self) {
+            fModallyDisabled = NO;
+        }
+
+        // In theory, this might cause flickering if the window gaining focus
+        // has its own menu. However, I couldn't reproduce it on practice, so
+        // perhaps this is a non issue.
+        CMenuBar* defaultMenu = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
+        if (defaultMenu != nil) {
+            [CMenuBar activate:defaultMenu modallyDisabled:NO];
+        }
     }
 }
 

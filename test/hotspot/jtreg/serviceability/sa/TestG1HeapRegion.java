@@ -40,6 +40,7 @@ import jdk.test.lib.Utils;
  * @test
  * @library /test/lib
  * @requires os.family != "mac"
+ * @requires vm.gc.G1
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.gc.g1
  *          jdk.hotspot.agent/sun.jvm.hotspot.memory

@@ -399,7 +399,7 @@ bool PSScavenge::invoke_no_policy() {
       PSKeepAliveClosure keep_alive(promotion_manager);
       PSEvacuateFollowersClosure evac_followers(promotion_manager);
       ReferenceProcessorStats stats;
-      ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->num_queues());
+      ReferenceProcessorPhaseTimes pt(&_gc_timer, reference_processor()->max_num_queues());
       if (reference_processor()->processing_is_mt()) {
         PSRefProcTaskExecutor task_executor;
         stats = reference_processor()->process_discovered_references(

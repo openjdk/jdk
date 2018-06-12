@@ -155,7 +155,7 @@ FT_BEGIN_HEADER
 
   } FT_CMapRec;
 
-  /* typecase any pointer to a charmap handle */
+  /* typecast any pointer to a charmap handle */
 #define FT_CMAP( x )  ( (FT_CMap)( x ) )
 
   /* obvious macros */

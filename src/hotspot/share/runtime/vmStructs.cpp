@@ -164,7 +164,6 @@ typedef HashtableEntry<intptr_t, mtInternal>  IntptrHashtableEntry;
 typedef Hashtable<intptr_t, mtInternal>       IntptrHashtable;
 typedef Hashtable<Symbol*, mtSymbol>          SymbolHashtable;
 typedef HashtableEntry<Symbol*, mtClass>      SymbolHashtableEntry;
-typedef Hashtable<oop, mtSymbol>              StringHashtable;
 typedef Hashtable<InstanceKlass*, mtClass>       KlassHashtable;
 typedef HashtableEntry<InstanceKlass*, mtClass>  KlassHashtableEntry;
 typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
@@ -475,12 +474,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
      static_field(SymbolTable,                 _the_table,                                    SymbolTable*)                          \
      static_field(SymbolTable,                 _shared_table,                                 SymbolCompactHashTable)                \
      static_field(RehashableSymbolHashtable,   _seed,                                         juint)                                 \
-                                                                                                                                     \
-  /***************/                                                                                                                  \
-  /* StringTable */                                                                                                                  \
-  /***************/                                                                                                                  \
-                                                                                                                                     \
-     static_field(StringTable,                 _the_table,                                    StringTable*)                          \
                                                                                                                                      \
   /********************/                                                                                                             \
   /* CompactHashTable */                                                                                                             \
@@ -1278,6 +1271,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_integer_type(intptr_t)                                          \
   declare_unsigned_integer_type(uintx)                                    \
   declare_unsigned_integer_type(uintptr_t)                                \
+  declare_unsigned_integer_type(uint8_t)                                  \
   declare_unsigned_integer_type(uint32_t)                                 \
   declare_unsigned_integer_type(uint64_t)                                 \
                                                                           \
@@ -1365,7 +1359,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(BasicHashtable<mtSymbol>)                         \
     declare_type(RehashableSymbolHashtable, BasicHashtable<mtSymbol>)     \
   declare_type(SymbolTable, SymbolHashtable)                              \
-  declare_type(StringTable, StringHashtable)                              \
     declare_type(Dictionary, KlassHashtable)                              \
   declare_toplevel_type(BasicHashtableEntry<mtInternal>)                  \
   declare_type(IntptrHashtableEntry, BasicHashtableEntry<mtInternal>)     \
@@ -2609,6 +2602,12 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
 // all #defined constants.
 
 #define VM_LONG_CONSTANTS(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
+                                                                          \
+  /****************/                                                      \
+  /* GC constants */                                                      \
+  /****************/                                                      \
+                                                                          \
+  VM_LONG_CONSTANTS_GC(declare_constant)                                  \
                                                                           \
   /*********************/                                                 \
   /* MarkOop constants */                                                 \

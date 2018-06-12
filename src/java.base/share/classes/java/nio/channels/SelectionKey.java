@@ -190,6 +190,83 @@ public abstract class SelectionKey {
     public abstract SelectionKey interestOps(int ops);
 
     /**
+     * Atomically sets this key's interest set to the bitwise union ("or") of
+     * the existing interest set and the given value. This method is guaranteed
+     * to be atomic with respect to other concurrent calls to this method or to
+     * {@link #interestOpsAnd(int)}.
+     *
+     * <p> This method may be invoked at any time.  If this method is invoked
+     * while a selection operation is in progress then it has no effect upon
+     * that operation; the change to the key's interest set will be seen by the
+     * next selection operation.
+     *
+     * @implSpec The default implementation synchronizes on this key and invokes
+     * {@code interestOps()} and {@code interestOps(int)} to retrieve and set
+     * this key's interest set.
+     *
+     * @param  ops  The interest set to apply
+     *
+     * @return  The previous interest set
+     *
+     * @throws  IllegalArgumentException
+     *          If a bit in the set does not correspond to an operation that
+     *          is supported by this key's channel, that is, if
+     *          {@code (ops & ~channel().validOps()) != 0}
+     *
+     * @throws  CancelledKeyException
+     *          If this key has been cancelled
+     *
+     * @since 11
+     */
+    public int interestOpsOr(int ops) {
+        synchronized (this) {
+            int oldVal = interestOps();
+            interestOps(oldVal | ops);
+            return oldVal;
+        }
+    }
+
+    /**
+     * Atomically sets this key's interest set to the bitwise intersection ("and")
+     * of the existing interest set and the given value. This method is guaranteed
+     * to be atomic with respect to other concurrent calls to this method or to
+     * {@link #interestOpsOr(int)}.
+     *
+     * <p> This method may be invoked at any time.  If this method is invoked
+     * while a selection operation is in progress then it has no effect upon
+     * that operation; the change to the key's interest set will be seen by the
+     * next selection operation.
+     *
+     * @apiNote Unlike the {@code interestOps(int)} and {@code interestOpsOr(int)}
+     * methods, this method does not throw {@code IllegalArgumentException} when
+     * invoked with bits in the interest set that do not correspond to an
+     * operation that is supported by this key's channel. This is to allow
+     * operation bits in the interest set to be cleared using bitwise complement
+     * values, e.g., {@code interestOpsAnd(~SelectionKey.OP_READ)} will remove
+     * the {@code OP_READ} from the interest set without affecting other bits.
+     *
+     * @implSpec The default implementation synchronizes on this key and invokes
+     * {@code interestOps()} and {@code interestOps(int)} to retrieve and set
+     * this key's interest set.
+     *
+     * @param  ops  The interest set to apply
+     *
+     * @return  The previous interest set
+     *
+     * @throws  CancelledKeyException
+     *          If this key has been cancelled
+     *
+     * @since 11
+     */
+    public int interestOpsAnd(int ops) {
+        synchronized (this) {
+            int oldVal = interestOps();
+            interestOps(oldVal & ops);
+            return oldVal;
+        }
+    }
+
+    /**
      * Retrieves this key's ready-operation set.
      *
      * <p> It is guaranteed that the returned set will only contain operation

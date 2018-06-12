@@ -95,8 +95,6 @@
   void invalidate_registers(Register preserve1 = noreg, Register preserve2 = noreg,
                             Register preserve3 = noreg) PRODUCT_RETURN;
 
-  void nop() { z_nop(); }
-
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = NULL) { MacroAssembler::null_check(r); }
 

@@ -50,7 +50,7 @@ public class TestSinhalaChar {
         final JLabel label = new JLabel("(empty)");
         label.setSize(400, 100);
         label.setBorder(new LineBorder(Color.black));
-        label.setFont(new Font("Lucida Bright", Font.PLAIN, 12));
+        label.setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
         if(AUTOMATIC_TEST) {  /* run the test automatically (else, manually) */
            label.setText(Character.toString('\u0DDD'));
         } else {

@@ -63,7 +63,6 @@
 #include "runtime/vframe.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/preserveException.hpp"
-
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
@@ -310,7 +309,8 @@ Handle java_lang_String::create_from_str(const char* utf8_str, TRAPS) {
   Handle h_obj = basic_create(length, is_latin1, CHECK_NH);
   if (length > 0) {
     if (!has_multibyte) {
-      strncpy((char*)value(h_obj())->byte_at_addr(0), utf8_str, length);
+      const jbyte* src = reinterpret_cast<const jbyte*>(utf8_str);
+      ArrayAccess<>::arraycopy_from_native(src, value(h_obj()), typeArrayOopDesc::element_offset<jbyte>(0), length);
     } else if (is_latin1) {
       UTF8::convert_to_unicode(utf8_str, value(h_obj())->byte_at_addr(0), length);
     } else {
@@ -356,7 +356,8 @@ Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
   Handle h_obj = basic_create(length, is_latin1, CHECK_NH);
   if (length > 0) {
     if (!has_multibyte) {
-      strncpy((char*)value(h_obj())->byte_at_addr(0), utf8_str, length);
+      const jbyte* src = reinterpret_cast<const jbyte*>(utf8_str);
+      ArrayAccess<>::arraycopy_from_native(src, value(h_obj()), typeArrayOopDesc::element_offset<jbyte>(0), length);
     } else if (is_latin1) {
       UTF8::convert_to_unicode(utf8_str, value(h_obj())->byte_at_addr(0), length);
     } else {
@@ -796,7 +797,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
       // update all the static field offsets to included the size.
-        for (JavaFieldStream fs(InstanceKlass::cast(k)); !fs.done(); fs.next()) {
+      for (JavaFieldStream fs(InstanceKlass::cast(k)); !fs.done(); fs.next()) {
         if (fs.access_flags().is_static()) {
           int real_offset = fs.offset() + InstanceMirrorKlass::offset_of_static_fields();
           fs.set_offset(real_offset);
@@ -807,12 +808,8 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
 
   if (k->is_shared() && k->has_raw_archived_mirror()) {
     if (MetaspaceShared::open_archive_heap_region_mapped()) {
-      oop m = k->archived_java_mirror();
-      assert(m != NULL, "archived mirror is NULL");
-      assert(MetaspaceShared::is_archive_object(m), "must be archived mirror object");
-      Handle m_h(THREAD, m);
-      // restore_archived_mirror() clears the klass' _has_raw_archived_mirror flag
-      restore_archived_mirror(k, m_h, Handle(), Handle(), Handle(), CHECK);
+      bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
+      assert(present, "Missing archived mirror for %s", k->external_name());
       return;
     } else {
       k->set_java_mirror_handle(NULL);
@@ -1205,11 +1202,23 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   return archived_mirror;
 }
 
-// After the archived mirror object is restored, the shared klass'
-// _has_raw_archived_mirror flag is cleared
-void java_lang_Class::restore_archived_mirror(Klass *k, Handle mirror,
+// Returns true if the mirror is updated, false if no archived mirror
+// data is present. After the archived mirror object is restored, the
+// shared klass' _has_raw_archived_mirror flag is cleared.
+bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle class_loader, Handle module,
                                               Handle protection_domain, TRAPS) {
+  oop m = MetaspaceShared::materialize_archived_object(k->archived_java_mirror_raw());
+
+  if (m == NULL) {
+    return false;
+  }
+
+  log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
+
+  // mirror is archived, restore
+  assert(MetaspaceShared::is_archive_object(m), "must be archived mirror object");
+  Handle mirror(THREAD, m);
 
   // The java.lang.Class field offsets were archived and reloaded from archive.
   // No need to put classes on the fixup_mirror_list before java.lang.Class
@@ -1219,7 +1228,7 @@ void java_lang_Class::restore_archived_mirror(Klass *k, Handle mirror,
     // - local static final fields with initial values were initialized at dump time
 
     // create the init_lock
-    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK);
+    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_(false));
     set_init_lock(mirror(), r);
 
     if (protection_domain.not_null()) {
@@ -1239,6 +1248,8 @@ void java_lang_Class::restore_archived_mirror(Klass *k, Handle mirror,
 
   ResourceMark rm;
   log_trace(cds, mirror)("Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
+
+  return true;
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -4255,7 +4266,7 @@ int java_lang_AssertionStatusDirectives::packages_offset;
 int java_lang_AssertionStatusDirectives::packageEnabled_offset;
 int java_lang_AssertionStatusDirectives::deflt_offset;
 int java_nio_Buffer::_limit_offset;
-int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset = 0;
+int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset;
 int reflect_ConstantPool::_oop_offset;
 int reflect_UnsafeStaticFieldAccessorImpl::_base_offset;
 
@@ -4397,13 +4408,12 @@ void java_nio_Buffer::serialize(SerializeClosure* f) {
 }
 #endif
 
-void java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(TRAPS) {
-  if (_owner_offset != 0) return;
+#define AOS_FIELDS_DO(macro) \
+  macro(_owner_offset, k, "exclusiveOwnerThread", thread_signature, false)
 
-  SystemDictionary::load_abstract_ownable_synchronizer_klass(CHECK);
-  InstanceKlass* k = SystemDictionary::abstract_ownable_synchronizer_klass();
-  compute_offset(_owner_offset, k,
-                 "exclusiveOwnerThread", vmSymbols::thread_signature());
+void java_util_concurrent_locks_AbstractOwnableSynchronizer::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::java_util_concurrent_locks_AbstractOwnableSynchronizer_klass();
+  AOS_FIELDS_DO(FIELD_COMPUTE_OFFSET);
 }
 
 oop java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(oop obj) {
@@ -4471,6 +4481,7 @@ void JavaClasses::compute_offsets() {
   java_lang_StackTraceElement::compute_offsets();
   java_lang_StackFrameInfo::compute_offsets();
   java_lang_LiveStackFrameInfo::compute_offsets();
+  java_util_concurrent_locks_AbstractOwnableSynchronizer::compute_offsets();
 
   // generated interpreter code wants to know about the offsets we just computed:
   AbstractAssembler::update_delayed_values();

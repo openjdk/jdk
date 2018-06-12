@@ -1978,7 +1978,7 @@ public class Resolve {
             ClassSymbol c = finder.loadClass(env.toplevel.modle, name);
             return isAccessible(env, c) ? c : new AccessError(env, null, c);
         } catch (ClassFinder.BadClassFile err) {
-            throw err;
+            return new BadClassFileError(err);
         } catch (CompletionFailure ex) {
             Symbol candidate = recoveryLoadClass.loadClass(env, name);
 
@@ -4497,6 +4497,27 @@ public class Resolve {
            return diags.create(dkind, log.currentSource(), pos,
                 "cant.access.inner.cls.constr", site.tsym.name, argtypes, site.getEnclosingType());
         }
+    }
+
+    class BadClassFileError extends InvalidSymbolError {
+
+        private final CompletionFailure ex;
+
+        public BadClassFileError(CompletionFailure ex) {
+            super(HIDDEN, ex.sym, "BadClassFileError");
+            this.name = sym.name;
+            this.ex = ex;
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+            JCDiagnostic d = diags.create(dkind, log.currentSource(), pos,
+                "cant.access", ex.sym, ex.getDetailValue());
+
+            d.setFlag(DiagnosticFlag.NON_DEFERRABLE);
+            return d;
+        }
+
     }
 
     /**

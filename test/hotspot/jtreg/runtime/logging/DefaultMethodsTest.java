@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8139564
+ * @bug 8139564 8203960
  * @summary defaultmethods=debug should have logging from each of the statements in the code
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -50,7 +50,15 @@ public class DefaultMethodsTest {
         output.shouldHaveExitValue(0);
     }
 
-    public static class InnerClass {
+    interface TestInterface {
+        default void doSomething() {
+            System.out.println("Default TestInterface");
+        }
+    }
+
+    public static class InnerClass implements TestInterface {
+        // InnerClass implements TestInterface with a default method.
+        // Loading of InnerClass will trigger default method processing.
         public static void main(String[] args) throws Exception {
             System.out.println("Inner Class");
         }

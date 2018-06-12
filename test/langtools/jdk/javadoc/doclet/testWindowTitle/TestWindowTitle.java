@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8016675 8026736
+ * @bug 8016675 8026736 8196202
  * @summary Test for window title.
  * @author Bhavesh Patel
  * @library ../lib
@@ -48,6 +48,7 @@ public class TestWindowTitle extends JavadocTester {
 
         javadoc("-d", "out-js-chars",
                 "-windowtitle", title,
+                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);
@@ -72,6 +73,7 @@ public class TestWindowTitle extends JavadocTester {
 
         javadoc("-d", "out-script",
                 "-windowtitle", title,
+                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);
@@ -105,6 +107,7 @@ public class TestWindowTitle extends JavadocTester {
 
         javadoc("-d", "out-html-tags",
                 "-windowtitle", title,
+                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);
@@ -128,6 +131,7 @@ public class TestWindowTitle extends JavadocTester {
 
         javadoc("-d", "out-html-entities",
                 "-windowtitle", title,
+                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
 
@@ -148,6 +152,7 @@ public class TestWindowTitle extends JavadocTester {
 
         javadoc("-d", "out-empty-tags",
                 "-windowtitle", title,
+                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
 
@@ -167,6 +172,7 @@ public class TestWindowTitle extends JavadocTester {
 
         javadoc("-d", "out-unicode",
                 "-windowtitle", title,
+                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);
@@ -188,6 +194,7 @@ public class TestWindowTitle extends JavadocTester {
         String title = "";
         javadoc("-d", "out-empty",
                 "-windowtitle", title,
+                "--frames",
                 "-sourcepath", testSrc, "p1", "p2");
         checkExit(Exit.OK);
 
@@ -205,6 +212,7 @@ public class TestWindowTitle extends JavadocTester {
 
         javadoc("-d", "out-doctitle",
                 "-doctitle", title,
+                "--frames",
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);

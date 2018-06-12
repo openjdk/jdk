@@ -26,6 +26,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
+#include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
@@ -74,7 +75,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
       __ mov(R0, addr);
     }
 #ifdef AARCH64
-    __ zero_extend(R1, count, 32); // G1BarrierSet::write_ref_array_pre_*_entry takes size_t
+    __ zero_extend(R1, count, 32); // G1BarrierSetRuntime::write_ref_array_pre_*_entry takes size_t
 #else
     if (count != R1) {
       __ mov(R1, count);
@@ -82,9 +83,9 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 #endif // AARCH64
 
     if (UseCompressedOops) {
-      __ call(CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_pre_narrow_oop_entry));
+      __ call(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry));
     } else {
-      __ call(CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_pre_oop_entry));
+      __ call(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_pre_oop_entry));
     }
 
 #ifdef AARCH64
@@ -106,7 +107,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
     __ mov(R0, addr);
   }
 #ifdef AARCH64
-  __ zero_extend(R1, count, 32); // G1BarrierSet::write_ref_array_post_entry takes size_t
+  __ zero_extend(R1, count, 32); // G1BarrierSetRuntime::write_ref_array_post_entry takes size_t
 #else
   if (count != R1) {
     __ mov(R1, count);
@@ -120,7 +121,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   __ push(R9);
 #endif // !R9_IS_SCRATCHED
 #endif // !AARCH64
-  __ call(CAST_FROM_FN_PTR(address, G1BarrierSet::write_ref_array_post_entry));
+  __ call(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_post_entry));
 #ifndef AARCH64
 #if R9_IS_SCRATCHED
   __ pop(R9);
@@ -205,7 +206,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   }
   __ mov(R1, Rthread);
 
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), R0, R1);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), R0, R1);
 
 #ifdef AARCH64
   if (store_addr != noreg) {
@@ -296,7 +297,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
     __ mov(R0, card_addr);
   }
   __ mov(R1, Rthread);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), R0, R1);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), R0, R1);
 
   __ bind(done);
 }
@@ -467,7 +468,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   assert(r_pre_val_0 == c_rarg0, "pre_val should be in R0");
   __ mov(c_rarg1, Rthread);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_pre), c_rarg0, c_rarg1);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), c_rarg0, c_rarg1);
 
   __ restore_live_registers_without_return();
 
@@ -574,7 +575,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   assert(r_card_addr_0 == c_rarg0, "card_addr should be in R0");
   __ mov(c_rarg1, Rthread);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::g1_wb_post), c_rarg0, c_rarg1);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), c_rarg0, c_rarg1);
 
   __ restore_live_registers_without_return();
 

@@ -146,19 +146,13 @@ endef
 # correct base directories.
 ifeq ($(OPENJDK_TARGET_OS)-$(DEBUG_LEVEL), macosx-release)
   JDK_IMAGE_DIR := $(JDK_MACOSX_BUNDLE_DIR)
-  JRE_IMAGE_DIR := $(JRE_MACOSX_BUNDLE_DIR)
   JDK_IMAGE_HOMEDIR := $(JDK_MACOSX_CONTENTS_DIR)/Home
-  JRE_IMAGE_HOMEDIR := $(JRE_MACOSX_CONTENTS_DIR)/Home
   JDK_BUNDLE_SUBDIR :=
-  JRE_BUNDLE_SUBDIR :=
 else
   JDK_IMAGE_HOMEDIR := $(JDK_IMAGE_DIR)
-  JRE_IMAGE_HOMEDIR := $(JRE_IMAGE_DIR)
   JDK_BUNDLE_SUBDIR := jdk-$(VERSION_NUMBER)
-  JRE_BUNDLE_SUBDIR := jre-$(VERSION_NUMBER)
   ifneq ($(DEBUG_LEVEL), release)
     JDK_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
-    JRE_BUNDLE_SUBDIR := $(JRE_BUNDLE_SUBDIR)/$(DEBUG_LEVEL)
   endif
 endif
 
@@ -204,26 +198,6 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
 
   TEST_DEMOS_BUNDLE_FILES := $(filter $(JDK_IMAGE_HOMEDIR)/demo/%, $(ALL_JDK_FILES))
 
-  ALL_JRE_FILES := $(call CacheFind, $(JRE_IMAGE_DIR))
-
-  # Create special filter rules when dealing with unzipped .dSYM directories on
-  # macosx
-  ifeq ($(OPENJDK_TARGET_OS), macosx)
-    ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), false)
-      JRE_SYMBOLS_EXCLUDE_PATTERN := $(addprefix %, \
-          $(call containing, .dSYM/, $(patsubst $(JRE_IMAGE_DIR)/%, %, $(ALL_JRE_FILES))))
-    endif
-  endif
-
-  JRE_BUNDLE_FILES := $(filter-out \
-      $(JRE_SYMBOLS_EXCLUDE_PATTERN) \
-      $(SYMBOLS_EXCLUDE_PATTERN), \
-      $(ALL_JRE_FILES))
-  JRE_SYMBOLS_BUNDLE_FILES := $(filter \
-      $(JRE_SYMBOLS_EXCLUDE_PATTERN) \
-      $(SYMBOLS_EXCLUDE_PATTERN), \
-      $(ALL_JRE_FILES))
-
   $(eval $(call SetupBundleFile, BUILD_JDK_BUNDLE, \
       BUNDLE_NAME := $(JDK_BUNDLE_NAME), \
       FILES := $(JDK_BUNDLE_FILES), \
@@ -234,15 +208,6 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
 
   PRODUCT_TARGETS += $(BUILD_JDK_BUNDLE)
 
-  $(eval $(call SetupBundleFile, BUILD_JRE_BUNDLE, \
-      BUNDLE_NAME := $(JRE_BUNDLE_NAME), \
-      FILES := $(JRE_BUNDLE_FILES), \
-      BASE_DIRS := $(JRE_IMAGE_DIR), \
-      SUBDIR := $(JRE_BUNDLE_SUBDIR), \
-  ))
-
-  PRODUCT_TARGETS += $(BUILD_JRE_BUNDLE)
-
   $(eval $(call SetupBundleFile, BUILD_JDK_SYMBOLS_BUNDLE, \
       BUNDLE_NAME := $(JDK_SYMBOLS_BUNDLE_NAME), \
       FILES := $(JDK_SYMBOLS_BUNDLE_FILES), \
@@ -252,16 +217,6 @@ ifneq ($(filter product-bundles, $(MAKECMDGOALS)), )
   ))
 
   PRODUCT_TARGETS += $(BUILD_JDK_SYMBOLS_BUNDLE)
-
-  $(eval $(call SetupBundleFile, BUILD_JRE_SYMBOLS_BUNDLE, \
-      BUNDLE_NAME := $(JRE_SYMBOLS_BUNDLE_NAME), \
-      FILES := $(JRE_SYMBOLS_BUNDLE_FILES), \
-      BASE_DIRS := $(JRE_IMAGE_DIR), \
-      SUBDIR := $(JRE_BUNDLE_SUBDIR), \
-      UNZIP_DEBUGINFO := true, \
-  ))
-
-  PRODUCT_TARGETS += $(BUILD_JRE_SYMBOLS_BUNDLE)
 
   # The demo bundle is only created to support client tests. Ideally it should
   # be built with the main test bundle, but since the prerequisites match

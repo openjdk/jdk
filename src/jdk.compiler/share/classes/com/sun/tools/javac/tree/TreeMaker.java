@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.Iterator;
 import com.sun.source.tree.ModuleTree.ModuleKind;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Attribute.UnresolvedClass;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.util.*;
@@ -872,7 +873,11 @@ public class TreeMaker implements JCTree.Factory {
             result = QualIdent(e.value);
         }
         public void visitError(Attribute.Error e) {
-            result = Erroneous();
+            if (e instanceof UnresolvedClass) {
+                result = ClassLiteral(((UnresolvedClass) e).classType).setType(syms.classType);
+            } else {
+                result = Erroneous();
+            }
         }
         public void visitCompound(Attribute.Compound compound) {
             if (compound instanceof Attribute.TypeCompound) {

@@ -39,11 +39,6 @@
  * then we need to use constraint instead.
  */
 
-class CommandLineError : public AllStatic {
-public:
-  static void print(bool verbose, const char* msg, ...);
-};
-
 class JVMFlagRange : public CHeapObj<mtArguments> {
 private:
   const char* _name;

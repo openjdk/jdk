@@ -629,7 +629,7 @@ void DefNewGeneration::collect(bool   full,
   FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
   ReferenceProcessor* rp = ref_processor();
   rp->setup_policy(clear_all_soft_refs);
-  ReferenceProcessorPhaseTimes pt(_gc_timer, rp->num_queues());
+  ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
   const ReferenceProcessorStats& stats =
   rp->process_discovered_references(&is_alive, &keep_alive, &evacuate_followers,
                                     NULL, &pt);

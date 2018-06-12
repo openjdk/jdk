@@ -31,6 +31,7 @@ public interface ErrorMessages {
     final String ERR_PARSER_BUG = "internal parser error (bug)";
     final String ERR_UNDEFINED_BYTECODE = "undefined bytecode (bug)";
     final String ERR_UNEXPECTED_BYTECODE = "unexpected bytecode (bug)";
+    final String ERR_TOO_MANY_CAPTURE_GROUPS = "too many capture groups";
 
     /* syntax error */
     final String ERR_END_PATTERN_AT_LEFT_BRACE = "end pattern at left brace";

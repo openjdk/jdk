@@ -1067,6 +1067,138 @@ reg_class vectorz_reg(XMM0,  XMM0b,  XMM0c,  XMM0d,  XMM0e,  XMM0f,  XMM0g,  XMM
 #endif
                       );
 
+reg_class xmm0_reg(XMM0, XMM0b, XMM0c, XMM0d);
+reg_class ymm0_reg(XMM0, XMM0b, XMM0c, XMM0d, XMM0e, XMM0f, XMM0g, XMM0h);
+reg_class zmm0_reg(XMM0, XMM0b, XMM0c, XMM0d, XMM0e, XMM0f, XMM0g, XMM0h, XMM0i, XMM0j, XMM0k, XMM0l, XMM0m, XMM0n, XMM0o, XMM0p);
+
+reg_class xmm1_reg(XMM1, XMM1b, XMM1c, XMM1d);
+reg_class ymm1_reg(XMM1, XMM1b, XMM1c, XMM1d, XMM1e, XMM1f, XMM1g, XMM1h);
+reg_class zmm1_reg(XMM1, XMM1b, XMM1c, XMM1d, XMM1e, XMM1f, XMM1g, XMM1h, XMM1i, XMM1j, XMM1k, XMM1l, XMM1m, XMM1n, XMM1o, XMM1p);
+
+reg_class xmm2_reg(XMM2, XMM2b, XMM2c, XMM2d);
+reg_class ymm2_reg(XMM2, XMM2b, XMM2c, XMM2d, XMM2e, XMM2f, XMM2g, XMM2h);
+reg_class zmm2_reg(XMM2, XMM2b, XMM2c, XMM2d, XMM2e, XMM2f, XMM2g, XMM2h, XMM2i, XMM2j, XMM2k, XMM2l, XMM2m, XMM2n, XMM2o, XMM2p);
+
+reg_class xmm3_reg(XMM3, XMM3b, XMM3c, XMM3d);
+reg_class ymm3_reg(XMM3, XMM3b, XMM3c, XMM3d, XMM3e, XMM3f, XMM3g, XMM3h);
+reg_class zmm3_reg(XMM3, XMM3b, XMM3c, XMM3d, XMM3e, XMM3f, XMM3g, XMM3h, XMM3i, XMM3j, XMM3k, XMM3l, XMM3m, XMM3n, XMM3o, XMM3p);
+
+reg_class xmm4_reg(XMM4, XMM4b, XMM4c, XMM4d);
+reg_class ymm4_reg(XMM4, XMM4b, XMM4c, XMM4d, XMM4e, XMM4f, XMM4g, XMM4h);
+reg_class zmm4_reg(XMM4, XMM4b, XMM4c, XMM4d, XMM4e, XMM4f, XMM4g, XMM4h, XMM4i, XMM4j, XMM4k, XMM4l, XMM4m, XMM4n, XMM4o, XMM4p);
+
+reg_class xmm5_reg(XMM5, XMM5b, XMM5c, XMM5d);
+reg_class ymm5_reg(XMM5, XMM5b, XMM5c, XMM5d, XMM5e, XMM5f, XMM5g, XMM5h);
+reg_class zmm5_reg(XMM5, XMM5b, XMM5c, XMM5d, XMM5e, XMM5f, XMM5g, XMM5h, XMM5i, XMM5j, XMM5k, XMM5l, XMM5m, XMM5n, XMM5o, XMM5p);
+
+reg_class xmm6_reg(XMM6, XMM6b, XMM6c, XMM6d);
+reg_class ymm6_reg(XMM6, XMM6b, XMM6c, XMM6d, XMM6e, XMM6f, XMM6g, XMM6h);
+reg_class zmm6_reg(XMM6, XMM6b, XMM6c, XMM6d, XMM6e, XMM6f, XMM6g, XMM6h, XMM6i, XMM6j, XMM6k, XMM6l, XMM6m, XMM6n, XMM6o, XMM6p);
+
+reg_class xmm7_reg(XMM7, XMM7b, XMM7c, XMM7d);
+reg_class ymm7_reg(XMM7, XMM7b, XMM7c, XMM7d, XMM7e, XMM7f, XMM7g, XMM7h);
+reg_class zmm7_reg(XMM7, XMM7b, XMM7c, XMM7d, XMM7e, XMM7f, XMM7g, XMM7h, XMM7i, XMM7j, XMM7k, XMM7l, XMM7m, XMM7n, XMM7o, XMM7p);
+
+#ifdef _LP64
+
+reg_class xmm8_reg(XMM8, XMM8b, XMM8c, XMM8d);
+reg_class ymm8_reg(XMM8, XMM8b, XMM8c, XMM8d, XMM8e, XMM8f, XMM8g, XMM8h);
+reg_class zmm8_reg(XMM8, XMM8b, XMM8c, XMM8d, XMM8e, XMM8f, XMM8g, XMM8h, XMM8i, XMM8j, XMM8k, XMM8l, XMM8m, XMM8n, XMM8o, XMM8p);
+
+reg_class xmm9_reg(XMM9, XMM9b, XMM9c, XMM9d);
+reg_class ymm9_reg(XMM9, XMM9b, XMM9c, XMM9d, XMM9e, XMM9f, XMM9g, XMM9h);
+reg_class zmm9_reg(XMM9, XMM9b, XMM9c, XMM9d, XMM9e, XMM9f, XMM9g, XMM9h, XMM9i, XMM9j, XMM9k, XMM9l, XMM9m, XMM9n, XMM9o, XMM9p);
+
+reg_class xmm10_reg(XMM10, XMM10b, XMM10c, XMM10d);
+reg_class ymm10_reg(XMM10, XMM10b, XMM10c, XMM10d, XMM10e, XMM10f, XMM10g, XMM10h);
+reg_class zmm10_reg(XMM10, XMM10b, XMM10c, XMM10d, XMM10e, XMM10f, XMM10g, XMM10h, XMM10i, XMM10j, XMM10k, XMM10l, XMM10m, XMM10n, XMM10o, XMM10p);
+
+reg_class xmm11_reg(XMM11, XMM11b, XMM11c, XMM11d);
+reg_class ymm11_reg(XMM11, XMM11b, XMM11c, XMM11d, XMM11e, XMM11f, XMM11g, XMM11h);
+reg_class zmm11_reg(XMM11, XMM11b, XMM11c, XMM11d, XMM11e, XMM11f, XMM11g, XMM11h, XMM11i, XMM11j, XMM11k, XMM11l, XMM11m, XMM11n, XMM11o, XMM11p);
+
+reg_class xmm12_reg(XMM12, XMM12b, XMM12c, XMM12d);
+reg_class ymm12_reg(XMM12, XMM12b, XMM12c, XMM12d, XMM12e, XMM12f, XMM12g, XMM12h);
+reg_class zmm12_reg(XMM12, XMM12b, XMM12c, XMM12d, XMM12e, XMM12f, XMM12g, XMM12h, XMM12i, XMM12j, XMM12k, XMM12l, XMM12m, XMM12n, XMM12o, XMM12p);
+
+reg_class xmm13_reg(XMM13, XMM13b, XMM13c, XMM13d);
+reg_class ymm13_reg(XMM13, XMM13b, XMM13c, XMM13d, XMM13e, XMM13f, XMM13g, XMM13h);
+reg_class zmm13_reg(XMM13, XMM13b, XMM13c, XMM13d, XMM13e, XMM13f, XMM13g, XMM13h, XMM13i, XMM13j, XMM13k, XMM13l, XMM13m, XMM13n, XMM13o, XMM13p);
+
+reg_class xmm14_reg(XMM14, XMM14b, XMM14c, XMM14d);
+reg_class ymm14_reg(XMM14, XMM14b, XMM14c, XMM14d, XMM14e, XMM14f, XMM14g, XMM14h);
+reg_class zmm14_reg(XMM14, XMM14b, XMM14c, XMM14d, XMM14e, XMM14f, XMM14g, XMM14h, XMM14i, XMM14j, XMM14k, XMM14l, XMM14m, XMM14n, XMM14o, XMM14p);
+
+reg_class xmm15_reg(XMM15, XMM15b, XMM15c, XMM15d);
+reg_class ymm15_reg(XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h);
+reg_class zmm15_reg(XMM15, XMM15b, XMM15c, XMM15d, XMM15e, XMM15f, XMM15g, XMM15h, XMM15i, XMM15j, XMM15k, XMM15l, XMM15m, XMM15n, XMM15o, XMM15p);
+
+reg_class xmm16_reg(XMM16, XMM16b, XMM16c, XMM16d);
+reg_class ymm16_reg(XMM16, XMM16b, XMM16c, XMM16d, XMM16e, XMM16f, XMM16g, XMM16h);
+reg_class zmm16_reg(XMM16, XMM16b, XMM16c, XMM16d, XMM16e, XMM16f, XMM16g, XMM16h, XMM16i, XMM16j, XMM16k, XMM16l, XMM16m, XMM16n, XMM16o, XMM16p);
+
+reg_class xmm17_reg(XMM17, XMM17b, XMM17c, XMM17d);
+reg_class ymm17_reg(XMM17, XMM17b, XMM17c, XMM17d, XMM17e, XMM17f, XMM17g, XMM17h);
+reg_class zmm17_reg(XMM17, XMM17b, XMM17c, XMM17d, XMM17e, XMM17f, XMM17g, XMM17h, XMM17i, XMM17j, XMM17k, XMM17l, XMM17m, XMM17n, XMM17o, XMM17p);
+
+reg_class xmm18_reg(XMM18, XMM18b, XMM18c, XMM18d);
+reg_class ymm18_reg(XMM18, XMM18b, XMM18c, XMM18d, XMM18e, XMM18f, XMM18g, XMM18h);
+reg_class zmm18_reg(XMM18, XMM18b, XMM18c, XMM18d, XMM18e, XMM18f, XMM18g, XMM18h, XMM18i, XMM18j, XMM18k, XMM18l, XMM18m, XMM18n, XMM18o, XMM18p);
+
+reg_class xmm19_reg(XMM19, XMM19b, XMM19c, XMM19d);
+reg_class ymm19_reg(XMM19, XMM19b, XMM19c, XMM19d, XMM19e, XMM19f, XMM19g, XMM19h);
+reg_class zmm19_reg(XMM19, XMM19b, XMM19c, XMM19d, XMM19e, XMM19f, XMM19g, XMM19h, XMM19i, XMM19j, XMM19k, XMM19l, XMM19m, XMM19n, XMM19o, XMM19p);
+
+reg_class xmm20_reg(XMM20, XMM20b, XMM20c, XMM20d);
+reg_class ymm20_reg(XMM20, XMM20b, XMM20c, XMM20d, XMM20e, XMM20f, XMM20g, XMM20h);
+reg_class zmm20_reg(XMM20, XMM20b, XMM20c, XMM20d, XMM20e, XMM20f, XMM20g, XMM20h, XMM20i, XMM20j, XMM20k, XMM20l, XMM20m, XMM20n, XMM20o, XMM20p);
+
+reg_class xmm21_reg(XMM21, XMM21b, XMM21c, XMM21d);
+reg_class ymm21_reg(XMM21, XMM21b, XMM21c, XMM21d, XMM21e, XMM21f, XMM21g, XMM21h);
+reg_class zmm21_reg(XMM21, XMM21b, XMM21c, XMM21d, XMM21e, XMM21f, XMM21g, XMM21h, XMM21i, XMM21j, XMM21k, XMM21l, XMM21m, XMM21n, XMM21o, XMM21p);
+
+reg_class xmm22_reg(XMM22, XMM22b, XMM22c, XMM22d);
+reg_class ymm22_reg(XMM22, XMM22b, XMM22c, XMM22d, XMM22e, XMM22f, XMM22g, XMM22h);
+reg_class zmm22_reg(XMM22, XMM22b, XMM22c, XMM22d, XMM22e, XMM22f, XMM22g, XMM22h, XMM22i, XMM22j, XMM22k, XMM22l, XMM22m, XMM22n, XMM22o, XMM22p);
+
+reg_class xmm23_reg(XMM23, XMM23b, XMM23c, XMM23d);
+reg_class ymm23_reg(XMM23, XMM23b, XMM23c, XMM23d, XMM23e, XMM23f, XMM23g, XMM23h);
+reg_class zmm23_reg(XMM23, XMM23b, XMM23c, XMM23d, XMM23e, XMM23f, XMM23g, XMM23h, XMM23i, XMM23j, XMM23k, XMM23l, XMM23m, XMM23n, XMM23o, XMM23p);
+
+reg_class xmm24_reg(XMM24, XMM24b, XMM24c, XMM24d);
+reg_class ymm24_reg(XMM24, XMM24b, XMM24c, XMM24d, XMM24e, XMM24f, XMM24g, XMM24h);
+reg_class zmm24_reg(XMM24, XMM24b, XMM24c, XMM24d, XMM24e, XMM24f, XMM24g, XMM24h, XMM24i, XMM24j, XMM24k, XMM24l, XMM24m, XMM24n, XMM24o, XMM24p);
+
+reg_class xmm25_reg(XMM25, XMM25b, XMM25c, XMM25d);
+reg_class ymm25_reg(XMM25, XMM25b, XMM25c, XMM25d, XMM25e, XMM25f, XMM25g, XMM25h);
+reg_class zmm25_reg(XMM25, XMM25b, XMM25c, XMM25d, XMM25e, XMM25f, XMM25g, XMM25h, XMM25i, XMM25j, XMM25k, XMM25l, XMM25m, XMM25n, XMM25o, XMM25p);
+
+reg_class xmm26_reg(XMM26, XMM26b, XMM26c, XMM26d);
+reg_class ymm26_reg(XMM26, XMM26b, XMM26c, XMM26d, XMM26e, XMM26f, XMM26g, XMM26h);
+reg_class zmm26_reg(XMM26, XMM26b, XMM26c, XMM26d, XMM26e, XMM26f, XMM26g, XMM26h, XMM26i, XMM26j, XMM26k, XMM26l, XMM26m, XMM26n, XMM26o, XMM26p);
+
+reg_class xmm27_reg(XMM27, XMM27b, XMM27c, XMM27d);
+reg_class ymm27_reg(XMM27, XMM27b, XMM27c, XMM27d, XMM27e, XMM27f, XMM27g, XMM27h);
+reg_class zmm27_reg(XMM27, XMM27b, XMM27c, XMM27d, XMM27e, XMM27f, XMM27g, XMM27h, XMM27i, XMM27j, XMM27k, XMM27l, XMM27m, XMM27n, XMM27o, XMM27p);
+
+reg_class xmm28_reg(XMM28, XMM28b, XMM28c, XMM28d);
+reg_class ymm28_reg(XMM28, XMM28b, XMM28c, XMM28d, XMM28e, XMM28f, XMM28g, XMM28h);
+reg_class zmm28_reg(XMM28, XMM28b, XMM28c, XMM28d, XMM28e, XMM28f, XMM28g, XMM28h, XMM28i, XMM28j, XMM28k, XMM28l, XMM28m, XMM28n, XMM28o, XMM28p);
+
+reg_class xmm29_reg(XMM29, XMM29b, XMM29c, XMM29d);
+reg_class ymm29_reg(XMM29, XMM29b, XMM29c, XMM29d, XMM29e, XMM29f, XMM29g, XMM29h);
+reg_class zmm29_reg(XMM29, XMM29b, XMM29c, XMM29d, XMM29e, XMM29f, XMM29g, XMM29h, XMM29i, XMM29j, XMM29k, XMM29l, XMM29m, XMM29n, XMM29o, XMM29p);
+
+reg_class xmm30_reg(XMM30, XMM30b, XMM30c, XMM30d);
+reg_class ymm30_reg(XMM30, XMM30b, XMM30c, XMM30d, XMM30e, XMM30f, XMM30g, XMM30h);
+reg_class zmm30_reg(XMM30, XMM30b, XMM30c, XMM30d, XMM30e, XMM30f, XMM30g, XMM30h, XMM30i, XMM30j, XMM30k, XMM30l, XMM30m, XMM30n, XMM30o, XMM30p);
+
+reg_class xmm31_reg(XMM31, XMM31b, XMM31c, XMM31d);
+reg_class ymm31_reg(XMM31, XMM31b, XMM31c, XMM31d, XMM31e, XMM31f, XMM31g, XMM31h);
+reg_class zmm31_reg(XMM31, XMM31b, XMM31c, XMM31d, XMM31e, XMM31f, XMM31g, XMM31h, XMM31i, XMM31j, XMM31k, XMM31l, XMM31m, XMM31n, XMM31o, XMM31p);
+
+#endif
+
 %}
 
 

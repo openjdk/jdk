@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,6 +282,11 @@ public class Sockets {
         if (QuickAck.available) {
             set.add(ExtendedSocketOptions.TCP_QUICKACK);
         }
+        if (KeepAliveOptions.AVAILABLE) {
+            set.addAll(Set.of(ExtendedSocketOptions.TCP_KEEPCOUNT,
+                    ExtendedSocketOptions.TCP_KEEPIDLE,
+                    ExtendedSocketOptions.TCP_KEEPINTERVAL));
+        }
         set = Collections.unmodifiableSet(set);
         options.put(Socket.class, set);
 
@@ -295,6 +300,11 @@ public class Sockets {
         }
         if (QuickAck.available) {
             set.add(ExtendedSocketOptions.TCP_QUICKACK);
+        }
+        if (KeepAliveOptions.AVAILABLE) {
+            set.addAll(Set.of(ExtendedSocketOptions.TCP_KEEPCOUNT,
+                    ExtendedSocketOptions.TCP_KEEPIDLE,
+                    ExtendedSocketOptions.TCP_KEEPINTERVAL));
         }
         set.add(StandardSocketOptions.IP_TOS);
         set = Collections.unmodifiableSet(set);
@@ -348,6 +358,21 @@ public class Sockets {
         static {
             Set<SocketOption<?>> s = new Socket().supportedOptions();
             available = s.contains(ExtendedSocketOptions.TCP_QUICKACK);
+        }
+    }
+
+    /**
+     * Tells whether TCP_KEEPALIVE options are supported.
+     */
+    static class KeepAliveOptions {
+
+        static final boolean AVAILABLE;
+
+        static {
+            Set<SocketOption<?>> s = new Socket().supportedOptions();
+            AVAILABLE = s.containsAll(Set.of(ExtendedSocketOptions.TCP_KEEPCOUNT,
+                                            ExtendedSocketOptions.TCP_KEEPIDLE,
+                                            ExtendedSocketOptions.TCP_KEEPINTERVAL));
         }
     }
 }

@@ -1733,17 +1733,13 @@
     /* based on the [min,def,max] values for the axis to be [-1,0,1]. */
     /* Then, if there's an `avar' table, we renormalize this range.   */
 
-    FT_TRACE5(( "%d design coordinate%s:\n",
-                num_coords,
-                num_coords == 1 ? "" : "s" ));
-
     a = mmvar->axis;
     for ( i = 0; i < num_coords; i++, a++ )
     {
       FT_Fixed  coord = coords[i];
 
 
-      FT_TRACE5(( "  %.5f\n", coord / 65536.0 ));
+      FT_TRACE5(( "    %d: %.5f\n", i, coord / 65536.0 ));
       if ( coord > a->maximum || coord < a->minimum )
       {
         FT_TRACE1((
@@ -2043,12 +2039,15 @@
 
       FT_TRACE2(( "loaded\n" ));
 
-      FT_TRACE5(( "number of GX style axes: %d\n", fvar_head.axisCount ));
+      FT_TRACE5(( "%d variation ax%s\n",
+                  fvar_head.axisCount,
+                  fvar_head.axisCount == 1 ? "is" : "es" ));
 
       if ( FT_NEW( face->blend ) )
         goto Exit;
 
-      num_axes = fvar_head.axisCount;
+      num_axes              = fvar_head.axisCount;
+      face->blend->num_axis = num_axes;
     }
     else
       num_axes = face->blend->num_axis;
@@ -2142,6 +2141,10 @@
       {
         GX_FVar_Axis  axis_rec;
 
+#ifdef FT_DEBUG_LEVEL_TRACE
+        int  invalid = 0;
+#endif
+
 
         if ( FT_STREAM_READ_FIELDS( fvaraxis_fields, &axis_rec ) )
           goto Exit;
@@ -2162,22 +2165,31 @@
         if ( a->minimum > a->def ||
              a->def > a->maximum )
         {
-          FT_TRACE2(( "TT_Get_MM_Var:"
-                      " invalid \"%s\" axis record; disabling\n",
-                      a->name ));
-
           a->minimum = a->def;
           a->maximum = a->def;
+
+#ifdef FT_DEBUG_LEVEL_TRACE
+          invalid = 1;
+#endif
         }
 
-        FT_TRACE5(( "  \"%s\":"
-                    " minimum=%.5f, default=%.5f, maximum=%.5f,"
-                    " flags=0x%04X\n",
+#ifdef FT_DEBUG_LEVEL_TRACE
+        if ( i == 0 )
+          FT_TRACE5(( "  idx   tag  "
+                   /* "  XXX  `XXXX'" */
+                      "    minimum     default     maximum   flags\n" ));
+                   /* "  XXXX.XXXXX  XXXX.XXXXX  XXXX.XXXXX  0xXXXX" */
+
+        FT_TRACE5(( "  %3d  `%s'"
+                    "  %10.5f  %10.5f  %10.5f  0x%04X%s\n",
+                    i,
                     a->name,
                     a->minimum / 65536.0,
                     a->def / 65536.0,
                     a->maximum / 65536.0,
-                    *axis_flags ));
+                    *axis_flags,
+                    invalid ? " (invalid, disabled)" : "" ));
+#endif
 
         a++;
         axis_flags++;
@@ -2202,6 +2214,10 @@
           goto Exit;
       }
 
+      FT_TRACE5(( "%d instance%s\n",
+                  fvar_head.instanceCount,
+                  fvar_head.instanceCount == 1 ? "" : "s" ));
+
       ns  = mmvar->namedstyle;
       nsc = face->blend->normalized_stylecoords;
       for ( i = 0; i < fvar_head.instanceCount; i++, ns++ )
@@ -2223,6 +2239,52 @@
           ns->psid = FT_GET_USHORT();
         else
           ns->psid = 0xFFFF;
+
+#ifdef FT_DEBUG_LEVEL_TRACE
+        {
+          SFNT_Service  sfnt = (SFNT_Service)face->sfnt;
+
+          FT_String*  strname = NULL;
+          FT_String*  psname  = NULL;
+
+          FT_ULong  pos;
+
+
+          pos = FT_STREAM_POS();
+
+          if ( ns->strid != 0xFFFF )
+          {
+            (void)sfnt->get_name( face,
+                                  (FT_UShort)ns->strid,
+                                  &strname );
+            if ( strname && !ft_strcmp( strname, ".notdef" ) )
+              strname = NULL;
+          }
+
+          if ( ns->psid != 0xFFFF )
+          {
+            (void)sfnt->get_name( face,
+                                  (FT_UShort)ns->psid,
+                                  &psname );
+            if ( psname && !ft_strcmp( psname, ".notdef" ) )
+              psname = NULL;
+          }
+
+          (void)FT_STREAM_SEEK( pos );
+
+          FT_TRACE5(( "  instance %d (%s%s%s, %s%s%s)\n",
+                      i,
+                      strname ? "name: `" : "",
+                      strname ? strname : "unnamed",
+                      strname ? "'" : "",
+                      psname ? "PS name: `" : "",
+                      psname ? psname : "no PS name",
+                      psname ? "'" : "" ));
+
+          FT_FREE( strname );
+          FT_FREE( psname );
+        }
+#endif /* FT_DEBUG_LEVEL_TRACE */
 
         ft_var_to_normalized( face, num_axes, ns->coords, nsc );
         nsc += num_axes;
@@ -2381,11 +2443,12 @@
       num_coords = mmvar->num_axis;
     }
 
-    FT_TRACE5(( "normalized design coordinates:\n" ));
+    FT_TRACE5(( "TT_Set_MM_Blend:\n"
+                "  normalized design coordinates:\n" ));
 
     for ( i = 0; i < num_coords; i++ )
     {
-      FT_TRACE5(( "  %.5f\n", coords[i] / 65536.0 ));
+      FT_TRACE5(( "    %.5f\n", coords[i] / 65536.0 ));
       if ( coords[i] < -0x00010000L || coords[i] > 0x00010000L )
       {
         FT_TRACE1(( "TT_Set_MM_Blend: normalized design coordinate %.5f\n"
@@ -2761,8 +2824,9 @@
       }
     }
 
-    /* return value -1 indicates `no change' */
-    if ( !have_diff )
+    /* return value -1 indicates `no change';                      */
+    /* we can exit early if `normalizedcoords' is already computed */
+    if ( blend->normalizedcoords && !have_diff )
       return -1;
 
     if ( FT_NEW_ARRAY( normalized, mmvar->num_axis ) )
@@ -2771,6 +2835,8 @@
     if ( !face->blend->avar_loaded )
       ft_var_load_avar( face );
 
+    FT_TRACE5(( "TT_Set_Var_Design:\n"
+                "  normalized design coordinates:\n" ));
     ft_var_to_normalized( face, num_coords, blend->coords, normalized );
 
     error = tt_set_mm_blend( face, mmvar->num_axis, normalized, 0 );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,18 @@ import java.util.stream.*;
  *          java.management
  * @requires vm.gc == null
  * @run main/othervm -XX:+UseG1GC TestMemoryMXBeansAndPoolsPresence G1
- * @run main/othervm -XX:+UseConcMarkSweepGC TestMemoryMXBeansAndPoolsPresence CMS
  * @run main/othervm -XX:+UseParallelGC TestMemoryMXBeansAndPoolsPresence Parallel
  * @run main/othervm -XX:+UseSerialGC TestMemoryMXBeansAndPoolsPresence Serial
+ */
+
+/* @test TestMemoryMXBeansAndPoolsPresenceCMS
+ * @bug 8191564
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @comment Graal does not support CMS
+ * @requires vm.gc == null & !vm.graal.enabled
+ * @run main/othervm -XX:+UseConcMarkSweepGC TestMemoryMXBeansAndPoolsPresence CMS
  */
 
 class GCBeanDescription {

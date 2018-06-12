@@ -783,7 +783,9 @@ class Assembler : public AbstractAssembler {
   void flush() {
 #ifdef VALIDATE_PIPELINE
     assert(_delay_state == NoDelay, "Ending code with a delay-slot.");
+#ifdef COMPILER2
     validate_no_pipeline_hazards();
+#endif
 #endif
     AbstractAssembler::flush();
   }

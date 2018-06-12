@@ -31,6 +31,8 @@ import org.graalvm.compiler.graph.spi.Canonicalizable;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 
+import jdk.vm.ci.meta.TriState;
+
 /**
  * Logic node that negates its argument.
  */
@@ -77,4 +79,11 @@ public final class LogicNegationNode extends LogicNode implements Canonicalizabl
         return this;
     }
 
+    @Override
+    public TriState implies(boolean thisNegated, LogicNode other) {
+        if (other == getValue()) {
+            return TriState.get(thisNegated);
+        }
+        return getValue().implies(!thisNegated, other);
+    }
 }

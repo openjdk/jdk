@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
  */
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -66,39 +67,58 @@ public class TestResize {
   }
 
   static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
-    pb.redirectErrorStream(true);
-    Process process = pb.start();
-    BufferedReader rd = new BufferedReader(new InputStreamReader(process.getInputStream()));
-    String line = rd.readLine();
-    while (line != null) {
-      if (line.startsWith("Java dictionary (")) {
-        // ex. "Java dictionary (table_size=107, classes=6)"
-        // ex. "Java dictionary (table_size=20201, classes=50002)"
+    OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+    String output = analyzer.getStdout();
+    analyzer.shouldHaveExitValue(0);
+
+    boolean resized = false;
+
+    // Split string into lines using platform independent end of line marker.
+    String[] lines = output.split("\\R");
+    for (String line : lines) {
+      if (!resized) {
+        // ex. [0.563s][info][safepoint,cleanup] resizing system dictionaries, 0.0000002 secs
+        if (line.contains("resizing system dictionaries")) {
+          resized = true;
+        }
+      } else if (resized && line.startsWith("Java dictionary (")) {
+        // ex. Java dictionary (table_size=10103, classes=5002)
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        scanner.next();
-        int table_size = getInt(scanner.next());
-        int classes = getInt(scanner.next());
+        scanner.next(); // skip "Java"
+        scanner.next(); // skip "dictionary"
+        int table_size = getInt(scanner.next()); // process "(table_size=40423"
+        int classes = getInt(scanner.next()); // process ", classes=50002"
         scanner.close();
 
         double loadFactor = (double)classes / (double)table_size;
         if (loadFactor > MAX_LOAD_FACTOR) {
-          throw new RuntimeException("Load factor too high, expected MAX "+MAX_LOAD_FACTOR+", got "+loadFactor);
+
+          // We've hit an error, so print all of the output.
+          System.out.println(output);
+
+          throw new RuntimeException("Load factor too high, expected MAX " + MAX_LOAD_FACTOR +
+            ", got " + loadFactor + " [table size " + table_size + ", number of clases " + classes + "]");
         } else {
-          System.out.println("PASS table_size:"+table_size+", classes:"+classes+" OK");
+          System.out.println("PASS table_size: " + table_size + ", classes: " + classes +
+          ", load factor: " + loadFactor + " <= " + MAX_LOAD_FACTOR);
+          // There are more than one system dictionary to check, so keep looking...
         }
       }
-      line = rd.readLine();
     }
-    int retval = process.waitFor();
-    if (retval != 0) {
-      throw new RuntimeException("Error: test returned non-zero value");
+
+    if (!resized) {
+      System.out.println("PASS trivially. No resizing occurred, so did not check the load.");
     }
   }
 
   public static void main(String[] args) throws Exception {
     if (Platform.isDebugBuild()) {
+      // -XX:+PrintSystemDictionaryAtExit will print the details of system dictionary,
+      // that will allow us to calculate the table's load factor.
+      // -Xlog:safepoint+cleanup will print out cleanup details at safepoint
+      // that will allow us to detect if the system dictionary resized.
       ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
+                                                                "-Xlog:safepoint+cleanup",
                                                                 "TriggerResize",
                                                                 "50000");
       analyzeOutputOn(pb);

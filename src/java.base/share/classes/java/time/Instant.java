@@ -311,7 +311,7 @@ public final class Instant
      * This method allows an arbitrary number of nanoseconds to be passed in.
      * The factory will alter the values of the second and nanosecond in order
      * to ensure that the stored nanosecond is in the range 0 to 999,999,999.
-     * For example, the following will result in the exactly the same instant:
+     * For example, the following will result in exactly the same instant:
      * <pre>
      *  Instant.ofEpochSecond(3, 1);
      *  Instant.ofEpochSecond(4, -999_999_999);
@@ -757,7 +757,7 @@ public final class Instant
             throw new UnsupportedTemporalTypeException("Unit must divide into a standard day without remainder");
         }
         long nod = (seconds % LocalTime.SECONDS_PER_DAY) * LocalTime.NANOS_PER_SECOND + nanos;
-        long result = Math.floorDiv(nod, dur) * dur ;
+        long result = Math.floorDiv(nod, dur) * dur;
         return plusNanos(result - nod);
     }
 

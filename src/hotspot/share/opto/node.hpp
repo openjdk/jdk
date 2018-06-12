@@ -80,6 +80,9 @@ class JVMState;
 class JumpNode;
 class JumpProjNode;
 class LoadNode;
+class LoadBarrierNode;
+class LoadBarrierSlowRegNode;
+class LoadBarrierWeakSlowRegNode;
 class LoadStoreNode;
 class LockNode;
 class LoopNode;
@@ -634,6 +637,7 @@ public:
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
         DEFINE_CLASS_ID(Initialize,       MemBar, 0)
         DEFINE_CLASS_ID(MemBarStoreStore, MemBar, 1)
+      DEFINE_CLASS_ID(LoadBarrier, Multi, 4)
 
     DEFINE_CLASS_ID(Mach,  Node, 1)
       DEFINE_CLASS_ID(MachReturn, Mach, 0)
@@ -680,6 +684,8 @@ public:
     DEFINE_CLASS_ID(Mem,   Node, 4)
       DEFINE_CLASS_ID(Load,  Mem, 0)
         DEFINE_CLASS_ID(LoadVector,  Load, 0)
+          DEFINE_CLASS_ID(LoadBarrierSlowReg, Load, 1)
+          DEFINE_CLASS_ID(LoadBarrierWeakSlowReg, Load, 2)
       DEFINE_CLASS_ID(Store, Mem, 1)
         DEFINE_CLASS_ID(StoreVector, Store, 0)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)
@@ -819,6 +825,9 @@ public:
   DEFINE_CLASS_QUERY(JumpProj)
   DEFINE_CLASS_QUERY(Load)
   DEFINE_CLASS_QUERY(LoadStore)
+  DEFINE_CLASS_QUERY(LoadBarrier)
+  DEFINE_CLASS_QUERY(LoadBarrierSlowReg)
+  DEFINE_CLASS_QUERY(LoadBarrierWeakSlowReg)
   DEFINE_CLASS_QUERY(Lock)
   DEFINE_CLASS_QUERY(Loop)
   DEFINE_CLASS_QUERY(Mach)

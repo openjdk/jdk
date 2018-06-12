@@ -29,19 +29,10 @@ include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
 
-  LIBLE_SRC := $(TOPDIR)/src/jdk.internal.le/$(OPENJDK_TARGET_OS_TYPE)/native/lible \
-      #
-  LIBLE_CPPFLAGS := \
-      $(addprefix -I, $(LIBLE_SRC)) \
-      -I$(SUPPORT_OUTPUTDIR)/headers/jdk.internal.le \
-      #
-
   $(eval $(call SetupJdkLibrary, BUILD_LIBLE, \
       NAME := le, \
-      SRC := $(LIBLE_SRC), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) $(LIBJAVA_HEADER_FLAGS)\
-          $(LIBLE_CPPFLAGS), \
+      CFLAGS := $(CFLAGS_JDKLIB), \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
       LIBS := $(JDKLIB_LIBS) user32.lib, \
   ))

@@ -1514,7 +1514,7 @@
     FT_FRAME_EXIT();
 
     if ( glyph_start == glyph_end )
-      return FT_THROW( Invalid_Argument );
+      return FT_THROW( Missing_Bitmap );
     if ( glyph_start > glyph_end                     ||
          glyph_end - glyph_start < 8                 ||
          face->ebdt_size - strike_offset < glyph_end )

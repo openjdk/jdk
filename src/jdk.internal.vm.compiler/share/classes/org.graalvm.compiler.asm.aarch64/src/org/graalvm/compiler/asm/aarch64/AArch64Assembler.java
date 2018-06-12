@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -63,11 +63,15 @@ import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FMOV
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FMSUB;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FMUL;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FNEG;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FRINTM;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FRINTN;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FRINTP;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FRINTZ;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FSQRT;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.FSUB;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.HINT;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.HLT;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.LDADD;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.LDAR;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.LDAXR;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.LDP;
@@ -480,6 +484,9 @@ public abstract class AArch64Assembler extends Assembler {
     private static final int CASAcquireOffset = 22;
     private static final int CASReleaseOffset = 15;
 
+    private static final int LDADDAcquireOffset = 23;
+    private static final int LDADDReleaseOffset = 22;
+
     /**
      * Encoding for all instructions.
      */
@@ -511,6 +518,7 @@ public abstract class AArch64Assembler extends Assembler {
         STP(0b0 << 22),
 
         CAS(0x08A07C00),
+        LDADD(0x38200000),
 
         ADR(0x00000000),
         ADRP(0x80000000),
@@ -573,6 +581,9 @@ public abstract class AArch64Assembler extends Assembler {
         FSQRT(0x00018000),
         FNEG(0x00010000),
 
+        FRINTM(0x00050000),
+        FRINTN(0x00040000),
+        FRINTP(0x00048000),
         FRINTZ(0x00058000),
 
         FADD(0x00002000),
@@ -1330,7 +1341,18 @@ public abstract class AArch64Assembler extends Assembler {
         emitInt(transferSizeEncoding | instr.encoding | rs2(rs) | rn(rn) | rt(rt));
     }
 
-    /* Compare And Swap */
+    /**
+     * Compare And Swap word or doubleword in memory. This reads a value from an address rn,
+     * compares it against a given value rs, and, if equal, stores the value rt to memory. The value
+     * read from address rn is stored in register rs.
+     *
+     * @param size size of bits read from memory. Must be 32 or 64.
+     * @param rs general purpose register to be compared and loaded. May not be null.
+     * @param rt general purpose register to be conditionally stored. May not be null.
+     * @param rn general purpose register containing the address from which to read.
+     * @param acquire boolean value signifying if the load should use acquire semantics.
+     * @param release boolean value signifying if the store should use release semantics.
+     */
     public void cas(int size, Register rs, Register rt, Register rn, boolean acquire, boolean release) {
         assert size == 32 || size == 64;
         int transferSize = NumUtil.log2Ceil(size / 8);
@@ -1344,17 +1366,42 @@ public abstract class AArch64Assembler extends Assembler {
         emitInt(transferSizeEncoding | instr.encoding | rs2(rs) | rn(rn) | rt(rt) | (acquire ? 1 : 0) << CASAcquireOffset | (release ? 1 : 0) << CASReleaseOffset);
     }
 
+    /**
+     * Atomic add. This reads a value from an address rn, stores the value in rt, and adds the value
+     * in rs to it, and stores the result back at address rn. The initial value read from memory is
+     * stored in rt.
+     *
+     * @param size size of operand to read from memory. Must be 8, 16, 32, or 64.
+     * @param rs general purpose register to be added to contents. May not be null.
+     * @param rt general purpose register to be loaded. May not be null.
+     * @param rn general purpose register or stack pointer holding an address from which to load.
+     * @param acquire boolean value signifying if the load should use acquire semantics.
+     * @param release boolean value signifying if the store should use release semantics.
+     */
+    public void ldadd(int size, Register rs, Register rt, Register rn, boolean acquire, boolean release) {
+        assert size == 8 || size == 16 || size == 32 || size == 64;
+        int transferSize = NumUtil.log2Ceil(size / 8);
+        loadAndAddInstruction(LDADD, rs, rt, rn, transferSize, acquire, release);
+    }
+
+    private void loadAndAddInstruction(Instruction instr, Register rs, Register rt, Register rn, int log2TransferSize, boolean acquire, boolean release) {
+        assert log2TransferSize >= 0 && log2TransferSize < 4;
+        assert rt.getRegisterCategory().equals(CPU) && rs.getRegisterCategory().equals(CPU) && !rs.equals(rt);
+        int transferSizeEncoding = log2TransferSize << LoadStoreTransferSizeOffset;
+        emitInt(transferSizeEncoding | instr.encoding | rs2(rs) | rn(rn) | rt(rt) | (acquire ? 1 : 0) << LDADDAcquireOffset | (release ? 1 : 0) << LDADDReleaseOffset);
+    }
+
     /* PC-relative Address Calculation (5.4.4) */
 
     /**
      * Address of page: sign extends 21-bit offset, shifts if left by 12 and adds it to the value of
-     * the PC with its bottom 12-bits cleared, writing the result to dst.
-     * No offset is emiited; the instruction will be patched later.
+     * the PC with its bottom 12-bits cleared, writing the result to dst. No offset is emitted; the
+     * instruction will be patched later.
      *
      * @param dst general purpose register. May not be null, zero-register or stackpointer.
      */
     public void adrp(Register dst) {
-        emitInt(ADRP.encoding | PcRelImmOp | rd(dst) );
+        emitInt(ADRP.encoding | PcRelImmOp | rd(dst));
     }
 
     /**
@@ -1367,12 +1414,15 @@ public abstract class AArch64Assembler extends Assembler {
         emitInt(ADR.encoding | PcRelImmOp | rd(dst) | getPcRelativeImmEncoding(imm21));
     }
 
+    /**
+     * Adds a 21-bit signed offset to the program counter and writes the result to dst.
+     *
+     * @param dst general purpose register. May not be null, zero-register or stackpointer.
+     * @param imm21 Signed 21-bit offset.
+     * @param pos the position in the code that the instruction is emitted.
+     */
     public void adr(Register dst, int imm21, int pos) {
         emitInt(ADR.encoding | PcRelImmOp | rd(dst) | getPcRelativeImmEncoding(imm21), pos);
-    }
-
-    public void adrp(Register dst, int pageOffset) {
-        emitInt(ADRP.encoding | PcRelImmOp | rd(dst) | getPcRelativeImmEncoding(pageOffset));
     }
 
     private static int getPcRelativeImmEncoding(int imm21) {
@@ -2430,6 +2480,39 @@ public abstract class AArch64Assembler extends Assembler {
      */
     protected void frintz(int size, Register dst, Register src) {
         fpDataProcessing1Source(FRINTZ, dst, src, floatFromSize(size));
+    }
+
+    /**
+     * Rounds floating-point to integral. Rounds towards nearest with ties to even.
+     *
+     * @param size register size.
+     * @param dst floating point register. May not be null.
+     * @param src floating point register. May not be null.
+     */
+    public void frintn(int size, Register dst, Register src) {
+        fpDataProcessing1Source(FRINTN, dst, src, floatFromSize(size));
+    }
+
+    /**
+     * Rounds floating-point to integral. Rounds towards minus infinity.
+     *
+     * @param size register size.
+     * @param dst floating point register. May not be null.
+     * @param src floating point register. May not be null.
+     */
+    public void frintm(int size, Register dst, Register src) {
+        fpDataProcessing1Source(FRINTM, dst, src, floatFromSize(size));
+    }
+
+    /**
+     * Rounds floating-point to integral. Rounds towards plus infinity.
+     *
+     * @param size register size.
+     * @param dst floating point register. May not be null.
+     * @param src floating point register. May not be null.
+     */
+    public void frintp(int size, Register dst, Register src) {
+        fpDataProcessing1Source(FRINTP, dst, src, floatFromSize(size));
     }
 
     /* Floating-point Arithmetic (1 source) (5.7.6) */

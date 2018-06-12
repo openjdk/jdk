@@ -36,7 +36,9 @@ public enum GC {
     Serial(1),
     Parallel(2),
     ConcMarkSweep(3),
-    G1(4);
+    G1(4),
+    Epsilon(5),
+    Z(6);
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 

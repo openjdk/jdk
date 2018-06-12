@@ -192,10 +192,8 @@ const DecoratorSet IN_HEAP            = UCONST64(1) << 20;
 const DecoratorSet IN_HEAP_ARRAY      = UCONST64(1) << 21;
 const DecoratorSet IN_ROOT            = UCONST64(1) << 22;
 const DecoratorSet IN_CONCURRENT_ROOT = UCONST64(1) << 23;
-const DecoratorSet IN_ARCHIVE_ROOT    = UCONST64(1) << 24;
 const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_HEAP_ARRAY |
-                                        IN_ROOT | IN_CONCURRENT_ROOT |
-                                        IN_ARCHIVE_ROOT;
+                                        IN_ROOT | IN_CONCURRENT_ROOT;
 
 // == Value Decorators ==
 // * OOP_NOT_NULL: This property can make certain barriers faster such as compressing oops.
@@ -245,9 +243,7 @@ namespace AccessInternal {
       ((IN_HEAP_ARRAY & barrier_strength_default) != 0 ? IN_HEAP : INTERNAL_EMPTY);
     static const DecoratorSet conc_root_is_root = heap_array_is_in_heap |
       ((IN_CONCURRENT_ROOT & heap_array_is_in_heap) != 0 ? IN_ROOT : INTERNAL_EMPTY);
-    static const DecoratorSet archive_root_is_root = conc_root_is_root |
-      ((IN_ARCHIVE_ROOT & conc_root_is_root) != 0 ? IN_ROOT : INTERNAL_EMPTY);
-    static const DecoratorSet value = archive_root_is_root | BT_BUILDTIME_DECORATORS;
+    static const DecoratorSet value = conc_root_is_root | BT_BUILDTIME_DECORATORS;
   };
 
   // This function implements the above DecoratorFixup rules, but without meta
@@ -268,9 +264,7 @@ namespace AccessInternal {
       ((IN_HEAP_ARRAY & barrier_strength_default) != 0 ? IN_HEAP : INTERNAL_EMPTY);
     DecoratorSet conc_root_is_root = heap_array_is_in_heap |
       ((IN_CONCURRENT_ROOT & heap_array_is_in_heap) != 0 ? IN_ROOT : INTERNAL_EMPTY);
-    DecoratorSet archive_root_is_root = conc_root_is_root |
-      ((IN_ARCHIVE_ROOT & conc_root_is_root) != 0 ? IN_ROOT : INTERNAL_EMPTY);
-    DecoratorSet value = archive_root_is_root | BT_BUILDTIME_DECORATORS;
+    DecoratorSet value = conc_root_is_root | BT_BUILDTIME_DECORATORS;
     return value;
   }
 }

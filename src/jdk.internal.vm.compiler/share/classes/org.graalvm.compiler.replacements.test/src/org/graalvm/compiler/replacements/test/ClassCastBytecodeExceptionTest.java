@@ -38,6 +38,7 @@ import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.BytecodeExceptionNode.BytecodeExceptionKind;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -83,7 +84,7 @@ public class ClassCastBytecodeExceptionTest extends BytecodeExceptionTest {
                 Constant hub = b.getConstantReflection().asObjectHub(type);
                 Stamp hubStamp = b.getStampProvider().createHubStamp(StampFactory.object(TypeReference.createExactTrusted(type)));
                 ConstantNode hubConst = b.add(ConstantNode.forConstant(hubStamp, hub, b.getMetaAccess()));
-                return throwBytecodeException(b, ClassCastException.class, obj, hubConst);
+                return throwBytecodeException(b, BytecodeExceptionKind.CLASS_CAST, obj, hubConst);
             }
         }, Exceptions.class, "throwClassCast", Object.class, Class.class);
         super.registerInvocationPlugins(invocationPlugins);

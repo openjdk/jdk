@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import sun.util.calendar.ZoneInfo;
  *     2       Taisho      1912-07-30T00:00:00 local time
  *     3       Showa       1926-12-25T00:00:00 local time
  *     4       Heisei      1989-01-08T00:00:00 local time
+ *     5       NewEra      2019-05-01T00:00:00 local time
  * ------------------------------------------------------
  * }</pre>
  *
@@ -71,8 +72,10 @@ import sun.util.calendar.ZoneInfo;
  * </pre>
  * where
  * <dl>
- * <dt>{@code <name>:}<dd>the full name of the new era (non-ASCII characters allowed)
- * <dt>{@code <abbr>:}<dd>the abbreviation of the new era (non-ASCII characters allowed)
+ * <dt>{@code <name>:}<dd>the full name of the new era (non-ASCII characters allowed,
+ * either in platform's native encoding or in Unicode escape notation, {@code \\uXXXX})
+ * <dt>{@code <abbr>:}<dd>the abbreviation of the new era (non-ASCII characters allowed,
+ * either in platform's native encoding or in Unicode escape notation, {@code \\uXXXX})
  * <dt>{@code <time['u']>:}<dd>the start time of the new era represented by
  * milliseconds from 1970-01-01T00:00:00 local time or UTC if {@code 'u'} is
  * appended to the milliseconds value. (ASCII digits only)
@@ -125,6 +128,11 @@ class JapaneseImperialCalendar extends Calendar {
      */
     public static final int HEISEI = 4;
 
+    /**
+     * The ERA constant designating the NewEra era.
+     */
+    private static final int NEWERA = 5;
+
     private static final int EPOCH_OFFSET   = 719163; // Fixed date of January 1, 1970 (Gregorian)
 
     // Useful millisecond constants.  Although ONE_DAY and ONE_WEEK can fit
@@ -154,6 +162,9 @@ class JapaneseImperialCalendar extends Calendar {
 
     // Fixed date of the first date of each era.
     private static final long[] sinceFixedDates;
+
+    // The current era
+    private static final int currentEra;
 
     /*
      * <pre>
@@ -251,13 +262,18 @@ class JapaneseImperialCalendar extends Calendar {
         // eras[BEFORE_MEIJI] and sinceFixedDate[BEFORE_MEIJI] are the
         // same as Gregorian.
         int index = BEFORE_MEIJI;
+        int current = index;
         sinceFixedDates[index] = gcal.getFixedDate(BEFORE_MEIJI_ERA.getSinceDate());
         eras[index++] = BEFORE_MEIJI_ERA;
         for (Era e : es) {
+            if(e.getSince(TimeZone.NO_TIMEZONE) < System.currentTimeMillis()) {
+                current = index;
+            }
             CalendarDate d = e.getSinceDate();
             sinceFixedDates[index] = gcal.getFixedDate(d);
             eras[index++] = e;
         }
+        currentEra = current;
 
         LEAST_MAX_VALUES[ERA] = MAX_VALUES[ERA] = eras.length - 1;
 
@@ -1743,12 +1759,12 @@ class JapaneseImperialCalendar extends Calendar {
                     }
                 } else if (transitionYear) {
                     if (jdate.getYear() == 1) {
-                        // As of Heisei (since Meiji) there's no case
+                        // As of NewEra (since Meiji) there's no case
                         // that there are multiple transitions in a
                         // year.  Historically there was such
                         // case. There might be such case again in the
                         // future.
-                        if (era > HEISEI) {
+                        if (era > NEWERA) {
                             CalendarDate pd = eras[era - 1].getSinceDate();
                             if (normalizedYear == pd.getYear()) {
                                 d.setMonth(pd.getMonth()).setDayOfMonth(pd.getDayOfMonth());
@@ -1883,7 +1899,7 @@ class JapaneseImperialCalendar extends Calendar {
             year = isSet(YEAR) ? internalGet(YEAR) : 1;
         } else {
             if (isSet(YEAR)) {
-                era = eras.length - 1;
+                era = currentEra;
                 year = internalGet(YEAR);
             } else {
                 // Equivalent to 1970 (Gregorian)
@@ -2367,7 +2383,7 @@ class JapaneseImperialCalendar extends Calendar {
      * default ERA is the current era, but a zero (unset) ERA means before Meiji.
      */
     private int internalGetEra() {
-        return isSet(ERA) ? internalGet(ERA) : eras.length - 1;
+        return isSet(ERA) ? internalGet(ERA) : currentEra;
     }
 
     /**

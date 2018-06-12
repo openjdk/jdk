@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4989690 6259855 6706299
+ * @bug 4989690 6259855 6706299 8204565
  * @summary Check that version-related system property invariants hold.
  * @author Martin Buchholz
  */
@@ -72,13 +72,17 @@ public class Versions {
     public static void main(String [] args) throws Exception {
         String classVersion   = getProperty("java.class.version");
         String javaVersion    = getProperty("java.version");
-        String VMVersion      = getProperty("java.vm.version");
         String runtimeVersion = getProperty("java.runtime.version");
         String specVersion    = getProperty("java.specification.version");
+        String vmSpecVersion  = getProperty("java.vm.specification.version");
+        String featureVersion = Integer.toString(Runtime.version().feature());
 
         if (! (javaVersion.startsWith(specVersion) &&
-               runtimeVersion.startsWith(specVersion)))
+               runtimeVersion.startsWith(specVersion) &&
+               specVersion.equals(featureVersion) &&
+               vmSpecVersion.equals(featureVersion))) {
             throw new Exception("Invalid version-related system properties");
+        }
 
         //----------------------------------------------------------------
         // Check that java.class.version is correct.

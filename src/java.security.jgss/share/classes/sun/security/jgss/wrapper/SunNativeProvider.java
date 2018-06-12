@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ public final class SunNativeProvider extends Provider {
         "sun.security.jgss.wrapper.NativeGSSFactory";
     private static final String LIB_PROP = "sun.security.jgss.lib";
     private static final String DEBUG_PROP = "sun.security.nativegss.debug";
-    private static HashMap<String, String> MECH_MAP;
-    static final Provider INSTANCE = new SunNativeProvider();
+    private static final HashMap<String, String> MECH_MAP;
+    static final Provider INSTANCE;
     static boolean DEBUG;
     static void debug(String message) {
         if (DEBUG) {
@@ -117,6 +117,8 @@ public final class SunNativeProvider extends Provider {
                         return null;
                     }
                 });
+        // initialize INSTANCE after MECH_MAP is constructed
+        INSTANCE = new SunNativeProvider();
     }
 
     public SunNativeProvider() {

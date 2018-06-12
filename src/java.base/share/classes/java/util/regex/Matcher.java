@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * An engine that performs match operations on a {@linkplain java.lang.CharSequence
- * character sequence} by interpreting a {@link Pattern}.
+ * An engine that performs match operations on a {@linkplain
+ * java.lang.CharSequence character sequence} by interpreting a {@link Pattern}.
  *
  * <p> A matcher is created from a pattern by invoking the pattern's {@link
  * Pattern#matcher matcher} method.  Once created, a matcher can be used to
@@ -52,8 +52,8 @@ import java.util.stream.StreamSupport;
  *   <li><p> The {@link #lookingAt lookingAt} method attempts to match the
  *   input sequence, starting at the beginning, against the pattern.  </p></li>
  *
- *   <li><p> The {@link #find find} method scans the input sequence looking for
- *   the next subsequence that matches the pattern.  </p></li>
+ *   <li><p> The {@link #find find} method scans the input sequence looking
+ *   for the next subsequence that matches the pattern.  </p></li>
  *
  * </ul>
  *
@@ -63,12 +63,12 @@ import java.util.stream.StreamSupport;
  *
  * <p> A matcher finds matches in a subset of its input called the
  * <i>region</i>. By default, the region contains all of the matcher's input.
- * The region can be modified via the {@link #region region} method and queried
- * via the {@link #regionStart regionStart} and {@link #regionEnd regionEnd}
- * methods. The way that the region boundaries interact with some pattern
- * constructs can be changed. See {@link #useAnchoringBounds
- * useAnchoringBounds} and {@link #useTransparentBounds useTransparentBounds}
- * for more details.
+ * The region can be modified via the {@link #region(int, int) region} method
+ * and queried via the {@link #regionStart() regionStart} and {@link
+ * #regionEnd() regionEnd} methods. The way that the region boundaries interact
+ * with some pattern constructs can be changed. See {@link
+ * #useAnchoringBounds(boolean) useAnchoringBounds} and {@link
+ * #useTransparentBounds(boolean) useTransparentBounds} for more details.
  *
  * <p> This class also defines methods for replacing matched subsequences with
  * new strings whose contents can, if desired, be computed from the match
@@ -586,8 +586,8 @@ public final class Matcher implements MatchResult {
      *
      * <p> For a matcher <i>m</i> with input sequence <i>s</i>,
      * the expressions <i>m.</i>{@code group()} and
-     * <i>s.</i>{@code substring(}<i>m.</i>{@code start(),}&nbsp;<i>m.</i>{@code end())}
-     * are equivalent.  </p>
+     * <i>s.</i>{@code substring(}<i>m.</i>{@code start(),}&nbsp;<i>m.</i>
+     * {@code end())} are equivalent.  </p>
      *
      * <p> Note that some patterns, for example {@code a*}, match the empty
      * string.  This method will return the empty string when the pattern
@@ -652,8 +652,8 @@ public final class Matcher implements MatchResult {
 
     /**
      * Returns the input subsequence captured by the given
-     * <a href="Pattern.html#groupname">named-capturing group</a> during the previous
-     * match operation.
+     * <a href="Pattern.html#groupname">named-capturing group</a> during the
+     * previous match operation.
      *
      * <p> If the match was successful but the group specified failed to match
      * any part of the input sequence, then {@code null} is returned. Note
@@ -866,9 +866,9 @@ public final class Matcher implements MatchResult {
      * string.
      *
      * <p> This method is intended to be used in a loop together with the
-     * {@link #appendTail appendTail} and {@link #find find} methods.  The
-     * following code, for example, writes {@code one dog two dogs in the
-     * yard} to the standard-output stream: </p>
+     * {@link #appendTail(StringBuffer) appendTail} and {@link #find() find}
+     * methods.  The following code, for example, writes {@code one dog two dogs
+     * in the yard} to the standard-output stream: </p>
      *
      * <blockquote><pre>
      * Pattern p = Pattern.compile("cat");
@@ -959,9 +959,9 @@ public final class Matcher implements MatchResult {
      * string.
      *
      * <p> This method is intended to be used in a loop together with the
-     * {@link #appendTail appendTail} and {@link #find find} methods.  The
-     * following code, for example, writes {@code one dog two dogs in the
-     * yard} to the standard-output stream: </p>
+     * {@link #appendTail(StringBuilder) appendTail} and
+     * {@link #find() find} methods. The following code, for example, writes
+     * {@code one dog two dogs in the yard} to the standard-output stream: </p>
      *
      * <blockquote><pre>
      * Pattern p = Pattern.compile("cat");
@@ -1104,8 +1104,8 @@ public final class Matcher implements MatchResult {
      * <p> This method reads characters from the input sequence, starting at
      * the append position, and appends them to the given string buffer.  It is
      * intended to be invoked after one or more invocations of the {@link
-     * #appendReplacement appendReplacement} method in order to copy the
-     * remainder of the input sequence.  </p>
+     * #appendReplacement(StringBuffer, String) appendReplacement} method in
+     * order to copy the remainder of the input sequence.  </p>
      *
      * @param  sb
      *         The target string buffer
@@ -1123,8 +1123,9 @@ public final class Matcher implements MatchResult {
      * <p> This method reads characters from the input sequence, starting at
      * the append position, and appends them to the given string builder.  It is
      * intended to be invoked after one or more invocations of the {@link
-     * #appendReplacement appendReplacement} method in order to copy the
-     * remainder of the input sequence.  </p>
+     * #appendReplacement(StringBuilder, String)
+     * appendReplacement} method in order to copy the remainder of the input
+     * sequence.  </p>
      *
      * @param  sb
      *         The target string builder
@@ -1490,10 +1491,10 @@ public final class Matcher implements MatchResult {
      * index specified by the {@code end} parameter.
      *
      * <p>Depending on the transparency and anchoring being used (see
-     * {@link #useTransparentBounds useTransparentBounds} and
-     * {@link #useAnchoringBounds useAnchoringBounds}), certain constructs such
-     * as anchors may behave differently at or around the boundaries of the
-     * region.
+     * {@link #useTransparentBounds(boolean) useTransparentBounds} and
+     * {@link #useAnchoringBounds(boolean) useAnchoringBounds}), certain
+     * constructs such as anchors may behave differently at or around the
+     * boundaries of the region.
      *
      * @param  start
      *         The index to start searching at (inclusive)
@@ -1523,8 +1524,8 @@ public final class Matcher implements MatchResult {
     /**
      * Reports the start index of this matcher's region. The
      * searches this matcher conducts are limited to finding matches
-     * within {@link #regionStart regionStart} (inclusive) and
-     * {@link #regionEnd regionEnd} (exclusive).
+     * within {@link #regionStart() regionStart} (inclusive) and
+     * {@link #regionEnd() regionEnd} (exclusive).
      *
      * @return  The starting point of this matcher's region
      * @since 1.5
@@ -1536,8 +1537,8 @@ public final class Matcher implements MatchResult {
     /**
      * Reports the end index (exclusive) of this matcher's region.
      * The searches this matcher conducts are limited to finding matches
-     * within {@link #regionStart regionStart} (inclusive) and
-     * {@link #regionEnd regionEnd} (exclusive).
+     * within {@link #regionStart() regionStart} (inclusive) and
+     * {@link #regionEnd() regionEnd} (exclusive).
      *
      * @return  the ending point of this matcher's region
      * @since 1.5
@@ -1553,7 +1554,7 @@ public final class Matcher implements MatchResult {
      * <i>transparent</i> bounds, {@code false} if it uses <i>opaque</i>
      * bounds.
      *
-     * <p> See {@link #useTransparentBounds useTransparentBounds} for a
+     * <p> See {@link #useTransparentBounds(boolean) useTransparentBounds} for a
      * description of transparent and opaque bounds.
      *
      * <p> By default, a matcher uses opaque region boundaries.
@@ -1604,7 +1605,7 @@ public final class Matcher implements MatchResult {
      * <p> This method returns {@code true} if this matcher uses
      * <i>anchoring</i> bounds, {@code false} otherwise.
      *
-     * <p> See {@link #useAnchoringBounds useAnchoringBounds} for a
+     * <p> See {@link #useAnchoringBounds(boolean) useAnchoringBounds} for a
      * description of anchoring bounds.
      *
      * <p> By default, a matcher uses anchoring region boundaries.
@@ -1770,18 +1771,18 @@ public final class Matcher implements MatchResult {
     }
 
     /**
-     * Generates a String from this Matcher's input in the specified range.
+     * Generates a String from this matcher's input in the specified range.
      *
      * @param  beginIndex   the beginning index, inclusive
      * @param  endIndex     the ending index, exclusive
-     * @return A String generated from this Matcher's input
+     * @return A String generated from this matcher's input
      */
     CharSequence getSubSequence(int beginIndex, int endIndex) {
         return text.subSequence(beginIndex, endIndex);
     }
 
     /**
-     * Returns this Matcher's input character at index i.
+     * Returns this matcher's input character at index i.
      *
      * @return A char from the specified index
      */

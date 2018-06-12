@@ -29,9 +29,8 @@ include LibCommon.gmk
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAAS, \
     NAME := jaas, \
-    SRC := $(call FindSrcDirsForLib, jdk.security.auth, jaas), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) -I$(SUPPORT_OUTPUTDIR)/headers/jdk.security.auth, \
+    CFLAGS := $(CFLAGS_JDKLIB), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_windows := netapi32.lib user32.lib mpr.lib advapi32.lib $(JDKLIB_LIBS), \

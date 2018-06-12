@@ -25,8 +25,7 @@
  * @test TestReclaimStringsLeaksMemory
  * @bug 8180048
  * @summary Ensure that during a Full GC interned string memory is reclaimed completely.
- * @requires vm.gc=="null"
- * @requires !vm.debug
+ * @requires vm.gc=="null" & !vm.graal.enabled & !vm.debug
  * @key gc
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

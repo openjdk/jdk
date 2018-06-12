@@ -54,9 +54,10 @@ enum hb_ot_shape_zero_width_marks_type_t {
   HB_COMPLEX_SHAPER_IMPLEMENT (arabic) \
   HB_COMPLEX_SHAPER_IMPLEMENT (hangul) \
   HB_COMPLEX_SHAPER_IMPLEMENT (hebrew) \
-  HB_COMPLEX_SHAPER_IMPLEMENT (myanmar_old) \
   HB_COMPLEX_SHAPER_IMPLEMENT (indic) \
+  HB_COMPLEX_SHAPER_IMPLEMENT (khmer) \
   HB_COMPLEX_SHAPER_IMPLEMENT (myanmar) \
+  HB_COMPLEX_SHAPER_IMPLEMENT (myanmar_old) \
   HB_COMPLEX_SHAPER_IMPLEMENT (thai) \
   HB_COMPLEX_SHAPER_IMPLEMENT (tibetan) \
   HB_COMPLEX_SHAPER_IMPLEMENT (use) \
@@ -285,7 +286,7 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
                                               planner->map.language_index[0],
                                               HB_TAG ('p','r','e','f'),
                                               nullptr))
-        return &_hb_ot_complex_shaper_indic;
+        return &_hb_ot_complex_shaper_khmer;
       else
         return &_hb_ot_complex_shaper_default;
 

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     4413109 4418221 6607198 8147448
+ * @bug     4413109 4418221 6607198 8147448 8204187
  * @run     main BitDepth
  * @summary Checks that ImageIO writers for standard formats can handle
  *          various BufferedImage RGB types. An optional list of arguments
@@ -197,6 +197,7 @@ public class BitDepth {
         if (!writers.hasNext()) {
             System.out.println("\tNo writers available for type " + biTypeNames[type]
                                + " BufferedImage!");
+            return null;
         } else {
             ImageWriter writer = writers.next();
             try (ImageOutputStream out = ImageIO.createImageOutputStream(file)) {
@@ -205,7 +206,7 @@ public class BitDepth {
             } catch (Exception e) {
                 System.out.println("\tCan't write a type " +  biTypeNames[type]
                            + " BufferedImage!");
-                return null;
+                throw new RuntimeException(e);
             }
         }
 

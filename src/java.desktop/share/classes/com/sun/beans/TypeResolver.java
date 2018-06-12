@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,7 +324,7 @@ public final class TypeResolver {
     /**
      * Replaces a {@link GenericArrayType GenericArrayType}
      * with plain array class where it is possible.
-     * Bug <a href="http://bugs.sun.com/view_bug.do?bug_id=5041784">5041784</a>
+     * Bug <a href="https://bugs.java.com/view_bug.do?bug_id=5041784">5041784</a>
      * is that arrays of non-generic type sometimes show up
      * as {@link GenericArrayType GenericArrayType} when using reflection.
      * For example, a {@code String[]} might show up

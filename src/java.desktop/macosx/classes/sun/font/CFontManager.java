@@ -220,12 +220,12 @@ public final class CFontManager extends SunFontManager {
             );
 
             String defaultFont = "Lucida Grande";
-            String defaultFallback = "Lucida Sans";
+            String defaultFallback = "Lucida Grande";
 
             setupLogicalFonts("Dialog", defaultFont, defaultFallback);
-            setupLogicalFonts("Serif", "Times", "Lucida Bright");
+            setupLogicalFonts("Serif", "Times", "Times");
             setupLogicalFonts("SansSerif", defaultFont, defaultFallback);
-            setupLogicalFonts("Monospaced", "Menlo", "Lucida Sans Typewriter");
+            setupLogicalFonts("Monospaced", "Menlo", "Courier");
             setupLogicalFonts("DialogInput", defaultFont, defaultFallback);
         }
     }

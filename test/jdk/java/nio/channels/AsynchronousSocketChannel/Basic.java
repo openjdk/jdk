@@ -25,9 +25,10 @@
  * @bug 4607272 6842687 6878369 6944810 7023403
  * @summary Unit test for AsynchronousSocketChannel(use -Dseed=X to set PRNG seed)
  * @library /test/lib
+ * @modules jdk.net
+ * @key randomness intermittent
  * @build jdk.test.lib.RandomFactory jdk.test.lib.Utils
  * @run main/othervm/timeout=600 Basic -skipSlowConnectTest
- * @key randomness intermittent
  */
 
 import java.io.Closeable;
@@ -41,6 +42,10 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import jdk.test.lib.RandomFactory;
+import java.util.List;
+import static jdk.net.ExtendedSocketOptions.TCP_KEEPCOUNT;
+import static jdk.net.ExtendedSocketOptions.TCP_KEEPIDLE;
+import static jdk.net.ExtendedSocketOptions.TCP_KEEPINTERVAL;
 
 public class Basic {
     private static final Random RAND = RandomFactory.getRandom();
@@ -183,9 +188,26 @@ public class Basic {
                 if (!ch.setOption(SO_REUSEPORT, true).getOption(SO_REUSEPORT))
                     throw new RuntimeException("SO_REUSEPORT did not change");
             }
+            List<? extends SocketOption> extOptions = List.of(TCP_KEEPCOUNT,
+                    TCP_KEEPIDLE, TCP_KEEPINTERVAL);
+            if (options.containsAll(extOptions)) {
+                ch.setOption(TCP_KEEPIDLE, 1234);
+                checkOption(ch, TCP_KEEPIDLE, 1234);
+                ch.setOption(TCP_KEEPINTERVAL, 123);
+                checkOption(ch, TCP_KEEPINTERVAL, 123);
+                ch.setOption(TCP_KEEPCOUNT, 7);
+                checkOption(ch, TCP_KEEPCOUNT, 7);
+            }
         }
     }
 
+    static void checkOption(AsynchronousSocketChannel sc, SocketOption name, Object expectedValue)
+            throws IOException {
+        Object value = sc.getOption(name);
+        if (!value.equals(expectedValue)) {
+            throw new RuntimeException("value not as expected");
+        }
+    }
     static void testConnect() throws Exception {
         System.out.println("-- connect --");
 

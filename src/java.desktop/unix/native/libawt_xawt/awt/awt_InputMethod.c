@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,17 @@
     #error This file should not be included in headless library
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
-#include <sys/time.h>
-
 #include "awt.h"
 #include "awt_p.h"
 
-#include <sun_awt_X11InputMethod.h>
+#include <sun_awt_X11InputMethodBase.h>
 #include <sun_awt_X11_XInputMethod.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <X11/keysym.h>
+#include <X11/Xlib.h>
 
 #define THROW_OUT_OF_MEMORY_ERROR() \
         JNU_ThrowOutOfMemoryError((JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2), NULL)
@@ -536,10 +536,10 @@ awt_x11inputmethod_lookupString(XKeyPressedEvent *event, KeySym *keysymp)
         composing = False;
         /*FALLTHRU*/
     case XLookupChars:
-    /*
-     printf("lookupString: status=XLookupChars, type=%d, state=%x, keycode=%x, keysym=%x\n",
-       event->type, event->state, event->keycode, keysym);
-    */
+        /*
+        printf("lookupString: status=XLookupChars, type=%d, state=%x, keycode=%x, keysym=%x\n",
+               event->type, event->state, event->keycode, keysym);
+        */
         javastr = JNU_NewStringPlatform(env, (const char *)pX11IMData->lookup_buf);
         if (javastr != NULL) {
             JNU_CallMethodByName(env, NULL,
@@ -552,10 +552,10 @@ awt_x11inputmethod_lookupString(XKeyPressedEvent *event, KeySym *keysymp)
         break;
 
     case XLookupKeySym:
-    /*
-     printf("lookupString: status=XLookupKeySym, type=%d, state=%x, keycode=%x, keysym=%x\n",
-       event->type, event->state, event->keycode, keysym);
-    */
+        /*
+        printf("lookupString: status=XLookupKeySym, type=%d, state=%x, keycode=%x, keysym=%x\n",
+               event->type, event->state, event->keycode, keysym);
+        */
         if (keysym == XK_Multi_key)
             composing = True;
         if (! composing) {
@@ -565,10 +565,10 @@ awt_x11inputmethod_lookupString(XKeyPressedEvent *event, KeySym *keysymp)
         break;
 
     case XLookupNone:
-    /*
-     printf("lookupString: status=XLookupNone, type=%d, state=%x, keycode=%x, keysym=%x\n",
-        event->type, event->state, event->keycode, keysym);
-    */
+        /*
+        printf("lookupString: status=XLookupNone, type=%d, state=%x, keycode=%x, keysym=%x\n",
+               event->type, event->state, event->keycode, keysym);
+        */
         break;
     }
 
@@ -576,8 +576,7 @@ awt_x11inputmethod_lookupString(XKeyPressedEvent *event, KeySym *keysymp)
 }
 
 #if defined(__linux__) || defined(MACOSX)
-static StatusWindow *createStatusWindow(
-                                Window parent) {
+static StatusWindow *createStatusWindow(Window parent) {
     StatusWindow *statusWindow;
     XSetWindowAttributes attrib;
     unsigned long attribmask;
@@ -600,7 +599,7 @@ static StatusWindow *createStatusWindow(
     AwtGraphicsConfigDataPtr adata;
     extern int awt_numScreens;
     /*hardcode the size right now, should get the size base on font*/
-    int   width=80, height=22;
+    int width=80, height=22;
     Window rootWindow;
     Window *ignoreWindowPtr;
     unsigned int ignoreUnit;
@@ -652,10 +651,10 @@ static StatusWindow *createStatusWindow(
     if (xx < 0 ){
         xx = 0;
     }
-    if (xx + width > xxwa.width){
+    if (xx + width > xxwa.width) {
         xx = xxwa.width - width;
     }
-    if (yy + height > xxwa.height){
+    if (yy + height > xxwa.height) {
         yy = xxwa.height - height;
     }
 
@@ -724,7 +723,7 @@ static void onoffStatusWindow(X11InputMethodData* pX11IMData,
         return;
     }
 
-    if (ON == False){
+    if (ON == False) {
         XUnmapWindow(dpy, statusWindow->w);
         statusWindow->on = False;
         return;
@@ -732,7 +731,7 @@ static void onoffStatusWindow(X11InputMethodData* pX11IMData,
     parent = JNU_CallMethodByName(GetJNIEnv(), NULL, pX11IMData->x11inputmethod,
                                   "getCurrentParentWindow",
                                   "()J").j;
-    if (statusWindow->parent != parent){
+    if (statusWindow->parent != parent) {
         statusWindow->parent = parent;
     }
     XGetWindowAttributes(dpy, parent, &xwa);
@@ -741,21 +740,22 @@ static void onoffStatusWindow(X11InputMethodData* pX11IMData,
                           xwa.x, xwa.y,
                           &x, &y,
                           &child);
-    if (statusWindow->x != x
-        || statusWindow->y != y
-        || statusWindow->height != xwa.height){
+    if (statusWindow->x != x ||
+        statusWindow->y != y ||
+        statusWindow->height != xwa.height)
+    {
         statusWindow->x = x;
         statusWindow->y = y;
         statusWindow->height = xwa.height;
         x = statusWindow->x - statusWindow->off_x;
         y = statusWindow->y + statusWindow->height - statusWindow->off_y;
-        if (x < 0 ){
+        if (x < 0 ) {
             x = 0;
         }
-        if (x + statusWindow->statusW > statusWindow->rootW){
+        if (x + statusWindow->statusW > statusWindow->rootW) {
             x = statusWindow->rootW - statusWindow->statusW;
         }
-        if (y + statusWindow->statusH > statusWindow->rootH){
+        if (y + statusWindow->statusH > statusWindow->rootH) {
             y = statusWindow->rootH - statusWindow->statusH;
         }
         XMoveWindow(dpy, statusWindow->w, x, y);
@@ -790,61 +790,19 @@ void paintStatusWindow(StatusWindow *statusWindow){
     XDrawLine(dpy, win, dimgc, 2, height-3, width-bwidth-1, height-3);
     XDrawLine(dpy, win, dimgc, 2, 2, width-bwidth-2, 2);
     XDrawLine(dpy, win, dimgc, width-bwidth, 2, width-bwidth, height-3);
-    if (statusWindow->fontset){
+    if (statusWindow->fontset) {
         XmbDrawString(dpy, win, statusWindow->fontset, fggc,
                       bwidth + 2, height - bwidth - 4,
                       statusWindow->status,
                       strlen(statusWindow->status));
-    }
-    else{
+    } else {
         /*too bad we failed to create a fontset for this locale*/
         XDrawString(dpy, win, fggc, bwidth + 2, height - bwidth - 4,
                     "[InputMethod ON]", strlen("[InputMethod ON]"));
     }
 }
 
-void statusWindowEventHandler(XEvent event){
-    JNIEnv *env = GetJNIEnv();
-    X11InputMethodData *pX11IMData = NULL;
-    StatusWindow *statusWindow;
-
-    if (!isX11InputMethodGRefInList(currentX11InputMethodInstance)) {
-        currentX11InputMethodInstance = NULL;
-        return;
-    }
-
-    if (NULL == currentX11InputMethodInstance
-        || NULL == (pX11IMData = getX11InputMethodData(env, currentX11InputMethodInstance))
-        || NULL == (statusWindow = pX11IMData->statusWindow)
-        || statusWindow->w != event.xany.window){
-        return;
-    }
-
-    switch (event.type){
-    case Expose:
-        paintStatusWindow(statusWindow);
-        break;
-    case MapNotify:
-    case ConfigureNotify:
-        {
-          /*need to reset the stackMode...*/
-            XWindowChanges xwc;
-            int value_make = CWStackMode;
-            xwc.stack_mode = TopIf;
-            XConfigureWindow(dpy, statusWindow->w, value_make, &xwc);
-        }
-        break;
-        /*
-    case UnmapNotify:
-    case VisibilityNotify:
-        break;
-        */
-    default:
-        break;
-  }
-}
-
-static void adjustStatusWindow(Window shell){
+static void adjustStatusWindow(Window shell) {
     JNIEnv *env = GetJNIEnv();
     X11InputMethodData *pX11IMData = NULL;
     StatusWindow *statusWindow;
@@ -853,9 +811,11 @@ static void adjustStatusWindow(Window shell){
         || !isX11InputMethodGRefInList(currentX11InputMethodInstance)
         || NULL == (pX11IMData = getX11InputMethodData(env,currentX11InputMethodInstance))
         || NULL == (statusWindow = pX11IMData->statusWindow)
-        || !statusWindow->on) {
+        || !statusWindow->on)
+    {
         return;
     }
+
     {
         XWindowAttributes xwa;
         int x, y;
@@ -875,7 +835,7 @@ static void adjustStatusWindow(Window shell){
 
           x = statusWindow->x - statusWindow->off_x;
           y = statusWindow->y + statusWindow->height - statusWindow->off_y;
-          if (x < 0 ){
+          if (x < 0 ) {
               x = 0;
           }
           if (x + statusWindow->statusW > statusWindow->rootW){
@@ -889,6 +849,7 @@ static void adjustStatusWindow(Window shell){
     }
 }
 #endif  /* __linux__ || MACOSX */
+
 /*
  * Creates two XICs, one for active clients and the other for passive
  * clients. All information on those XICs are stored in the
@@ -931,9 +892,9 @@ createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
         return FALSE ;
     }
 
-#if defined(__linux__) || defined(MACOSX)
     on_the_spot_styles |= XIMStatusNothing;
 
+#if defined(__linux__) || defined(MACOSX)
     /*kinput does not support XIMPreeditCallbacks and XIMStatusArea
       at the same time, so use StatusCallback to draw the status
       ourself
@@ -944,8 +905,6 @@ createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
             break;
         }
     }
-#else /*! __linux__ && !MACOSX */
-    on_the_spot_styles |= XIMStatusNothing;
 #endif /* __linux__ || MACOSX */
 
     for (i = 0; i < im_styles->count_styles; i++) {
@@ -1023,12 +982,12 @@ createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
             XFree((void *)preedit);
         }
 #else /* !__linux__ && !MACOSX */
-            pX11IMData->ic_active = XCreateIC(X11im,
-                                              XNClientWindow, w,
-                                              XNFocusWindow, w,
-                                              XNInputStyle, active_styles,
-                                              XNPreeditAttributes, preedit,
-                                              NULL);
+        pX11IMData->ic_active = XCreateIC(X11im,
+                                          XNClientWindow, w,
+                                          XNFocusWindow, w,
+                                          XNInputStyle, active_styles,
+                                          XNPreeditAttributes, preedit,
+                                          NULL);
         XFree((void *)preedit);
 #endif /* __linux__ || MACOSX */
     } else {
@@ -1075,14 +1034,14 @@ static void
 PreeditStartCallback(XIC ic, XPointer client_data, XPointer call_data)
 {
     /*ARGSUSED*/
-    /* printf("Native: PreeditCaretCallback\n"); */
+    /* printf("Native: PreeditStartCallback\n"); */
 }
 
 static void
 PreeditDoneCallback(XIC ic, XPointer client_data, XPointer call_data)
 {
     /*ARGSUSED*/
-    /* printf("Native: StatusStartCallback\n"); */
+    /* printf("Native: PreeditDoneCallback\n"); */
 }
 
 /*
@@ -1187,7 +1146,6 @@ PreeditCaretCallback(XIC ic, XPointer client_data,
 {
     /*ARGSUSED*/
     /* printf("Native: PreeditCaretCallback\n"); */
-
 }
 
 #if defined(__linux__) || defined(MACOSX)
@@ -1196,7 +1154,6 @@ StatusStartCallback(XIC ic, XPointer client_data, XPointer call_data)
 {
     /*ARGSUSED*/
     /*printf("StatusStartCallback:\n");  */
-
 }
 
 static void
@@ -1204,7 +1161,6 @@ StatusDoneCallback(XIC ic, XPointer client_data, XPointer call_data)
 {
     /*ARGSUSED*/
     /*printf("StatusDoneCallback:\n"); */
-
 }
 
 static void
@@ -1230,25 +1186,23 @@ StatusDrawCallback(XIC ic, XPointer client_data,
         || NULL == (statusWindow = pX11IMData->statusWindow)){
         goto finally;
     }
-   currentX11InputMethodInstance = (jobject)client_data;
+    currentX11InputMethodInstance = (jobject)client_data;
 
-    if (status_draw->type == XIMTextType){
+    if (status_draw->type == XIMTextType) {
         XIMText *text = (status_draw->data).text;
-        if (text != NULL){
-          if (text->string.multi_byte != NULL) {
-              strncpy(statusWindow->status, text->string.multi_byte, MAX_STATUS_LEN);
-              statusWindow->status[MAX_STATUS_LEN - 1] = '\0';
-          }
-          else {
-              char *mbstr = wcstombsdmp(text->string.wide_char, text->length);
-              strncpy(statusWindow->status, mbstr, MAX_STATUS_LEN);
-              statusWindow->status[MAX_STATUS_LEN - 1] = '\0';
-          }
-          statusWindow->on = True;
-          onoffStatusWindow(pX11IMData, statusWindow->parent, True);
-          paintStatusWindow(statusWindow);
-        }
-        else {
+        if (text != NULL) {
+            if (text->string.multi_byte != NULL) {
+                strncpy(statusWindow->status, text->string.multi_byte, MAX_STATUS_LEN);
+                statusWindow->status[MAX_STATUS_LEN - 1] = '\0';
+            } else {
+                char *mbstr = wcstombsdmp(text->string.wide_char, text->length);
+                strncpy(statusWindow->status, mbstr, MAX_STATUS_LEN);
+                statusWindow->status[MAX_STATUS_LEN - 1] = '\0';
+            }
+            statusWindow->on = True;
+            onoffStatusWindow(pX11IMData, statusWindow->parent, True);
+            paintStatusWindow(statusWindow);
+        } else {
             statusWindow->on = False;
             /*just turnoff the status window
             paintStatusWindow(statusWindow);
@@ -1327,26 +1281,10 @@ static void DestroyXIMCallback(XIM im, XPointer client_data, XPointer call_data)
     X11InputMethodData *pX11IMData = getX11InputMethodData(env, currentX11InputMethodInstance);
 }
 
-/*
- * Class:     sun_awt_X11InputMethod
- * Method:    initIDs
- * Signature: ()V
- */
-
-/* This function gets called from the static initializer for
-   X11InputMethod.java
-   to initialize the fieldIDs for fields that may be accessed from C */
-JNIEXPORT void JNICALL
-Java_sun_awt_X11InputMethod_initIDs(JNIEnv *env, jclass cls)
-{
-    x11InputMethodIDs.pData = (*env)->GetFieldID(env, cls, "pData", "J");
-}
-
-
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11_XInputMethod_openXIMNative(JNIEnv *env,
-                                          jobject this,
-                                          jlong display)
+                                            jobject this,
+                                            jlong display)
 {
     Bool registered;
 
@@ -1375,8 +1313,8 @@ Java_sun_awt_X11_XInputMethod_openXIMNative(JNIEnv *env,
 
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11_XInputMethod_createXICNative(JNIEnv *env,
-                                                  jobject this,
-                                                  jlong window)
+                                              jobject this,
+                                              jlong window)
 {
     X11InputMethodData *pX11IMData;
     jobject globalRef;
@@ -1423,10 +1361,10 @@ finally:
 
 JNIEXPORT void JNICALL
 Java_sun_awt_X11_XInputMethod_setXICFocusNative(JNIEnv *env,
-                                              jobject this,
-                                              jlong w,
-                                              jboolean req,
-                                              jboolean active)
+                                                jobject this,
+                                                jlong w,
+                                                jboolean req,
+                                                jboolean active)
 {
     X11InputMethodData *pX11IMData;
     AWT_LOCK();
@@ -1471,9 +1409,27 @@ Java_sun_awt_X11_XInputMethod_setXICFocusNative(JNIEnv *env,
     AWT_UNLOCK();
 }
 
-JNIEXPORT void JNICALL
-Java_sun_awt_X11InputMethod_turnoffStatusWindow(JNIEnv *env,
-                                                jobject this)
+/*
+ * Class:     sun_awt_X11InputMethodBase
+ * Method:    initIDs
+ * Signature: ()V
+ * This function gets called from the static initializer for
+ * X11InputMethod.java to initialize the fieldIDs for fields
+ * that may be accessed from C
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11InputMethodBase_initIDs
+  (JNIEnv *env, jclass cls)
+{
+    x11InputMethodIDs.pData = (*env)->GetFieldID(env, cls, "pData", "J");
+}
+
+/*
+ * Class:     sun_awt_X11InputMethodBase
+ * Method:    turnoffStatusWindow
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11InputMethodBase_turnoffStatusWindow
+  (JNIEnv *env, jobject this)
 {
 #if defined(__linux__) || defined(MACOSX)
     X11InputMethodData *pX11IMData;
@@ -1495,9 +1451,13 @@ Java_sun_awt_X11InputMethod_turnoffStatusWindow(JNIEnv *env,
 #endif
 }
 
-JNIEXPORT void JNICALL
-Java_sun_awt_X11InputMethod_disposeXIC(JNIEnv *env,
-                                             jobject this)
+/*
+ * Class:     sun_awt_X11InputMethodBase
+ * Method:    disposeXIC
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11InputMethodBase_disposeXIC
+  (JNIEnv *env, jobject this)
 {
     X11InputMethodData *pX11IMData = NULL;
 
@@ -1518,9 +1478,13 @@ Java_sun_awt_X11InputMethod_disposeXIC(JNIEnv *env,
     AWT_UNLOCK();
 }
 
-JNIEXPORT jstring JNICALL
-Java_sun_awt_X11InputMethod_resetXIC(JNIEnv *env,
-                                           jobject this)
+/*
+ * Class:     sun_awt_X11InputMethodBase
+ * Method:    resetXIC
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_sun_awt_X11InputMethodBase_resetXIC
+  (JNIEnv *env, jobject this)
 {
     X11InputMethodData *pX11IMData;
     char *xText = NULL;
@@ -1564,9 +1528,9 @@ Java_sun_awt_X11InputMethod_resetXIC(JNIEnv *env,
 }
 
 /*
- * Class:     sun_awt_X11InputMethod
+ * Class:     sun_awt_X11InputMethodBase
  * Method:    setCompositionEnabledNative
- * Signature: (ZJ)V
+ * Signature: (Z)Z
  *
  * This method tries to set the XNPreeditState attribute associated with the current
  * XIC to the passed in 'enable' state.
@@ -1575,9 +1539,8 @@ Java_sun_awt_X11InputMethod_resetXIC(JNIEnv *env,
  * 'enable' state; Otherwise, if XSetICValues fails to set this attribute,
  * java.lang.UnsupportedOperationException will be thrown. JNI_FALSE is returned if this
  * method fails due to other reasons.
- *
  */
-JNIEXPORT jboolean JNICALL Java_sun_awt_X11InputMethod_setCompositionEnabledNative
+JNIEXPORT jboolean JNICALL Java_sun_awt_X11InputMethodBase_setCompositionEnabledNative
   (JNIEnv *env, jobject this, jboolean enable)
 {
     X11InputMethodData *pX11IMData;
@@ -1603,18 +1566,17 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11InputMethod_setCompositionEnabledNati
 }
 
 /*
- * Class:     sun_awt_X11InputMethod
+ * Class:     sun_awt_X11InputMethodBase
  * Method:    isCompositionEnabledNative
- * Signature: (J)Z
+ * Signature: ()Z
  *
  * This method tries to get the XNPreeditState attribute associated with the current XIC.
  *
  * Return JNI_TRUE if the XNPreeditState is successfully retrieved. Otherwise, if
  * XGetICValues fails to get this attribute, java.lang.UnsupportedOperationException
  * will be thrown. JNI_FALSE is returned if this method fails due to other reasons.
- *
  */
-JNIEXPORT jboolean JNICALL Java_sun_awt_X11InputMethod_isCompositionEnabledNative
+JNIEXPORT jboolean JNICALL Java_sun_awt_X11InputMethodBase_isCompositionEnabledNative
   (JNIEnv *env, jobject this)
 {
     X11InputMethodData *pX11IMData = NULL;

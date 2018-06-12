@@ -40,8 +40,12 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.LongStream;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -97,6 +101,87 @@ public class TimeUnit8Test extends JSR166TestCase {
                 continue;
             }
             assertSame(cu, tu.toChronoUnit());
+        }
+    }
+
+    /**
+     * convert(Duration) roundtrips with Duration.ofXXXX and Duration.of(long, ChronoUnit)
+     */
+    public void testConvertDuration_roundtripDurationOf() {
+        long n = ThreadLocalRandom.current().nextLong();
+
+        assertEquals(n, NANOSECONDS.convert(Duration.ofNanos(n)));
+        assertEquals(n, NANOSECONDS.convert(Duration.of(n, ChronoUnit.NANOS)));
+        assertEquals(n, MILLISECONDS.convert(Duration.ofMillis(n)));
+        assertEquals(n, MILLISECONDS.convert(Duration.of(n, ChronoUnit.MILLIS)));
+        assertEquals(n, SECONDS.convert(Duration.ofSeconds(n)));
+        assertEquals(n, SECONDS.convert(Duration.of(n, ChronoUnit.SECONDS)));
+        n /= 60;
+        assertEquals(n, MINUTES.convert(Duration.ofMinutes(n)));
+        assertEquals(n, MINUTES.convert(Duration.of(n, ChronoUnit.MINUTES)));
+        n /= 60;
+        assertEquals(n, HOURS.convert(Duration.ofHours(n)));
+        assertEquals(n, HOURS.convert(Duration.of(n, ChronoUnit.HOURS)));
+        n /= 24;
+        assertEquals(n, DAYS.convert(Duration.ofDays(n)));
+        assertEquals(n, DAYS.convert(Duration.of(n, ChronoUnit.DAYS)));
+    }
+
+    /**
+     * convert(Duration.ofNanos(n)) agrees with convert(n, NANOSECONDS)
+     */
+    public void testConvertDuration_roundtripDurationOfNanos() {
+        // Test values near unit transitions and near overflow.
+        LongStream.concat(
+                Arrays.stream(TimeUnit.values()).mapToLong(u -> u.toNanos(1)),
+                LongStream.of(Long.MAX_VALUE, Long.MIN_VALUE))
+            .flatMap(n -> LongStream.of(n, n + 1, n - 1))
+            .flatMap(n -> LongStream.of(n, n + 1_000_000_000, n - 1_000_000_000))
+            .flatMap(n -> LongStream.of(n, -n))
+            // .peek(System.err::println)
+            .forEach(n -> Arrays.stream(TimeUnit.values()).forEach(
+                u -> assertEquals(u.convert(n, NANOSECONDS),
+                                  u.convert(Duration.ofNanos(n)))));
+    }
+
+    /**
+     * convert(Duration) doesn't misbehave near Long.MAX_VALUE and Long.MIN_VALUE.
+     */
+    public void testConvertDuration_nearOverflow() {
+        ChronoUnit NANOS = ChronoUnit.NANOS;
+        Duration maxDuration = Duration.ofSeconds(Long.MAX_VALUE, 999_999_999);
+        Duration minDuration = Duration.ofSeconds(Long.MIN_VALUE, 0);
+
+        for (TimeUnit u : TimeUnit.values()) {
+            ChronoUnit cu = u.toChronoUnit();
+            long r;
+            if (u.toNanos(1) > SECONDS.toNanos(1)) {
+                r = u.toNanos(1) / SECONDS.toNanos(1);
+
+                assertThrows(ArithmeticException.class,
+                             () -> Duration.of(Long.MAX_VALUE, cu),
+                             () -> Duration.of(Long.MIN_VALUE, cu));
+            } else {
+                r = 1;
+
+                Duration max = Duration.of(Long.MAX_VALUE, cu);
+                Duration min = Duration.of(Long.MIN_VALUE, cu);
+                assertEquals(Long.MAX_VALUE, u.convert(max));
+                assertEquals(Long.MAX_VALUE - 1, u.convert(max.minus(1, NANOS)));
+                assertEquals(Long.MAX_VALUE - 1, u.convert(max.minus(1, cu)));
+                assertEquals(Long.MIN_VALUE, u.convert(min));
+                assertEquals(Long.MIN_VALUE + 1, u.convert(min.plus(1, NANOS)));
+                assertEquals(Long.MIN_VALUE + 1, u.convert(min.plus(1, cu)));
+                assertEquals(Long.MAX_VALUE, u.convert(max.plus(1, NANOS)));
+                if (u != SECONDS) {
+                    assertEquals(Long.MAX_VALUE, u.convert(max.plus(1, cu)));
+                    assertEquals(Long.MIN_VALUE, u.convert(min.minus(1, NANOS)));
+                    assertEquals(Long.MIN_VALUE, u.convert(min.minus(1, cu)));
+                }
+            }
+
+            assertEquals(Long.MAX_VALUE / r, u.convert(maxDuration));
+            assertEquals(Long.MIN_VALUE / r, u.convert(minDuration));
         }
     }
 

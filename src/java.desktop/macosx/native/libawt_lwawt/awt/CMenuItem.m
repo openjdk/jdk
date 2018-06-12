@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #import "CMenuItem.h"
 #import "CMenu.h"
 #import "AWTEvent.h"
+#import "AWTWindow.h"
 #import "ThreadUtilities.h"
 
 #import "java_awt_Event.h"
@@ -111,12 +112,14 @@
                 }
                 eventKey = [NSString stringWithCharacters: &newChar length: 1];
             }
+            // The action event can be ignored only if the key window is an AWT window.
+            // Otherwise, the action event is the only notification and must be processed.
             NSWindow *keyWindow = [NSApp keyWindow];
-            if (keyWindow != nil) {
+            if (keyWindow != nil && [AWTWindow isAWTWindow: keyWindow]) {
                 return;
             }
-		}
-		
+        }
+        
         static JNF_CLASS_CACHE(jc_CMenuItem, "sun/lwawt/macosx/CMenuItem");
         static JNF_MEMBER_CACHE(jm_handleAction, jc_CMenuItem, "handleAction", "(JI)V"); // AWT_THREADING Safe (event)
 
@@ -126,7 +129,7 @@
         JNFCallVoidMethod(env, fPeer, jm_handleAction, UTC(currEvent), javaModifiers); // AWT_THREADING Safe (event)
     }
     JNF_COCOA_EXIT(env);
-	
+    
 }
 
 - (void) setJavaLabel:(NSString *)theLabel shortcut:(NSString *)theKeyEquivalent modifierMask:(jint)modifiers {

@@ -32,6 +32,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -181,7 +182,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp) {
   br (Assembler::always, true, Assembler::pt, done);
   delayed()->nop();
   bind(not_weak);
-  access_load_at(T_OBJECT, IN_ROOT | IN_CONCURRENT_ROOT,
+  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
                  Address(value, 0), value, tmp);
   verify_oop(value);
   bind(done);
@@ -3338,6 +3339,12 @@ SkipIfEqual::~SkipIfEqual() {
   _masm->bind(_label);
 }
 
+void MacroAssembler::bang_stack_with_offset(int offset) {
+  // stack grows down, caller passes positive offset
+  assert(offset > 0, "must bang with negative offset");
+  set((-offset)+STACK_BIAS, G3_scratch);
+  st(G0, SP, G3_scratch);
+}
 
 // Writes to stack successive pages until offset reached to check for
 // stack overflow + shadow pages.  This clobbers tsp and scratch.
@@ -3395,7 +3402,7 @@ void MacroAssembler::reserved_stack_check() {
 // ((OopHandle)result).resolve();
 void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // OopHandle::resolve is an indirection.
-  access_load_at(T_OBJECT, IN_ROOT | IN_CONCURRENT_ROOT,
+  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
                  Address(result, 0), result, tmp);
 }
 
@@ -3440,6 +3447,7 @@ void MacroAssembler::store_klass_gap(Register s, Register d) {
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Register src, Address dst, Register tmp) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, src, dst, tmp);
@@ -3451,6 +3459,7 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Address src, Register dst, Register tmp) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  decorators = AccessInternal::decorator_fixup(decorators);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, src, dst, tmp);

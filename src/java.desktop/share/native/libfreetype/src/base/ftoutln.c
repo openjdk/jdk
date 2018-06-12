@@ -286,12 +286,13 @@
     FT_TRACE5(( "FT_Outline_Decompose: Done\n", n ));
     return FT_Err_Ok;
 
+  Invalid_Outline:
+    error = FT_THROW( Invalid_Outline );
+    /* fall through */
+
   Exit:
     FT_TRACE5(( "FT_Outline_Decompose: Error 0x%x\n", error ));
     return error;
-
-  Invalid_Outline:
-    return FT_THROW( Invalid_Outline );
   }
 
 

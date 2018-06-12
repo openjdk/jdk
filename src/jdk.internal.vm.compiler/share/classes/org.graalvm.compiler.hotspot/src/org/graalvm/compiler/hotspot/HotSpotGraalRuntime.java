@@ -105,6 +105,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     }
 
     private final String runtimeName;
+    private final String compilerConfigurationName;
     private final HotSpotBackend hostBackend;
     private final GlobalMetrics metricValues = new GlobalMetrics();
     private final List<SnippetCounter.Group> snippetCounterGroups;
@@ -155,6 +156,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         compilationProblemsPerAction = new EnumMap<>(ExceptionAction.class);
         snippetCounterGroups = GraalOptions.SnippetCounters.getValue(options) ? new ArrayList<>() : null;
         CompilerConfiguration compilerConfiguration = compilerConfigurationFactory.createCompilerConfiguration();
+        compilerConfigurationName = compilerConfigurationFactory.getName();
 
         compiler = new HotSpotGraalCompiler(jvmciRuntime, this, options);
         management = GraalServices.loadSingle(HotSpotGraalManagementRegistration.class, false);
@@ -294,6 +296,11 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     public <T extends Architecture> Backend getBackend(Class<T> arch) {
         assert arch != Architecture.class;
         return backends.get(arch);
+    }
+
+    @Override
+    public String getCompilerConfigurationName() {
+        return compilerConfigurationName;
     }
 
     private long runtimeStartTime;

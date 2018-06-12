@@ -229,6 +229,7 @@ class Metaspace : public AllStatic {
 // Manages the metaspace portion belonging to a class loader
 class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   friend class CollectedHeap; // For expand_and_allocate()
+  friend class ZCollectedHeap; // For expand_and_allocate()
   friend class Metaspace;
   friend class MetaspaceUtils;
   friend class metaspace::PrintCLDMetaspaceInfoClosure;
@@ -389,7 +390,9 @@ public:
     // Print details about the underlying virtual spaces.
     rf_show_vslist                  = (1 << 3),
     // Print metaspace map.
-    rf_show_vsmap                   = (1 << 4)
+    rf_show_vsmap                   = (1 << 4),
+    // If show_loaders: show loaded classes for each loader.
+    rf_show_classes                 = (1 << 5)
   };
 
   // This will print out a basic metaspace usage report but

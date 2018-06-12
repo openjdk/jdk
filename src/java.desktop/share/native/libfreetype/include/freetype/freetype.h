@@ -724,11 +724,12 @@ FT_BEGIN_HEADER
   /*      Same as FT_ENCODING_JOHAB.  Deprecated.                          */
   /*                                                                       */
   /* <Note>                                                                */
-  /*    By default, FreeType automatically synthesizes a Unicode charmap   */
-  /*    for PostScript fonts, using their glyph name dictionaries.         */
-  /*    However, it also reports the encodings defined explicitly in the   */
-  /*    font file, for the cases when they are needed, with the Adobe      */
-  /*    values as well.                                                    */
+  /*    By default, FreeType enables a Unicode charmap and tags it with    */
+  /*    FT_ENCODING_UNICODE when it is either provided or can be generated */
+  /*    from PostScript glyph name dictionaries in the font file.          */
+  /*    All other encodings are considered legacy and tagged only if       */
+  /*    explicitly defined in the font file.  Otherwise, FT_ENCODING_NONE  */
+  /*    is used.                                                           */
   /*                                                                       */
   /*    FT_ENCODING_NONE is set by the BDF and PCF drivers if the charmap  */
   /*    is neither Unicode nor ISO-8859-1 (otherwise it is set to          */
@@ -1175,7 +1176,7 @@ FT_BEGIN_HEADER
   /*      interpolating between them.  Supported formats are Adobe MM,     */
   /*      TrueType GX, and OpenType variation fonts.                       */
   /*                                                                       */
-  /*      See the multiple-masters specific API for details.               */
+  /*      See section @multiple_masters for API details.                   */
   /*                                                                       */
   /*    FT_FACE_FLAG_GLYPH_NAMES ::                                        */
   /*      The face contains glyph names, which can be retrieved using      */
@@ -2062,8 +2063,8 @@ FT_BEGIN_HEADER
   /*    data :: A pointer to the parameter data.                           */
   /*                                                                       */
   /* <Note>                                                                */
-  /*    The ID and function of parameters are driver-specific.  See the    */
-  /*    various FT_PARAM_TAG_XXX flags for more information.               */
+  /*    The ID and function of parameters are driver-specific.  See        */
+  /*    section @parameter_tags for more information.                      */
   /*                                                                       */
   typedef struct  FT_Parameter_
   {
@@ -2833,6 +2834,10 @@ FT_BEGIN_HEADER
   /*    since its glyph indices are not listed in any of the font's        */
   /*    charmaps.                                                          */
   /*                                                                       */
+  /*    If no active cmap is set up (i.e., `face->charmap' is zero), the   */
+  /*    call to @FT_Get_Char_Index is omitted, and the function behaves    */
+  /*    identically to @FT_Load_Glyph.                                     */
+  /*                                                                       */
   FT_EXPORT( FT_Error )
   FT_Load_Char( FT_Face   face,
                 FT_ULong  char_code,
@@ -3065,7 +3070,7 @@ FT_BEGIN_HEADER
    *
    *     Advance widths are rounded to integer values; however, using the
    *     `lsb_delta' and `rsb_delta' fields of @FT_GlyphSlotRec, it is
-   *     possible to get fractional advance widths for sub-pixel positioning
+   *     possible to get fractional advance widths for subpixel positioning
    *     (which is recommended to use).
    *
    *     If configuration option AF_CONFIG_OPTION_TT_SIZE_METRICS is active,
@@ -3204,13 +3209,13 @@ FT_BEGIN_HEADER
   /*      opacity).                                                        */
   /*                                                                       */
   /*    FT_RENDER_MODE_LCD ::                                              */
-  /*      This mode corresponds to horizontal RGB and BGR sub-pixel        */
+  /*      This mode corresponds to horizontal RGB and BGR subpixel         */
   /*      displays like LCD screens.  It produces 8-bit bitmaps that are   */
   /*      3~times the width of the original glyph outline in pixels, and   */
   /*      which use the @FT_PIXEL_MODE_LCD mode.                           */
   /*                                                                       */
   /*    FT_RENDER_MODE_LCD_V ::                                            */
-  /*      This mode corresponds to vertical RGB and BGR sub-pixel displays */
+  /*      This mode corresponds to vertical RGB and BGR subpixel displays  */
   /*      (like PDA screens, rotated LCD displays, etc.).  It produces     */
   /*      8-bit bitmaps that are 3~times the height of the original        */
   /*      glyph outline in pixels and use the @FT_PIXEL_MODE_LCD_V mode.   */
@@ -4552,7 +4557,7 @@ FT_BEGIN_HEADER
    */
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  9
-#define FREETYPE_PATCH  0
+#define FREETYPE_PATCH  1
 
 
   /*************************************************************************/

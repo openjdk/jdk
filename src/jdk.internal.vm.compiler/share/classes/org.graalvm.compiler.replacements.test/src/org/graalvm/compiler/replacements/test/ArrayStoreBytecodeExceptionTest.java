@@ -32,6 +32,7 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.extended.BytecodeExceptionNode.BytecodeExceptionKind;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
@@ -55,7 +56,7 @@ public class ArrayStoreBytecodeExceptionTest extends BytecodeExceptionTest {
         invocationPlugins.register(new InvocationPlugin() {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode obj) {
-                return throwBytecodeException(b, ArrayStoreException.class, obj);
+                return throwBytecodeException(b, BytecodeExceptionKind.ARRAY_STORE, obj);
             }
         }, Exceptions.class, "throwArrayStore", Object.class);
         super.registerInvocationPlugins(invocationPlugins);

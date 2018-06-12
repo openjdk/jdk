@@ -27,7 +27,6 @@
 
 #include "jfr/utilities/jfrAllocation.hpp"
 
-class Monitor;
 class JavaThread;
 class JfrStackFrame;
 class JfrThreadSampler;

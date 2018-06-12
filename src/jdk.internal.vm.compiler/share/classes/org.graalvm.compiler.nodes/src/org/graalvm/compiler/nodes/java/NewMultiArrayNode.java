@@ -87,7 +87,7 @@ public class NewMultiArrayNode extends DeoptimizingFixedWithNextNode implements 
     }
 
     @Override
-    public ValueNode length() {
+    public ValueNode findLength(ArrayLengthProvider.FindLengthMode mode) {
         return dimension(0);
     }
 }

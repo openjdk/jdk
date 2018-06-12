@@ -26,7 +26,6 @@
 #define SHARE_VM_C1_C1_MACROASSEMBLER_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "asm/macroAssembler.inline.hpp"
 #include "utilities/macros.hpp"
 
 class CodeEmitInfo;

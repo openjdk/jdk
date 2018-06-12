@@ -46,7 +46,7 @@ public final class PiArrayNode extends PiNode implements ArrayLengthProvider {
     @Input ValueNode length;
 
     @Override
-    public ValueNode length() {
+    public ValueNode findLength(ArrayLengthProvider.FindLengthMode mode) {
         return length;
     }
 
@@ -57,7 +57,7 @@ public final class PiArrayNode extends PiNode implements ArrayLengthProvider {
 
     @Override
     public Node canonical(CanonicalizerTool tool) {
-        if (GraphUtil.arrayLength(object()) != length()) {
+        if (GraphUtil.arrayLength(object(), ArrayLengthProvider.FindLengthMode.SEARCH_ONLY) != length) {
             return this;
         }
         return super.canonical(tool);

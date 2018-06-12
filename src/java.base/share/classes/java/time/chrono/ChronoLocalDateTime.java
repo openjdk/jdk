@@ -201,7 +201,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      *
      * @return the date part of this date-time, not null
      */
-    D toLocalDate() ;
+    D toLocalDate();
 
     /**
      * Gets the local time part of this date-time.

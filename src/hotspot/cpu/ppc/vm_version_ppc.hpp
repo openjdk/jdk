@@ -49,6 +49,7 @@ protected:
     ldbrx,
     stdbrx,
     vshasig,
+    rtm,
     num_features // last entry to count features
   };
   enum Feature_Flag_Set {
@@ -64,12 +65,13 @@ protected:
     vand_m                = (1 << vand   ),
     lqarx_m               = (1 << lqarx  ),
     vcipher_m             = (1 << vcipher),
-    vshasig_m             = (1 << vshasig),
     vpmsumb_m             = (1 << vpmsumb),
     mfdscr_m              = (1 << mfdscr ),
     vsx_m                 = (1 << vsx    ),
     ldbrx_m               = (1 << ldbrx  ),
     stdbrx_m              = (1 << stdbrx ),
+    vshasig_m             = (1 << vshasig),
+    rtm_m                 = (1 << rtm    ),
     all_features_m        = (unsigned long)-1
   };
 
@@ -107,6 +109,8 @@ public:
   static bool has_stdbrx()  { return (_features & stdbrx_m) != 0; }
   static bool has_vshasig() { return (_features & vshasig_m) != 0; }
   static bool has_mtfprd()  { return has_vpmsumb(); } // alias for P8
+  // OS feature support
+  static bool has_tm()      { return (_features & rtm_m) != 0; }
 
   // Assembler testing
   static void allow_all();

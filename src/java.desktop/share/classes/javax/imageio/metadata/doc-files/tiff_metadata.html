@@ -5,7 +5,7 @@
     <title>TIFF Metadata Format Specification and Usage Notes</title>
 </head>
 <!--
-Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ questions.
 -->
 
 <body>
-
+<main role="main">
 <h1>TIFF Metadata Format Specification and Usage Notes</h1>
 
 <a href="#Reading">Reading Images</a>
@@ -69,24 +69,24 @@ questions.
 <a href="#StreamMetadata">Native Stream Metadata Format</a><br/>
 <a href="#ImageMetadata">Native Image Metadata Format</a>
 
-<h3><a id="Reading">Reading Images</a></h3>
+<h2><a id="Reading">Reading Images</a></h2>
 
 TIFF images are read by an <a href="../../ImageReader.html">ImageReader</a>
 which may be controlled by its public interface as well as via a supplied
 <a href="../../plugins/tiff/TIFFImageReadParam.html">TIFFImageReadParam</a>.
 
-<!-- <h4>Supported Image Types</h4> -->
+<!-- <h3>Supported Image Types</h3> -->
 
 <!-- Table? -->
 
-<h4><a id="ColorConversionRead">Color Conversion</a></h4>
+<h3><a id="ColorConversionRead">Color Conversion</a></h3>
 
 <p>If the source image data
 have photometric type CIE L*a*b* or YCbCr, and the destination color space
 type is RGB, then the source image data will be automatically converted to
 RGB using an internal color converter.</p>
 
-<h4><a id="ColorSpacesRead">Color Spaces</a></h4>
+<h3><a id="ColorSpacesRead">Color Spaces</a></h3>
 
 The raw color space assigned by default, i.e., in the absence of a
 user-supplied <a href="../../ImageTypeSpecifier.html">ImageTypeSpecifier</a>,
@@ -154,7 +154,7 @@ foregoing, then an <code>ImageTypeSpecifier</code> should be
 supplied to the reader and should be derived from a color space which is correct
 for the data in question.</p>
 
-<h4><a id="ICCProfilesRead">ICC Profiles</a></h4>
+<h3><a id="ICCProfilesRead">ICC Profiles</a></h3>
 
 If an ICC profile is contained in the image metadata
 (<a href="../../plugins/tiff/BaselineTIFFTagSet.html">
@@ -196,7 +196,7 @@ space will be included in the
 more than one type, the first one will be based on the ICC profile and the
 second on the inferred color space.</p>
 
-<h4><a id="MetadataIssuesRead">Metadata Issues</a></h4>
+<h3><a id="MetadataIssuesRead">Metadata Issues</a></h3>
 
 By default all recognized fields in the TIFF image file directory (IFD) are
 loaded into the native image metadata object. Which fields are loaded may be
@@ -226,8 +226,8 @@ object may simplify gaining access to metadata values. An instance of
 object returned by the TIFF reader using the
 <code>TIFFDirectory.createFromMetadata</code> method.</p>
 
-<h5><a id="MapNativeStandard"></a>
-Mapping of TIFF Native Image Metadata to the Standard Metadata Format</h5>
+<h4><a id="MapNativeStandard"></a>
+Mapping of TIFF Native Image Metadata to the Standard Metadata Format</h4>
 
 The derivation of standard metadata format
 <a href="standard_metadata.html">javax_imageio_1.0</a>
@@ -349,12 +349,12 @@ unassociated alpha =&gt; "nonpremultiplied".</td>
 </tr>
 </table>
 
-<h4><a id="ExifRead">Reading Exif Images</a></h4>
+<h3><a id="ExifRead">Reading Exif Images</a></h3>
 
 The TIFF reader may be used to read an uncompressed Exif image or the
 contents of the <code>APP1</code> marker segment of a compressed Exif image.
 
-<h5><a id="ExifReadTIFF">Reading Uncompressed Exif Images</a></h5>
+<h4><a id="ExifReadTIFF">Reading Uncompressed Exif Images</a></h4>
 
 An uncompressed Exif image is a one- or two-page uncompressed TIFF image
 with a specific ordering of its IFD and image data content. Each pixel
@@ -386,7 +386,7 @@ Note that the Exif thumbnail is treated as a separate page in the TIFF
 stream and not as a thumbnail, i.e.,
 <code>tiffReader.hasThumbnails(0)</code> will return <code>false</code>.
 
-<h5><a id="ExifReadJPEG">Reading Compressed Exif Images</a></h5>
+<h4><a id="ExifReadJPEG">Reading Compressed Exif Images</a></h4>
 
 A compressed Exif image is a 3-band ISO/IEC 10918-1 baseline DCT JPEG stream
 with an inserted <code>APP1</code> marker segment. The parameters of the marker
@@ -453,7 +453,7 @@ images. Calling <code>tiffReader.read(0,&nbsp;readParam)</code> will throw
 an exception as the primary image in the embedded TIFF stream is always
 empty; the primary image should be obtained using the JPEG reader itself.
 
-<h3><a id="Writing">Writing Images</a></h3>
+<h2><a id="Writing">Writing Images</a></h2>
 
 TIFF images are written by a <a href="../../ImageWriter.html">ImageWriter</a> which may be
 controlled by its public interface as well as via a supplied
@@ -477,11 +477,11 @@ compression is being used and strips are being written, the number of
 rows per strip is rounded to a multiple of 8 times the maximum MCU over
 both dimensions.</p>
 
- <!-- <h4>Supported Image Types</h4> -->
+ <!-- <h3>Supported Image Types</h3> -->
 
 <!-- Table? -->
 
-<h4><a id="Compression">Compression</a></h4>
+<h3><a id="Compression">Compression</a></h3>
 
 The compression type may be set via the <code>setCompressionType()</code> method of
 the <code>ImageWriteParam</code> after setting the compression mode to
@@ -576,14 +576,14 @@ to derive the Deflate compression level. For JPEG the floating point
 quality value is passed directly to the JPEG writer plug-in which
 interprets it in the usual way.</p>
 
-<h4><a id="ColorConversionWrite">Color Conversion</a></h4>
+<h3><a id="ColorConversionWrite">Color Conversion</a></h3>
 
 <p>If the source image data
 color space type is RGB, and the destination photometric type is CIE L*a*b* or
 YCbCr, then the source image data will be automatically converted from
 RGB using an internal color converter.</p>
 
-<h4><a id="ICCProfilesWrite">ICC Profiles</a></h4>
+<h3><a id="ICCProfilesWrite">ICC Profiles</a></h3>
 
 An <code>ICC Profile</code> field will be written if either:
 <ul>
@@ -600,7 +600,7 @@ to the <code>ImageTypeSpecifier</code> of the image being written.
 </li>
 </ul>
 
-<h4><a id="MetadataIssuesWrite">Metadata Issues</a></h4>
+<h3><a id="MetadataIssuesWrite">Metadata Issues</a></h3>
 
 Some behavior of the writer is affected by or may affect the contents of
 the image metadata which may be supplied by the user.
@@ -713,8 +713,8 @@ field to be written a <code>TIFFField</code> may be added to the
 <code>IIOMetadata</code> object so obtained may then be passed to the TIFF
 writer.</p>
 
-<h5><a id="MapStandardNative"></a>
-Mapping of the Standard Metadata Format to TIFF Native Image Metadata</h5>
+<h4><a id="MapStandardNative"></a>
+Mapping of the Standard Metadata Format to TIFF Native Image Metadata</h4>
 
 The derivation of <a href="#ImageMetadata">TIFF native image metadata</a>
 elements from the standard metadata format
@@ -829,12 +829,12 @@ TIFF Fields, e.g., "Software", then the field is added with content
 </tr>
 </table>
 
-<h4><a id="ExifWrite">Writing Exif Images</a></h4>
+<h3><a id="ExifWrite">Writing Exif Images</a></h3>
 
 The TIFF writer may be used to write an uncompressed Exif image or the
 contents of the <code>APP1</code> marker segment of a compressed Exif image.
 
-<h5><a id="ExifWriteTIFF">Writing Uncompressed Exif Images</a></h5>
+<h4><a id="ExifWriteTIFF">Writing Uncompressed Exif Images</a></h4>
 
 When writing a sequence of images each image is normally recorded as
 {IFD,&nbsp;IFD Value,&nbsp;Image Data}. The Exif specification requires
@@ -901,7 +901,7 @@ written:
     }
 </code></pre>
 
-<h5><a id="ExifWriteJPEG">Writing Compressed Exif Images</a></h5>
+<h4><a id="ExifWriteJPEG">Writing Compressed Exif Images</a></h4>
 
 The structure of the embedded TIFF stream in the <code>APP1</code> segment of a
 compressed Exif image is identical to the <a href="#ExifStructure">
@@ -1008,7 +1008,7 @@ The <code>"unknown"</code> node created above would be appended to the
 and written to the JPEG stream when the primary image is written using
 the JPEG writer.
 
-<h3><a id="StreamMetadata">Stream Metadata</a></h3>
+<h2><a id="StreamMetadata">Stream Metadata</a></h2>
 
 The DTD for the TIFF native stream metadata format is as follows:
 
@@ -1025,7 +1025,7 @@ The DTD for the TIFF native stream metadata format is as follows:
 ]&gt;
 </pre>
 
-<h3><a id="ImageMetadata">Image Metadata</a></h3>
+<h2><a id="ImageMetadata">Image Metadata</a></h2>
 
 The DTD for the TIFF native image metadata format is as follows:
 
@@ -1174,6 +1174,6 @@ The DTD for the TIFF native image metadata format is as follows:
 </pre>
 
 @since 9
-
+</main>
 </body>
 </html>

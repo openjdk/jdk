@@ -27,6 +27,7 @@
  * @summary Check if a RuntimeException is wrapped by RuntimeMBeanException
  *          only once.
  *
+ * @requires vm.gc != "Z"
  * @author  Mandy Chung
  *
  * @build MXBeanException

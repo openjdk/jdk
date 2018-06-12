@@ -424,8 +424,8 @@ const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (
 //----------------------------------------------------------------------------------------------------
 // Default and minimum StringTableSize values
 
-const int defaultStringTableSize = NOT_LP64(1009) LP64_ONLY(60013);
-const int minimumStringTableSize = 1009;
+const int defaultStringTableSize = NOT_LP64(1024) LP64_ONLY(65536);
+const int minimumStringTableSize = 128;
 
 const int defaultSymbolTableSize = 20011;
 const int minimumSymbolTableSize = 1009;

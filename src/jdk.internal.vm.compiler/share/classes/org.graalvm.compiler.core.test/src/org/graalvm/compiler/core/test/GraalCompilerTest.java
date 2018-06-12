@@ -1054,7 +1054,7 @@ public abstract class GraalCompilerTest extends GraalTest {
         try (DebugContext.Scope s = debug.scope("Compile", graphToCompile)) {
             assert options != null;
             Request<CompilationResult> request = new Request<>(graphToCompile, installedCodeOwner, getProviders(), getBackend(), getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL,
-                            graphToCompile.getProfilingInfo(), createSuites(options), createLIRSuites(options), compilationResult, CompilationResultBuilderFactory.Default);
+                            graphToCompile.getProfilingInfo(), createSuites(options), createLIRSuites(options), compilationResult, CompilationResultBuilderFactory.Default, true);
             return GraalCompiler.compile(request);
         } catch (Throwable e) {
             throw debug.handle(e);

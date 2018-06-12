@@ -29,9 +29,7 @@ include LibCommon.gmk
 $(eval $(call IncludeCustomExtension, lib/Lib-java.desktop.gmk))
 
 # Prepare the find cache.
-LIB_java.desktop_SRC_DIRS += $(TOPDIR)/src/java.desktop/*/native
-
-$(eval $(call FillCacheFind, $(wildcard $(LIB_java.desktop_SRC_DIRS))))
+$(eval $(call FillCacheFind, $(wildcard $(TOPDIR)/src/java.desktop/*/native)))
 
 ################################################################################
 # Create the AWT/2D libraries
@@ -43,16 +41,8 @@ include Awt2dLibraries.gmk
 
 ifneq ($(OPENJDK_TARGET_OS), aix)
 
-  LIBJSOUND_SRC_DIRS := $(wildcard \
-      $(TOPDIR)/src/java.desktop/share/native/libjsound \
-      $(TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS)/native/libjsound \
-      )
-
   LIBJSOUND_CFLAGS := \
-      -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
       $(ALSA_CFLAGS) \
-      $(LIBJAVA_HEADER_FLAGS) \
-      $(foreach dir, $(LIBJSOUND_SRC_DIRS), -I$(dir)) \
       -DX_PLATFORM=X_$(OPENJDK_TARGET_OS_UPPERCASE) \
       -DUSE_PORTS=TRUE \
       -DUSE_DAUDIO=TRUE \
@@ -71,7 +61,6 @@ ifneq ($(OPENJDK_TARGET_OS), aix)
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
       NAME := jsound, \
-      SRC := $(LIBJSOUND_SRC_DIRS), \
       TOOLCHAIN := $(LIBJSOUND_TOOLCHAIN), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
@@ -97,15 +86,11 @@ endif
 # Create the macosx specific osxapp and osx libraries
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  LIBOSXAPP_SRC := $(TOPDIR)/src/java.desktop/macosx/native/libosxapp
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSXAPP, \
       NAME := osxapp, \
-      SRC := $(LIBOSXAPP_SRC), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(addprefix -I, $(LIBOSXAPP_SRC)) \
-          -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
       DISABLED_WARNINGS_clang := objc-method-access objc-root-class \
           deprecated-declarations, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -129,19 +114,11 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   ##############################################################################
 
-  LIBOSX_DIRS := $(TOPDIR)/src/java.desktop/macosx/native/libosx
-  LIBOSX_CFLAGS := -I$(LIBOSX_DIRS) \
-      -I$(TOPDIR)/src/java.desktop/macosx/native/libosxapp \
-      $(LIBJAVA_HEADER_FLAGS) \
-      -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
-      #
-
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSX, \
       NAME := osx, \
-      SRC := $(LIBOSX_DIRS), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(LIBOSX_CFLAGS), \
+      CFLAGS := $(CFLAGS_JDKLIB), \
+      EXTRA_HEADER_DIRS := libosxapp, \
       DISABLED_WARNINGS_clang := deprecated-declarations, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.desktop \

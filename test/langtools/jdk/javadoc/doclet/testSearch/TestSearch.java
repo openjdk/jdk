@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
- *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201
+ *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -67,6 +67,7 @@ public class TestSearch extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkInvalidUsageIndexTag();
@@ -105,6 +106,7 @@ public class TestSearch extends JavadocTester {
                 "-Xdoclint:all",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.ERROR);
         checkDocLintErrors();
@@ -142,6 +144,7 @@ public class TestSearch extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(false);
@@ -167,6 +170,7 @@ public class TestSearch extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true);
@@ -193,6 +197,7 @@ public class TestSearch extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(false);
@@ -216,6 +221,7 @@ public class TestSearch extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true);
@@ -235,14 +241,14 @@ public class TestSearch extends JavadocTester {
 
     @Test
     void test7() {
-        setAutomaticCheckLinks(false); // @ignore JDK-8202627
         javadoc("-d", "out-7",
                 "-nodeprecated",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
-        setAutomaticCheckLinks(true); // @ignore JDK-8202627
+
         checkExit(Exit.OK);
         checkSearchOutput(true);
         checkIndexNoDeprecated();
@@ -266,6 +272,7 @@ public class TestSearch extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkInvalidUsageIndexTag();
@@ -293,6 +300,7 @@ public class TestSearch extends JavadocTester {
                 "--disable-javafx-strict-checks",
                 "-package",
                 "-use",
+                "--frames",
                 "pkgfx", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true);
@@ -318,6 +326,7 @@ public class TestSearch extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true, false);
@@ -345,6 +354,7 @@ public class TestSearch extends JavadocTester {
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-use",
+                "--frames",
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchJS();
@@ -389,7 +399,7 @@ public class TestSearch extends JavadocTester {
                 "<!--[if IE]>\n",
                 "<script type=\"text/javascript\" src=\"jquery/jszip-utils/dist/jszip-utils-ie.min.js\"></script>\n",
                 "<![endif]-->\n",
-                "<script type=\"text/javascript\" src=\"jquery/jquery-1.10.2.js\"></script>\n",
+                "<script type=\"text/javascript\" src=\"jquery/jquery-1.12.4.js\"></script>\n",
                 "<script type=\"text/javascript\" src=\"jquery/jquery-ui.js\"></script>",
                 "var pathtoroot = \"./\";\n"
                 + "var useModuleDirectories = " + moduleDirectoriesVar + ";\n"
@@ -581,7 +591,7 @@ public class TestSearch extends JavadocTester {
     void checkJqueryAndImageFiles(boolean expectedOutput) {
         checkFiles(expectedOutput,
                 "search.js",
-                "jquery/jquery-1.10.2.js",
+                "jquery/jquery-1.12.4.js",
                 "jquery/jquery-ui.js",
                 "jquery/jquery-ui.css",
                 "jquery/jquery-ui.min.js",
