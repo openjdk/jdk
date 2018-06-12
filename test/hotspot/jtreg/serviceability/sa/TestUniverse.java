@@ -106,13 +106,19 @@ public class TestUniverse {
             output.shouldContain("PSYoungGen");
             output.shouldContain("eden");
         }
-
+        if (gc.contains("UseEpsilonGC")) {
+            output.shouldContain("Epsilon heap");
+            output.shouldContain("reserved");
+            output.shouldContain("committed");
+            output.shouldContain("used");
+        }
     }
 
     public static void test(String gc) throws Exception {
         LingeredApp app = null;
         try {
             List<String> vmArgs = new ArrayList<String>();
+            vmArgs.add("-XX:+UnlockExperimentalVMOptions"); // unlock experimental GCs
             vmArgs.add(gc);
             app = LingeredApp.startApp(vmArgs);
             System.out.println ("Started LingeredApp with the GC option " + gc +
@@ -139,6 +145,7 @@ public class TestUniverse {
             if (!Compiler.isGraalEnabled()) { // Graal does not support CMS
               test("-XX:+UseConcMarkSweepGC");
             }
+            test("-XX:+UseEpsilonGC");
         } catch (Exception e) {
             throw new Error("Test failed with " + e);
         }

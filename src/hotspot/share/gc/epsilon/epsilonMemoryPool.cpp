@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,24 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+#include "precompiled.hpp"
+#include "gc/epsilon/epsilonHeap.hpp"
+#include "gc/epsilon/epsilonMemoryPool.hpp"
 
-/** Mimics the enums in the VM under CollectedHeap::Name */
+EpsilonMemoryPool::EpsilonMemoryPool(EpsilonHeap* heap) :
+        _heap(heap),
+        CollectedMemoryPool("Epsilon Heap",
+                            heap->capacity(),
+                            heap->max_capacity(),
+                            false) {
+  assert(UseEpsilonGC, "sanity");
+}
 
-public class CollectedHeapName {
-  private String name;
+MemoryUsage EpsilonMemoryPool::get_memory_usage() {
+  size_t initial_sz = initial_size();
+  size_t max_sz     = max_size();
+  size_t used       = used_in_bytes();
+  size_t committed  = committed_in_bytes();
 
-  private CollectedHeapName(String name) { this.name = name; }
-
-  public static final CollectedHeapName SERIAL = new CollectedHeapName("Serial");
-  public static final CollectedHeapName PARALLEL = new CollectedHeapName("Parallel");
-  public static final CollectedHeapName CMS = new CollectedHeapName("CMS");
-  public static final CollectedHeapName G1 = new CollectedHeapName("G1");
-  public static final CollectedHeapName EPSILON = new CollectedHeapName("Epsilon");
-
-  public String toString() {
-    return name;
-  }
+  return MemoryUsage(initial_sz, used, committed, max_sz);
 }

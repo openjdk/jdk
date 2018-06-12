@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,18 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+#ifndef SHARE_GC_EPSILON_EPSILONARGUMENTS_HPP
+#define SHARE_GC_EPSILON_EPSILONARGUMENTS_HPP
 
-/** Mimics the enums in the VM under CollectedHeap::Name */
+#include "gc/shared/gcArguments.hpp"
 
-public class CollectedHeapName {
-  private String name;
+class CollectedHeap;
 
-  private CollectedHeapName(String name) { this.name = name; }
+class EpsilonArguments : public GCArguments {
+public:
+  virtual void initialize();
+  virtual size_t conservative_max_heap_alignment();
+  virtual CollectedHeap* create_heap();
+};
 
-  public static final CollectedHeapName SERIAL = new CollectedHeapName("Serial");
-  public static final CollectedHeapName PARALLEL = new CollectedHeapName("Parallel");
-  public static final CollectedHeapName CMS = new CollectedHeapName("CMS");
-  public static final CollectedHeapName G1 = new CollectedHeapName("G1");
-  public static final CollectedHeapName EPSILON = new CollectedHeapName("Epsilon");
-
-  public String toString() {
-    return name;
-  }
-}
+#endif // SHARE_GC_EPSILON_EPSILONARGUMENTS_HPP
