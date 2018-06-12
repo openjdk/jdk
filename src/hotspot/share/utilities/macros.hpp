@@ -149,6 +149,24 @@
 #define NOT_CMSGC_RETURN_(code) { return code; }
 #endif // INCLUDE_CMSGC
 
+#ifndef INCLUDE_EPSILONGC
+#define INCLUDE_EPSILONGC 1
+#endif // INCLUDE_EPSILONGC
+
+#if INCLUDE_EPSILONGC
+#define EPSILONGC_ONLY(x) x
+#define EPSILONGC_ONLY_ARG(arg) arg,
+#define NOT_EPSILONGC(x)
+#define NOT_EPSILONGC_RETURN        /* next token must be ; */
+#define NOT_EPSILONGC_RETURN_(code) /* next token must be ; */
+#else
+#define EPSILONGC_ONLY(x)
+#define EPSILONGC_ONLY_ARG(arg)
+#define NOT_EPSILONGC(x) x
+#define NOT_EPSILONGC_RETURN        {}
+#define NOT_EPSILONGC_RETURN_(code) { return code; }
+#endif // INCLUDE_EPSILONGC
+
 #ifndef INCLUDE_G1GC
 #define INCLUDE_G1GC 1
 #endif // INCLUDE_G1GC
@@ -203,7 +221,7 @@
 #define NOT_SERIALGC_RETURN_(code) { return code; }
 #endif // INCLUDE_SERIALGC
 
-#if INCLUDE_CMSGC || INCLUDE_G1GC || INCLUDE_PARALLELGC
+#if INCLUDE_CMSGC || INCLUDE_EPSILONGC || INCLUDE_G1GC || INCLUDE_PARALLELGC
 #define INCLUDE_NOT_ONLY_SERIALGC 1
 #else
 #define INCLUDE_NOT_ONLY_SERIALGC 0

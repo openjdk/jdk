@@ -155,6 +155,11 @@ ifneq ($(call check-jvm-feature, serialgc), true)
   JVM_EXCLUDE_FILES += psMarkSweep.cpp psMarkSweepDecorator.cpp
 endif
 
+ifneq ($(call check-jvm-feature, epsilongc), true)
+  JVM_CFLAGS_FEATURES += -DINCLUDE_EPSILONGC=0
+  JVM_EXCLUDE_PATTERNS += gc/epsilon
+endif
+
 ifneq ($(call check-jvm-feature, jfr), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_JFR=0
   JVM_EXCLUDE_PATTERNS += jfr

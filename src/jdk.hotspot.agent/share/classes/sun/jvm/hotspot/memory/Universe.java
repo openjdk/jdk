@@ -31,6 +31,7 @@ import sun.jvm.hotspot.gc.cms.CMSHeap;
 import sun.jvm.hotspot.gc.serial.SerialHeap;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
+import sun.jvm.hotspot.gc.epsilon.EpsilonHeap;
 import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
@@ -82,6 +83,7 @@ public class Universe {
     heapConstructor.addMapping("SerialHeap", SerialHeap.class);
     heapConstructor.addMapping("ParallelScavengeHeap", ParallelScavengeHeap.class);
     heapConstructor.addMapping("G1CollectedHeap", G1CollectedHeap.class);
+    heapConstructor.addMapping("EpsilonHeap", EpsilonHeap.class);
 
     mainThreadGroupField   = type.getOopField("_main_thread_group");
     systemThreadGroupField = type.getOopField("_system_thread_group");

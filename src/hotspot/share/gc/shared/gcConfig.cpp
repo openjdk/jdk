@@ -31,6 +31,9 @@
 #if INCLUDE_CMSGC
 #include "gc/cms/cmsArguments.hpp"
 #endif
+#if INCLUDE_EPSILONGC
+#include "gc/epsilon/epsilonArguments.hpp"
+#endif
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
 #endif
@@ -52,6 +55,7 @@ struct SupportedGC {
 };
 
      CMSGC_ONLY(static CMSArguments      cmsArguments;)
+ EPSILONGC_ONLY(static EpsilonArguments  epsilonArguments;)
       G1GC_ONLY(static G1Arguments       g1Arguments;)
 PARALLELGC_ONLY(static ParallelArguments parallelArguments;)
   SERIALGC_ONLY(static SerialArguments   serialArguments;)
@@ -60,6 +64,7 @@ PARALLELGC_ONLY(static ParallelArguments parallelArguments;)
 // line flag, CollectedHeap::Name and GCArguments instance.
 static const SupportedGC SupportedGCs[] = {
        CMSGC_ONLY_ARG(SupportedGC(UseConcMarkSweepGC, CollectedHeap::CMS,      cmsArguments,      "concurrent mark sweep gc"))
+   EPSILONGC_ONLY_ARG(SupportedGC(UseEpsilonGC,       CollectedHeap::Epsilon,  epsilonArguments,  "epsilon gc"))
         G1GC_ONLY_ARG(SupportedGC(UseG1GC,            CollectedHeap::G1,       g1Arguments,       "g1 gc"))
   PARALLELGC_ONLY_ARG(SupportedGC(UseParallelGC,      CollectedHeap::Parallel, parallelArguments, "parallel gc"))
   PARALLELGC_ONLY_ARG(SupportedGC(UseParallelOldGC,   CollectedHeap::Parallel, parallelArguments, "parallel gc"))
@@ -88,6 +93,7 @@ void GCConfig::select_gc_ergonomically() {
   }
 
   NOT_CMSGC(     UNSUPPORTED_OPTION(UseConcMarkSweepGC));
+  NOT_EPSILONGC( UNSUPPORTED_OPTION(UseEpsilonGC);)
   NOT_G1GC(      UNSUPPORTED_OPTION(UseG1GC);)
   NOT_PARALLELGC(UNSUPPORTED_OPTION(UseParallelGC);)
   NOT_PARALLELGC(UNSUPPORTED_OPTION(UseParallelOldGC));

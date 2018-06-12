@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -22,22 +21,24 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+#ifndef SHARE_VM_GC_EPSILON_EPSILONMONITORINGSUPPORT_HPP
+#define SHARE_VM_GC_EPSILON_EPSILONMONITORINGSUPPORT_HPP
 
-/** Mimics the enums in the VM under CollectedHeap::Name */
+#include "memory/allocation.hpp"
 
-public class CollectedHeapName {
-  private String name;
+class GenerationCounters;
+class EpsilonSpaceCounters;
+class EpsilonHeap;
 
-  private CollectedHeapName(String name) { this.name = name; }
+class EpsilonMonitoringSupport : public CHeapObj<mtGC> {
+private:
+  GenerationCounters*   _heap_counters;
+  EpsilonSpaceCounters* _space_counters;
 
-  public static final CollectedHeapName SERIAL = new CollectedHeapName("Serial");
-  public static final CollectedHeapName PARALLEL = new CollectedHeapName("Parallel");
-  public static final CollectedHeapName CMS = new CollectedHeapName("CMS");
-  public static final CollectedHeapName G1 = new CollectedHeapName("G1");
-  public static final CollectedHeapName EPSILON = new CollectedHeapName("Epsilon");
+public:
+  EpsilonMonitoringSupport(EpsilonHeap* heap);
+  void update_counters();
+};
 
-  public String toString() {
-    return name;
-  }
-}
+#endif // SHARE_VM_GC_EPSILON_EPSILONMONITORINGSUPPORT_HPP
+

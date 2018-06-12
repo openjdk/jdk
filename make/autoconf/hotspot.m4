@@ -25,7 +25,7 @@
 
 # All valid JVM features, regardless of platform
 VALID_JVM_FEATURES="compiler1 compiler2 zero minimal dtrace jvmti jvmci \
-    graal vm-structs jni-check services management cmsgc g1gc parallelgc serialgc nmt cds \
+    graal vm-structs jni-check services management cmsgc g1gc parallelgc serialgc epsilongc nmt cds \
     static-build link-time-opt aot jfr"
 
 # Deprecated JVM features (these are ignored, but with a warning)
@@ -410,7 +410,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
   fi
 
   # All variants but minimal (and custom) get these features
-  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cmsgc g1gc parallelgc serialgc jni-check jvmti management nmt services vm-structs"
+  NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cmsgc g1gc parallelgc serialgc epsilongc jni-check jvmti management nmt services vm-structs"
   if test "x$ENABLE_CDS" = "xtrue"; then
     NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cds"
   fi

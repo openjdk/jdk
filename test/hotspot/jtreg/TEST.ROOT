@@ -45,6 +45,7 @@ requires.properties= \
     vm.gc.Serial \
     vm.gc.Parallel \
     vm.gc.ConcMarkSweep \
+    vm.gc.Epsilon \
     vm.jvmci \
     vm.emulatedClient \
     vm.cpu.features \

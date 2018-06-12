@@ -33,6 +33,7 @@ import java.util.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.gc.epsilon.*;
 import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.gc.g1.*;
@@ -1108,6 +1109,9 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                             anno = "PSOldGen ";
                             bad = false;
                           }
+                        } else if (collHeap instanceof EpsilonHeap) {
+                          anno = "Epsilon ";
+                          bad = false;
                         } else {
                           // Optimistically assume the oop isn't bad
                           anno = "[Unknown generation] ";

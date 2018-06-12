@@ -37,6 +37,9 @@
 #if INCLUDE_CMSGC
 #include "gc/cms/vmStructs_cms.hpp"
 #endif
+#if INCLUDE_EPSILONGC
+#include "gc/epsilon/vmStructs_epsilon.hpp"
+#endif
 #if INCLUDE_G1GC
 #include "gc/g1/vmStructs_g1.hpp"
 #endif
@@ -55,6 +58,9 @@
   CMSGC_ONLY(VM_STRUCTS_CMSGC(nonstatic_field,                                                                                       \
                               volatile_nonstatic_field,                                                                              \
                               static_field))                                                                                         \
+  EPSILONGC_ONLY(VM_STRUCTS_EPSILONGC(nonstatic_field,                                                                               \
+                                      volatile_nonstatic_field,                                                                      \
+                                      static_field))                                                                                 \
   G1GC_ONLY(VM_STRUCTS_G1GC(nonstatic_field,                                                                                         \
                             volatile_nonstatic_field,                                                                                \
                             static_field))                                                                                           \
@@ -153,6 +159,9 @@
   CMSGC_ONLY(VM_TYPES_CMSGC(declare_type,                                 \
                             declare_toplevel_type,                        \
                             declare_integer_type))                        \
+  EPSILONGC_ONLY(VM_TYPES_EPSILONGC(declare_type,                         \
+                                    declare_toplevel_type,                \
+                                    declare_integer_type))                \
   G1GC_ONLY(VM_TYPES_G1GC(declare_type,                                   \
                           declare_toplevel_type,                          \
                           declare_integer_type))                          \
@@ -225,6 +234,8 @@
                             declare_constant_with_value)                    \
   CMSGC_ONLY(VM_INT_CONSTANTS_CMSGC(declare_constant,                       \
                                     declare_constant_with_value))           \
+  EPSILONGC_ONLY(VM_INT_CONSTANTS_EPSILONGC(declare_constant,               \
+                                            declare_constant_with_value))   \
   G1GC_ONLY(VM_INT_CONSTANTS_G1GC(declare_constant,                         \
                                   declare_constant_with_value))             \
   PARALLELGC_ONLY(VM_INT_CONSTANTS_PARALLELGC(declare_constant,             \

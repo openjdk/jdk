@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.tools;
 
 import java.util.*;
+import sun.jvm.hotspot.gc.epsilon.*;
 import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.gc.serial.*;
@@ -124,6 +125,9 @@ public class HeapSummary extends Tool {
          printValMB("used     = ", oldGen.used());
          printValMB("free     = ", oldFree);
          System.out.println(alignment + (double)oldGen.used() * 100.0 / oldGen.capacity() + "% used");
+      } else if (heap instanceof EpsilonHeap) {
+         EpsilonHeap eh = (EpsilonHeap) heap;
+         printSpace(eh.space());
       } else {
          throw new RuntimeException("unknown CollectedHeap type : " + heap.getClass());
       }
@@ -158,6 +162,12 @@ public class HeapSummary extends Tool {
            System.out.print("Garbage-First (G1) GC ");
            l = getFlagValue("ParallelGCThreads", flagMap);
            System.out.println("with " + l + " thread(s)");
+           return;
+       }
+
+       l = getFlagValue("UseEpsilonGC", flagMap);
+       if (l == 1L) {
+           System.out.println("Epsilon (no-op) GC");
            return;
        }
 
