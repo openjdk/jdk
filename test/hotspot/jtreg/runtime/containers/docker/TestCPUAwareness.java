@@ -30,13 +30,13 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build Common
  * @run driver TestCPUAwareness
  */
 import java.util.List;
+import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
-
+import jdk.test.lib.containers.cgroup.CPUSetsReader;
 
 public class TestCPUAwareness {
     private static final String imageName = Common.imageName("cpu");

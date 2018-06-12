@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +20,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.BufferedReader;
-import java.io.File;
+
+package jdk.test.lib.containers.cgroup;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import jdk.test.lib.Asserts;
 
 
 // A simple CPU sets reader and parser
 public class CPUSetsReader {
-    public static String PROC_SELF_STATUS_PATH="/proc/self/status";
+    public static String PROC_SELF_STATUS_PATH = "/proc/self/status";
 
     // Test the parser
     public static void test() {
@@ -51,6 +52,16 @@ public class CPUSetsReader {
         Asserts.assertEquals(listToString(parseCpuSet(cpuSet)), expectedResult);
     }
 
+    public static int getNumCpus() {
+        String path = "/proc/cpuinfo";
+        try {
+            Stream<String> stream = Files.lines(Paths.get(path));
+            return (int) stream.filter(line -> line.startsWith("processor")).count();
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
 
     public static String readFromProcStatus(String setType) {
         String path = PROC_SELF_STATUS_PATH;
@@ -60,8 +71,8 @@ public class CPUSetsReader {
 
         try (Stream<String> stream = Files.lines(Paths.get(path))) {
             o = stream
-                .filter(line -> line.contains(setType))
-                .findFirst();
+                    .filter(line -> line.contains(setType))
+                    .findFirst();
         } catch (IOException e) {
             return null;
         }
@@ -70,7 +81,7 @@ public class CPUSetsReader {
             return null;    // entry not found
         }
 
-        String[] parts = o.get().replaceAll("\\s","").split(":");
+        String[] parts = o.get().replaceAll("\\s", "").split(":");
 
         // Should be 2 parts, before and after ":"
         Asserts.assertEquals(parts.length, 2);
@@ -102,12 +113,11 @@ public class CPUSetsReader {
         return result;
     }
 
-
     private static void addRange(ArrayList<Integer> list, String s) {
         String[] range = s.split("-");
-        if ( range.length != 2 ) {
+        if (range.length != 2) {
             throw new RuntimeException("Range should only contain two items, but contains "
-                                       + range.length + " items");
+                    + range.length + " items");
         }
 
         int min = Integer.parseInt(range[0]);
@@ -115,7 +125,7 @@ public class CPUSetsReader {
 
         if (min >= max) {
             String msg = String.format("min is greater or equals to max, min = %d, max = %d",
-                                       min, max);
+                    min, max);
             throw new RuntimeException(msg);
         }
 
@@ -134,8 +144,12 @@ public class CPUSetsReader {
     // include up to maxCount.
     public static String listToString(List<Integer> list, int maxCount) {
         return list.stream()
-            .limit(maxCount)
-            .map(Object::toString)
-            .collect(Collectors.joining(","));
+                .limit(maxCount)
+                .map(Object::toString)
+                .collect(Collectors.joining(","));
+    }
+
+    public static String numberToString(int num) {
+        return IntStream.range(0, num).boxed().map(Object::toString).collect(Collectors.joining(","));
     }
 }
