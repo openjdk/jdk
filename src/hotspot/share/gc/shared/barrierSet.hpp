@@ -103,17 +103,17 @@ protected:
   ~BarrierSet() { }
 
   template <class BarrierSetAssemblerT>
-  BarrierSetAssembler* make_barrier_set_assembler() {
+  static BarrierSetAssembler* make_barrier_set_assembler() {
     return NOT_ZERO(new BarrierSetAssemblerT()) ZERO_ONLY(NULL);
   }
 
   template <class BarrierSetC1T>
-  BarrierSetC1* make_barrier_set_c1() {
+  static BarrierSetC1* make_barrier_set_c1() {
     return COMPILER1_PRESENT(new BarrierSetC1T()) NOT_COMPILER1(NULL);
   }
 
   template <class BarrierSetC2T>
-  BarrierSetC2* make_barrier_set_c2() {
+  static BarrierSetC2* make_barrier_set_c2() {
     return COMPILER2_PRESENT(new BarrierSetC2T()) NOT_COMPILER2(NULL);
   }
 
