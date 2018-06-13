@@ -88,6 +88,18 @@ public class CopyAndMove {
         }
     }
 
+    static void printDirInfo(String name, Path dir) throws IOException {
+        System.err.format("%s: %s (%s)%n", name, dir,
+            Files.getFileStore(dir).type());
+    }
+
+    static void printDirInfo(String label, Path dir1, Path dir2)
+        throws IOException {
+        System.err.format("--- %s ---%n", label);
+        printDirInfo("dir1", dir1);
+        printDirInfo("dir2", dir2);
+    }
+
     static void checkBasicAttributes(BasicFileAttributes attrs1,
                                      BasicFileAttributes attrs2)
     {
@@ -117,17 +129,44 @@ public class CopyAndMove {
     static void checkPosixAttributes(PosixFileAttributes attrs1,
                                      PosixFileAttributes attrs2)
     {
-        assertTrue(attrs1.permissions().equals(attrs2.permissions()));
-        assertTrue(attrs1.owner().equals(attrs2.owner()));
-        assertTrue(attrs1.group().equals(attrs2.group()));
+        try {
+            assertTrue(attrs1.permissions().equals(attrs2.permissions()));
+            assertTrue(attrs1.owner().equals(attrs2.owner()));
+            assertTrue(attrs1.group().equals(attrs2.group()));
+        } catch (Exception e) {
+            if (!attrs1.permissions().equals(attrs2.permissions()))
+                System.err.format("permissions%n1 (%d): %s%n2 (%d): %s%n%n",
+                    attrs1.permissions().size(), attrs1.permissions(),
+                    attrs2.permissions().size(), attrs2.permissions());
+            if (!attrs1.owner().equals(attrs2.owner()))
+                System.err.format("owner%n1: %s%n2: %s%n%n",
+                    attrs1.owner(), attrs2.owner());
+            if (!attrs1.group().equals(attrs2.group()))
+                System.err.format("group%n1: %s%n2: %s%n%n",
+                    attrs1.group(), attrs2.group());
+            throw e;
+        }
     }
 
     static void checkDosAttributes(DosFileAttributes attrs1,
                                    DosFileAttributes attrs2)
     {
-        assertTrue(attrs1.isReadOnly() == attrs2.isReadOnly());
-        assertTrue(attrs1.isHidden() == attrs2.isHidden());
-        assertTrue(attrs1.isSystem() == attrs2.isSystem());
+        try {
+            assertTrue(attrs1.isReadOnly() == attrs2.isReadOnly());
+            assertTrue(attrs1.isHidden() == attrs2.isHidden());
+            assertTrue(attrs1.isSystem() == attrs2.isSystem());
+        } catch (Exception e) {
+            if(attrs1.isReadOnly() != attrs2.isReadOnly())
+                System.err.format("isReadOnly%n1: %s%n2: %s%n%n",
+                    attrs1.isReadOnly(), attrs2.isReadOnly());
+            if(attrs1.isHidden() != attrs2.isHidden())
+                System.err.format("isHidden%n1: %s%n2: %s%n%n",
+                    attrs1.isHidden(), attrs2.isHidden());
+            if(attrs1.isSystem() != attrs2.isSystem())
+                System.err.format("isSystem%n1: %s%n2: %s%n%n",
+                    attrs1.isSystem(), attrs2.isSystem());
+            throw e;
+        }
     }
 
     static void checkUserDefinedFileAttributes(Map<String,ByteBuffer> attrs1,
@@ -253,6 +292,8 @@ public class CopyAndMove {
     static void testMove(Path dir1, Path dir2, boolean supportsLinks)
         throws IOException
     {
+        printDirInfo("testMove", dir1, dir2);
+
         Path source, target, entry;
 
         boolean sameDevice = getFileStore(dir1).equals(getFileStore(dir2));
@@ -688,6 +729,8 @@ public class CopyAndMove {
     static void testCopyFileToFile(Path dir1, Path dir2, boolean supportsLinks)
         throws IOException
     {
+        printDirInfo("testCopyFileToFile", dir1, dir2);
+
         Path source, target, link, entry;
 
         // -- regular file --
