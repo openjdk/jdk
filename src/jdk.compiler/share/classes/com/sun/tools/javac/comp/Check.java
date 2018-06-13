@@ -3650,17 +3650,8 @@ public class Check {
         OUTER: for (JCImport imp : toplevel.getImports()) {
             if (!imp.staticImport && TreeInfo.name(imp.qualid) == names.asterisk) {
                 TypeSymbol tsym = ((JCFieldAccess)imp.qualid).selected.type.tsym;
-                if (toplevel.modle.visiblePackages != null) {
-                    //TODO - unclear: selects like javax.* will get resolved from the current module
-                    //(as javax is not an exported package from any module). And as javax in the current
-                    //module typically does not contain any classes or subpackages, we need to go through
-                    //the visible packages to find a sub-package:
-                    for (PackageSymbol known : toplevel.modle.visiblePackages.values()) {
-                        if (Convert.packagePart(known.fullname) == tsym.flatName())
-                            continue OUTER;
-                    }
-                }
-                if (tsym.kind == PCK && tsym.members().isEmpty() && !tsym.exists()) {
+                if (tsym.kind == PCK && tsym.members().isEmpty() &&
+                    !(Feature.IMPORT_ON_DEMAND_OBSERVABLE_PACKAGES.allowedInSource(source) && tsym.exists())) {
                     log.error(DiagnosticFlag.RESOLVE_ERROR, imp.pos, Errors.DoesntExist(tsym));
                 }
             }
