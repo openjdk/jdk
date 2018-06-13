@@ -3853,6 +3853,8 @@ MsgRouting AwtComponent::WmChar(UINT character, UINT repCnt, UINT flags,
 MsgRouting AwtComponent::WmForwardChar(WCHAR character, LPARAM lParam,
                                        BOOL synthetic)
 {
+    deadKeyActive = FALSE;
+
     // just post WM_CHAR with unicode key value
     DefWindowProc(WM_CHAR, (WPARAM)character, lParam);
     return mrConsume;
