@@ -150,6 +150,9 @@ define_pd_global(bool, ThreadLocalHandshakes, false);
   product(bool, UseUnalignedLoadStores, false,                              \
           "Use SSE2 MOVDQU instruction for Arraycopy")                      \
                                                                             \
+  product(bool, UseXMMForObjInit, false,                                    \
+          "Use XMM/YMM MOVDQU instruction for Object Initialization")       \
+                                                                            \
   product(bool, UseFastStosb, false,                                        \
           "Use fast-string operation for zeroing: rep stosb")               \
                                                                             \
