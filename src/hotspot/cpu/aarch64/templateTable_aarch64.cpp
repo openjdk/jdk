@@ -2027,7 +2027,7 @@ void TemplateTable::if_acmp(Condition cc)
   // assume branch is more often taken than not (loops use backward branches)
   Label not_taken;
   __ pop_ptr(r1);
-  __ cmp(r1, r0);
+  __ cmpoop(r1, r0);
   __ br(j_not(cc), not_taken);
   branch(false, false);
   __ bind(not_taken);

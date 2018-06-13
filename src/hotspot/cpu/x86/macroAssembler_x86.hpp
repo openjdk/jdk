@@ -741,11 +741,13 @@ class MacroAssembler: public Assembler {
   void cmpklass(Address dst, Metadata* obj);
   void cmpklass(Register dst, Metadata* obj);
   void cmpoop(Address dst, jobject obj);
+  void cmpoop_raw(Address dst, jobject obj);
 #endif // _LP64
 
   void cmpoop(Register src1, Register src2);
   void cmpoop(Register src1, Address src2);
   void cmpoop(Register dst, jobject obj);
+  void cmpoop_raw(Register dst, jobject obj);
 
   // NOTE src2 must be the lval. This is NOT an mem-mem compare
   void cmpptr(Address src1, AddressLiteral src2);
