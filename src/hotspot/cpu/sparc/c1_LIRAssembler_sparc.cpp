@@ -3202,23 +3202,38 @@ void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest, LIR_PatchCode patch_cod
   const Register dest_reg = dest->as_pointer_register();
   const Register base_reg = addr->base()->as_pointer_register();
 
-  if (Assembler::is_simm13(addr->disp())) {
-    if (addr->index()->is_valid()) {
-      const Register index_reg = addr->index()->as_pointer_register();
-      assert(index_reg != G3_scratch, "invariant");
-      __ add(base_reg, addr->disp(), G3_scratch);
-      __ add(index_reg, G3_scratch, dest_reg);
-    } else {
-      __ add(base_reg, addr->disp(), dest_reg);
-    }
-  } else {
-    __ set(addr->disp(), G3_scratch);
+  if (patch_code != lir_patch_none) {
+    PatchingStub* patch = new PatchingStub(_masm, PatchingStub::access_field_id);
+    assert(addr->disp() != 0, "must have");
+    assert(base_reg != G3_scratch, "invariant");
+    __ patchable_set(0, G3_scratch);
+    patching_epilog(patch, patch_code, base_reg, info);
+    assert(dest_reg != G3_scratch, "invariant");
     if (addr->index()->is_valid()) {
       const Register index_reg = addr->index()->as_pointer_register();
       assert(index_reg != G3_scratch, "invariant");
       __ add(index_reg, G3_scratch, G3_scratch);
     }
     __ add(base_reg, G3_scratch, dest_reg);
+  } else {
+    if (Assembler::is_simm13(addr->disp())) {
+      if (addr->index()->is_valid()) {
+        const Register index_reg = addr->index()->as_pointer_register();
+        assert(index_reg != G3_scratch, "invariant");
+        __ add(base_reg, addr->disp(), G3_scratch);
+        __ add(index_reg, G3_scratch, dest_reg);
+      } else {
+        __ add(base_reg, addr->disp(), dest_reg);
+      }
+    } else {
+      __ set(addr->disp(), G3_scratch);
+      if (addr->index()->is_valid()) {
+        const Register index_reg = addr->index()->as_pointer_register();
+        assert(index_reg != G3_scratch, "invariant");
+        __ add(index_reg, G3_scratch, G3_scratch);
+      }
+      __ add(base_reg, G3_scratch, dest_reg);
+    }
   }
 }
 

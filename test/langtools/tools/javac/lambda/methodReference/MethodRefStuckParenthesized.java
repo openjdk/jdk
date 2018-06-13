@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,28 @@
 
 /*
  * @test
- * @bug 4869999 8193302
- * @summary Verify that the compiler does not prematurely decide a package is not observable.
- * @compile -source 8 -Xlint:-options ImportsObservable.java
- * @compile/fail/ref=ImportsObservable.out -XDrawDiagnostics ImportsObservable.java
+ * @bug 8203679
+ * @summary This is a negative regression test for an AssertionError in DeferredAttr.
+ * @compile/fail/ref=MethodRefStuckParenthesized.out -XDrawDiagnostics MethodRefStuckParenthesized.java
  */
 
-import javax.*;
-import javax.swing.*;
-public class ImportsObservable {
+public abstract class MethodRefStuckParenthesized {
+
+  interface I {
+    String v();
+  }
+
+  interface J {
+    String v();
+  }
+
+  abstract String v();
+
+  abstract void f(I v);
+
+  abstract <X extends J> J g(X x);
+
+  void test() {
+    f(g((this::v)));
+  }
 }

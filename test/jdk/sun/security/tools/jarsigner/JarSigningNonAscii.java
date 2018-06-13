@@ -29,9 +29,7 @@
  * @run main/othervm JarSigningNonAscii
  */
 
-import sun.security.tools.*;
 import java.io.*;
-import java.security.Security;
 import java.util.*;
 import java.util.jar.*;
 import java.security.cert.Certificate;

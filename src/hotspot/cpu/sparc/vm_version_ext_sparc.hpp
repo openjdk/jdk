@@ -27,8 +27,11 @@
 
 #include "utilities/macros.hpp"
 #include "vm_version_sparc.hpp"
+
+#if defined(SOLARIS)
 #include <kstat.h>
 #include <sys/processor.h>
+#endif
 
 #define CPU_INFO        "cpu_info"
 #define CPU_TYPE        "fpu_type"
@@ -45,7 +48,9 @@ class VM_Version_Ext : public VM_Version {
   static int               _no_of_threads;
   static int               _no_of_cores;
   static int               _no_of_sockets;
+#if defined(SOLARIS)
   static kid_t             _kcid;
+#endif
   static char              _cpu_name[CPU_TYPE_DESC_BUF_SIZE];
   static char              _cpu_desc[CPU_DETAILED_DESC_BUF_SIZE];
 
