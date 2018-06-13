@@ -804,7 +804,6 @@ javax/swing/JEditorPane/8195095/ImageViewTest.java 8202656 windows-all
 javax/swing/text/Utilities/8142966/SwingFontMetricsTest.java 8202663 windows-all
 javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
-javax/swing/plaf/nimbus/8057791/bug8057791.java 8202877 macosx-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
 java/awt/im/memoryleak/InputContextMemoryLeakTest.java 8023814 linux-all,solaris-all
 
