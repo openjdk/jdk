@@ -26,7 +26,6 @@
 
 import java.rmi.*;
 import sun.rmi.transport.*;
-import sun.rmi.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.rmi.dgc.*;

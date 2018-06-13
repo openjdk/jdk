@@ -38,6 +38,8 @@
 class CommittedVirtualMemoryTest {
 public:
   static void test() {
+#ifndef _AIX
+    // See JDK-8202772: temporarily disabled.
     Thread* thr = Thread::current();
     address stack_end = thr->stack_end();
     size_t  stack_size = thr->stack_size();
@@ -81,6 +83,7 @@ public:
     ASSERT_TRUE(i >= 1);
     ASSERT_TRUE(found_stack_top);
     ASSERT_TRUE(found_i_addr);
+#endif // !_AIX
   }
 
   static void check_covered_pages(address addr, size_t size, address base, size_t touch_pages, int* page_num) {

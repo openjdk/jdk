@@ -164,10 +164,17 @@ public class DeferredAttr extends JCTree.Visitor {
                     JCMemberReference result = new JCMemberReference(t.mode, t.name, expr, typeargs) {
                         @Override
                         public void setOverloadKind(OverloadKind overloadKind) {
-                            super.setOverloadKind(overloadKind);
-                            if (t.getOverloadKind() == null) {
+                            OverloadKind previous = t.getOverloadKind();
+                            if (previous == null) {
                                 t.setOverloadKind(overloadKind);
+                            } else {
+                                Assert.check(previous == overloadKind);
                             }
+                        }
+
+                        @Override
+                        public OverloadKind getOverloadKind() {
+                            return t.getOverloadKind();
                         }
                     };
                     result.pos = t.pos;

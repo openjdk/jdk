@@ -3651,6 +3651,11 @@ void MacroAssembler::cmpptr(Register src1, Address src2) {
   cmp(src1, rscratch1);
 }
 
+void MacroAssembler::cmpoop(Register obj1, Register obj2) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->obj_equals(this, obj1, obj2);
+}
+
 void MacroAssembler::load_klass(Register dst, Register src) {
   if (UseCompressedClassPointers) {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
@@ -5048,6 +5053,8 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     // a1 & a2 == 0 means (some-pointer is null) or
     // (very-rare-or-even-probably-impossible-pointer-values)
     // so, we can save one branch in most cases
+    cmpoop(a1, a2);
+    br(EQ, SAME);
     eor(rscratch1, a1, a2);
     tst(a1, a2);
     mov(result, false);
@@ -5131,7 +5138,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     // faster to perform another branch before comparing a1 and a2
     cmp(cnt1, elem_per_word);
     br(LE, SHORT); // short or same
-    cmp(a1, a2);
+    cmpoop(a1, a2);
     br(EQ, SAME);
     ldr(tmp3, Address(pre(a1, base_offset)));
     cmp(cnt1, stubBytesThreshold);
