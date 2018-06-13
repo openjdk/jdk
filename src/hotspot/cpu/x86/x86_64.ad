@@ -10770,12 +10770,12 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 
 // =======================================================================
 // fast clearing of an array
-instruct rep_stos(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dummy,
-                  rFlagsReg cr)
+instruct rep_stos(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
+                  Universe dummy, rFlagsReg cr)
 %{
   predicate(!((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
   format %{ $$template
     $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
@@ -10791,35 +10791,90 @@ instruct rep_stos(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dummy,
     if (UseFastStosb) {
        $$emit$$"shlq    rcx,3\t# Convert doublewords to bytes\n\t"
        $$emit$$"rep     stosb\t# Store rax to *rdi++ while rcx--\n\t"
+    } else if (UseXMMForObjInit) {
+       $$emit$$"mov     rdi,rax\n\t"
+       $$emit$$"vpxor   ymm0,ymm0,ymm0\n\t"
+       $$emit$$"jmpq    L_zero_64_bytes\n\t"
+       $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
+       $$emit$$"vmovdqu ymm0,(rax)\n\t"
+       $$emit$$"vmovdqu ymm0,0x20(rax)\n\t"
+       $$emit$$"add     0x40,rax\n\t"
+       $$emit$$"# L_zero_64_bytes:\n\t"
+       $$emit$$"sub     0x8,rcx\n\t"
+       $$emit$$"jge     L_loop\n\t"
+       $$emit$$"add     0x4,rcx\n\t"
+       $$emit$$"jl      L_tail\n\t"
+       $$emit$$"vmovdqu ymm0,(rax)\n\t"
+       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"sub     0x4,rcx\n\t"
+       $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
+       $$emit$$"add     0x4,rcx\n\t"
+       $$emit$$"jle     L_end\n\t"
+       $$emit$$"dec     rcx\n\t"
+       $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
+       $$emit$$"vmovq   xmm0,(rax)\n\t"
+       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"dec     rcx\n\t"
+       $$emit$$"jge     L_sloop\n\t"
+       $$emit$$"# L_end:\n\t"
     } else {
        $$emit$$"rep     stosq\t# Store rax to *rdi++ while rcx--\n\t"
     }
     $$emit$$"# DONE"
   %}
   ins_encode %{
-    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register, false);
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register,
+                 $tmp$$XMMRegister, false);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dummy,
-                  rFlagsReg cr)
+instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero, 
+                        Universe dummy, rFlagsReg cr)
 %{
   predicate(((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
   format %{ $$template
-    $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
     if (UseFastStosb) {
+       $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
        $$emit$$"shlq    rcx,3\t# Convert doublewords to bytes\n\t"
        $$emit$$"rep     stosb\t# Store rax to *rdi++ while rcx--"
+    } else if (UseXMMForObjInit) {
+       $$emit$$"mov     rdi,rax\t# ClearArray:\n\t"
+       $$emit$$"vpxor   ymm0,ymm0,ymm0\n\t"
+       $$emit$$"jmpq    L_zero_64_bytes\n\t"
+       $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
+       $$emit$$"vmovdqu ymm0,(rax)\n\t"
+       $$emit$$"vmovdqu ymm0,0x20(rax)\n\t"
+       $$emit$$"add     0x40,rax\n\t"
+       $$emit$$"# L_zero_64_bytes:\n\t"
+       $$emit$$"sub     0x8,rcx\n\t"
+       $$emit$$"jge     L_loop\n\t"
+       $$emit$$"add     0x4,rcx\n\t"
+       $$emit$$"jl      L_tail\n\t"
+       $$emit$$"vmovdqu ymm0,(rax)\n\t"
+       $$emit$$"add     0x20,rax\n\t"
+       $$emit$$"sub     0x4,rcx\n\t"
+       $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
+       $$emit$$"add     0x4,rcx\n\t"
+       $$emit$$"jle     L_end\n\t"
+       $$emit$$"dec     rcx\n\t"
+       $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
+       $$emit$$"vmovq   xmm0,(rax)\n\t"
+       $$emit$$"add     0x8,rax\n\t"
+       $$emit$$"dec     rcx\n\t"
+       $$emit$$"jge     L_sloop\n\t"
+       $$emit$$"# L_end:\n\t"
     } else {
+       $$emit$$"xorq    rax, rax\t# ClearArray:\n\t"
        $$emit$$"rep     stosq\t# Store rax to *rdi++ while rcx--"
     }
   %}
   ins_encode %{
-    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register, true);
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register, 
+                 $tmp$$XMMRegister, true);
   %}
   ins_pipe(pipe_slow);
 %}

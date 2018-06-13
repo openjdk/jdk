@@ -1578,7 +1578,10 @@ public:
 
   // clear memory of size 'cnt' qwords, starting at 'base';
   // if 'is_large' is set, do not try to produce short loop
-  void clear_mem(Register base, Register cnt, Register rtmp, bool is_large);
+  void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large);
+
+  // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM registers
+  void xmm_clear_mem(Register base, Register cnt, XMMRegister xtmp);
 
 #ifdef COMPILER2
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
