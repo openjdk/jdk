@@ -339,4 +339,18 @@ public class EventFilters
 
         return false;
     }
+
+    // Filters out events with location not matching the given type.
+    public static boolean filtered(Event event, String typeName) {
+        if (event instanceof Locatable) {
+            Location location = ((Locatable) event).location();
+            if (location != null) {
+                ReferenceType declaringType = location.declaringType();
+                if (declaringType != null && typeName.equals(declaringType.name())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }
