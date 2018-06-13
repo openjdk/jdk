@@ -82,14 +82,14 @@ void PLAB::retire() {
 size_t PLAB::retire_internal() {
   size_t result = 0;
   if (_top < _hard_end) {
-    CollectedHeap::fill_with_object(_top, _hard_end);
+    Universe::heap()->fill_with_dummy_object(_top, _hard_end, true);
     result += invalidate();
   }
   return result;
 }
 
 void PLAB::add_undo_waste(HeapWord* obj, size_t word_sz) {
-  CollectedHeap::fill_with_object(obj, word_sz);
+  Universe::heap()->fill_with_dummy_object(obj, obj + word_sz, true);
   _undo_wasted += word_sz;
 }
 

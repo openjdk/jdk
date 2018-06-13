@@ -350,6 +350,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     fill_with_object(start, pointer_delta(end, start), zap);
   }
 
+  virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
+
   // Return the address "addr" aligned by "alignment_in_bytes" if such
   // an address is below "end".  Return NULL otherwise.
   inline static HeapWord* align_allocation_or_fail(HeapWord* addr,
