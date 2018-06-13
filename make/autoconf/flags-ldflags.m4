@@ -94,7 +94,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     BASIC_LDFLAGS="-b64 -brtl -bnolibpath -bexpall -bernotok -btextpsize:64K \
         -bdatapsize:64K -bstackpsize:64K"
-    BASIC_LDFLAGS_JVM_ONLY="-Wl,-lC_r"
+    # libjvm.so has gotten too large for normal TOC size; compile with qpic=large and link with bigtoc
+    BASIC_LDFLAGS_JVM_ONLY="-Wl,-lC_r -bbigtoc"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     BASIC_LDFLAGS="-nologo -opt:ref"
