@@ -211,6 +211,7 @@ tier1_runtime = \
  -runtime/ConstantPool/IntfMethod.java \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
  -runtime/ErrorHandling/ErrorHandler.java \
+ -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/logging/MonitorMismatchTest.java \
  -runtime/memory/ReserveMemory.java \
@@ -273,6 +274,8 @@ tier1_serviceability = \
   serviceability/logging \
   serviceability/sa \
   -serviceability/sa/ClhsdbScanOops.java \
+  -serviceability/sa/TestJmapCore.java \
+  -serviceability/sa/TestJmapCoreMetaspace.java \
   -serviceability/sa/TestHeapDumpForLargeArray.java
 
 tier1 = \
@@ -2264,17 +2267,6 @@ vmTestbase_vm_compiler_quick = \
 # JSR292 tests (invokedynamic AKA Multi-Language VM AKA Da Vinci Machine)
 vmTestbase_vm_mlvm = \
   vmTestbase/vm/mlvm
-
-# Heap dump tests
-vmTestbase_vm_heapdump = \
-  vmTestbase/heapdump
-
-vmTestbase_vm_heapdump_quick = \
-  vmTestbase/heapdump/OnOOMToFile/TestDescription.java \
-  vmTestbase/heapdump/OnOOMToFileMetaspace/TestDescription.java \
-  vmTestbase/heapdump/OnOOMToPath/TestDescription.java \
-  vmTestbase/heapdump/JMapHeapCore/TestDescription.java \
-  vmTestbase/heapdump/JMapMetaspace/TestDescription.java
 
 # Tests for attach-on-demand implementation
 vmTestbase_nsk_aod = \
