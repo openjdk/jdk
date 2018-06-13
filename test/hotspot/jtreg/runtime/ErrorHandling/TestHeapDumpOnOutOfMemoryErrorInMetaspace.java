@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,8 @@
  */
 
 /*
- * @test
- *
- * @summary converted from VM testbase heapdump/JMapHeap.
- * VM testbase keywords: [heapdump, feature_heapdump, nonconcurrent, jdk]
- * VM testbase readme:
- * DESCRIPTION
- *     This test verifies that heap dump created by JMap is able to be
- *     parsed by HprofParser. It fills the heap with objects of different types
- *     till OutOfMemoryError, then uses JMap to create heap dump and then
- *     verifies created heap dump with HprofParser.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jdk.test.lib.hprof.HprofParser
- *        heapdump.share.EatMemory
- * @run shell/timeout=300 run.sh
+ * @test TestHeapDumpOnOutOfMemoryErrorInMetaspace
+ * @summary Test verifies that -XX:HeapDumpOnOutOfMemoryError dump heap when OutOfMemory is thrown in metaspace
+ * @library /test/lib
+ * @run driver/timeout=240 TestHeapDumpOnOutOfMemoryError run metaspace
  */
-

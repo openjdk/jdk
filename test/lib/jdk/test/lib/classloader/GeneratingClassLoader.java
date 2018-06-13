@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package utils;
+package jdk.test.lib.classloader;
 
 import java.io.*;
 import java.util.*;
@@ -31,9 +31,12 @@ import java.util.*;
  * This classloader can load classes with name starting with 'Class'. It will
  * use TemplateClass as template and will replace class name in the bytecode of
  * template class. It can be used for example to detect memory leaks in class
- * loading or to quickly fill PermGen.
+ * loading or to quickly fill Metaspace.
  */
-class GeneratingClassLoader extends ClassLoader {
+class TemplateClass {
+}
+
+public class GeneratingClassLoader extends ClassLoader {
 
     public synchronized Class loadClass(String name) throws ClassNotFoundException {
         return loadClass(name, false);
@@ -63,7 +66,7 @@ class GeneratingClassLoader extends ClassLoader {
      * Create generating class loader that will use class file for given class
      * from classpath as template.
      */
-    GeneratingClassLoader(String templateClassName) {
+    public GeneratingClassLoader(String templateClassName) {
         this.templateClassName = templateClassName;
         classPath = System.getProperty("java.class.path").split(File.pathSeparator);
         try {
@@ -77,11 +80,11 @@ class GeneratingClassLoader extends ClassLoader {
      * Create generating class loader that will use class file for
      * nsk.share.classload.TemplateClass as template.
      */
-    GeneratingClassLoader() {
+    public GeneratingClassLoader() {
         this(TemplateClass.class.getName());
     }
 
-    int getNameLength() {
+    public int getNameLength() {
         return templateClassName.length();
     }
 
@@ -89,7 +92,7 @@ class GeneratingClassLoader extends ClassLoader {
         return PREFIX;
     }
 
-    String getClassName(int number) {
+    public String getClassName(int number) {
         StringBuffer sb = new StringBuffer();
         sb.append(PREFIX);
         sb.append(number);
@@ -183,7 +186,7 @@ class GeneratingClassLoader extends ClassLoader {
         }
     }
 
-    static final String DEFAULT_CLASSNAME = TemplateClass.class.getName();
+    public static final String DEFAULT_CLASSNAME = TemplateClass.class.getName();
     static final String PREFIX = "Class";
 
     private final String[] classPath;

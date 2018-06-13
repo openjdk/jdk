@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,9 @@
  * questions.
  */
 
-
 /*
- * @test
- *
- * @summary converted from VM testbase heapdump/JMapHeapCore.
- * VM testbase keywords: [heapdump, feature_heapdump, nonconcurrent.jdk, quick, quarantine]
- * VM testbase comments: JDK-8023376 JDK-8001227 JDK-8051445
- * VM testbase readme:
- * DESCRIPTION
- *     This test verifies that heap dump created by jhsdb is able to be
- *     parsed by HprofParser. It fills the heap with objects of different types
- *     till OutOfMemoryError, forces core dump, then uses jhsdb on core file
- *     to create heap dump and then verifies created heap dump with HprofParser.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @build jdk.test.lib.hprof.HprofParser
- *        heapdump.share.EatMemory
- * @run shell/timeout=300 run.sh
+ * @test TestJmapCoreMetaspace
+ * @summary Test verifies that jhsdb jmap could generate heap dump from core when metspace is full
+ * @library /test/lib
+ * @run driver/timeout=240 TestJmapCore run metaspace
  */
-
