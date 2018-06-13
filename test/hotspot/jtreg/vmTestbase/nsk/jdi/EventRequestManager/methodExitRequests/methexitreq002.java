@@ -525,7 +525,7 @@ public class methexitreq002 {
 
             log2("      received: " + event);
 
-            if (EventFilters.filtered(event)) {
+            if (EventFilters.filtered(event, debuggeeName)) {
                 eventSet.resume();
             }
             else {
