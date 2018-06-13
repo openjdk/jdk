@@ -47,6 +47,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -2150,6 +2151,14 @@ public final class System {
             }
             public Stream<ModuleLayer> layers(ClassLoader loader) {
                 return ModuleLayer.layers(loader);
+            }
+
+            public String newStringNoRepl(byte[] bytes, Charset cs) {
+                return StringCoding.newStringNoRepl(bytes, cs);
+            }
+
+            public byte[] getBytesNoRepl(String s, Charset cs) {
+                return StringCoding.getBytesNoRepl(s, cs);
             }
 
             public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
