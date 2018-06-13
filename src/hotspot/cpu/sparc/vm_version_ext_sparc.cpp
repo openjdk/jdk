@@ -31,10 +31,13 @@
 int   VM_Version_Ext::_no_of_threads = 0;
 int   VM_Version_Ext::_no_of_cores = 0;
 int   VM_Version_Ext::_no_of_sockets = 0;
+#if defined(SOLARIS)
 kid_t VM_Version_Ext::_kcid = -1;
+#endif
 char  VM_Version_Ext::_cpu_name[CPU_TYPE_DESC_BUF_SIZE] = {0};
 char  VM_Version_Ext::_cpu_desc[CPU_DETAILED_DESC_BUF_SIZE] = {0};
 
+#if defined(SOLARIS)
 // get cpu information. It takes into account if the kstat chain id
 // has been changed and update the info if necessary.
 bool VM_Version_Ext::initialize_cpu_information(void) {
@@ -144,6 +147,13 @@ bool VM_Version_Ext::initialize_cpu_information(void) {
   kstat_close(kc);
   return true;
 }
+#elif defined(LINUX)
+// get cpu information.
+bool VM_Version_Ext::initialize_cpu_information(void) {
+  // Not yet implemented.
+  return false;
+}
+#endif
 
 int VM_Version_Ext::number_of_threads(void) {
   initialize_cpu_information();
