@@ -241,6 +241,11 @@ class MemTracker : AllStatic {
     }
   }
 
+#ifdef _AIX
+  // See JDK-8202772 - temporarily disable thread stack tracking on AIX.
+  static inline void record_thread_stack(void* addr, size_t size) {}
+  static inline void release_thread_stack(void* addr, size_t size) {}
+#else
   static inline void record_thread_stack(void* addr, size_t size) {
     if (tracking_level() < NMT_summary) return;
     if (addr != NULL) {
@@ -260,6 +265,7 @@ class MemTracker : AllStatic {
       VirtualMemoryTracker::remove_released_region((address)addr, size);
     }
   }
+#endif
 
   // Query lock is used to synchronize the access to tracking data.
   // So far, it is only used by JCmd query, but it may be used by
