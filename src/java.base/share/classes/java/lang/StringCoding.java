@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -589,6 +589,10 @@ class StringCoding {
     }
 
     private static byte[] encode8859_1(byte coder, byte[] val) {
+        return encode8859_1(coder, val, true);
+    }
+
+    private static byte[] encode8859_1(byte coder, byte[] val, boolean doReplace) {
         if (coder == LATIN1) {
             return Arrays.copyOf(val, val.length);
         }
@@ -602,6 +606,9 @@ class StringCoding {
             sp = sp + ret;
             dp = dp + ret;
             if (ret != len) {
+                if (!doReplace) {
+                    throwMalformed(sp, 1);
+                }
                 char c = StringUTF16.getChar(val, sp++);
                 if (Character.isHighSurrogate(c) && sp < sl &&
                     Character.isLowSurrogate(StringUTF16.getChar(val, sp))) {
@@ -674,6 +681,12 @@ class StringCoding {
     private static void throwMalformed(int off, int nb) {
         throw new IllegalArgumentException("malformed input off : " + off +
                                            ", length : " + nb);
+    }
+
+    private static void throwMalformed(byte[] val) {
+        int dp = 0;
+        while (dp < val.length && val[dp] >=0) { dp++; }
+        throwMalformed(dp, 1);
     }
 
     private static char repl = '\ufffd';
@@ -931,7 +944,7 @@ class StringCoding {
     ////////////////////// for j.u.z.ZipCoder //////////////////////////
 
     /*
-     * Throws iae, instead of replacing, if malformed or unmappble.
+     * Throws iae, instead of replacing, if malformed or unmappable.
      */
     static String newStringUTF8NoRepl(byte[] src, int off, int len) {
         if (COMPACT_STRINGS && !hasNegatives(src, off, len))
@@ -941,9 +954,137 @@ class StringCoding {
     }
 
     /*
-     * Throws iae, instead of replacing, if unmappble.
+     * Throws iae, instead of replacing, if unmappable.
      */
     static byte[] getBytesUTF8NoRepl(String s) {
         return encodeUTF8(s.coder(), s.value(), false);
+    }
+
+    ////////////////////// for j.n.f.Files //////////////////////////
+
+    private static boolean isASCII(byte[] src) {
+        return !hasNegatives(src, 0, src.length);
+    }
+
+    private static String newStringLatin1(byte[] src) {
+        if (COMPACT_STRINGS)
+           return new String(src, LATIN1);
+        return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+    }
+
+    static String newStringNoRepl(byte[] src, Charset cs) {
+        if (cs == UTF_8) {
+            if (COMPACT_STRINGS && isASCII(src))
+                return new String(src, LATIN1);
+            Result ret = decodeUTF8_0(src, 0, src.length, false);
+            return new String(ret.value, ret.coder);
+        }
+        if (cs == ISO_8859_1) {
+            return newStringLatin1(src);
+        }
+        if (cs == US_ASCII) {
+            if (isASCII(src)) {
+                return newStringLatin1(src);
+            } else {
+                throwMalformed(src);
+            }
+        }
+
+        CharsetDecoder cd = cs.newDecoder();
+        // ascii fastpath
+        if ((cd instanceof ArrayDecoder) &&
+            ((ArrayDecoder)cd).isASCIICompatible() && isASCII(src)) {
+            return newStringLatin1(src);
+        }
+        int len = src.length;
+        if (len == 0) {
+            return "";
+        }
+        int en = scale(len, cd.maxCharsPerByte());
+        char[] ca = new char[en];
+        if (cs.getClass().getClassLoader0() != null &&
+            System.getSecurityManager() != null) {
+            src = Arrays.copyOf(src, len);
+        }
+        ByteBuffer bb = ByteBuffer.wrap(src);
+        CharBuffer cb = CharBuffer.wrap(ca);
+        try {
+            CoderResult cr = cd.decode(bb, cb, true);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            cr = cd.flush(cb);
+            if (!cr.isUnderflow())
+                cr.throwException();
+        } catch (CharacterCodingException x) {
+            throw new IllegalArgumentException(x);  // todo
+        }
+        Result ret = resultCached.get().with(ca, 0, cb.position());
+        return new String(ret.value, ret.coder);
+    }
+
+    /*
+     * Throws iae, instead of replacing, if unmappable.
+     */
+    static byte[] getBytesNoRepl(String s, Charset cs) {
+        byte[] val = s.value();
+        byte coder = s.coder();
+        if (cs == UTF_8) {
+            if (isASCII(val)) {
+                return val;
+            }
+            return encodeUTF8(coder, val, false);
+        }
+        if (cs == ISO_8859_1) {
+            if (coder == LATIN1) {
+                return val;
+            }
+            return encode8859_1(coder, val, false);
+        }
+        if (cs == US_ASCII) {
+            if (coder == LATIN1) {
+                if (isASCII(val)) {
+                    return val;
+                } else {
+                    throwMalformed(val);
+                }
+            }
+        }
+        CharsetEncoder ce = cs.newEncoder();
+        // fastpath for ascii compatible
+        if (coder == LATIN1 && (((ce instanceof ArrayEncoder) &&
+                                 ((ArrayEncoder)ce).isASCIICompatible() &&
+                                 isASCII(val)))) {
+            return val;
+        }
+        int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
+        int en = scale(len, ce.maxBytesPerChar());
+        byte[] ba = new byte[en];
+        if (len == 0) {
+            return ba;
+        }
+        if (ce instanceof ArrayEncoder) {
+            int blen = (coder == LATIN1 ) ? ((ArrayEncoder)ce).encodeFromLatin1(val, 0, len, ba)
+                                          : ((ArrayEncoder)ce).encodeFromUTF16(val, 0, len, ba);
+            if (blen != -1) {
+                return safeTrim(ba, blen, true);
+            }
+        }
+        boolean isTrusted = cs.getClass().getClassLoader0() == null ||
+                            System.getSecurityManager() == null;
+        char[] ca = (coder == LATIN1 ) ? StringLatin1.toChars(val)
+                                       : StringUTF16.toChars(val);
+        ByteBuffer bb = ByteBuffer.wrap(ba);
+        CharBuffer cb = CharBuffer.wrap(ca, 0, len);
+        try {
+            CoderResult cr = ce.encode(cb, bb, true);
+            if (!cr.isUnderflow())
+                cr.throwException();
+            cr = ce.flush(bb);
+            if (!cr.isUnderflow())
+                cr.throwException();
+        } catch (CharacterCodingException x) {
+            throw new Error(x);
+        }
+        return safeTrim(ba, bb.position(), isTrusted);
     }
 }

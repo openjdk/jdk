@@ -3121,6 +3121,9 @@ public final class Files {
      */
     private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
 
+    private static final jdk.internal.misc.JavaLangAccess JLA =
+            jdk.internal.misc.SharedSecrets.getJavaLangAccess();
+
     /**
      * Reads all the bytes from an input stream. Uses {@code initialSize} as a hint
      * about how many bytes the stream will have.
@@ -3199,6 +3202,81 @@ public final class Files {
                 throw new OutOfMemoryError("Required array size too large");
 
             return read(in, (int)size);
+        }
+    }
+
+    /**
+     * Reads all content from a file into a string, decoding from bytes to characters
+     * using the {@link StandardCharsets#UTF_8 UTF-8} {@link Charset charset}.
+     * The method ensures that the file is closed when all content have been read
+     * or an I/O error, or other runtime exception, is thrown.
+     *
+     * <p> This method is equivalent to:
+     * {@code readString(path, StandardCharsets.UTF_8) }
+     *
+     * @param   path the path to the file
+     *
+     * @return  a String containing the content read from the file
+     *
+     * @throws  IOException
+     *          if an I/O error occurs reading from the file or a malformed or
+     *          unmappable byte sequence is read
+     * @throws  OutOfMemoryError
+     *          if the file is extremely large, for example larger than {@code 2GB}
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
+     *          method is invoked to check read access to the file.
+     *
+     * @since 11
+     */
+    public static String readString(Path path) throws IOException {
+        return readString(path, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Reads all characters from a file into a string, decoding from bytes to characters
+     * using the specified {@linkplain Charset charset}.
+     * The method ensures that the file is closed when all content have been read
+     * or an I/O error, or other runtime exception, is thrown.
+     *
+     * <p> This method reads all content including the line separators in the middle
+     * and/or at the end. The resulting string will contain line separators as they
+     * appear in the file.
+     *
+     * @apiNote
+     * This method is intended for simple cases where it is appropriate and convenient
+     * to read the content of a file into a String. It is not intended for reading
+     * very large files.
+     *
+     *
+     *
+     * @param   path the path to the file
+     * @param   cs the charset to use for decoding
+     *
+     * @return  a String containing the content read from the file
+     *
+     * @throws  IOException
+     *          if an I/O error occurs reading from the file or a malformed or
+     *          unmappable byte sequence is read
+     * @throws  OutOfMemoryError
+     *          if the file is extremely large, for example larger than {@code 2GB}
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
+     *          method is invoked to check read access to the file.
+     *
+     * @since 11
+     */
+    public static String readString(Path path, Charset cs) throws IOException {
+        Objects.requireNonNull(path);
+        Objects.requireNonNull(cs);
+
+        byte[] ba = readAllBytes(path);
+        try {
+            return JLA.newStringNoRepl(ba, cs);
+        } catch (IllegalArgumentException e) {
+            throw new IOException(e);
         }
     }
 
@@ -3454,6 +3532,110 @@ public final class Files {
         throws IOException
     {
         return write(path, lines, StandardCharsets.UTF_8, options);
+    }
+
+    /**
+     * Write a {@linkplain java.lang.CharSequence CharSequence} to a file.
+     * Characters are encoded into bytes using the
+     * {@link StandardCharsets#UTF_8 UTF-8} {@link Charset charset}.
+     *
+     * <p> This method is equivalent to:
+     * {@code writeString(path, test, StandardCharsets.UTF_8, options) }
+     *
+     * @param   path
+     *          the path to the file
+     * @param   csq
+     *          the CharSequence to be written
+     * @param   options
+     *          options specifying how the file is opened
+     *
+     * @return  the path
+     *
+     * @throws  IllegalArgumentException
+     *          if {@code options} contains an invalid combination of options
+     * @throws  IOException
+     *          if an I/O error occurs writing to or creating the file, or the
+     *          text cannot be encoded using the specified charset
+     * @throws  UnsupportedOperationException
+     *          if an unsupported option is specified
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
+     *          method is invoked to check write access to the file. The {@link
+     *          SecurityManager#checkDelete(String) checkDelete} method is
+     *          invoked to check delete access if the file is opened with the
+     *          {@code DELETE_ON_CLOSE} option.
+     *
+     * @since 11
+     */
+    public static Path writeString(Path path, CharSequence csq, OpenOption... options)
+            throws IOException
+    {
+        return writeString(path, csq, StandardCharsets.UTF_8, options);
+    }
+
+    /**
+     * Write a {@linkplain java.lang.CharSequence CharSequence} to a file.
+     * Characters are encoded into bytes using the specified
+     * {@linkplain java.nio.charset.Charset charset}.
+     *
+     * <p> All characters are written as they are, including the line separators in
+     * the char sequence. No extra characters are added.
+     *
+     * <p> The {@code options} parameter specifies how the file is created
+     * or opened. If no options are present then this method works as if the
+     * {@link StandardOpenOption#CREATE CREATE}, {@link
+     * StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING}, and {@link
+     * StandardOpenOption#WRITE WRITE} options are present. In other words, it
+     * opens the file for writing, creating the file if it doesn't exist, or
+     * initially truncating an existing {@link #isRegularFile regular-file} to
+     * a size of {@code 0}.
+     *
+     *
+     * @param   path
+     *          the path to the file
+     * @param   csq
+     *          the CharSequence to be written
+     * @param   cs
+     *          the charset to use for encoding
+     * @param   options
+     *          options specifying how the file is opened
+     *
+     * @return  the path
+     *
+     * @throws  IllegalArgumentException
+     *          if {@code options} contains an invalid combination of options
+     * @throws  IOException
+     *          if an I/O error occurs writing to or creating the file, or the
+     *          text cannot be encoded using the specified charset
+     * @throws  UnsupportedOperationException
+     *          if an unsupported option is specified
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
+     *          method is invoked to check write access to the file. The {@link
+     *          SecurityManager#checkDelete(String) checkDelete} method is
+     *          invoked to check delete access if the file is opened with the
+     *          {@code DELETE_ON_CLOSE} option.
+     *
+     * @since 11
+     */
+    public static Path writeString(Path path, CharSequence csq, Charset cs, OpenOption... options)
+            throws IOException
+    {
+        // ensure the text is not null before opening file
+        Objects.requireNonNull(path);
+        Objects.requireNonNull(csq);
+        Objects.requireNonNull(cs);
+
+        try {
+            byte[] bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
+            write(path, bytes, options);
+        } catch (IllegalArgumentException e) {
+            throw new IOException(e);
+        }
+
+        return path;
     }
 
     // -- Stream APIs --
