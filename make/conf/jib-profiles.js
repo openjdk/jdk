@@ -438,6 +438,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: ["devkit", "autoconf", "build_devkit", "cups"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu", "--with-freetype=bundled",
+                "--disable-warnings-as-errors", "--with-cpu-port=aarch64",
             ],
         },
 
@@ -567,6 +568,29 @@ var getJibProfilesProfiles = function (input, common, data) {
         profiles[name] = concatObjects(common.main_profile_base, profiles[name]);
         profiles[debugName] = concatObjects(profiles[name], common.debug_profile_base);
     });
+
+    // Bootcycle profiles runs the build with itself as the boot jdk. This can
+    // be done in two ways. Either using the builtin bootcycle target in the
+    // build system. Or by supplying the main jdk build as bootjdk to configure.
+    [ "linux-x64", "macosx-x64", "solaris-sparcv9", "windows-x64"]
+        .forEach(function (name) {
+            var bootcycleName = name + "-bootcycle";
+            var bootcyclePrebuiltName = name + "-bootcycle-prebuilt";
+            // The base bootcycle profile just changes the default target
+            // compared to the base profile
+            profiles[bootcycleName] = clone(profiles[name]);
+            profiles[bootcycleName].default_make_targets = [ "bootcycle-images" ];
+            // The prebuilt bootcycle variant modifies the boot jdk argument
+            var bootcyclePrebuiltBase = {
+                dependencies: [ name + ".jdk" ],
+                configure_args: "--with-boot-jdk=" + input.get(name + ".jdk", "home_path"),
+            }
+            profiles[bootcyclePrebuiltName] = concatObjects(profiles[name],
+                bootcyclePrebuiltBase);
+            var bootJdkIndex = profiles[bootcyclePrebuiltName].dependencies.indexOf("boot_jdk");
+            delete profiles[bootcyclePrebuiltName].dependencies[bootJdkIndex];
+            profiles[bootcyclePrebuiltName].default_make_targets = [ "product-images" ];
+        });
 
     //
     // Define artifacts for profiles
