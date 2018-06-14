@@ -24,7 +24,7 @@
 /**
  * @test TestObjects
  * @key gc
- * @requires vm.gc.Epsilon
+ * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Epsilon is able to allocate objects, and does not corrupt their state
  *
  * @run main/othervm -Xmx128m                                        -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC TestObjects
