@@ -298,7 +298,6 @@ else # HAS_SPEC=true
   main: $(INIT_TARGETS)
         ifneq ($(SEQUENTIAL_TARGETS)$(PARALLEL_TARGETS), )
 	  $(call RotateLogFiles)
-	  $(call PrepareFailureLogs)
 	  $(PRINTF) "Building $(TARGET_DESCRIPTION)\n" $(BUILD_LOG_PIPE)
           ifneq ($(SEQUENTIAL_TARGETS), )
             # Don't touch build output dir since we might be cleaning. That
@@ -308,6 +307,7 @@ else # HAS_SPEC=true
 	        $(SEQUENTIAL_TARGETS) )
           endif
           ifneq ($(PARALLEL_TARGETS), )
+	    $(call PrepareFailureLogs)
 	    $(call StartGlobalTimer)
 	    $(call PrepareSmartJavac)
             # JOBS will only be empty for a bootcycle-images recursive call
