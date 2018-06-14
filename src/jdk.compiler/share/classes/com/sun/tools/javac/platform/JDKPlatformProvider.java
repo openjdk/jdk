@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.nio.file.ProviderNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -89,9 +90,24 @@ public class JDKPlatformProvider implements PlatformProvider {
     private static final String[] symbolFileLocation = { "lib", "ct.sym" };
 
     private static final Set<String> SUPPORTED_JAVA_PLATFORM_VERSIONS;
+    public static final Comparator<String> NUMERICAL_COMPARATOR = (s1, s2) -> {
+        int i1;
+        try {
+            i1 = Integer.parseInt(s1);
+        } catch (NumberFormatException ex) {
+            i1 = Integer.MAX_VALUE;
+        }
+        int i2;
+        try {
+            i2 = Integer.parseInt(s2);
+        } catch (NumberFormatException ex) {
+            i2 = Integer.MAX_VALUE;
+        }
+        return i1 != i2 ? i1 - i2 : s1.compareTo(s2);
+    };
 
     static {
-        SUPPORTED_JAVA_PLATFORM_VERSIONS = new TreeSet<>();
+        SUPPORTED_JAVA_PLATFORM_VERSIONS = new TreeSet<>(NUMERICAL_COMPARATOR);
         Path ctSymFile = findCtSym();
         if (Files.exists(ctSymFile)) {
             try (FileSystem fs = FileSystems.newFileSystem(ctSymFile, null);

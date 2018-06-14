@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +21,38 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8167965 8194308
- * @summary Test proper handling of the --release option.
- * @modules
- *      jdk.compiler/com.sun.tools.javac.jvm
- *      jdk.compiler/com.sun.tools.javac.platform
- *      jdk.jdeps/com.sun.tools.jdeprscan
- * @build jdk.jdeprscan.TestRelease
- * @run testng jdk.jdeprscan.TestRelease
+ * @bug 8196618
+ * @summary Check that JDKPlatformProvider.NUMERICAL_COMPARATOR works correctly
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.platform
+ * @run main NumericalComparatorTest
  */
 
-package jdk.jdeprscan;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import com.sun.tools.javac.platform.JDKPlatformProvider;
-import com.sun.tools.jdeprscan.Main;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+public class NumericalComparatorTest {
 
-public class TestRelease {
-    static boolean invoke(String arg) {
-        return Main.call(System.out, System.err, "--list", "--release", arg);
+    public static void main(String... args) throws IOException {
+        new NumericalComparatorTest().run();
     }
 
-    @Test
-    public void testSuccess() {
-        for (String target : new JDKPlatformProvider().getSupportedPlatformNames()) {
-            assertTrue(invoke(target));
-        }
+    void run() throws IOException {
+        doTest(List.of("8", "10", "11", "9", "b1", "a1", "a2"),
+               List.of("8", "9", "10", "11", "a1", "a2", "b1"));
     }
 
-    @Test
-    public void testFailure() {
-        assertFalse(invoke("5"));
+    void doTest(List<String> input, List<String> expectedOutput) {
+        List<String> actual = input.stream()
+                                   .sorted(JDKPlatformProvider.NUMERICAL_COMPARATOR)
+                                   .collect(Collectors.toList());
+        if (!expectedOutput.equals(actual))
+            throw new AssertionError("Unexpected output: " + actual);
     }
+
 }
