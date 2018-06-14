@@ -198,17 +198,16 @@ size_t StringTable::item_added() {
   return Atomic::add((size_t)1, &(the_table()->_items));
 }
 
-size_t StringTable::items_to_clean(size_t ncl) {
-  size_t total = Atomic::add((size_t)ncl, &(the_table()->_uncleaned_items));
+size_t StringTable::add_items_to_clean(size_t ndead) {
+  size_t total = Atomic::add((size_t)ndead, &(the_table()->_uncleaned_items));
   log_trace(stringtable)(
      "Uncleaned items:" SIZE_FORMAT " added: " SIZE_FORMAT " total:" SIZE_FORMAT,
-     the_table()->_uncleaned_items, ncl, total);
+     the_table()->_uncleaned_items, ndead, total);
   return total;
 }
 
 void StringTable::item_removed() {
   Atomic::add((size_t)-1, &(the_table()->_items));
-  Atomic::add((size_t)-1, &(the_table()->_uncleaned_items));
 }
 
 double StringTable::get_load_factor() {
@@ -405,8 +404,11 @@ void StringTable::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f,
 
   StringTable::the_table()->_weak_handles->weak_oops_do(&stiac, tmp);
 
-  StringTable::the_table()->items_to_clean(stiac._count);
+  // This is the serial case without ParState.
+  // Just set the correct number and check for a cleaning phase.
+  the_table()->_uncleaned_items = stiac._count;
   StringTable::the_table()->check_concurrent_work();
+
   if (processed != NULL) {
     *processed = (int) stiac._count_total;
   }
@@ -430,8 +432,9 @@ void StringTable::possibly_parallel_unlink(
 
   _par_state_string->weak_oops_do(&stiac, &dnc);
 
-  StringTable::the_table()->items_to_clean(stiac._count);
-  StringTable::the_table()->check_concurrent_work();
+  // Accumulate the dead strings.
+  the_table()->add_items_to_clean(stiac._count);
+
   *processed = (int) stiac._count_total;
   *removed = (int) stiac._count;
 }
@@ -467,10 +470,8 @@ void StringTable::grow(JavaThread* jt) {
 }
 
 struct StringTableDoDelete : StackObj {
-  long _count;
-  StringTableDoDelete() : _count(0) {}
   void operator()(WeakHandle<vm_string_table_data>* val) {
-    ++_count;
+    /* do nothing */
   }
 };
 
@@ -524,6 +525,7 @@ void StringTable::check_concurrent_work() {
   if (_has_work) {
     return;
   }
+
   double load_factor = StringTable::get_load_factor();
   double dead_factor = StringTable::get_dead_factor();
   // We should clean/resize if we have more dead than alive,
