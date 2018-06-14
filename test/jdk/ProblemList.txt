@@ -853,8 +853,6 @@ com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-
 
 # jdk_util
 
-java/util/Map/InPlaceOpsCollisions.java                         8203387 generic-all
-
 ############################################################################
 
 # jdk_instrument
