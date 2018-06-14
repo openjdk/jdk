@@ -3262,6 +3262,9 @@ public:
     if (process_symbols) {
       SymbolTable::clear_parallel_claimed_index();
     }
+    if (process_strings) {
+      StringTable::reset_dead_counter();
+    }
   }
 
   ~G1StringAndSymbolCleaningTask() {
@@ -3275,6 +3278,9 @@ public:
         "symbols: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
         strings_processed(), strings_removed(),
         symbols_processed(), symbols_removed());
+    if (_process_strings) {
+      StringTable::finish_dead_counter();
+    }
   }
 
   void work(uint worker_id) {

@@ -83,7 +83,7 @@ private:
 
   static uintx item_added();
   static void item_removed();
-  static size_t items_to_clean(size_t ncl);
+  size_t add_items_to_clean(size_t ndead);
 
   StringTable();
 
@@ -113,6 +113,23 @@ private:
   static bool has_work() { return the_table()->_has_work; }
 
   // GC support
+
+  // Must be called before a parallel walk where strings might die.
+  static void reset_dead_counter() {
+    the_table()->_uncleaned_items = 0;
+  }
+  // After the parallel walk this method must be called to trigger
+  // cleaning. Note it might trigger a resize instead.
+  static void finish_dead_counter() {
+    the_table()->check_concurrent_work();
+  }
+
+  // If GC uses ParState directly it should add the number of cleared
+  // strings to this method.
+  static void inc_dead_counter(size_t ndead) {
+    the_table()->add_items_to_clean(ndead);
+  }
+
   //   Delete pointers to otherwise-unreachable objects.
   static void unlink(BoolObjectClosure* cl) {
     unlink_or_oops_do(cl);
@@ -150,9 +167,9 @@ private:
   oop lookup_shared(jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static void copy_shared_string_table(CompactStringTableWriter* ch_table) NOT_CDS_JAVA_HEAP_RETURN;
  public:
-  static oop create_archived_string(oop s, Thread* THREAD);
+  static oop create_archived_string(oop s, Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
   static void set_shared_string_mapped() { _shared_string_mapped = true; }
-  static bool shared_string_mapped()       { return _shared_string_mapped; }
+  static bool shared_string_mapped()     { return _shared_string_mapped; }
   static void shared_oops_do(OopClosure* f) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_to_archive() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;

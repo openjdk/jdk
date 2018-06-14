@@ -164,6 +164,7 @@ private:
 
 public:
   ZConcurrentWeakRootsIterator();
+  ~ZConcurrentWeakRootsIterator();
 
   void oops_do(OopClosure* cl);
 };
