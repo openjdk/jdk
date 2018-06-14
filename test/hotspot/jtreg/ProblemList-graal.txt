@@ -139,6 +139,15 @@ vmTestbase/nsk/jvmti/unit/FollowReferences/followref003/TestDescription.java    
 
 vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t002/TestDescription.java        8204506   macosx-all
 
-compiler/stable/TestStableShort.java                             8204346   generic-all
-compiler/stable/TestStableUShort.java                            8204346   generic-all
-compiler/stable/TestStableUByte.java                             8204346   generic-all
+compiler/stable/TestStableBoolean.java                           8204347   generic-all
+compiler/stable/TestStableByte.java                              8204347   generic-all
+compiler/stable/TestStableChar.java                              8204347   generic-all
+compiler/stable/TestStableDouble.java                            8204347   generic-all
+compiler/stable/TestStableFloat.java                             8204347   generic-all
+compiler/stable/TestStableInt.java                               8204347   generic-all
+compiler/stable/TestStableLong.java                              8204347   generic-all
+compiler/stable/TestStableMismatched.java                        8204347   generic-all
+compiler/stable/TestStableObject.java                            8204347   generic-all
+compiler/stable/TestStableShort.java                             8204347   generic-all
+compiler/stable/TestStableUByte.java                             8204347   generic-all
+compiler/stable/TestStableUShort.java                            8204347   generic-all
