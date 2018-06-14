@@ -809,10 +809,10 @@ const char* Klass::class_loader_and_module_name() const {
       module_name = module->name()->as_C_string();
       msglen += strlen(module_name);
       // Use version if exists and is not a jdk module
-      if (module->is_non_jdk_module() && module->version() != NULL) {
+      if (module->should_show_version()) {
         has_version = true;
         version = module->version()->as_C_string();
-        msglen += strlen("@") + strlen(version);
+        msglen += strlen(version) + 1; // +1 for "@"
       }
     }
   } else {

@@ -117,7 +117,7 @@ public:
 
   Symbol*          location() const                    { return _location; }
   void             set_location(Symbol* location);
-  bool             is_non_jdk_module();
+  bool             should_show_version();
 
   bool             can_read(ModuleEntry* m) const;
   bool             has_reads_list() const;
