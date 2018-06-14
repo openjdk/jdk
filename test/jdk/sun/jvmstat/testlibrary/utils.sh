@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -221,3 +221,10 @@ freePort()
   fi
   echo "${port1}"
 }
+
+# Flags used by all jstat calls in jdk/sun/tools/jstat/*.sh
+#
+# The awk scripts parsing jstat output expect it to be in en-us locale. 
+# Especially, we must force '.' instead of ',' in numbers.
+COMMON_JSTAT_FLAGS="-J-XX:+UsePerfData -J-Duser.language=en -J-Duser.country=en"
+
