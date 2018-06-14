@@ -24,7 +24,7 @@
 /**
  * @test TestAlwaysPretouch
  * @key gc
- * @requires vm.gc.Epsilon
+ * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Basic sanity test for Epsilon
  * @run main/othervm -Xmx1g -XX:+AlwaysPreTouch -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC TestAlwaysPretouch
  */

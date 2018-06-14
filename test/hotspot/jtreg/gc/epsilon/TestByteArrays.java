@@ -24,7 +24,7 @@
 /**
  * @test TestByteArrays
  * @key gc
- * @requires vm.gc.Epsilon
+ * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Epsilon is able to allocate arrays, and does not corrupt their state
  *
  * @run main/othervm -Xmx1g                                        -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC TestByteArrays

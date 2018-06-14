@@ -24,7 +24,7 @@
 /**
  * @test TestManyThreads
  * @key gc
- * @requires vm.gc.Epsilon
+ * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Test allocations from many threads
  *
  * @run main/othervm -Xmx128m -Xss512k                                        -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC TestManyThreads
