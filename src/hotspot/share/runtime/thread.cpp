@@ -1127,35 +1127,6 @@ static void call_postVMInitHook(TRAPS) {
   }
 }
 
-static void reset_vm_info_property(TRAPS) {
-  // the vm info string
-  ResourceMark rm(THREAD);
-  const char *vm_info = VM_Version::vm_info_string();
-
-  // update the native system property first
-  Arguments::PropertyList_update_value(Arguments::system_properties(), "java.vm.info", vm_info);
-
-  // java.lang.System class
-  Klass* klass =  SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
-
-  // setProperty arguments
-  Handle key_str    = java_lang_String::create_from_str("java.vm.info", CHECK);
-  Handle value_str  = java_lang_String::create_from_str(vm_info, CHECK);
-
-  // return value
-  JavaValue r(T_OBJECT);
-
-  // public static String setProperty(String key, String value);
-  JavaCalls::call_static(&r,
-                         klass,
-                         vmSymbols::setProperty_name(),
-                         vmSymbols::string_string_string_signature(),
-                         key_str,
-                         value_str,
-                         CHECK);
-}
-
-
 void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name,
                                     bool daemon, TRAPS) {
   assert(thread_group.not_null(), "thread group should be specified");
@@ -3771,6 +3742,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     VMThread::execute(&verify_op);
   }
 
+  // We need this to update the java.vm.info property in case any flags used
+  // to initially define it have been changed. This is needed for both CDS and
+  // AOT, since UseSharedSpaces and UseAOT may be changed after java.vm.info
+  // is initially computed. See Abstract_VM_Version::vm_info_string().
+  // This update must happen before we initialize the java classes, but
+  // after any initialization logic that might modify the flags.
+  Arguments::update_vm_info_property(VM_Version::vm_info_string());
+
   Thread* THREAD = Thread::current();
 
   // Always call even when there are not JVMTI environments yet, since environments
@@ -3781,12 +3760,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JvmtiExport::post_early_vm_start();
 
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
-
-  // We need this to update the java.vm.info property in case any flags used
-  // to initially define it have been changed. This is needed for both CDS and
-  // AOT, since UseSharedSpaces and UseAOT may be changed after java.vm.info
-  // is initially computed. See Abstract_VM_Version::vm_info_string().
-  reset_vm_info_property(CHECK_JNI_ERR);
 
   quicken_jni_functions();
 

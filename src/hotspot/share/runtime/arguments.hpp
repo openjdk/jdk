@@ -291,6 +291,7 @@ class Arguments : AllStatic {
   static SystemProperty *_java_home;
   static SystemProperty *_java_class_path;
   static SystemProperty *_jdk_boot_class_path_append;
+  static SystemProperty *_vm_info;
 
   // --patch-module=module=<file>(<pathsep><file>)*
   // Each element contains the associated module name, path
@@ -643,6 +644,11 @@ class Arguments : AllStatic {
   // Update/Initialize System properties after JDK version number is known
   static void init_version_specific_system_properties();
 
+  // Update VM info property - called after argument parsing
+  static void update_vm_info_property(const char* vm_info) {
+    _vm_info->set_value(vm_info);
+  }
+
   // Property List manipulation
   static void PropertyList_add(SystemProperty *element);
   static void PropertyList_add(SystemProperty** plist, SystemProperty *element);
@@ -651,7 +657,6 @@ class Arguments : AllStatic {
   static void PropertyList_unique_add(SystemProperty** plist, const char* k, const char* v,
                                       PropertyAppendable append, PropertyWriteable writeable,
                                       PropertyInternal internal);
-  static void PropertyList_update_value(SystemProperty* plist, const char* k, const char* v);
   static const char* PropertyList_get_value(SystemProperty* plist, const char* key);
   static const char* PropertyList_get_readable_value(SystemProperty* plist, const char* key);
   static int  PropertyList_count(SystemProperty* pl);
