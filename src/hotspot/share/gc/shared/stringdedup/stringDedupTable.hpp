@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,44 +22,44 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1STRINGDEDUPTABLE_HPP
-#define SHARE_VM_GC_G1_G1STRINGDEDUPTABLE_HPP
+#ifndef SHARE_VM_GC_SHARED_STRINGDEDUP_STRINGDEDUPTABLE_HPP
+#define SHARE_VM_GC_SHARED_STRINGDEDUP_STRINGDEDUPTABLE_HPP
 
-#include "gc/g1/g1StringDedupStat.hpp"
+#include "gc/shared/stringdedup/stringDedupStat.hpp"
 #include "runtime/mutexLocker.hpp"
 
-class G1StringDedupEntryCache;
-class G1StringDedupUnlinkOrOopsDoClosure;
+class StringDedupEntryCache;
+class StringDedupUnlinkOrOopsDoClosure;
 
 //
 // Table entry in the deduplication hashtable. Points weakly to the
 // character array. Can be chained in a linked list in case of hash
 // collisions or when placed in a freelist in the entry cache.
 //
-class G1StringDedupEntry : public CHeapObj<mtGC> {
+class StringDedupEntry : public CHeapObj<mtGC> {
 private:
-  G1StringDedupEntry* _next;
+  StringDedupEntry* _next;
   unsigned int      _hash;
   bool              _latin1;
   typeArrayOop      _obj;
 
 public:
-  G1StringDedupEntry() :
+  StringDedupEntry() :
     _next(NULL),
     _hash(0),
     _latin1(false),
     _obj(NULL) {
   }
 
-  G1StringDedupEntry* next() {
+  StringDedupEntry* next() {
     return _next;
   }
 
-  G1StringDedupEntry** next_addr() {
+  StringDedupEntry** next_addr() {
     return &_next;
   }
 
-  void set_next(G1StringDedupEntry* next) {
+  void set_next(StringDedupEntry* next) {
     _next = next;
   }
 
@@ -111,16 +111,16 @@ public:
 // the table partition (i.e. a range of elements in _buckets), not other parts of the
 // table such as the _entries field, statistics counters, etc.
 //
-class G1StringDedupTable : public CHeapObj<mtGC> {
+class StringDedupTable : public CHeapObj<mtGC> {
 private:
   // The currently active hashtable instance. Only modified when
   // the table is resizes or rehashed.
-  static G1StringDedupTable*      _table;
+  static StringDedupTable*        _table;
 
   // Cache for reuse and fast alloc/free of table entries.
-  static G1StringDedupEntryCache* _entry_cache;
+  static StringDedupEntryCache*   _entry_cache;
 
-  G1StringDedupEntry**            _buckets;
+  StringDedupEntry**              _buckets;
   size_t                          _size;
   uintx                           _entries;
   uintx                           _shrink_threshold;
@@ -148,11 +148,16 @@ private:
   static uintx                    _resize_count;
   static uintx                    _rehash_count;
 
-  G1StringDedupTable(size_t size, jint hash_seed = 0);
-  ~G1StringDedupTable();
+  static volatile size_t          _claimed_index;
+
+  static StringDedupTable*        _resized_table;
+  static StringDedupTable*        _rehashed_table;
+
+  StringDedupTable(size_t size, jint hash_seed = 0);
+  ~StringDedupTable();
 
   // Returns the hash bucket at the given index.
-  G1StringDedupEntry** bucket(size_t index) {
+  StringDedupEntry** bucket(size_t index) {
     return _buckets + index;
   }
 
@@ -162,18 +167,18 @@ private:
   }
 
   // Adds a new table entry to the given hash bucket.
-  void add(typeArrayOop value, bool latin1, unsigned int hash, G1StringDedupEntry** list);
+  void add(typeArrayOop value, bool latin1, unsigned int hash, StringDedupEntry** list);
 
   // Removes the given table entry from the table.
-  void remove(G1StringDedupEntry** pentry, uint worker_id);
+  void remove(StringDedupEntry** pentry, uint worker_id);
 
   // Transfers a table entry from the current table to the destination table.
-  void transfer(G1StringDedupEntry** pentry, G1StringDedupTable* dest);
+  void transfer(StringDedupEntry** pentry, StringDedupTable* dest);
 
   // Returns an existing character array in the given hash bucket, or NULL
   // if no matching character array exists.
   typeArrayOop lookup(typeArrayOop value, bool latin1, unsigned int hash,
-                      G1StringDedupEntry** list, uintx &count);
+                      StringDedupEntry** list, uintx &count);
 
   // Returns an existing character array in the table, or inserts a new
   // table entry if no matching character array exists.
@@ -200,42 +205,51 @@ private:
   // currently active hash function and hash seed.
   static unsigned int hash_code(typeArrayOop value, bool latin1);
 
-  static uintx unlink_or_oops_do(G1StringDedupUnlinkOrOopsDoClosure* cl,
+  static uintx unlink_or_oops_do(StringDedupUnlinkOrOopsDoClosure* cl,
                                  size_t partition_begin,
                                  size_t partition_end,
                                  uint worker_id);
+
+  static size_t claim_table_partition(size_t partition_size);
+
+  static bool is_resizing();
+  static bool is_rehashing();
+
+  // If a table resize is needed, returns a newly allocated empty
+  // hashtable of the proper size.
+  static StringDedupTable* prepare_resize();
+
+  // Installs a newly resized table as the currently active table
+  // and deletes the previously active table.
+  static void finish_resize(StringDedupTable* resized_table);
+
+  // If a table rehash is needed, returns a newly allocated empty
+  // hashtable and updates the hash seed.
+  static StringDedupTable* prepare_rehash();
+
+  // Transfers rehashed entries from the currently active table into
+  // the new table. Installs the new table as the currently active table
+  // and deletes the previously active table.
+  static void finish_rehash(StringDedupTable* rehashed_table);
 
 public:
   static void create();
 
   // Deduplicates the given String object, or adds its backing
   // character array to the deduplication hashtable.
-  static void deduplicate(oop java_string, G1StringDedupStat& stat);
+  static void deduplicate(oop java_string, StringDedupStat* stat);
 
-  // If a table resize is needed, returns a newly allocated empty
-  // hashtable of the proper size.
-  static G1StringDedupTable* prepare_resize();
+  static void unlink_or_oops_do(StringDedupUnlinkOrOopsDoClosure* cl, uint worker_id);
 
-  // Installs a newly resized table as the currently active table
-  // and deletes the previously active table.
-  static void finish_resize(G1StringDedupTable* resized_table);
-
-  // If a table rehash is needed, returns a newly allocated empty
-  // hashtable and updates the hash seed.
-  static G1StringDedupTable* prepare_rehash();
-
-  // Transfers rehashed entries from the currently active table into
-  // the new table. Installs the new table as the currently active table
-  // and deletes the previously active table.
-  static void finish_rehash(G1StringDedupTable* rehashed_table);
+  static void print_statistics();
+  static void verify();
 
   // If the table entry cache has grown too large, delete overflowed entries.
   static void clean_entry_cache();
 
-  static void unlink_or_oops_do(G1StringDedupUnlinkOrOopsDoClosure* cl, uint worker_id);
-
-  static void print_statistics();
-  static void verify();
+  // GC support
+  static void gc_prologue(bool resize_and_rehash_table);
+  static void gc_epilogue();
 };
 
-#endif // SHARE_VM_GC_G1_G1STRINGDEDUPTABLE_HPP
+#endif // SHARE_VM_GC_SHARED_STRINGDEDUP_STRINGDEDUPTABLE_HPP
