@@ -735,8 +735,6 @@ private:
   void duplicate_predicates(CountedLoopNode* pre_head, Node *min_taken, Node* castii,
                             IdealLoopTree* outer_loop, LoopNode* outer_main_head,
                             uint dd_main_head);
-  Node* update_skeleton_predicate(Node* iff, Node* value, Node* entry = NULL, Node* uncommon_proj = NULL,
-                                  Node* min_taken = NULL, IdealLoopTree* outer_loop = NULL, Node* prev_proj = NULL);
 
 public:
 
