@@ -456,6 +456,9 @@ else # $(HAS_SPEC)=true
 	)
   endef
 
+  # Failure logs are only supported for "parallel" main targets, not the
+  # (trivial) sequential make targets (such as clean and reconfigure),
+  # since the failure-logs directory creation will conflict with clean.
   define PrepareFailureLogs
 	$(RM) -r $(MAKESUPPORT_OUTPUTDIR)/failure-logs 2> /dev/null && \
 	$(MKDIR) -p $(MAKESUPPORT_OUTPUTDIR)/failure-logs
