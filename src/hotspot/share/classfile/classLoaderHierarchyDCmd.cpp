@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/safepoint.hpp"
+#include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -202,9 +203,11 @@ class LoaderTreeNode : public ResourceObj {
       }
 
       if (print_classes) {
-
         if (_classes != NULL) {
           for (LoadedClassInfo* lci = _classes; lci; lci = lci->_next) {
+            // Non-anonymous classes should live in the primary CLD of its loader
+            assert(lci->_cld == _cld, "must be");
+
             branchtracker.print(st);
             if (lci == _classes) { // first iteration
               st->print("%*s ", indentation, "Classes:");
@@ -212,9 +215,15 @@ class LoaderTreeNode : public ResourceObj {
               st->print("%*s ", indentation, "");
             }
             st->print("%s", lci->_klass->external_name());
+
+            // Special treatment for generated core reflection accessor classes: print invocation target.
+            if (ReflectionAccessorImplKlassHelper::is_generated_accessor(lci->_klass)) {
+              st->print(" (invokes: ");
+              ReflectionAccessorImplKlassHelper::print_invocation_target(st, lci->_klass);
+              st->print(")");
+            }
+
             st->cr();
-            // Non-anonymous classes should live in the primary CLD of its loader
-            assert(lci->_cld == _cld, "must be");
           }
           branchtracker.print(st);
           st->print("%*s ", indentation, "");

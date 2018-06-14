@@ -24,13 +24,9 @@
  */
 #include "precompiled.hpp"
 
-#include "classfile/systemDictionary.hpp"
 #include "memory/metaspace/printMetaspaceInfoKlassClosure.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/constantPool.inline.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/klass.hpp"
-#include "utilities/constantTag.hpp"
+#include "oops/reflectionAccessorImplKlassHelper.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -54,6 +50,14 @@ void PrintMetaspaceInfoKlassClosure::do_klass(Klass* k) {
     _out->print(UINTX_FORMAT_W(4) ": ", _num_classes);
     ResourceMark rm;
     _out->print("%s", k->external_name());
+
+    // Special treatment for generated core reflection accessor classes: print invocation target.
+    if (ReflectionAccessorImplKlassHelper::is_generated_accessor(k)) {
+      _out->print(" (invokes: ");
+      ReflectionAccessorImplKlassHelper::print_invocation_target(_out, k);
+      _out->print(")");
+    }
+
   }
 }
 
