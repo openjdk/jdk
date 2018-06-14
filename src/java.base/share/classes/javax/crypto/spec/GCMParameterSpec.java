@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class GCMParameterSpec implements AlgorithmParameterSpec {
 
         // Input sanity check
         if ((src == null) ||(len < 0) || (offset < 0)
-                || ((len + offset) > src.length)) {
+                || (len > (src.length - offset))) {
             throw new IllegalArgumentException("Invalid buffer arguments");
         }
 
