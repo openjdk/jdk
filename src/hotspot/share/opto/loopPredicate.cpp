@@ -89,7 +89,7 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred) 
 //
 //
 // We will create a region to guard the uct call if there is no one there.
-// The true projecttion (if_cont) of the new_iff is returned.
+// The true projection (if_cont) of the new_iff is returned.
 // This code is also used to clone predicates to cloned loops.
 ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
                                                       Deoptimization::DeoptReason reason,
@@ -767,10 +767,10 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
 }
 
 // After pre/main/post loops are created, we'll put a copy of some
-// range checks between the pre and main loop to validate the initial
-// value of the induction variable for the main loop. Make a copy of
-// the predicates here with an opaque node as a place holder for the
-// initial value.
+// range checks between the pre and main loop to validate the value
+// of the main loop induction variable. Make a copy of the predicates
+// here with an opaque node as a place holder for the value (will be
+// updated by PhaseIdealLoop::update_skeleton_predicate()).
 ProjNode* PhaseIdealLoop::insert_skeleton_predicate(IfNode* iff, IdealLoopTree *loop,
                                                     ProjNode* proj, ProjNode *predicate_proj,
                                                     ProjNode* upper_bound_proj,
