@@ -116,6 +116,7 @@ SystemProperty *Arguments::_java_library_path = NULL;
 SystemProperty *Arguments::_java_home = NULL;
 SystemProperty *Arguments::_java_class_path = NULL;
 SystemProperty *Arguments::_jdk_boot_class_path_append = NULL;
+SystemProperty *Arguments::_vm_info = NULL;
 
 GrowableArray<ModulePatchPath*> *Arguments::_patch_mod_prefix = NULL;
 PathString *Arguments::_system_boot_class_path = NULL;
@@ -395,8 +396,10 @@ void Arguments::init_system_properties() {
                                                            "Java Virtual Machine Specification",  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.name", VM_Version::vm_name(),  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.info", VM_Version::vm_info_string(),  true));
   PropertyList_add(&_system_properties, new SystemProperty("jdk.debug", VM_Version::jdk_debug_level(),  false));
+
+  // Initialize the vm.info now, but it will need updating after argument parsing.
+  _vm_info = new SystemProperty("java.vm.info", VM_Version::vm_info_string(), true);
 
   // Following are JVMTI agent writable properties.
   // Properties values are set to NULL and they are
@@ -417,6 +420,7 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, _java_home);
   PropertyList_add(&_system_properties, _java_class_path);
   PropertyList_add(&_system_properties, _jdk_boot_class_path_append);
+  PropertyList_add(&_system_properties, _vm_info);
 
   // Set OS specific system properties values
   os::init_system_properties_values();
@@ -4449,18 +4453,6 @@ void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, c
   }
 
   PropertyList_add(plist, k, v, writeable == WriteableProperty, internal == InternalProperty);
-}
-
-// Update existing property with new value.
-void Arguments::PropertyList_update_value(SystemProperty* plist, const char* k, const char* v) {
-  SystemProperty* prop;
-  for (prop = plist; prop != NULL; prop = prop->next()) {
-    if (strcmp(k, prop->key()) == 0) {
-        prop->set_value(v);
-        return;
-    }
-  }
-  assert(false, "invalid property");
 }
 
 // Copies src into buf, replacing "%%" with "%" and "%p" with pid
