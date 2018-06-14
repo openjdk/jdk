@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,121 +23,60 @@
  */
 
 #include "precompiled.hpp"
+
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1StringDedupStat.hpp"
 #include "logging/log.hpp"
 
-G1StringDedupStat::G1StringDedupStat() :
-  _inspected(0),
-  _skipped(0),
-  _hashed(0),
-  _known(0),
-  _new(0),
-  _new_bytes(0),
-  _deduped(0),
-  _deduped_bytes(0),
+G1StringDedupStat::G1StringDedupStat() : StringDedupStat(),
   _deduped_young(0),
   _deduped_young_bytes(0),
   _deduped_old(0),
   _deduped_old_bytes(0),
-  _idle(0),
-  _exec(0),
-  _block(0),
-  _start_concurrent(0.0),
-  _end_concurrent(0.0),
-  _start_phase(0.0),
-  _idle_elapsed(0.0),
-  _exec_elapsed(0.0),
-  _block_elapsed(0.0) {
+  _heap(G1CollectedHeap::heap()) {
 }
 
-void G1StringDedupStat::add(const G1StringDedupStat& stat) {
-  _inspected           += stat._inspected;
-  _skipped             += stat._skipped;
-  _hashed              += stat._hashed;
-  _known               += stat._known;
-  _new                 += stat._new;
-  _new_bytes           += stat._new_bytes;
-  _deduped             += stat._deduped;
-  _deduped_bytes       += stat._deduped_bytes;
-  _deduped_young       += stat._deduped_young;
-  _deduped_young_bytes += stat._deduped_young_bytes;
-  _deduped_old         += stat._deduped_old;
-  _deduped_old_bytes   += stat._deduped_old_bytes;
-  _idle                += stat._idle;
-  _exec                += stat._exec;
-  _block               += stat._block;
-  _idle_elapsed        += stat._idle_elapsed;
-  _exec_elapsed        += stat._exec_elapsed;
-  _block_elapsed       += stat._block_elapsed;
-}
 
-void G1StringDedupStat::print_start(const G1StringDedupStat& last_stat) {
-  log_info(gc, stringdedup)(
-     "Concurrent String Deduplication (" G1_STRDEDUP_TIME_FORMAT ")",
-     G1_STRDEDUP_TIME_PARAM(last_stat._start_concurrent));
-}
 
-void G1StringDedupStat::print_end(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat) {
-  double total_deduped_bytes_percent = 0.0;
-
-  if (total_stat._new_bytes > 0) {
-    // Avoid division by zero
-    total_deduped_bytes_percent = percent_of(total_stat._deduped_bytes, total_stat._new_bytes);
-  }
-
-  log_info(gc, stringdedup)(
-    "Concurrent String Deduplication "
-    G1_STRDEDUP_BYTES_FORMAT_NS "->" G1_STRDEDUP_BYTES_FORMAT_NS "(" G1_STRDEDUP_BYTES_FORMAT_NS ") "
-    "avg " G1_STRDEDUP_PERCENT_FORMAT_NS " "
-    "(" G1_STRDEDUP_TIME_FORMAT ", " G1_STRDEDUP_TIME_FORMAT ") " G1_STRDEDUP_TIME_FORMAT_MS,
-    G1_STRDEDUP_BYTES_PARAM(last_stat._new_bytes),
-    G1_STRDEDUP_BYTES_PARAM(last_stat._new_bytes - last_stat._deduped_bytes),
-    G1_STRDEDUP_BYTES_PARAM(last_stat._deduped_bytes),
-    total_deduped_bytes_percent,
-    G1_STRDEDUP_TIME_PARAM(last_stat._start_concurrent),
-    G1_STRDEDUP_TIME_PARAM(last_stat._end_concurrent),
-    G1_STRDEDUP_TIME_PARAM_MS(last_stat._exec_elapsed));
-}
-
-void G1StringDedupStat::print_statistics(const G1StringDedupStat& stat, bool total) {
-  double skipped_percent             = percent_of(stat._skipped, stat._inspected);
-  double hashed_percent              = percent_of(stat._hashed, stat._inspected);
-  double known_percent               = percent_of(stat._known, stat._inspected);
-  double new_percent                 = percent_of(stat._new, stat._inspected);
-  double deduped_percent             = percent_of(stat._deduped, stat._new);
-  double deduped_bytes_percent       = percent_of(stat._deduped_bytes, stat._new_bytes);
-  double deduped_young_percent       = percent_of(stat._deduped_young, stat._deduped);
-  double deduped_young_bytes_percent = percent_of(stat._deduped_young_bytes, stat._deduped_bytes);
-  double deduped_old_percent         = percent_of(stat._deduped_old, stat._deduped);
-  double deduped_old_bytes_percent   = percent_of(stat._deduped_old_bytes, stat._deduped_bytes);
-
-  if (total) {
-    log_debug(gc, stringdedup)(
-      "  Total Exec: " UINTX_FORMAT "/" G1_STRDEDUP_TIME_FORMAT_MS
-      ", Idle: " UINTX_FORMAT "/" G1_STRDEDUP_TIME_FORMAT_MS
-      ", Blocked: " UINTX_FORMAT "/" G1_STRDEDUP_TIME_FORMAT_MS,
-      stat._exec, G1_STRDEDUP_TIME_PARAM_MS(stat._exec_elapsed),
-      stat._idle, G1_STRDEDUP_TIME_PARAM_MS(stat._idle_elapsed),
-      stat._block, G1_STRDEDUP_TIME_PARAM_MS(stat._block_elapsed));
+void G1StringDedupStat::deduped(oop obj, uintx bytes) {
+  StringDedupStat::deduped(obj, bytes);
+  if (_heap->is_in_young(obj)) {
+    _deduped_young ++;
+    _deduped_young_bytes += bytes;
   } else {
-    log_debug(gc, stringdedup)(
-      "  Last Exec: " G1_STRDEDUP_TIME_FORMAT_MS
-      ", Idle: " G1_STRDEDUP_TIME_FORMAT_MS
-      ", Blocked: " UINTX_FORMAT "/" G1_STRDEDUP_TIME_FORMAT_MS,
-      G1_STRDEDUP_TIME_PARAM_MS(stat._exec_elapsed),
-      G1_STRDEDUP_TIME_PARAM_MS(stat._idle_elapsed),
-      stat._block, G1_STRDEDUP_TIME_PARAM_MS(stat._block_elapsed));
+    _deduped_old ++;
+    _deduped_old_bytes += bytes;
   }
-  log_debug(gc, stringdedup)("    Inspected:    " G1_STRDEDUP_OBJECTS_FORMAT, stat._inspected);
-  log_debug(gc, stringdedup)("      Skipped:    " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")", stat._skipped, skipped_percent);
-  log_debug(gc, stringdedup)("      Hashed:     " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")", stat._hashed, hashed_percent);
-  log_debug(gc, stringdedup)("      Known:      " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")", stat._known, known_percent);
-  log_debug(gc, stringdedup)("      New:        " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ") " G1_STRDEDUP_BYTES_FORMAT,
-                             stat._new, new_percent, G1_STRDEDUP_BYTES_PARAM(stat._new_bytes));
-  log_debug(gc, stringdedup)("    Deduplicated: " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ") " G1_STRDEDUP_BYTES_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")",
-                             stat._deduped, deduped_percent, G1_STRDEDUP_BYTES_PARAM(stat._deduped_bytes), deduped_bytes_percent);
-  log_debug(gc, stringdedup)("      Young:      " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ") " G1_STRDEDUP_BYTES_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")",
-                             stat._deduped_young, deduped_young_percent, G1_STRDEDUP_BYTES_PARAM(stat._deduped_young_bytes), deduped_young_bytes_percent);
-  log_debug(gc, stringdedup)("      Old:        " G1_STRDEDUP_OBJECTS_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ") " G1_STRDEDUP_BYTES_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT ")",
-                             stat._deduped_old, deduped_old_percent, G1_STRDEDUP_BYTES_PARAM(stat._deduped_old_bytes), deduped_old_bytes_percent);
+}
+
+void G1StringDedupStat::add(const StringDedupStat* const stat) {
+  StringDedupStat::add(stat);
+  const G1StringDedupStat* const g1_stat = (const G1StringDedupStat* const)stat;
+  _deduped_young += g1_stat->_deduped_young;
+  _deduped_young_bytes += g1_stat->_deduped_young_bytes;
+  _deduped_old += g1_stat->_deduped_old;
+  _deduped_old_bytes += g1_stat->_deduped_old_bytes;
+}
+
+void G1StringDedupStat::print_statistics(bool total) const {
+  StringDedupStat::print_statistics(total);
+
+  double deduped_young_percent       = percent_of(_deduped_young, _deduped);
+  double deduped_young_bytes_percent = percent_of(_deduped_young_bytes, _deduped_bytes);
+  double deduped_old_percent         = percent_of(_deduped_old, _deduped);
+  double deduped_old_bytes_percent   = percent_of(_deduped_old_bytes, _deduped_bytes);
+
+  log_debug(gc, stringdedup)("      Young:      " STRDEDUP_OBJECTS_FORMAT "(" STRDEDUP_PERCENT_FORMAT ") " STRDEDUP_BYTES_FORMAT "(" STRDEDUP_PERCENT_FORMAT ")",
+                             _deduped_young, deduped_young_percent, STRDEDUP_BYTES_PARAM(_deduped_young_bytes), deduped_young_bytes_percent);
+  log_debug(gc, stringdedup)("      Old:        " STRDEDUP_OBJECTS_FORMAT "(" STRDEDUP_PERCENT_FORMAT ") " STRDEDUP_BYTES_FORMAT "(" STRDEDUP_PERCENT_FORMAT ")",
+                             _deduped_old, deduped_old_percent, STRDEDUP_BYTES_PARAM(_deduped_old_bytes), deduped_old_bytes_percent);
+
+}
+
+void G1StringDedupStat::reset() {
+  StringDedupStat::reset();
+  _deduped_young = 0;
+  _deduped_young_bytes = 0;
+  _deduped_old = 0;
+  _deduped_old_bytes = 0;
 }

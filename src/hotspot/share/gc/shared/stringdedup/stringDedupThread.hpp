@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1STRINGDEDUPTHREAD_HPP
-#define SHARE_VM_GC_G1_G1STRINGDEDUPTHREAD_HPP
+#ifndef SHARE_VM_GC_SHARED_STRINGDEDUP_STRINGDEDUPTHREAD_HPP
+#define SHARE_VM_GC_SHARED_STRINGDEDUP_STRINGDEDUPTHREAD_HPP
 
-#include "gc/g1/g1StringDedupStat.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
+#include "gc/shared/stringdedup/stringDedupStat.hpp"
 
 //
 // The deduplication thread is where the actual deduplication occurs. It waits for
@@ -36,25 +36,37 @@
 // concurrently with the Java application but participates in safepoints to allow
 // the GC to adjust and unlink oops from the deduplication queue and table.
 //
-class G1StringDedupThread: public ConcurrentGCThread {
-private:
-  static G1StringDedupThread* _thread;
+class StringDedupThread: public ConcurrentGCThread {
+protected:
+  static StringDedupThread* _thread;
 
-  G1StringDedupThread();
-  ~G1StringDedupThread();
+  StringDedupThread();
+  ~StringDedupThread();
 
-  void print_start(const G1StringDedupStat& last_stat);
-  void print_end(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat);
+  void print_start(const StringDedupStat* last_stat);
+  void print_end(const StringDedupStat* last_stat, const StringDedupStat* total_stat);
 
-  void run_service();
+  void run_service() { this->do_deduplication(); }
   void stop_service();
+
+  void deduplicate_shared_strings(StringDedupStat* stat);
+protected:
+  virtual void do_deduplication() = 0;
+
+public:
+  static StringDedupThread* thread();
+};
+
+template <typename S>
+class StringDedupThreadImpl : public StringDedupThread {
+private:
+  StringDedupThreadImpl() { }
+
+protected:
+  void do_deduplication();
 
 public:
   static void create();
-
-  static G1StringDedupThread* thread();
-
-  void deduplicate_shared_strings(G1StringDedupStat& stat);
 };
 
-#endif // SHARE_VM_GC_G1_G1STRINGDEDUPTHREAD_HPP
+#endif // SHARE_VM_GC_SHARED_STRINGDEDUP_STRINGDEDUPTHREAD_HPP
