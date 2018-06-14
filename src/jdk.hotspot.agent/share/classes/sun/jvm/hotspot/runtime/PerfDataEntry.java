@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 package sun.jvm.hotspot.runtime;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.oops.*;
@@ -362,11 +363,8 @@ public class PerfDataEntry extends VMObject {
                 str = new String(charArrayValue());
             } else if (dataType == BasicType.getTByte()) {
                 // byte[] is returned as a String
-                try {
-                    str = new String(byteArrayValue(), "US-ASCII");
-                } catch (java.io.UnsupportedEncodingException e) {
-                    str = "can't decode string : " + e.getMessage();
-                }
+                str = CStringUtilities.getString(addr.addOffsetTo(dataOffset()),
+                                                 StandardCharsets.US_ASCII);
             } else if (dataType == BasicType.getTShort()) {
                 short[] res = shortArrayValue();
                 StringBuffer buf = new StringBuffer();
