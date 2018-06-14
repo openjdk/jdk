@@ -820,7 +820,7 @@ public final class Class<T> implements java.io.Serializable,
      * primitive type or void, then the {@code Module} object for the
      * {@code java.base} module is returned.
      *
-     * If this class is in an unnamed module then the {@link
+     * If this class is in an unnamed module then the {@linkplain
      * ClassLoader#getUnnamedModule() unnamed} {@code Module} of the class
      * loader for this class is returned.
      *
@@ -953,14 +953,14 @@ public final class Class<T> implements java.io.Serializable,
      * empty string if the class is in an unnamed package.
      *
      * <p> If this class is a member class, then this method is equivalent to
-     * invoking {@code getPackageName()} on the {@link #getEnclosingClass
+     * invoking {@code getPackageName()} on the {@linkplain #getEnclosingClass
      * enclosing class}.
      *
-     * <p> If this class is a {@link #isLocalClass local class} or an {@link
+     * <p> If this class is a {@linkplain #isLocalClass local class} or an {@linkplain
      * #isAnonymousClass() anonymous class}, then this method is equivalent to
-     * invoking {@code getPackageName()} on the {@link #getDeclaringClass
-     * declaring class} of the {@link #getEnclosingMethod enclosing method} or
-     * {@link #getEnclosingConstructor enclosing constructor}.
+     * invoking {@code getPackageName()} on the {@linkplain #getDeclaringClass
+     * declaring class} of the {@linkplain #getEnclosingMethod enclosing method} or
+     * {@linkplain #getEnclosingConstructor enclosing constructor}.
      *
      * <p> If this class represents an array type then this method returns the
      * package name of the element type. If this class represents a primitive
@@ -2576,7 +2576,7 @@ public final class Class<T> implements java.io.Serializable,
      * @param  name name of the desired resource
      * @return  A {@link java.io.InputStream} object; {@code null} if no
      *          resource with this name is found, the resource is in a package
-     *          that is not {@link Module#isOpen(String, Module) open} to at
+     *          that is not {@linkplain Module#isOpen(String, Module) open} to at
      *          least the caller module, or access to the resource is denied
      *          by the security manager.
      * @throws  NullPointerException If {@code name} is {@code null}
@@ -2675,7 +2675,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return A {@link java.net.URL} object; {@code null} if no resource with
      *         this name is found, the resource cannot be located by a URL, the
      *         resource is in a package that is not
-     *         {@link Module#isOpen(String, Module) open} to at least the caller
+     *         {@linkplain Module#isOpen(String, Module) open} to at least the caller
      *         module, or access to the resource is denied by the security
      *         manager.
      * @throws NullPointerException If {@code name} is {@code null}
