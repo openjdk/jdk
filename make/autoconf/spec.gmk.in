@@ -303,6 +303,8 @@ BUILD_FAILURE_HANDLER := @BUILD_FAILURE_HANDLER@
 
 ENABLE_GENERATE_CLASSLIST := @ENABLE_GENERATE_CLASSLIST@
 
+EXCLUDE_TRANSLATIONS := @EXCLUDE_TRANSLATIONS@
+
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
 # it in sync.
 BOOT_JDK:=@BOOT_JDK@

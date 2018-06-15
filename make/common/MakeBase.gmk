@@ -1075,6 +1075,22 @@ ColonList = \
   )
 
 ################################################################################
+# Given a list of files, filters out locale specific files for translations
+# that should be excluded from this build.
+# $1 - The list of files to filter
+# $2 - The suffix of the files that should be considered (.java or .properties)
+FilterExcludedTranslations = \
+  $(strip $(if $(EXCLUDE_TRANSLATIONS), \
+    $(filter-out \
+        $(foreach suffix, $2, \
+          $(addprefix %_, $(addsuffix $(suffix), $(EXCLUDE_TRANSLATIONS))) \
+        ), \
+        $1 \
+    ), \
+    $1 \
+  ))
+
+################################################################################
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, common/MakeBase.gmk))

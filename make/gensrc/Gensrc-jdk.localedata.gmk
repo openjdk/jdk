@@ -38,6 +38,7 @@ include GensrcProperties.gmk
 $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
     SRC_DIRS := $(TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
+    KEEP_ALL_TRANSLATIONS := true, \
 ))
 
 # Skip generating zh_HK from zh_TW for this module.
