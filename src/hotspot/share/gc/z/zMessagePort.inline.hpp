@@ -87,6 +87,17 @@ inline void ZMessagePort<T>::send_sync(T message) {
 
   // Wait for completion
   request.wait();
+
+  {
+    // Guard deletion of underlying semaphore. This is a workaround for a
+    // bug in sem_post() in glibc < 2.21, where it's not safe to destroy
+    // the semaphore immediately after returning from sem_wait(). The
+    // reason is that sem_post() can touch the semaphore after a waiting
+    // thread have returned from sem_wait(). To avoid this race we are
+    // forcing the waiting thread to acquire/release the lock held by the
+    // posting thread. https://sourceware.org/bugzilla/show_bug.cgi?id=12674
+    MonitorLockerEx ml(&_monitor, Monitor::_no_safepoint_check_flag);
+  }
 }
 
 template <typename T>
