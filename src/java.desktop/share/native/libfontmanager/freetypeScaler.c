@@ -364,6 +364,19 @@ Java_sun_font_FreetypeFontScaler_createScalerContextNative(
     context->doBold = (boldness != 1.0);
     context->doItalize = (italic != 0);
 
+    /* freetype is very keen to use embedded bitmaps, even if it knows
+     * there is a rotation or you asked for antialiasing.
+     * In the rendering path we will check useSBits and disable
+     * bitmaps unless it is set. And here we set it only if none
+     * of the conditions invalidate using it.
+     * Note that we allow embedded bitmaps for the LCD case.
+     */
+    if ((aa != TEXT_AA_ON) && (fm != TEXT_FM_ON) &&
+        !context->doBold && !context->doItalize &&
+        (context->transform.yx == 0) && (context->transform.xy == 0))
+    {
+        context->useSbits = 1;
+    }
     return ptr_to_jlong(context);
 }
 
@@ -685,9 +698,8 @@ Java_sun_font_FreetypeFontScaler_getGlyphImageNative(
         return ptr_to_jlong(getNullGlyphImage());
     }
 
-    /* if algorithmic styling is required then we do not request bitmap */
-    if (context->doBold || context->doItalize) {
-        renderFlags =  FT_LOAD_DEFAULT;
+    if (!context->useSbits) {
+        renderFlags |= FT_LOAD_NO_BITMAP;
     }
 
     /* NB: in case of non identity transform
