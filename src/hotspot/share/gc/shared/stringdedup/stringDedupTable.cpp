@@ -286,7 +286,7 @@ typeArrayOop StringDedupTable::lookup(typeArrayOop value, bool latin1, unsigned 
         // Apply proper barrier to make sure it is kept alive. Concurrent mark might
         // otherwise declare it dead if there are no other strong references to this object.
         oop* obj_addr = (oop*)entry->obj_addr();
-        oop obj = RootAccess<IN_CONCURRENT_ROOT | ON_WEAK_OOP_REF>::oop_load(obj_addr);
+        oop obj = NativeAccess<IN_CONCURRENT_ROOT | ON_WEAK_OOP_REF>::oop_load(obj_addr);
         return typeArrayOop(obj);
       }
     }

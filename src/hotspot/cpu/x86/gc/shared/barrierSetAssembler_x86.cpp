@@ -31,15 +31,15 @@
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register dst, Address src, Register tmp1, Register tmp_thread) {
-  bool on_heap = (decorators & IN_HEAP) != 0;
-  bool on_root = (decorators & IN_ROOT) != 0;
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool in_native = (decorators & IN_NATIVE) != 0;
   bool oop_not_null = (decorators & OOP_NOT_NULL) != 0;
   bool atomic = (decorators & MO_RELAXED) != 0;
 
   switch (type) {
   case T_OBJECT:
   case T_ARRAY: {
-    if (on_heap) {
+    if (in_heap) {
 #ifdef _LP64
       if (UseCompressedOops) {
         __ movl(dst, src);
@@ -54,7 +54,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
         __ movptr(dst, src);
       }
     } else {
-      assert(on_root, "why else?");
+      assert(in_native, "why else?");
       __ movptr(dst, src);
     }
     break;
@@ -96,15 +96,15 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                    Address dst, Register val, Register tmp1, Register tmp2) {
-  bool on_heap = (decorators & IN_HEAP) != 0;
-  bool on_root = (decorators & IN_ROOT) != 0;
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool in_native = (decorators & IN_NATIVE) != 0;
   bool oop_not_null = (decorators & OOP_NOT_NULL) != 0;
   bool atomic = (decorators & MO_RELAXED) != 0;
 
   switch (type) {
   case T_OBJECT:
   case T_ARRAY: {
-    if (on_heap) {
+    if (in_heap) {
       if (val == noreg) {
         assert(!oop_not_null, "inconsistent access");
 #ifdef _LP64
@@ -133,7 +133,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
         }
       }
     } else {
-      assert(on_root, "why else?");
+      assert(in_native, "why else?");
       assert(val != noreg, "not supported");
       __ movptr(dst, val);
     }

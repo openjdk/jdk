@@ -403,7 +403,7 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ z_tmll(tmp1, JNIHandles::weak_tag_mask); // Test for jweak tag.
   __ z_braz(Lnot_weak);
   __ verify_oop(value);
-  DecoratorSet decorators = IN_ROOT | ON_PHANTOM_OOP_REF;
+  DecoratorSet decorators = IN_NATIVE | ON_PHANTOM_OOP_REF;
   g1_write_barrier_pre(masm, decorators, (const Address*)NULL, value, noreg, tmp1, tmp2, true);
   __ bind(Lnot_weak);
   __ verify_oop(value);

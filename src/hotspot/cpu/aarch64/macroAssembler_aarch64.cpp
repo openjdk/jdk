@@ -2120,7 +2120,7 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
   tbz(r0, 0, not_weak);    // Test for jweak tag.
 
   // Resolve jweak.
-  access_load_at(T_OBJECT, IN_ROOT | ON_PHANTOM_OOP_REF, value,
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
                  Address(value, -JNIHandles::weak_tag_value), tmp, thread);
   verify_oop(value);
   b(done);
