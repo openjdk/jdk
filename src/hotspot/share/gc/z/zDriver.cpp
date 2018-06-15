@@ -146,6 +146,27 @@ static bool should_clear_soft_references() {
   return false;
 }
 
+static bool should_boost_worker_threads() {
+  // Boost worker threads if one or more allocations have stalled
+  const bool stalled = ZHeap::heap()->is_alloc_stalled();
+  if (stalled) {
+    // Boost
+    return true;
+  }
+
+  // Boost worker threads if implied by the GC cause
+  const GCCause::Cause cause = ZCollectedHeap::heap()->gc_cause();
+  if (cause == GCCause::_wb_full_gc ||
+      cause == GCCause::_java_lang_system_gc ||
+      cause == GCCause::_metadata_GC_clear_soft_refs) {
+    // Boost
+    return true;
+  }
+
+  // Don't boost
+  return false;
+}
+
 class ZMarkStartClosure : public ZOperationClosure {
 public:
   virtual const char* name() const {
@@ -163,6 +184,10 @@ public:
     // Setup soft reference policy
     const bool clear = should_clear_soft_references();
     ZHeap::heap()->set_soft_reference_policy(clear);
+
+    // Setup boost mode
+    const bool boost = should_boost_worker_threads();
+    ZHeap::heap()->set_boost_worker_threads(boost);
 
     ZCollectedHeap::heap()->increment_total_collections(true /* full */);
 
@@ -277,11 +302,6 @@ private:
   GCCauseSetter _gc_cause_setter;
   ZStatTimer    _timer;
 
-  bool should_boost_worker_threads(GCCause::Cause cause) const {
-    return cause == GCCause::_java_lang_system_gc ||
-           cause == GCCause::_z_allocation_stall;
-  }
-
 public:
   ZDriverCycleScope(GCCause::Cause cause) :
       _gc_id(),
@@ -289,10 +309,6 @@ public:
       _timer(ZPhaseCycle) {
     // Update statistics
     ZStatCycle::at_start();
-
-    // Set boost mode
-    const bool boost = should_boost_worker_threads(cause);
-    ZHeap::heap()->set_boost_worker_threads(boost);
   }
 
   ~ZDriverCycleScope() {
