@@ -66,6 +66,9 @@ define SetupCompileProperties
   PROPSOURCES := $2 \
       $$(shell $(FIND) $(TOPDIR)/src/$(MODULE)/share/classes -name "*.properties")
 
+  # Filter out any excluded translations
+  PROPSOURCES := $$(call FilterExcludedTranslations, $$(PROPSOURCES), .properties)
+
   # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
   # to .../langtools/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
   # Strip away prefix and suffix, leaving for example only:
@@ -105,6 +108,7 @@ endef
 define SetupParseProperties
   # property files to process
   PARSEPROPSOURCES := $$(addprefix $(TOPDIR)/src/$(MODULE)/share/classes/, $2)
+  PARSEPROPSOURCES := $$(call FilterExcludedTranslations, $$(PARSEPROPSOURCES), .properties)
 
   PARSEPROPALLDIRS := $$(patsubst $(TOPDIR)/src/$(MODULE)/share/classes/%, \
       $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/%, \

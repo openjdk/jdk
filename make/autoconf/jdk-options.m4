@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -581,4 +581,26 @@ AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST],
   fi
 
   AC_SUBST(ENABLE_GENERATE_CLASSLIST)
+])
+
+################################################################################
+#
+# Optionally filter resource translations
+#
+AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
+[
+  AC_ARG_WITH([exclude-translations], [AS_HELP_STRING([--with-exclude-translations],
+      [a comma separated list of locales to exclude translations for. Default is
+      to include all translations present in the source.])])
+
+  EXCLUDE_TRANSLATIONS=""
+  AC_MSG_CHECKING([if any translations should be excluded])
+  if test "x$with_exclude_translations" != "x"; then
+    EXCLUDE_TRANSLATIONS="${with_exclude_translations//,/ }"
+    AC_MSG_RESULT([yes: $EXCLUDE_TRANSLATIONS])
+  else
+    AC_MSG_RESULT([no])
+  fi
+
+  AC_SUBST(EXCLUDE_TRANSLATIONS)
 ])

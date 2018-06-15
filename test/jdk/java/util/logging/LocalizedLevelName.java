@@ -34,19 +34,19 @@ import java.util.logging.*;
 
 public class LocalizedLevelName {
     private static Object[] namesMap = {
-        "SEVERE",  Locale.ENGLISH, "Severe",        Level.SEVERE,
-        "WARNING", Locale.FRENCH,  "Avertissement", Level.WARNING,
-        "INFO",    Locale.ITALIAN, "Informazioni",  Level.INFO,
-        "SEVERE",  Locale.FRENCH,  "Grave",         Level.SEVERE,
-        "CONFIG",  Locale.GERMAN,  "Konfiguration", Level.CONFIG,
-        "ALL",     Locale.ROOT,    "All",           Level.ALL,
-        "SEVERE",  Locale.ROOT,    "Severe",        Level.SEVERE,
-        "WARNING", Locale.ROOT,    "Warning",       Level.WARNING,
-        "CONFIG",  Locale.ROOT,    "Config",        Level.CONFIG,
-        "INFO",    Locale.ROOT,    "Info",          Level.INFO,
-        "FINE",    Locale.ROOT,    "Fine",          Level.FINE,
-        "FINER",   Locale.ROOT,    "Finer",         Level.FINER,
-        "FINEST",  Locale.ROOT,    "Finest",        Level.FINEST
+        "SEVERE",  Locale.ENGLISH,                 "Severe",       Level.SEVERE,
+        "WARNING", Locale.JAPANESE,                "\u8B66\u544A", Level.WARNING,
+        "INFO",    Locale.SIMPLIFIED_CHINESE,      "\u4FE1\u606F", Level.INFO,
+        "SEVERE",  Locale.TRADITIONAL_CHINESE,     "\u56B4\u91CD", Level.SEVERE,
+        "CONFIG",  Locale.forLanguageTag("zh-HK"), "\u7D44\u614B", Level.CONFIG,
+        "ALL",     Locale.ROOT,                    "All",          Level.ALL,
+        "SEVERE",  Locale.ROOT,                    "Severe",       Level.SEVERE,
+        "WARNING", Locale.ROOT,                    "Warning",      Level.WARNING,
+        "CONFIG",  Locale.ROOT,                    "Config",       Level.CONFIG,
+        "INFO",    Locale.ROOT,                    "Info",         Level.INFO,
+        "FINE",    Locale.ROOT,                    "Fine",         Level.FINE,
+        "FINER",   Locale.ROOT,                    "Finer",        Level.FINER,
+        "FINEST",  Locale.ROOT,                    "Finest",       Level.FINEST
     };
 
     public static void main(String args[]) throws Exception {
