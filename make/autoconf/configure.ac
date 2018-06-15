@@ -31,7 +31,7 @@ SRC#
 
 
 AC_PREREQ([2.69])
-AC_INIT(OpenJDK, jdk9, build-dev@openjdk.java.net,,http://openjdk.java.net)
+AC_INIT(OpenJDK, openjdk, build-dev@openjdk.java.net,,http://openjdk.java.net)
 
 AC_CONFIG_AUX_DIR([$TOPDIR/make/autoconf/build-aux])
 m4_include([build-aux/pkg.m4])
