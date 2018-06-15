@@ -63,6 +63,8 @@
  *      TestDriver
  */
 
+import sun.hotspot.code.Compiler;
+
 public class TestDriver {
     public static void main(String[] args) throws Exception {
         sun.hotspot.WhiteBox wb = sun.hotspot.WhiteBox.getWhiteBox();
@@ -70,6 +72,12 @@ public class TestDriver {
         Boolean isUseG1GCon = wb.getBooleanVMFlag("UseG1GC");
         Boolean isUseConcMarkSweepGCon = wb.getBooleanVMFlag("UseConcMarkSweepGC");
         Boolean isUseZGCon = wb.getBooleanVMFlag("UseZGC");
+        Boolean isUseEpsilonGCon = wb.getBooleanVMFlag("UseEpsilonGC");
+
+        if (Compiler.isGraalEnabled() &&
+            (isUseConcMarkSweepGCon || isUseZGCon || isUseEpsilonGCon)) {
+            return; // Graal does not support these GCs
+        }
 
         String keyPhrase;
         if ((isExplicitGCInvokesConcurrentOn && (isUseG1GCon || isUseConcMarkSweepGCon)) || isUseZGCon) {
