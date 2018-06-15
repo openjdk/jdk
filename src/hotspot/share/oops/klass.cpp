@@ -142,7 +142,10 @@ void Klass::check_valid_for_instantiation(bool throwError, TRAPS) {
 
 
 void Klass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) {
-  THROW(vmSymbols::java_lang_ArrayStoreException());
+  ResourceMark rm(THREAD);
+  assert(s != NULL, "Throw NPE!");
+  THROW_MSG(vmSymbols::java_lang_ArrayStoreException(),
+            err_msg("arraycopy: source type %s is not an array", s->klass()->external_name()));
 }
 
 
