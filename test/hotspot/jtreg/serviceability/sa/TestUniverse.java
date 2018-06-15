@@ -163,8 +163,8 @@ public class TestUniverse {
                 if (args[0].equals("withZ")) {
                     test("-XX:+UseZGC");
                 }
+                test("-XX:+UseEpsilonGC");
             }
-            test("-XX:+UseEpsilonGC");
         } catch (Exception e) {
             throw new Error("Test failed with " + e);
         }
