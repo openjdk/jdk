@@ -53,7 +53,9 @@ public class CopyAndMove {
         try {
 
             // Same directory
-            testPosixAttributes = getFileStore(dir1).supportsFileAttributeView("posix");
+            FileStore fileStore1 = getFileStore(dir1);
+            printDirInfo("dir1", dir1, fileStore1);
+            testPosixAttributes = fileStore1.supportsFileAttributeView("posix");
             testCopyFileToFile(dir1, dir1, TestUtil.supportsLinks(dir1));
             testMove(dir1, dir1, TestUtil.supportsLinks(dir1));
 
@@ -64,8 +66,10 @@ public class CopyAndMove {
             try {
                 boolean testSymbolicLinks =
                     TestUtil.supportsLinks(dir1) && TestUtil.supportsLinks(dir2);
-                testPosixAttributes = getFileStore(dir1).supportsFileAttributeView("posix") &&
-                                      getFileStore(dir2).supportsFileAttributeView("posix");
+                FileStore fileStore2 = getFileStore(dir2);
+                printDirInfo("dir2", dir2, fileStore2);
+                testPosixAttributes = fileStore1.supportsFileAttributeView("posix") &&
+                                      fileStore2.supportsFileAttributeView("posix");
                 testCopyFileToFile(dir1, dir2, testSymbolicLinks);
                 testMove(dir1, dir2, testSymbolicLinks);
             } finally {
@@ -74,8 +78,10 @@ public class CopyAndMove {
 
             // Target is location associated with custom provider
             Path dir3 = PassThroughFileSystem.create().getPath(dir1.toString());
-            testPosixAttributes = getFileStore(dir1).supportsFileAttributeView("posix") &&
-                                  getFileStore(dir3).supportsFileAttributeView("posix");
+            FileStore fileStore3 = getFileStore(dir3);
+            printDirInfo("dir3", dir3, fileStore3);
+            testPosixAttributes = fileStore1.supportsFileAttributeView("posix") &&
+                                  fileStore3.supportsFileAttributeView("posix");
             testCopyFileToFile(dir1, dir3, false);
             testMove(dir1, dir3, false);
 
@@ -88,16 +94,9 @@ public class CopyAndMove {
         }
     }
 
-    static void printDirInfo(String name, Path dir) throws IOException {
-        System.err.format("%s: %s (%s)%n", name, dir,
-            Files.getFileStore(dir).type());
-    }
-
-    static void printDirInfo(String label, Path dir1, Path dir2)
+    static void printDirInfo(String name, Path dir, FileStore store)
         throws IOException {
-        System.err.format("--- %s ---%n", label);
-        printDirInfo("dir1", dir1);
-        printDirInfo("dir2", dir2);
+        System.err.format("%s: %s (%s)%n", name, dir, store.type());
     }
 
     static void checkBasicAttributes(BasicFileAttributes attrs1,
@@ -129,44 +128,25 @@ public class CopyAndMove {
     static void checkPosixAttributes(PosixFileAttributes attrs1,
                                      PosixFileAttributes attrs2)
     {
-        try {
-            assertTrue(attrs1.permissions().equals(attrs2.permissions()));
-            assertTrue(attrs1.owner().equals(attrs2.owner()));
-            assertTrue(attrs1.group().equals(attrs2.group()));
-        } catch (Exception e) {
-            if (!attrs1.permissions().equals(attrs2.permissions()))
-                System.err.format("permissions%n1 (%d): %s%n2 (%d): %s%n%n",
-                    attrs1.permissions().size(), attrs1.permissions(),
-                    attrs2.permissions().size(), attrs2.permissions());
-            if (!attrs1.owner().equals(attrs2.owner()))
-                System.err.format("owner%n1: %s%n2: %s%n%n",
-                    attrs1.owner(), attrs2.owner());
-            if (!attrs1.group().equals(attrs2.group()))
-                System.err.format("group%n1: %s%n2: %s%n%n",
-                    attrs1.group(), attrs2.group());
-            throw e;
-        }
+        assertTrue(attrs1.permissions().equals(attrs2.permissions()),
+            "permissions%n1 (%d): %s%n2 (%d): %s%n%n",
+             attrs1.permissions().size(), attrs1.permissions(),
+             attrs2.permissions().size(), attrs2.permissions());
+        assertTrue(attrs1.owner().equals(attrs2.owner()),
+             "owner%n1: %s%n2: %s%n%n", attrs1.owner(), attrs2.owner());
+        assertTrue(attrs1.group().equals(attrs2.group()),
+             "group%n1: %s%n2: %s%n%n", attrs1.group(), attrs2.group());
     }
 
     static void checkDosAttributes(DosFileAttributes attrs1,
                                    DosFileAttributes attrs2)
     {
-        try {
-            assertTrue(attrs1.isReadOnly() == attrs2.isReadOnly());
-            assertTrue(attrs1.isHidden() == attrs2.isHidden());
-            assertTrue(attrs1.isSystem() == attrs2.isSystem());
-        } catch (Exception e) {
-            if(attrs1.isReadOnly() != attrs2.isReadOnly())
-                System.err.format("isReadOnly%n1: %s%n2: %s%n%n",
-                    attrs1.isReadOnly(), attrs2.isReadOnly());
-            if(attrs1.isHidden() != attrs2.isHidden())
-                System.err.format("isHidden%n1: %s%n2: %s%n%n",
-                    attrs1.isHidden(), attrs2.isHidden());
-            if(attrs1.isSystem() != attrs2.isSystem())
-                System.err.format("isSystem%n1: %s%n2: %s%n%n",
-                    attrs1.isSystem(), attrs2.isSystem());
-            throw e;
-        }
+        assertTrue(attrs1.isReadOnly() == attrs2.isReadOnly(),
+            "isReadOnly%n1: %s%n2: %s%n%n", attrs1.isReadOnly(), attrs2.isReadOnly());
+        assertTrue(attrs1.isHidden() == attrs2.isHidden(),
+            "isHidden%n1: %s%n2: %s%n%n", attrs1.isHidden(), attrs2.isHidden());
+        assertTrue(attrs1.isSystem() == attrs2.isSystem(),
+            "isSystem%n1: %s%n2: %s%n%n", attrs1.isSystem(), attrs2.isSystem());
     }
 
     static void checkUserDefinedFileAttributes(Map<String,ByteBuffer> attrs1,
@@ -292,8 +272,6 @@ public class CopyAndMove {
     static void testMove(Path dir1, Path dir2, boolean supportsLinks)
         throws IOException
     {
-        printDirInfo("testMove", dir1, dir2);
-
         Path source, target, entry;
 
         boolean sameDevice = getFileStore(dir1).equals(getFileStore(dir2));
@@ -729,8 +707,6 @@ public class CopyAndMove {
     static void testCopyFileToFile(Path dir1, Path dir2, boolean supportsLinks)
         throws IOException
     {
-        printDirInfo("testCopyFileToFile", dir1, dir2);
-
         Path source, target, link, entry;
 
         // -- regular file --
@@ -1154,6 +1130,13 @@ public class CopyAndMove {
     static void assertTrue(boolean value) {
         if (!value)
             throw new RuntimeException("Assertion failed");
+    }
+
+    static void assertTrue(boolean value, String format, Object... args) {
+        if (!value) {
+            System.err.format(format, args);
+            throw new RuntimeException("Assertion failed");
+        }
     }
 
     // computes simple hash of the given file
