@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8176841
+ * @bug 8176841 8202537
  * @summary Tests java.time classes deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -687,7 +687,7 @@ public class TestUnicodeExtension {
             {"uswsq", "America/Indiana/Petersburg"},
             {"usxul", "America/North_Dakota/Beulah"},
             {"usyak", "America/Yakutat"},
-            {"utc", "Etc/GMT"},
+            {"utc", "Etc/UTC"},
             {"utce01", "Etc/GMT-1"},
             {"utce02", "Etc/GMT-2"},
             {"utce03", "Etc/GMT-3"},

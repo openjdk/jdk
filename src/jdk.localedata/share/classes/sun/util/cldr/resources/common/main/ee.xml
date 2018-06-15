@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="ee"/>
 	</identity>
 	<localeDisplayNames>
@@ -817,6 +818,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a á à ã b d ɖ e é è ẽ ɛ {ɛ\u0301} {ɛ\u0300} {ɛ\u0303} f ƒ g ɣ h x i í ì ĩ k l m n ŋ o ó ò õ ɔ {ɔ\u0301} {ɔ\u0300} {ɔ\u0303} p r s t u ú ù ũ v ʋ w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ă â å ä ā æ c ç ĕ ê ë ĭ î ï j ñ ŏ ô ö ø œ q ŭ û ü ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D Ɖ E Ɛ F Ƒ G Ɣ H X I K L M N Ŋ O Ɔ P R S T U V Ʋ W Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
@@ -1084,26 +1086,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{0} {1}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{0} {1}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{0} {1}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{0} {1}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
@@ -1453,6 +1456,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">ŋ</dayPeriod>
 							<dayPeriod type="pm">ɣ</dayPeriod>
+							<dayPeriod type="morning1">fɔŋli</dayPeriod>
+							<dayPeriod type="morning2">ŋdi</dayPeriod>
+							<dayPeriod type="afternoon1">ŋdɔ</dayPeriod>
+							<dayPeriod type="afternoon2">ɣetrɔ</dayPeriod>
+							<dayPeriod type="evening1">fiẽ</dayPeriod>
+							<dayPeriod type="night1">zã</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">ŋdi</dayPeriod>
@@ -1466,23 +1475,46 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">ŋdi</dayPeriod>
+							<dayPeriod type="pm">ɣetrɔ</dayPeriod>
+							<dayPeriod type="morning1">fɔŋli</dayPeriod>
+							<dayPeriod type="morning2">ŋdi</dayPeriod>
+							<dayPeriod type="afternoon1">ŋdɔ</dayPeriod>
+							<dayPeriod type="afternoon2">ɣetrɔ</dayPeriod>
+							<dayPeriod type="evening1">fiẽ</dayPeriod>
+							<dayPeriod type="night1">zã</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">ŋ</dayPeriod>
 							<dayPeriod type="pm">ɣ</dayPeriod>
+							<dayPeriod type="morning1">fɔŋli</dayPeriod>
+							<dayPeriod type="morning2">ŋdi</dayPeriod>
+							<dayPeriod type="afternoon1">ŋdɔ</dayPeriod>
+							<dayPeriod type="afternoon2">ɣetrɔ</dayPeriod>
+							<dayPeriod type="evening1">fiẽ</dayPeriod>
+							<dayPeriod type="night1">zã</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="provisional">ŋdi</dayPeriod>
-							<dayPeriod type="pm" draft="provisional">ɣetrɔ</dayPeriod>
+							<dayPeriod type="am">ŋdi</dayPeriod>
+							<dayPeriod type="pm">ɣetrɔ</dayPeriod>
+							<dayPeriod type="morning1">fɔŋli</dayPeriod>
+							<dayPeriod type="morning2">ŋdi</dayPeriod>
+							<dayPeriod type="afternoon1">ŋdɔ</dayPeriod>
+							<dayPeriod type="afternoon2">ɣetrɔ</dayPeriod>
+							<dayPeriod type="evening1">fiẽ</dayPeriod>
+							<dayPeriod type="night1">zã</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">Hafi Yesu Va Do ŋgɔ</era>
-						<era type="1">Yesu Ŋɔli</era>
+						<era type="0">Hafi Yesu Va</era>
+						<era type="0" alt="variant">Bŋ</era>
+						<era type="1">Yesu ŋɔli</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">hY</era>
+						<era type="0">HYV</era>
 						<era type="0" alt="variant">Bŋ</era>
 						<era type="1">Yŋ</era>
 						<era type="1" alt="variant">Eŋ</era>
@@ -1558,12 +1590,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">'ga' h 'le' B 'me'</dateFormatItem>
+						<dateFormatItem id="Bhm">'ga' h 'aɖabaƒoƒo' mm 'le' B 'me'</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss 'le' B 'me'</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">'ga' h:mm 'le' E B 'me'</dateFormatItem>
+						<dateFormatItem id="EBhms">'ga' h:mm:ss 'le' E B 'me'</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Ehm">E a 'ga' h:mm</dateFormatItem>
-						<dateFormatItem id="EHm" draft="unconfirmed">E HH:mm</dateFormatItem>
+						<dateFormatItem id="EHm">E 'ga' HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E a 'ga' h:mm:ss</dateFormatItem>
-						<dateFormatItem id="EHms" draft="unconfirmed">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="EHms">E 'ga' HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d 'lia', y G</dateFormatItem>
@@ -1574,6 +1612,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">a 'ga' h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">a 'ga' h:mm:ss 'le' v</dateFormatItem>
+						<dateFormatItem id="Hmsv">'ga' HH:mm:ss 'le' v</dateFormatItem>
+						<dateFormatItem id="hmv">a 'ga' h:mm 'le' v</dateFormatItem>
+						<dateFormatItem id="Hmv">'ga' HH:mm 'le' v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -1582,6 +1624,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMEd">E, MMM d 'lia'</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d 'lia'</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, MMMM d 'lia'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM 'ƒe' 'kɔsiɖa' W 'lia'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM 'ƒe' 'kɔsiɖa' W 'lia'</dateFormatItem>
 						<dateFormatItem id="ms">'aɖabaƒoƒo' mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -1593,7 +1637,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'kɔsiɖa' w 'lia' 'le' 'ƒe' y 'me'</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'kɔsiɖa' w 'lia' 'le' 'ƒe' y 'me'</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Timezone">{0} {1}</appendItem>
+					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
@@ -1654,7 +1703,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">E, MMM d 'lia' – E, MMM d 'lia'</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="unconfirmed">y–y</greatestDifference>
+							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">M/y – M/y</greatestDifference>
@@ -2234,1202 +2283,1300 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
+			<gmtFormat>{0} GMT</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>{0}</regionFormat>
-			<regionFormat type="daylight">{0}</regionFormat>
-			<regionFormat type="standard">{0}</regionFormat>
+			<regionFormat>{0} gaƒoƒo me</regionFormat>
+			<regionFormat type="daylight">{0} kele gaƒoƒo me</regionFormat>
+			<regionFormat type="standard">{0} nutome gaƒoƒo me</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Xexeme gaƒoƒoɖoanyi me</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>du manya</exemplarCity>
+				<exemplarCity>Du manya</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
-				<exemplarCity>Andorra nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Andorra</exemplarCity>
 			</zone>
 			<zone type="Asia/Dubai">
-				<exemplarCity>Dubai nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dubai</exemplarCity>
 			</zone>
 			<zone type="Asia/Kabul">
-				<exemplarCity>Kabul nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kabul</exemplarCity>
 			</zone>
 			<zone type="America/Antigua">
-				<exemplarCity>Antigua nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Antigua</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
-				<exemplarCity>Anguilla nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Anguilla</exemplarCity>
 			</zone>
 			<zone type="Europe/Tirane">
-				<exemplarCity>Tirane nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tirane</exemplarCity>
 			</zone>
 			<zone type="Asia/Yerevan">
-				<exemplarCity>Yerevan nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Yerevan</exemplarCity>
 			</zone>
 			<zone type="Africa/Luanda">
-				<exemplarCity>Luanda nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Luanda</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Rothera">
-				<exemplarCity>Rothera nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Rothera</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Palmer">
-				<exemplarCity>Palmer nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Palmer</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity>Troll</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Syowa">
-				<exemplarCity>Syowa nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Syowa</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Mawson">
-				<exemplarCity>Mawson nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mawson</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Davis">
-				<exemplarCity>Davis nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Davis</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Vostok">
-				<exemplarCity>Vostok nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vostok</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Casey">
-				<exemplarCity>Kasey nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Casey</exemplarCity>
 			</zone>
 			<zone type="Antarctica/DumontDUrville">
-				<exemplarCity>Dumont d’Urville nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dumont d’Urville</exemplarCity>
 			</zone>
 			<zone type="Antarctica/McMurdo">
-				<exemplarCity>MacMurdo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>McMurdo</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity>Rio Gallegos nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Rio Gallegos</exemplarCity>
 			</zone>
 			<zone type="America/Mendoza">
-				<exemplarCity>Mendoza nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mendoza</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/San_Juan">
-				<exemplarCity>San Dzuan nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>San Juan</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Ushuaia">
-				<exemplarCity>Ushuaia nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Ushuaia</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/La_Rioja">
-				<exemplarCity>La Rioha nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>La Rioja</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/San_Luis">
-				<exemplarCity>San Luis nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>San Luis</exemplarCity>
 			</zone>
 			<zone type="America/Catamarca">
-				<exemplarCity>Katamaka nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Catamarca</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Salta">
-				<exemplarCity>Salta nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Salta</exemplarCity>
 			</zone>
 			<zone type="America/Jujuy">
-				<exemplarCity>Dzudzoi nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Jujuy</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Tucuman">
-				<exemplarCity>Tukuman nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tucuman</exemplarCity>
 			</zone>
 			<zone type="America/Cordoba">
-				<exemplarCity>Kɔdoba nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Cordoba</exemplarCity>
 			</zone>
 			<zone type="America/Buenos_Aires">
-				<exemplarCity>Buenos Aires nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Buenos Aires</exemplarCity>
 			</zone>
 			<zone type="Pacific/Pago_Pago">
-				<exemplarCity>Pago Pago nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Pago Pago</exemplarCity>
 			</zone>
 			<zone type="Europe/Vienna">
-				<exemplarCity>Vienna nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vienna</exemplarCity>
 			</zone>
 			<zone type="Australia/Perth">
-				<exemplarCity>Perth nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Perth</exemplarCity>
 			</zone>
 			<zone type="Australia/Eucla">
-				<exemplarCity>Eucla nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Eucla</exemplarCity>
 			</zone>
 			<zone type="Australia/Darwin">
-				<exemplarCity>Darwin nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Darwin</exemplarCity>
 			</zone>
 			<zone type="Australia/Adelaide">
-				<exemplarCity>Adelaide nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Adelaide</exemplarCity>
 			</zone>
 			<zone type="Australia/Broken_Hill">
-				<exemplarCity>Broken Hill nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Broken Hill</exemplarCity>
 			</zone>
 			<zone type="Australia/Currie">
-				<exemplarCity>Kurrie nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Melbourne">
-				<exemplarCity>Melbourne nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Melbourne</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
-				<exemplarCity>Hobart nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Hobart</exemplarCity>
 			</zone>
 			<zone type="Australia/Lindeman">
-				<exemplarCity>Lindeman nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Lindeman</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
-				<exemplarCity>Sidney nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Sydney</exemplarCity>
 			</zone>
 			<zone type="Australia/Brisbane">
-				<exemplarCity>Brisbane nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Brisbane</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity>Macquarie</exemplarCity>
 			</zone>
 			<zone type="Australia/Lord_Howe">
-				<exemplarCity>Lɔd Howe nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Lord Howe</exemplarCity>
 			</zone>
 			<zone type="America/Aruba">
-				<exemplarCity>Aruba nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Aruba</exemplarCity>
 			</zone>
 			<zone type="Europe/Mariehamn">
-				<exemplarCity>Mariehamn nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mariehamn</exemplarCity>
 			</zone>
 			<zone type="Asia/Baku">
-				<exemplarCity>Baku nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Baku</exemplarCity>
 			</zone>
 			<zone type="Europe/Sarajevo">
-				<exemplarCity>Sarayevo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Sarajevo</exemplarCity>
 			</zone>
 			<zone type="America/Barbados">
-				<exemplarCity>Barbados nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Barbados</exemplarCity>
 			</zone>
 			<zone type="Asia/Dhaka">
-				<exemplarCity>Dhaka nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dhaka</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
-				<exemplarCity>Brussels nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Brussels</exemplarCity>
 			</zone>
 			<zone type="Africa/Ouagadougou">
-				<exemplarCity>Ouagadugu nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Ouagadougou</exemplarCity>
 			</zone>
 			<zone type="Europe/Sofia">
-				<exemplarCity>Sofia nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Sofia</exemplarCity>
 			</zone>
 			<zone type="Asia/Bahrain">
-				<exemplarCity>Bahrain nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bahrain</exemplarCity>
 			</zone>
 			<zone type="Africa/Bujumbura">
-				<exemplarCity>Budzumbura nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bujumbura</exemplarCity>
 			</zone>
 			<zone type="Africa/Porto-Novo">
-				<exemplarCity>Pɔto-Novo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Porto-Novo</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>St. Barthelemy nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>St. Barthelemy</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
-				<exemplarCity>Bermuda nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bermuda</exemplarCity>
 			</zone>
 			<zone type="Asia/Brunei">
-				<exemplarCity>Brunei nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Brunei</exemplarCity>
 			</zone>
 			<zone type="America/La_Paz">
-				<exemplarCity>La Paz nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>La Paz</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity>Kralendijk</exemplarCity>
 			</zone>
 			<zone type="America/Eirunepe">
-				<exemplarCity>Eirunepe nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Eirunepe</exemplarCity>
 			</zone>
 			<zone type="America/Rio_Branco">
-				<exemplarCity>Rio Branko nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Rio Branco</exemplarCity>
 			</zone>
 			<zone type="America/Porto_Velho">
-				<exemplarCity>Pɔrto Velho nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Porto Velho</exemplarCity>
 			</zone>
 			<zone type="America/Boa_Vista">
-				<exemplarCity>Boa Vista nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Boa Vista</exemplarCity>
 			</zone>
 			<zone type="America/Manaus">
-				<exemplarCity>Manaus nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Manaus</exemplarCity>
 			</zone>
 			<zone type="America/Cuiaba">
-				<exemplarCity>Kuiaba nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Cuiaba</exemplarCity>
 			</zone>
 			<zone type="America/Santarem">
-				<exemplarCity>Santarem nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Santarem</exemplarCity>
 			</zone>
 			<zone type="America/Campo_Grande">
-				<exemplarCity>Kampo Grande nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Campo Grande</exemplarCity>
 			</zone>
 			<zone type="America/Belem">
-				<exemplarCity>Belem nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Belem</exemplarCity>
 			</zone>
 			<zone type="America/Araguaina">
-				<exemplarCity>Araguaina nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Araguaina</exemplarCity>
 			</zone>
 			<zone type="America/Sao_Paulo">
-				<exemplarCity>Sao Paulo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Sao Paulo</exemplarCity>
 			</zone>
 			<zone type="America/Bahia">
-				<exemplarCity>Bahia nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bahia</exemplarCity>
 			</zone>
 			<zone type="America/Fortaleza">
-				<exemplarCity>Fortaleza nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Fortaleza</exemplarCity>
 			</zone>
 			<zone type="America/Maceio">
-				<exemplarCity>Maseio nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Maceio</exemplarCity>
 			</zone>
 			<zone type="America/Recife">
-				<exemplarCity>Resife nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Recife</exemplarCity>
 			</zone>
 			<zone type="America/Noronha">
-				<exemplarCity>Noronha nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Noronha</exemplarCity>
 			</zone>
 			<zone type="America/Nassau">
-				<exemplarCity>Nassau nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Nassau</exemplarCity>
 			</zone>
 			<zone type="Asia/Thimphu">
-				<exemplarCity>Timfu nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Thimphu</exemplarCity>
 			</zone>
 			<zone type="Africa/Gaborone">
-				<exemplarCity>Gaborone nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Gaborone</exemplarCity>
 			</zone>
 			<zone type="Europe/Minsk">
-				<exemplarCity>Minsk nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Minsk</exemplarCity>
 			</zone>
 			<zone type="America/Belize">
-				<exemplarCity>Belize nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Belize</exemplarCity>
 			</zone>
 			<zone type="America/Dawson">
-				<exemplarCity>Dɔwson nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dawson</exemplarCity>
 			</zone>
 			<zone type="America/Whitehorse">
-				<exemplarCity>Whitehorse nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Whitehorse</exemplarCity>
 			</zone>
 			<zone type="America/Inuvik">
-				<exemplarCity>Inuvik nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Inuvik</exemplarCity>
 			</zone>
 			<zone type="America/Vancouver">
-				<exemplarCity>Vankouver nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vancouver</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
-				<exemplarCity>Dawson Krik nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dawson Creek</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity>Creston</exemplarCity>
 			</zone>
 			<zone type="America/Yellowknife">
-				<exemplarCity>Yellownaif nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Yellowknife</exemplarCity>
 			</zone>
 			<zone type="America/Edmonton">
-				<exemplarCity>Edmonton nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Edmonton</exemplarCity>
 			</zone>
 			<zone type="America/Swift_Current">
-				<exemplarCity>Swift Kurrent nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Swift Current</exemplarCity>
 			</zone>
 			<zone type="America/Cambridge_Bay">
-				<exemplarCity>Kambridge Bay nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Cambridge Bay</exemplarCity>
 			</zone>
 			<zone type="America/Regina">
-				<exemplarCity>Regina nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Regina</exemplarCity>
 			</zone>
 			<zone type="America/Winnipeg">
-				<exemplarCity>Winnipeg nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Winnipeg</exemplarCity>
 			</zone>
 			<zone type="America/Resolute">
-				<exemplarCity>Resolute nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Resolute</exemplarCity>
 			</zone>
 			<zone type="America/Rainy_River">
-				<exemplarCity>Raini Riva nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Rainy River</exemplarCity>
 			</zone>
 			<zone type="America/Rankin_Inlet">
-				<exemplarCity>Rankin Inlet nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Rankin Inlet</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
-				<exemplarCity>Atikokannutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Atikokan</exemplarCity>
 			</zone>
 			<zone type="America/Thunder_Bay">
-				<exemplarCity>Thunder Bay nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Thunder Bay</exemplarCity>
 			</zone>
 			<zone type="America/Nipigon">
-				<exemplarCity>Nipigon nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Nipigon</exemplarCity>
 			</zone>
 			<zone type="America/Toronto">
-				<exemplarCity>Toronto nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Toronto</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
-				<exemplarCity>Ikaluit nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Iqaluit</exemplarCity>
 			</zone>
 			<zone type="America/Pangnirtung">
-				<exemplarCity>Pangnirtung nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Pangnirtung</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
-				<exemplarCity>Moncton nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Moncton</exemplarCity>
 			</zone>
 			<zone type="America/Halifax">
-				<exemplarCity>Halifaks nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Halifax</exemplarCity>
 			</zone>
 			<zone type="America/Goose_Bay">
-				<exemplarCity>Guse Bay nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Goose Bay</exemplarCity>
 			</zone>
 			<zone type="America/Glace_Bay">
-				<exemplarCity>Glaise Bay nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Glace Bay</exemplarCity>
 			</zone>
 			<zone type="America/Blanc-Sablon">
-				<exemplarCity>Blank-Sablon nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Blanc-Sablon</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
-				<exemplarCity>St. Yohannes nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>St. John’s</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
-				<exemplarCity>Kokos nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Cocos</exemplarCity>
 			</zone>
 			<zone type="Africa/Kinshasa">
-				<exemplarCity>Kinshasa nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kinshasa</exemplarCity>
 			</zone>
 			<zone type="Africa/Lubumbashi">
-				<exemplarCity>Lubumbashi nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Lubumbashi</exemplarCity>
 			</zone>
 			<zone type="Africa/Bangui">
-				<exemplarCity>Bangui nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bangui</exemplarCity>
 			</zone>
 			<zone type="Africa/Brazzaville">
-				<exemplarCity>Brazzaville nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Brazzaville</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
-				<exemplarCity>Zurich nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Zurich</exemplarCity>
 			</zone>
 			<zone type="Africa/Abidjan">
-				<exemplarCity>Abidzan nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Abidjan</exemplarCity>
 			</zone>
 			<zone type="Pacific/Rarotonga">
-				<exemplarCity>Rarotonga nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Rarotonga</exemplarCity>
 			</zone>
 			<zone type="Pacific/Easter">
-				<exemplarCity>Easter nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Easter</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenas</exemplarCity>
 			</zone>
 			<zone type="America/Santiago">
-				<exemplarCity draft="unconfirmed">Santiago nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Santiago</exemplarCity>
 			</zone>
 			<zone type="Africa/Douala">
-				<exemplarCity>Doula nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Douala</exemplarCity>
 			</zone>
 			<zone type="Asia/Urumqi">
-				<exemplarCity>Urumqi nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Urumqi</exemplarCity>
 			</zone>
 			<zone type="Asia/Shanghai">
-				<exemplarCity draft="unconfirmed">Shanghai nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Shanghai</exemplarCity>
 			</zone>
 			<zone type="America/Bogota">
-				<exemplarCity>Bogota nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bogota</exemplarCity>
 			</zone>
 			<zone type="America/Costa_Rica">
-				<exemplarCity>Kɔsta Rika nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Costa Rica</exemplarCity>
 			</zone>
 			<zone type="America/Havana">
-				<exemplarCity>Havana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Havana</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
-				<exemplarCity>Kape Verde nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Cape Verde</exemplarCity>
 			</zone>
 			<zone type="America/Curacao">
-				<exemplarCity>Kurakao nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Curacao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
-				<exemplarCity>Kristmas nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Christmas</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
-				<exemplarCity>Nikosia nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Nicosia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
-				<exemplarCity>Prague nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Prague</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity>Busingen</exemplarCity>
 			</zone>
 			<zone type="Europe/Berlin">
-				<exemplarCity>Berlin nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Berlin</exemplarCity>
 			</zone>
 			<zone type="Africa/Djibouti">
-				<exemplarCity>Dzibuti nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Djibouti</exemplarCity>
 			</zone>
 			<zone type="Europe/Copenhagen">
-				<exemplarCity>Kopenhagen nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Copenhagen</exemplarCity>
 			</zone>
 			<zone type="America/Dominica">
-				<exemplarCity>Dominika nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dominica</exemplarCity>
 			</zone>
 			<zone type="America/Santo_Domingo">
-				<exemplarCity>Santo Domingo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Santo Domingo</exemplarCity>
 			</zone>
 			<zone type="Africa/Algiers">
-				<exemplarCity>Algiers nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Algiers</exemplarCity>
 			</zone>
 			<zone type="Pacific/Galapagos">
-				<exemplarCity>Galapagos nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Galapagos</exemplarCity>
 			</zone>
 			<zone type="America/Guayaquil">
-				<exemplarCity draft="unconfirmed">Guayakuil nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Guayaquil</exemplarCity>
 			</zone>
 			<zone type="Europe/Tallinn">
-				<exemplarCity>Tallinn nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tallinn</exemplarCity>
 			</zone>
 			<zone type="Africa/Cairo">
-				<exemplarCity>Kairo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Cairo</exemplarCity>
 			</zone>
 			<zone type="Africa/El_Aaiun">
-				<exemplarCity>El Aaiun nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>El Aaiun</exemplarCity>
 			</zone>
 			<zone type="Africa/Asmera">
-				<exemplarCity>Asmara nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Asmara</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Canary">
-				<exemplarCity>Kanari nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Canary</exemplarCity>
 			</zone>
 			<zone type="Africa/Ceuta">
-				<exemplarCity>Keuta nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Ceuta</exemplarCity>
 			</zone>
 			<zone type="Europe/Madrid">
-				<exemplarCity draft="unconfirmed">Madrid nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Madrid</exemplarCity>
 			</zone>
 			<zone type="Africa/Addis_Ababa">
-				<exemplarCity>Addis Ababa nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Addis Ababa</exemplarCity>
 			</zone>
 			<zone type="Europe/Helsinki">
-				<exemplarCity>Helsinki nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Helsinki</exemplarCity>
 			</zone>
 			<zone type="Pacific/Fiji">
-				<exemplarCity>Fidzi nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Fiji</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Stanley">
-				<exemplarCity>Stanley nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Stanley</exemplarCity>
 			</zone>
 			<zone type="Pacific/Truk">
-				<exemplarCity>Tsuuk nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Chuuk</exemplarCity>
 			</zone>
 			<zone type="Pacific/Ponape">
-				<exemplarCity>Pohnpei nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Pohnpei</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kosrae">
-				<exemplarCity>Kosrae nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kosrae</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Faeroe">
-				<exemplarCity>Faroe nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Faroe</exemplarCity>
 			</zone>
 			<zone type="Europe/Paris">
-				<exemplarCity>Paris nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Paris</exemplarCity>
 			</zone>
 			<zone type="Africa/Libreville">
-				<exemplarCity>Libreville nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Libreville</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
 				<long>
-					<daylight draft="unconfirmed">Britain dzomeŋɔli gaƒoƒome</daylight>
+					<daylight>British dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
-				<exemplarCity draft="unconfirmed">London nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>London</exemplarCity>
 			</zone>
 			<zone type="America/Grenada">
-				<exemplarCity>Grenada nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Grenada</exemplarCity>
 			</zone>
 			<zone type="Asia/Tbilisi">
-				<exemplarCity>Tbilisi nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tbilisi</exemplarCity>
 			</zone>
 			<zone type="America/Cayenne">
-				<exemplarCity>Kayenne nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Cayenne</exemplarCity>
 			</zone>
 			<zone type="Europe/Guernsey">
-				<exemplarCity>Guernse nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Guernsey</exemplarCity>
 			</zone>
 			<zone type="Africa/Accra">
-				<exemplarCity>Gɛ̃ nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Accra</exemplarCity>
 			</zone>
 			<zone type="Europe/Gibraltar">
-				<exemplarCity>Gibraltar nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Gibraltar</exemplarCity>
 			</zone>
 			<zone type="America/Thule">
-				<exemplarCity>Thule nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Thule</exemplarCity>
 			</zone>
 			<zone type="America/Godthab">
-				<exemplarCity draft="unconfirmed">Godthab nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Nuuk</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity>Skɔsbisund nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Ittoqqortoormiit</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
-				<exemplarCity>Danmarkshavn nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Danmarkshavn</exemplarCity>
 			</zone>
 			<zone type="Africa/Banjul">
-				<exemplarCity>Bandzul nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Banjul</exemplarCity>
 			</zone>
 			<zone type="Africa/Conakry">
-				<exemplarCity>Konakry nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Conakry</exemplarCity>
 			</zone>
 			<zone type="America/Guadeloupe">
-				<exemplarCity>Guadelupe nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Guadeloupe</exemplarCity>
 			</zone>
 			<zone type="Africa/Malabo">
-				<exemplarCity>Malabo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Malabo</exemplarCity>
 			</zone>
 			<zone type="Europe/Athens">
-				<exemplarCity>Atens nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Athens</exemplarCity>
 			</zone>
 			<zone type="Atlantic/South_Georgia">
-				<exemplarCity>Anyiehe Georgia nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>South Georgia</exemplarCity>
 			</zone>
 			<zone type="America/Guatemala">
-				<exemplarCity>Guatemala nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Guatemala</exemplarCity>
 			</zone>
 			<zone type="Pacific/Guam">
-				<exemplarCity>Guam nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Guam</exemplarCity>
 			</zone>
 			<zone type="Africa/Bissau">
-				<exemplarCity>Bisao nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bissau</exemplarCity>
 			</zone>
 			<zone type="America/Guyana">
-				<exemplarCity>Gayana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Guyana</exemplarCity>
 			</zone>
 			<zone type="Asia/Hong_Kong">
-				<exemplarCity>Hɔng Kɔng nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Hong Kong</exemplarCity>
 			</zone>
 			<zone type="America/Tegucigalpa">
-				<exemplarCity>Tegukigalpa nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tegucigalpa</exemplarCity>
 			</zone>
 			<zone type="Europe/Zagreb">
-				<exemplarCity>Zagreb nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Zagreb</exemplarCity>
 			</zone>
 			<zone type="America/Port-au-Prince">
-				<exemplarCity>Pɔrt-au-Princenutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Port-au-Prince</exemplarCity>
 			</zone>
 			<zone type="Europe/Budapest">
-				<exemplarCity>Budapest nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Budapest</exemplarCity>
 			</zone>
 			<zone type="Asia/Jakarta">
-				<exemplarCity>Dzakarta nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Jakarta</exemplarCity>
 			</zone>
 			<zone type="Asia/Pontianak">
-				<exemplarCity>Pontianak nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Pontianak</exemplarCity>
 			</zone>
 			<zone type="Asia/Makassar">
-				<exemplarCity>Makassar nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Makassar</exemplarCity>
 			</zone>
 			<zone type="Asia/Jayapura">
-				<exemplarCity>Dzayapura nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Jayapura</exemplarCity>
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
-					<daylight draft="unconfirmed">Irelanɖ dzomeŋɔli gaƒoƒome</daylight>
+					<daylight>Ireland nutome gaƒoƒo me</daylight>
 				</long>
-				<exemplarCity>Dublin nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dublin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
-				<exemplarCity>Yerusalem nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Jerusalem</exemplarCity>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
-				<exemplarCity>Aisle of Man nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Isle of Man</exemplarCity>
 			</zone>
 			<zone type="Asia/Calcutta">
-				<exemplarCity>Kolkata nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kolkata</exemplarCity>
 			</zone>
 			<zone type="Indian/Chagos">
-				<exemplarCity>Tsagos nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Chagos</exemplarCity>
 			</zone>
 			<zone type="Asia/Baghdad">
-				<exemplarCity>Baghdad nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Baghdad</exemplarCity>
 			</zone>
 			<zone type="Asia/Tehran">
-				<exemplarCity>Tehran nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tehran</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Reykjavik">
-				<exemplarCity>Reykjavik nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Reykjavik</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
-				<exemplarCity>Roma nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Rome</exemplarCity>
 			</zone>
 			<zone type="Europe/Jersey">
-				<exemplarCity>Jɛse nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Jersey</exemplarCity>
 			</zone>
 			<zone type="America/Jamaica">
-				<exemplarCity>Dzamaika nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Jamaica</exemplarCity>
 			</zone>
 			<zone type="Asia/Amman">
-				<exemplarCity>Amman nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Amman</exemplarCity>
 			</zone>
 			<zone type="Asia/Tokyo">
-				<exemplarCity>Tokio nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tokyo</exemplarCity>
 			</zone>
 			<zone type="Africa/Nairobi">
-				<exemplarCity>Nairobi nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Nairobi</exemplarCity>
 			</zone>
 			<zone type="Asia/Bishkek">
-				<exemplarCity>Bishkek nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bishkek</exemplarCity>
 			</zone>
 			<zone type="Asia/Phnom_Penh">
-				<exemplarCity>Nɔm Penh nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Phnom Penh</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>Enderburi nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Enderbury</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
-				<exemplarCity>Kiritimati nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kiritimati</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tarawa">
-				<exemplarCity>Tarawa nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tarawa</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
-				<exemplarCity>Komoro nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Comoro</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
-				<exemplarCity>St. Kitis nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>St. Kitts</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
-				<exemplarCity>Piongyang nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Pyongyang</exemplarCity>
 			</zone>
 			<zone type="Asia/Seoul">
-				<exemplarCity>Seoul nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Seoul</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuwait">
-				<exemplarCity>Kuwait nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kuwait</exemplarCity>
 			</zone>
 			<zone type="America/Cayman">
-				<exemplarCity>Keman nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Cayman</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtau">
-				<exemplarCity>Aktau nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Aqtau</exemplarCity>
 			</zone>
 			<zone type="Asia/Oral">
-				<exemplarCity>Oral nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Oral</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atyrau</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
-				<exemplarCity>Aktobe nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Aqtobe</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
-				<exemplarCity>Kizilɔda nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Qyzylorda</exemplarCity>
 			</zone>
 			<zone type="Asia/Almaty">
-				<exemplarCity>Almati nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Almaty</exemplarCity>
 			</zone>
 			<zone type="Asia/Vientiane">
-				<exemplarCity>Vientiane nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vientiane</exemplarCity>
 			</zone>
 			<zone type="Asia/Beirut">
-				<exemplarCity>Beirut nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Beirut</exemplarCity>
 			</zone>
 			<zone type="America/St_Lucia">
-				<exemplarCity>St. Lusia nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>St. Lucia</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
-				<exemplarCity>Vaduz nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vaduz</exemplarCity>
 			</zone>
 			<zone type="Asia/Colombo">
-				<exemplarCity>Kolombo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Colombo</exemplarCity>
 			</zone>
 			<zone type="Africa/Monrovia">
-				<exemplarCity>Monrovia nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Monrovia</exemplarCity>
 			</zone>
 			<zone type="Africa/Maseru">
-				<exemplarCity>Maseru nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Maseru</exemplarCity>
 			</zone>
 			<zone type="Europe/Vilnius">
-				<exemplarCity>Vilnius nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vilnius</exemplarCity>
 			</zone>
 			<zone type="Europe/Luxembourg">
-				<exemplarCity>Lazembɔg nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Luxembourg</exemplarCity>
 			</zone>
 			<zone type="Europe/Riga">
-				<exemplarCity>Riga nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Riga</exemplarCity>
 			</zone>
 			<zone type="Africa/Tripoli">
-				<exemplarCity>Tripoli nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tripoli</exemplarCity>
 			</zone>
 			<zone type="Africa/Casablanca">
-				<exemplarCity>Kasablanka nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Casablanca</exemplarCity>
 			</zone>
 			<zone type="Europe/Monaco">
-				<exemplarCity>Monaco nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Monaco</exemplarCity>
 			</zone>
 			<zone type="Europe/Chisinau">
-				<exemplarCity>Tsisinau nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Chisinau</exemplarCity>
 			</zone>
 			<zone type="Europe/Podgorica">
-				<exemplarCity>Podgorika nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Podgorica</exemplarCity>
 			</zone>
 			<zone type="America/Marigot">
-				<exemplarCity>Marigot nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Marigot</exemplarCity>
 			</zone>
 			<zone type="Indian/Antananarivo">
-				<exemplarCity>Antananarivo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Antananarivo</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kwajalein">
-				<exemplarCity>Kwadzalein nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kwajalein</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity>Majuro</exemplarCity>
 			</zone>
 			<zone type="Europe/Skopje">
-				<exemplarCity>Skopie nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Skopje</exemplarCity>
 			</zone>
 			<zone type="Africa/Bamako">
-				<exemplarCity draft="unconfirmed">Bamako nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bamako</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangoon nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Yangon</exemplarCity>
 			</zone>
 			<zone type="Asia/Hovd">
-				<exemplarCity>Hovd nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Hovd</exemplarCity>
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
-				<exemplarCity>Ulaanbaatar nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Ulaanbaatar</exemplarCity>
 			</zone>
 			<zone type="Asia/Choibalsan">
-				<exemplarCity>Tsoibalsan nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Choibalsan</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
-				<exemplarCity>Macau nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Macau</exemplarCity>
 			</zone>
 			<zone type="Pacific/Saipan">
-				<exemplarCity>Saipan nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Saipan</exemplarCity>
 			</zone>
 			<zone type="America/Martinique">
-				<exemplarCity>Martinik nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Martinique</exemplarCity>
 			</zone>
 			<zone type="Africa/Nouakchott">
-				<exemplarCity>Nouakchott nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Nouakchott</exemplarCity>
 			</zone>
 			<zone type="America/Montserrat">
-				<exemplarCity>Montserrat nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Montserrat</exemplarCity>
 			</zone>
 			<zone type="Europe/Malta">
-				<exemplarCity>Malta nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Malta</exemplarCity>
 			</zone>
 			<zone type="Indian/Mauritius">
-				<exemplarCity>Mauritius nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mauritius</exemplarCity>
 			</zone>
 			<zone type="Indian/Maldives">
-				<exemplarCity>Maldives nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Maldives</exemplarCity>
 			</zone>
 			<zone type="Africa/Blantyre">
-				<exemplarCity>Blantaire nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Blantyre</exemplarCity>
 			</zone>
 			<zone type="America/Tijuana">
-				<exemplarCity>Tihuana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tijuana</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
-				<exemplarCity>Hermosillo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Hermosillo</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
-				<exemplarCity>Mazatlan nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mazatlan</exemplarCity>
 			</zone>
 			<zone type="America/Chihuahua">
-				<exemplarCity>Tsihuahua nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Chihuahua</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>Bahia Banderas</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity>Ojinaga</exemplarCity>
 			</zone>
 			<zone type="America/Monterrey">
-				<exemplarCity>Monterrey nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Monterrey</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity>Meksikodugã nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mexico City</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity>Matamoros</exemplarCity>
 			</zone>
 			<zone type="America/Merida">
-				<exemplarCity>Merida nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Merida</exemplarCity>
 			</zone>
 			<zone type="America/Cancun">
-				<exemplarCity>Kankun nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Cancun</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuala_Lumpur">
-				<exemplarCity draft="unconfirmed">Kuala Lumpur nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kuala Lumpur</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuching">
-				<exemplarCity>Kutsing nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kuching</exemplarCity>
 			</zone>
 			<zone type="Africa/Maputo">
-				<exemplarCity>Maputo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Maputo</exemplarCity>
 			</zone>
 			<zone type="Africa/Windhoek">
-				<exemplarCity>Windhoek nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Windhoek</exemplarCity>
 			</zone>
 			<zone type="Pacific/Noumea">
-				<exemplarCity>Numea nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Noumea</exemplarCity>
 			</zone>
 			<zone type="Africa/Niamey">
-				<exemplarCity>Niamey nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Niamey</exemplarCity>
 			</zone>
 			<zone type="Pacific/Norfolk">
-				<exemplarCity>Nɔfɔlk nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Norfolk</exemplarCity>
 			</zone>
 			<zone type="Africa/Lagos">
-				<exemplarCity>Lagos nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Lagos</exemplarCity>
 			</zone>
 			<zone type="America/Managua">
-				<exemplarCity>Managua nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Managua</exemplarCity>
 			</zone>
 			<zone type="Europe/Amsterdam">
-				<exemplarCity>Amsterdam nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Amsterdam</exemplarCity>
 			</zone>
 			<zone type="Europe/Oslo">
-				<exemplarCity>Oslo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Oslo</exemplarCity>
 			</zone>
 			<zone type="Asia/Katmandu">
 				<exemplarCity>Kathmandu nutomegaƒoƒome</exemplarCity>
 			</zone>
 			<zone type="Pacific/Nauru">
-				<exemplarCity>Nauru nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Nauru</exemplarCity>
 			</zone>
 			<zone type="Pacific/Niue">
-				<exemplarCity>Niue nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Niue</exemplarCity>
 			</zone>
 			<zone type="Pacific/Chatham">
-				<exemplarCity>Tsatham nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Chatham</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity>Auckland</exemplarCity>
 			</zone>
 			<zone type="Asia/Muscat">
-				<exemplarCity>Muskat nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Muscat</exemplarCity>
 			</zone>
 			<zone type="America/Panama">
-				<exemplarCity>Panama nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Panama</exemplarCity>
 			</zone>
 			<zone type="America/Lima">
-				<exemplarCity>Lima nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Lima</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity>Tahiti</exemplarCity>
 			</zone>
 			<zone type="Pacific/Marquesas">
-				<exemplarCity>Markuesas nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Marquesas</exemplarCity>
 			</zone>
 			<zone type="Pacific/Gambier">
-				<exemplarCity>Gambier nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Gambier</exemplarCity>
 			</zone>
 			<zone type="Pacific/Port_Moresby">
-				<exemplarCity>Pɔrt Moresbynutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Port Moresby</exemplarCity>
+			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity>Bougainville</exemplarCity>
 			</zone>
 			<zone type="Asia/Manila">
-				<exemplarCity>Manila nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Manila</exemplarCity>
 			</zone>
 			<zone type="Asia/Karachi">
-				<exemplarCity>Karatsi nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Karachi</exemplarCity>
 			</zone>
 			<zone type="Europe/Warsaw">
-				<exemplarCity>Wɔsɔw nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Warsaw</exemplarCity>
 			</zone>
 			<zone type="America/Miquelon">
-				<exemplarCity>Miquelon nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Miquelon</exemplarCity>
 			</zone>
 			<zone type="Pacific/Pitcairn">
-				<exemplarCity>Pitkairn nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Pitcairn</exemplarCity>
 			</zone>
 			<zone type="America/Puerto_Rico">
-				<exemplarCity>Puerto Riko nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Puerto Rico</exemplarCity>
 			</zone>
 			<zone type="Asia/Gaza">
-				<exemplarCity>Gaza nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Gaza</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity>Hebron</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Azores">
-				<exemplarCity>Azores nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Azores</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Madeira">
-				<exemplarCity>Madeira nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Madeira</exemplarCity>
 			</zone>
 			<zone type="Europe/Lisbon">
-				<exemplarCity draft="unconfirmed">Lisbon nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Lisbon</exemplarCity>
 			</zone>
 			<zone type="Pacific/Palau">
-				<exemplarCity>Palau nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Palau</exemplarCity>
 			</zone>
 			<zone type="America/Asuncion">
-				<exemplarCity>Asunsion nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Asuncion</exemplarCity>
 			</zone>
 			<zone type="Asia/Qatar">
-				<exemplarCity>Katar nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Qatar</exemplarCity>
 			</zone>
 			<zone type="Indian/Reunion">
-				<exemplarCity>Reunion nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Reunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
-				<exemplarCity>Bukarest nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bucharest</exemplarCity>
 			</zone>
 			<zone type="Europe/Belgrade">
-				<exemplarCity>Belgrade nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Belgrade</exemplarCity>
 			</zone>
 			<zone type="Europe/Kaliningrad">
-				<exemplarCity>Kaliningrad nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kaliningrad</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
-				<exemplarCity>Simferopol nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Simferopol</exemplarCity>
 			</zone>
 			<zone type="Europe/Moscow">
-				<exemplarCity>Moscow nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Moscow</exemplarCity>
 			</zone>
 			<zone type="Europe/Volgograd">
-				<exemplarCity>Volgograd nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Volgograd</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrakhan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
 			</zone>
 			<zone type="Europe/Samara">
-				<exemplarCity>Samara nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Samara</exemplarCity>
 			</zone>
 			<zone type="Asia/Yekaterinburg">
-				<exemplarCity>Yekaterinburg nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Yekaterinburg</exemplarCity>
 			</zone>
 			<zone type="Asia/Omsk">
-				<exemplarCity>Omsk nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Omsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novosibirsk">
-				<exemplarCity>Novosibirsk nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity>Novokuznetsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Krasnoyarsk">
-				<exemplarCity>Krasnoyarsk nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Krasnoyarsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Irkutsk">
-				<exemplarCity>Irkutsk nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Irkutsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity>Chita</exemplarCity>
 			</zone>
 			<zone type="Asia/Yakutsk">
-				<exemplarCity>Yakutsk nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Yakutsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Vladivostok">
-				<exemplarCity>Vladivostok nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vladivostok</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity>Khandyga</exemplarCity>
 			</zone>
 			<zone type="Asia/Sakhalin">
-				<exemplarCity>Sakhalin nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Sakhalin</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity>Ust-Nera</exemplarCity>
 			</zone>
 			<zone type="Asia/Magadan">
-				<exemplarCity>Magadan nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Magadan</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity>Srednekolymsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Kamchatka">
-				<exemplarCity>Kamtsatka nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kamchatka</exemplarCity>
 			</zone>
 			<zone type="Asia/Anadyr">
-				<exemplarCity>Anadir nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Anadyr</exemplarCity>
 			</zone>
 			<zone type="Africa/Kigali">
-				<exemplarCity>Kigali nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kigali</exemplarCity>
 			</zone>
 			<zone type="Asia/Riyadh">
-				<exemplarCity>Riyadh nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Riyadh</exemplarCity>
 			</zone>
 			<zone type="Pacific/Guadalcanal">
-				<exemplarCity>Guadalkanal nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Guadalcanal</exemplarCity>
 			</zone>
 			<zone type="Indian/Mahe">
-				<exemplarCity>Mahe nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mahe</exemplarCity>
 			</zone>
 			<zone type="Africa/Khartoum">
-				<exemplarCity>Khartoum nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Khartoum</exemplarCity>
 			</zone>
 			<zone type="Europe/Stockholm">
-				<exemplarCity>Stockholm nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Stockholm</exemplarCity>
 			</zone>
 			<zone type="Asia/Singapore">
-				<exemplarCity>Singapore nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Singapore</exemplarCity>
 			</zone>
 			<zone type="Atlantic/St_Helena">
-				<exemplarCity>St. Helena nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>St. Helena</exemplarCity>
 			</zone>
 			<zone type="Europe/Ljubljana">
-				<exemplarCity>Lubliana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Ljubljana</exemplarCity>
 			</zone>
 			<zone type="Arctic/Longyearbyen">
-				<exemplarCity>Longyearbiyen nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Longyearbyen</exemplarCity>
 			</zone>
 			<zone type="Europe/Bratislava">
-				<exemplarCity>Bratislava nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bratislava</exemplarCity>
 			</zone>
 			<zone type="Africa/Freetown">
-				<exemplarCity>Freetown nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Freetown</exemplarCity>
 			</zone>
 			<zone type="Europe/San_Marino">
-				<exemplarCity>San Marino nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>San Marino</exemplarCity>
 			</zone>
 			<zone type="Africa/Dakar">
-				<exemplarCity>Dakar nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dakar</exemplarCity>
 			</zone>
 			<zone type="Africa/Mogadishu">
-				<exemplarCity>Mogadishu nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mogadishu</exemplarCity>
 			</zone>
 			<zone type="America/Paramaribo">
-				<exemplarCity>Paramaribo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Paramaribo</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity>Juba</exemplarCity>
 			</zone>
 			<zone type="Africa/Sao_Tome">
-				<exemplarCity>Sao Tome nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Sao Tome</exemplarCity>
 			</zone>
 			<zone type="America/El_Salvador">
-				<exemplarCity>El Salvadɔ nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>El Salvador</exemplarCity>
 			</zone>
 			<zone type="America/Lower_Princes">
-				<exemplarCity draft="unconfirmed">Lowa Prins Kɔta nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Lower Prince’s Quarter</exemplarCity>
 			</zone>
 			<zone type="Asia/Damascus">
-				<exemplarCity>Damaskus nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Damascus</exemplarCity>
 			</zone>
 			<zone type="Africa/Mbabane">
-				<exemplarCity>Mbabane nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mbabane</exemplarCity>
 			</zone>
 			<zone type="America/Grand_Turk">
-				<exemplarCity>Grand Tɛk nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Grand Turk</exemplarCity>
 			</zone>
 			<zone type="Africa/Ndjamena">
-				<exemplarCity>Ndzamena nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Ndjamena</exemplarCity>
 			</zone>
 			<zone type="Indian/Kerguelen">
-				<exemplarCity>Kerguelen nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kerguelen</exemplarCity>
 			</zone>
 			<zone type="Africa/Lome">
-				<exemplarCity>Lome nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Lome</exemplarCity>
 			</zone>
 			<zone type="Asia/Bangkok">
-				<exemplarCity>Bangkok nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Bangkok</exemplarCity>
 			</zone>
 			<zone type="Asia/Dushanbe">
-				<exemplarCity>Dutsanbe nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dushanbe</exemplarCity>
 			</zone>
 			<zone type="Pacific/Fakaofo">
-				<exemplarCity>Fakaofo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Fakaofo</exemplarCity>
 			</zone>
 			<zone type="Asia/Dili">
-				<exemplarCity>Dili nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dili</exemplarCity>
 			</zone>
 			<zone type="Asia/Ashgabat">
-				<exemplarCity>Ashgabat nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Ashgabat</exemplarCity>
 			</zone>
 			<zone type="Africa/Tunis">
-				<exemplarCity>Tunis nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tunis</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tongatapu">
-				<exemplarCity>Tongatapu nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tongatapu</exemplarCity>
 			</zone>
 			<zone type="Europe/Istanbul">
-				<exemplarCity>Istanbul nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Istanbul</exemplarCity>
 			</zone>
 			<zone type="America/Port_of_Spain">
-				<exemplarCity>Pɔrt of Spain nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Port of Spain</exemplarCity>
 			</zone>
 			<zone type="Pacific/Funafuti">
-				<exemplarCity>Funafuti nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Funafuti</exemplarCity>
 			</zone>
 			<zone type="Asia/Taipei">
-				<exemplarCity>Taipei nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Taipei</exemplarCity>
 			</zone>
 			<zone type="Africa/Dar_es_Salaam">
-				<exemplarCity>Dar es Salam nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Dar es Salaam</exemplarCity>
 			</zone>
 			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Uzhgorod</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
-				<exemplarCity draft="unconfirmed">Kiev nutmegaƒoƒome</exemplarCity>
+				<exemplarCity>Kiev</exemplarCity>
 			</zone>
 			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporozhiye nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Zaporozhye</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
-				<exemplarCity>Kampala nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Kampala</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
-				<exemplarCity>Midway nutomegaƒoƒome</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Yohanneston nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Midway</exemplarCity>
 			</zone>
 			<zone type="Pacific/Wake">
-				<exemplarCity>Wake nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Wake</exemplarCity>
 			</zone>
 			<zone type="America/Adak">
-				<exemplarCity>Adak nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Adak</exemplarCity>
 			</zone>
 			<zone type="America/Nome">
-				<exemplarCity>Nome nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu nutomegaƒoƒome</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
-				<exemplarCity>Anchorage nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Anchorage</exemplarCity>
 			</zone>
 			<zone type="America/Yakutat">
-				<exemplarCity>Yakutat nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Yakutat</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity>Sitka</exemplarCity>
 			</zone>
 			<zone type="America/Juneau">
-				<exemplarCity>Dzuneau nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Juneau</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity>Metlakatla</exemplarCity>
 			</zone>
 			<zone type="America/Los_Angeles">
-				<exemplarCity>Los Angeles nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Los Angeles</exemplarCity>
 			</zone>
 			<zone type="America/Boise">
-				<exemplarCity>Boise nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Boise</exemplarCity>
 			</zone>
 			<zone type="America/Phoenix">
-				<exemplarCity>Foenix nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Phoenix</exemplarCity>
 			</zone>
 			<zone type="America/Denver">
-				<exemplarCity>Denva nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Denver</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
-				<exemplarCity>Beulah, North Dakota nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Beulah, North Dakota</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/New_Salem">
-				<exemplarCity>New Salem, North Dakota nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>New Salem, North Dakota</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
-				<exemplarCity>Titina, North Dakota nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Center, North Dakota</exemplarCity>
 			</zone>
 			<zone type="America/Chicago">
-				<exemplarCity>Tsikago nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Chicago</exemplarCity>
 			</zone>
 			<zone type="America/Menominee">
-				<exemplarCity>Menomini nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Menominee</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vincennes">
-				<exemplarCity>Vinsennes, Indiana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vincennes, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Petersburg">
-				<exemplarCity>Petersburg, Indiana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Petersburg, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>Telldugã, Indiana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tell City, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Knox">
-				<exemplarCity>Knox, Indiana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Knox, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Winamac">
-				<exemplarCity>Winamak, Indiana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Winamac, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Marengo">
-				<exemplarCity>Marengo, Indiana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Marengo, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indianapolis">
-				<exemplarCity>Indianapolis nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Indianapolis</exemplarCity>
 			</zone>
 			<zone type="America/Louisville">
-				<exemplarCity>Louisville nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Louisville</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vevay">
-				<exemplarCity>Vevay, Indiana nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vevay, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Kentucky/Monticello">
-				<exemplarCity>Montisello, Kentaki nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Monticello, Kentucky</exemplarCity>
 			</zone>
 			<zone type="America/Detroit">
-				<exemplarCity>Detrɔit nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Detroit</exemplarCity>
 			</zone>
 			<zone type="America/New_York">
-				<exemplarCity>New York nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>New York</exemplarCity>
 			</zone>
 			<zone type="America/Montevideo">
-				<exemplarCity>Montevideo nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Montevideo</exemplarCity>
 			</zone>
 			<zone type="Asia/Samarkand">
-				<exemplarCity>Samarkand nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Samarkand</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
-				<exemplarCity draft="unconfirmed">Tashkent nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tashkent</exemplarCity>
 			</zone>
 			<zone type="Europe/Vatican">
-				<exemplarCity>Vatikan nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Vatican</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
-				<exemplarCity>St. Vincent nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>St. Vincent</exemplarCity>
 			</zone>
 			<zone type="America/Caracas">
-				<exemplarCity>Karakas nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Caracas</exemplarCity>
 			</zone>
 			<zone type="America/Tortola">
-				<exemplarCity>Tɔtola nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Tortola</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
-				<exemplarCity>St. Toma nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>St. Thomas</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
-				<exemplarCity>Ho Tsi Minh nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Ho Chi Minh</exemplarCity>
 			</zone>
 			<zone type="Pacific/Efate">
-				<exemplarCity>Efate nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Efate</exemplarCity>
 			</zone>
 			<zone type="Pacific/Wallis">
-				<exemplarCity>Wallis nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Wallis</exemplarCity>
 			</zone>
 			<zone type="Pacific/Apia">
-				<exemplarCity>Apia nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Apia</exemplarCity>
 			</zone>
 			<zone type="Asia/Aden">
-				<exemplarCity>Aden nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Aden</exemplarCity>
 			</zone>
 			<zone type="Indian/Mayotte">
-				<exemplarCity>Mayotte nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Mayotte</exemplarCity>
 			</zone>
 			<zone type="Africa/Johannesburg">
-				<exemplarCity>Yohannesburg nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Johannesburg</exemplarCity>
 			</zone>
 			<zone type="Africa/Lusaka">
-				<exemplarCity>Lusaka nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Lusaka</exemplarCity>
 			</zone>
 			<zone type="Africa/Harare">
-				<exemplarCity>Harare nutomegaƒoƒome</exemplarCity>
+				<exemplarCity>Harare</exemplarCity>
 			</zone>
 			<metazone type="Acre">
 				<long>
@@ -3438,9 +3585,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<daylight draft="unconfirmed">Eker dzomeŋɔli gaƒoƒome</daylight>
 				</long>
 			</metazone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Afghanistan gaƒoƒo me</standard>
+				</long>
+			</metazone>
 			<metazone type="Africa_Central">
 				<long>
-					<standard>Titina Afrika gaƒoƒome</standard>
+					<standard>Central Africa gaƒoƒo me</standard>
 				</long>
 				<short>
 					<standard>CAT</standard>
@@ -3448,7 +3600,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Africa_Eastern">
 				<long>
-					<standard>Ɣedzeƒe Africa gaƒoƒome</standard>
+					<standard>East Africa gaƒoƒo me</standard>
 				</long>
 				<short>
 					<standard>EAT</standard>
@@ -3456,7 +3608,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Africa_Southern">
 				<long>
-					<standard>Anyiehe Africa gaƒoƒome</standard>
+					<standard>South Africa nutome gaƒoƒo me</standard>
 				</long>
 				<short>
 					<standard>SAST</standard>
@@ -3464,9 +3616,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Ɣetoɖoƒe Africa gaƒoƒome</generic>
-					<standard>Ɣetoɖoƒe Afrika gaƒoƒoɖoanyime</standard>
-					<daylight>Ɣetoɖoƒe Africa ŋkekeme gaƒoƒome</daylight>
+					<generic>West Africa gaƒoƒo me</generic>
+					<standard>West Africa nutome gaƒoƒo me</standard>
+					<daylight>West Africa dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 				<short>
 					<generic>WAT</generic>
@@ -3476,9 +3628,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Alaska">
 				<long>
-					<generic draft="unconfirmed">Alaska gaƒoƒome</generic>
-					<standard draft="unconfirmed">Alaska gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Alaska ŋkekeme gaƒoƒome</daylight>
+					<generic>Alaska gaƒoƒome</generic>
+					<standard>Alaska nutome gaƒoƒo me</standard>
+					<daylight>Alaska kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Almaty">
@@ -3490,37 +3642,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Amazon">
 				<long>
-					<generic draft="unconfirmed">Amazon gaƒoƒome</generic>
-					<standard draft="unconfirmed">Amazon gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Amazon dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Amazon gaƒoƒome</generic>
+					<standard>Amazon nutome gaƒoƒo me</standard>
+					<daylight>Amazon dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
 					<generic>Titina America gaƒoƒome</generic>
-					<standard>Titina America gaƒoƒoɖoanyime</standard>
-					<daylight>Titina America ŋkekeme gaƒoƒome</daylight>
+					<standard>Titina America nutome gaƒoƒo me</standard>
+					<daylight>Titina America kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>Ɣedzeƒe America gaƒoƒome</generic>
-					<standard>Ɣedzeƒe America gaƒoƒoɖoanyime</standard>
-					<daylight>Ɣedzeƒe America ŋkekeme gaƒoƒome</daylight>
+					<generic>Eastern America gaƒoƒo me</generic>
+					<standard>Eastern America nutome gaƒoƒo me</standard>
+					<daylight>Eastern America kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>America Todzidukɔwo ƒe gaƒoƒome</generic>
-					<standard>America Todzidukɔwo ƒe gaƒoƒoɖoanyime</standard>
-					<daylight>America Todzidukɔwo ƒe ŋkekme gaƒoƒome</daylight>
+					<generic>Mountain gaƒoƒo me</generic>
+					<standard>Mountain nutome gaƒoƒo me</standard>
+					<daylight>Mountain kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
 					<generic>Pacific gaƒoƒome</generic>
-					<standard>Pacific gaƒoƒoɖoanyime</standard>
-					<daylight>Pacific ŋkekme gaƒoƒome</daylight>
+					<standard>Pacific nutome gaƒoƒo me</standard>
+					<daylight>Pacific kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Anadyr">
@@ -3528,6 +3680,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<generic draft="unconfirmed">Anadir gaƒoƒome</generic>
 					<standard draft="unconfirmed">Anadir gaƒoƒoɖoanyime</standard>
 					<daylight draft="unconfirmed">Anadir ŋkekeme gaƒoƒome</daylight>
+				</long>
+			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>Apia gaƒoƒo me</generic>
+					<standard>Apia nutome gaƒoƒo me</standard>
+					<daylight>Apia kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtau">
@@ -3546,152 +3705,213 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Arabian">
 				<long>
-					<generic>Arabia gaƒoƒome</generic>
-					<standard>Arabia gaƒoƒoɖoanyime</standard>
-					<daylight>Arabia ŋkekeme gaƒoƒome</daylight>
+					<generic>Arabia gaƒoƒo me</generic>
+					<standard>Arabia nutome gaƒoƒo me</standard>
+					<daylight>Arabia dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
-					<generic draft="unconfirmed">Argentina gaƒoƒome</generic>
-					<standard draft="unconfirmed">Argentina gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Argentina dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Argentina gaƒoƒo me</generic>
+					<standard>Argentina nutome gaƒoƒo me</standard>
+					<daylight>Argentina dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
-					<generic draft="unconfirmed">Ɣetoɖoƒe Argentina gaƒoƒome</generic>
-					<standard draft="unconfirmed">Ɣetoɖoƒe Argentina gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Ɣetoɖoƒe Argentina dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Ɣetoɖoƒe Argentina gaƒoƒo me</generic>
+					<standard>Ɣetoɖoƒe Argentina nutome gaƒoƒo me</standard>
+					<daylight>Ɣetoɖoƒe Argentina dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
 				<long>
-					<generic draft="unconfirmed">Armenia gaƒoƒome</generic>
-					<standard draft="unconfirmed">Armenia gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Armenia dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Armenia gaƒoƒo me</generic>
+					<standard>Armenia nutome gaƒoƒo me</standard>
+					<daylight>Armenia dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>Atlantic gaƒoƒome</generic>
-					<standard>Atlantic gaƒoƒoɖoanyime</standard>
-					<daylight>Atlantic ŋkekeme gaƒoƒome</daylight>
+					<standard>Atlantic nutome gaƒoƒome</standard>
+					<daylight>Atlantic kele gaƒoƒome</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>Titina Australia gaƒoƒome</generic>
-					<standard>Titina Australia gaƒoƒoɖoanyime</standard>
-					<daylight>Titina Australia ŋkekeme gaƒoƒome</daylight>
+					<generic>Central Australia gaƒoƒo me</generic>
+					<standard>Australian Central nutome gaƒoƒo me</standard>
+					<daylight>Australian Central dzomeli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
-					<generic>Australia ɣetoɖofe gaƒoƒome</generic>
-					<standard>Australia ɣetoɖofe gaƒoƒoɖoanyime</standard>
-					<daylight>Australia ɣetoɖofe ŋkekeme gaƒoƒome</daylight>
+					<generic>Australian Central Australia ɣetoɖofe gaƒoƒo me</generic>
+					<standard>Australian Central Western nutome gaƒoƒo me</standard>
+					<daylight>Australian Central Western kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
-					<generic>Ɣedzeƒe Australia gaƒoƒome</generic>
-					<standard>Ɣedzeƒe Australia gaƒoƒoɖoanyime</standard>
-					<daylight>Ɣedzeƒe Australia ŋkekeme gaƒoƒome</daylight>
+					<generic>Eastern Australia gaƒoƒo me</generic>
+					<standard>Australian Eastern nutome gaƒoƒo me</standard>
+					<daylight>Australian Eastern kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
-					<generic>Ɣetoɖoƒe Australia gaƒoƒome</generic>
-					<standard>Ɣetoɖoƒe Australia gaƒoƒoɖoanyime</standard>
-					<daylight>Ɣetoɖoƒe Australia ŋkekeme gaƒoƒome</daylight>
+					<generic>Western Australia gaƒoƒo me</generic>
+					<standard>Australian Western nutome gaƒoƒo me</standard>
+					<daylight>Australian Western kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
-					<generic draft="unconfirmed">Azerbaidzan gaƒoƒome</generic>
-					<standard draft="unconfirmed">Azerbaidzan gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Azerbaidzan dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Azerbaijan gaƒoƒo me</generic>
+					<standard>Azerbaijan nutome gaƒoƒo me</standard>
+					<daylight>Azerbaijan dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azores">
 				<long>
-					<generic draft="unconfirmed">Azores gaƒoƒome</generic>
-					<standard draft="unconfirmed">Azores gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Azores dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Azores gaƒoƒo me</generic>
+					<standard>Azores nutome gaƒoƒo me</standard>
+					<daylight>Azores dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>Bangladesh gaƒoƒo me</generic>
+					<standard>Bangladesh nutome gaƒoƒo me</standard>
+					<daylight>Bangladesh dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Bhutan gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Bolivia">
 				<long>
-					<standard draft="unconfirmed">Bolivia gaƒoƒome</standard>
+					<standard>Bolivia gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Brasilia">
 				<long>
-					<generic draft="unconfirmed">Brasilia gaƒoƒome</generic>
-					<standard draft="unconfirmed">Brasilia gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Brasilia dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Brasilia gaƒoƒo me</generic>
+					<standard>Brasilia nutome gaƒoƒo me</standard>
+					<daylight>Brasilia dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Brunei Darussalam gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
-					<generic draft="unconfirmed">Kep Verde gaƒoƒome</generic>
-					<standard draft="unconfirmed">Kep Verde gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Kep Verde dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Cape Verde gaƒoƒo me</generic>
+					<standard>Cape Verde nutome gaƒoƒo me</standard>
+					<daylight>Cape Verde dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Chamorro gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Chatham gaƒoƒo me</generic>
+					<standard>Chatham nutome gaƒoƒo me</standard>
+					<daylight>Chatham kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
 				<long>
-					<generic draft="unconfirmed">Tsile gaƒoƒo me</generic>
-					<standard draft="unconfirmed">Tsile gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Tsile dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Chile gaƒoƒo me</generic>
+					<standard>Chile nutome gaƒoƒo me</standard>
+					<daylight>Chile dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
 				<long>
-					<generic>China gaƒoƒome</generic>
-					<standard>China gaƒoƒoɖoanyime</standard>
-					<daylight>China ŋkekeme gaƒoƒome</daylight>
+					<generic>China gaƒoƒo me</generic>
+					<standard>China nutome gaƒoƒo me</standard>
+					<daylight>China kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Choibalsan">
 				<long>
-					<generic draft="unconfirmed">Tsoibalsan gaƒoƒome</generic>
-					<standard draft="unconfirmed">Tsoibalsan gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Tsoibalsan dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Choibalsan gaƒoƒo me</generic>
+					<standard>Choibalsan nutome gaƒoƒo me</standard>
+					<daylight>Choibalsan dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Christmas Island gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Cocos Islands gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
 				<long>
-					<generic draft="unconfirmed">Kolombia gaƒoƒome</generic>
-					<standard draft="unconfirmed">Kolombia gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Kolombia dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Colombia gaƒoƒo me</generic>
+					<standard>Colombia nutome gaƒoƒo me</standard>
+					<daylight>Colombia dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>Cook Islands gaƒoƒo me</generic>
+					<standard>Cook Islands nutome gaƒoƒo me</standard>
+					<daylight>Cook Islands dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic draft="unconfirmed">Kuba gaƒoƒome</generic>
-					<standard draft="unconfirmed">Kuba gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Kuba ŋkekeme gaƒoƒome</daylight>
+					<generic>Cuba gaƒoƒome</generic>
+					<standard>Cuba nutome gaƒoƒome</standard>
+					<daylight>Cuba kele gaƒoƒome</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Davis gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Dumont-d’Urville gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>East Timor gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Easter">
 				<long>
-					<generic draft="unconfirmed">Easter Ƒudomekpodukɔ ƒe gaƒoƒome</generic>
-					<standard draft="unconfirmed">Easter Ƒudomekpodukɔ ƒe gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Easter Ƒudomekpodukɔ ƒe dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Easter Island gaƒoƒo me</generic>
+					<standard>Easter Island nutome gaƒoƒo me</standard>
+					<daylight>Easter Island dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
 				<long>
-					<standard draft="unconfirmed">Ikuedɔ dzomeŋɔli gaƒoƒome</standard>
+					<standard>Ecuador gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>Titina Europe gaƒoƒome</generic>
-					<standard>Titina Europe gaƒoƒoɖoanyime</standard>
-					<daylight>Titina Europe ŋkekeme gaƒoƒome</daylight>
+					<generic>Central Europe gaƒoƒo me</generic>
+					<standard>Central Europe nutome gaƒoƒo me</standard>
+					<daylight>Central Europe dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
@@ -3703,104 +3923,163 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
-					<generic>Ɣetoɖoƒe Europe gaƒoƒome</generic>
-					<standard>Ɣetoɖoƒe Europe gaƒoƒoɖoanyime</standard>
-					<daylight>Ɣetoɖoƒe Europe ŋkekeme gaƒoƒome</daylight>
+					<generic>Western Europe gaƒoƒo me</generic>
+					<standard>Western Europe nutome gaƒoƒo me</standard>
+					<daylight>Western Europe dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic draft="unconfirmed">Fɔlklanɖ Ƒudomekpodukɔ ƒe gaƒoƒome</generic>
-					<standard draft="unconfirmed">Fɔlklanɖ Ƒudomekpodukɔ ƒe gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Fɔlklanɖ Ƒudomekpodukɔ ƒe dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Falkland Islands gaƒoƒo me</generic>
+					<standard>Falkland Islands nutome gaƒoƒo me</standard>
+					<daylight>Falkland Islands dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>Fiji gaƒoƒo me</generic>
+					<standard>Fiji nutome gaƒoƒo me</standard>
+					<daylight>Fiji dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard draft="unconfirmed">Frentsi Guiana gaƒoƒome</standard>
+					<standard>French Guiana gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>French Southern &amp; Antarctic gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
 				<long>
-					<standard draft="unconfirmed">Galapagos gaƒoƒome</standard>
+					<standard>Galapagos gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Gambier gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Georgia">
 				<long>
-					<generic draft="unconfirmed">Dzɔdzia gaƒoƒome</generic>
-					<standard draft="unconfirmed">Dzɔdzia gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Dzɔdzia dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Georgia gaƒoƒo me</generic>
+					<standard>Georgia nutome gaƒoƒo me</standard>
+					<daylight>Georgia dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Gilbert Islands gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Greenwich gaƒoƒome</standard>
+					<standard>Greenwich gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic draft="unconfirmed">Ɣedzeƒe Grinlanɖ gaƒoƒome</generic>
-					<standard draft="unconfirmed">Ɣedzeƒe Grinlanɖ gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Ɣedzeƒe Grinlanɖ dzomeŋɔli gaƒoƒome</daylight>
+					<generic>East Greenland gaƒoƒome</generic>
+					<standard>East Greenland nutome gaƒoƒo me</standard>
+					<daylight>East Greenland dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic draft="unconfirmed">Ɣetoɖoƒe Grinlanɖ gaƒoƒome</generic>
-					<standard draft="unconfirmed">Ɣetoɖoƒe Grinlanɖ gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Ɣetoɖoƒe Grinlanɖ dzomeŋɔli gaƒoƒome</daylight>
+					<generic>West Greenland gaƒoƒo me</generic>
+					<standard>West Greenland nutome gaƒoƒo me</standard>
+					<daylight>West Greenland kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
 				<long>
-					<standard draft="unconfirmed">Gulf gaƒoƒome</standard>
+					<standard>Gulf nutome gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Guyana">
 				<long>
-					<standard draft="unconfirmed">Gayana gaƒoƒome</standard>
+					<standard>Guyana gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic draft="unconfirmed">Hawaii-Aleutia gaƒoƒome</generic>
-					<standard draft="unconfirmed">Hawaii-Aleutia gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Hawaii-Aleutia ŋkekeme gaƒoƒome</daylight>
+					<generic>Hawaii-Aleutia gaƒoƒo me</generic>
+					<standard>Hawaii-Aleutia nutome gaƒoƒo me</standard>
+					<daylight>Hawaii-Aleutia kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
-					<generic draft="unconfirmed">Hɔng Kɔng gaƒoƒome</generic>
-					<standard draft="unconfirmed">Hɔng Kɔng gaƒoƒoɖoanyi me</standard>
-					<daylight draft="unconfirmed">Hɔng Kɔng dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Hong Kong gaƒoƒo me</generic>
+					<standard>Hong Kong nutome gaƒoƒo me</standard>
+					<daylight>Hong Kong dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hovd">
 				<long>
-					<generic draft="unconfirmed">Hoved gaƒoƒome</generic>
-					<standard draft="unconfirmed">Hoved gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Hoved dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Hovd gaƒoƒo me</generic>
+					<standard>Hovd nutome gaƒoƒo me</standard>
+					<daylight>Hovd dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>India gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Indian Ocean gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Indonesia gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Central Indonesia gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Eastern Indonesia gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Western Indonesia gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>Iran gaƒoƒo me</generic>
+					<standard>Iran nutome gaƒoƒo me</standard>
+					<daylight>Iran kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
-					<generic draft="unconfirmed">Irkusk gaƒoƒome</generic>
-					<standard draft="unconfirmed">Irkusk gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Irkusk dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Irkutsk gaƒoƒo me</generic>
+					<standard>Irkutsk nutome gaƒoƒo me</standard>
+					<daylight>Irkutsk dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
 				<long>
-					<generic>Israel gaƒoƒome</generic>
-					<standard>Israel gaƒoƒoɖoanyime</standard>
-					<daylight>Israel ŋkekeme gaƒoƒome</daylight>
+					<generic>Israel gaƒoƒo me</generic>
+					<standard>Israel nutome gaƒoƒo me</standard>
+					<daylight>Israel kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
 				<long>
-					<generic>Japan gaƒoƒome</generic>
-					<standard>Japan gaƒoƒoɖanyime</standard>
-					<daylight>Japan ŋkekeme gaƒoƒome</daylight>
+					<generic>Japan gaƒoƒo me</generic>
+					<standard>Japan nutome gaƒoƒo me</standard>
+					<daylight>Japan dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kamchatka">
@@ -3812,31 +4091,48 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
-					<standard draft="unconfirmed">Ɣedzeƒe Kazakstan gaƒoƒome</standard>
+					<standard>East Kazakhstan gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Western">
 				<long>
-					<standard draft="unconfirmed">Ɣetoɖoƒe Kazakstan gaƒoƒome</standard>
+					<standard>West Kazakhstan gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Korea">
 				<long>
-					<generic>Korea gaƒoƒome</generic>
-					<standard>Korea gaƒoƒoɖoanyime</standard>
-					<daylight>Korea ŋkekeme gaƒoƒome</daylight>
+					<generic>Korea gaƒoƒo me</generic>
+					<standard>Korea nutome gaƒoƒo me</standard>
+					<daylight>Korea dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Kosrae gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Krasnoyarsk">
 				<long>
-					<generic draft="unconfirmed">Krasnoyarsk gaƒoƒome</generic>
-					<standard draft="unconfirmed">Krasnoyarsk gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Krasnoyarsk dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Krasnoyarsk gaƒoƒo me</generic>
+					<standard>Krasnoyarsk nutome gaƒoƒo me</standard>
+					<daylight>Krasnoyarsk dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
-					<standard draft="unconfirmed">Kirgistan gaƒoƒome</standard>
+					<standard>Kyrgystan gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Line Islands gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Lord Howe gaƒoƒo me</generic>
+					<standard>Lord Howe nutome gaƒoƒo me</standard>
+					<daylight>Lord Howe kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macau">
@@ -3846,81 +4142,208 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<daylight draft="unconfirmed">Makau ŋkekeme gaƒoƒome</daylight>
 				</long>
 			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard>Macquarie Island gaƒoƒo me</standard>
+				</long>
+			</metazone>
 			<metazone type="Magadan">
 				<long>
-					<generic draft="unconfirmed">Magadan gaƒoƒome</generic>
-					<standard draft="unconfirmed">Magadan gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Magadan dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Magadan gaƒoƒo me</generic>
+					<standard>Magadan nutome gaƒoƒo me</standard>
+					<daylight>Magadan dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Malaysia gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>Maldives gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Marquesas gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Marshall Islands gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">
 				<long>
-					<generic draft="unconfirmed">Mɔritius gaƒoƒome</generic>
-					<standard draft="unconfirmed">Mɔritius gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Mɔritius dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Mauritius gaƒoƒo me</generic>
+					<standard>Mauritius nutome gaƒoƒo me</standard>
+					<daylight>Mauritius dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Mawson gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>Northwest Mexico gaƒoƒo me</generic>
+					<standard>Northwest Mexico nutome gaƒoƒo me</standard>
+					<daylight>Northwest Mexico kele gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Mexican Pacific gaƒoƒo me</generic>
+					<standard>Mexican Pacific nutome gaƒoƒo me</standard>
+					<daylight>Mexican Pacific kele gaƒoƒome</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
-					<generic draft="unconfirmed">Ulan Batɔ gaƒoƒome</generic>
-					<standard draft="unconfirmed">Ulan Batɔ gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Ulan Batɔ dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Ulan Bator gaƒoƒo me</generic>
+					<standard>Ulan Bator nutome gaƒoƒo me</standard>
+					<daylight>Ulan Bator dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
 				<long>
-					<generic>Moscow gaƒoƒome</generic>
-					<standard>Moscow gaƒoƒoɖoanyime</standard>
-					<daylight>Moscow ŋkekeme gaƒoƒome</daylight>
+					<generic>Moscow gaƒoƒo me</generic>
+					<standard>Moscow nutome gaƒoƒo me</standard>
+					<daylight>Moscow dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>Myanmar gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>Nauru gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>Nepal gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>New Caledonia gaƒoƒo me</generic>
+					<standard>New Caledonia nutome gaƒoƒo me</standard>
+					<daylight>New Caledonia dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>New Zealand gaƒoƒo me</generic>
+					<standard>New Zealand nutome gaƒoƒo me</standard>
+					<daylight>New Zealand kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic draft="unconfirmed">Niufaunɖlanɖ gaƒoƒome</generic>
-					<standard draft="unconfirmed">Niufaunɖlanɖ gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Niufaunɖlanɖ ŋkekeme gaƒoƒome</daylight>
+					<generic>Newfoundland gaƒoƒome</generic>
+					<standard>Newfoundland nutome gaƒoƒome</standard>
+					<daylight>Newfoundland kele gaƒoƒome</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>Niue gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<standard>Norfolk Island gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
 				<long>
-					<generic draft="unconfirmed">Fernando de Noronha gaƒoƒome</generic>
-					<standard draft="unconfirmed">Fernando de Noronha gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Fernando de Noronha dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Fernando de Noronha gaƒoƒo me</generic>
+					<standard>Fernando de Noronha nutome gaƒoƒo me</standard>
+					<daylight>Fernando de Noronha dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
-					<generic draft="unconfirmed">Novosibirsk gaƒoƒome</generic>
-					<standard draft="unconfirmed">Novosibirsk gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Novosibirsk dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Novosibirsk gaƒoƒo me</generic>
+					<standard>Novosibirsk nutome gaƒoƒo me</standard>
+					<daylight>Novosibirsk dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
-					<generic draft="unconfirmed">Omsk gaƒoƒome</generic>
-					<standard draft="unconfirmed">Omsk gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Omsk dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Omsk gaƒoƒo me</generic>
+					<standard>Omsk nutome gaƒoƒo me</standard>
+					<daylight>Omsk dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>Pakistan gaƒoƒo me</generic>
+					<standard>Pakistan nutome gaƒoƒo me</standard>
+					<daylight>Pakistan dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>Palau gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>Papua New Guinea gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
-					<generic draft="unconfirmed">Paraguai gaƒoƒome</generic>
-					<standard draft="unconfirmed">Paraguai gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Paraguai dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Paraguay gaƒoƒo me</generic>
+					<standard>Paraguay nutome gaƒoƒo me</standard>
+					<daylight>Paraguay dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
-					<generic draft="unconfirmed">Peru gaƒoƒome</generic>
-					<standard draft="unconfirmed">Peru gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Peru dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Peru gaƒoƒo me</generic>
+					<standard>Peru nutome gaƒoƒo me</standard>
+					<daylight>Peru dzomeŋɔli gaƒoƒome</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Philippine gaƒoƒo me</generic>
+					<standard>Philippine nutome gaƒoƒo me</standard>
+					<daylight>Philippine dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Phoenix Islands gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic draft="unconfirmed">Saint Pierre kple Mikuelon gaƒoƒome</generic>
-					<standard draft="unconfirmed">Saint Pierre kple Mikuelon gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Saint Pierre kple Mikuelon ŋkekeme gaƒoƒome</daylight>
+					<generic>St. Pierre &amp; Miquelon gaƒoƒome</generic>
+					<standard>St. Pierre &amp; Miquelon nutome gaƒoƒome</standard>
+					<daylight>St. Pierre &amp; Miquelon kele gaƒoƒome</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Pitcairn gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Ponape gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pyongyang gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -3932,14 +4355,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Reunion">
 				<long>
-					<standard draft="unconfirmed">Reunion gaƒoƒome</standard>
+					<standard>Reunion gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Rothera gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Sakhalin">
 				<long>
-					<generic draft="unconfirmed">Sahalin gaƒoƒome</generic>
-					<standard draft="unconfirmed">Sakhalin gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Sahalin dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Sakhalin gaƒoƒo me</generic>
+					<standard>Sakhalin nutome gaƒoƒo me</standard>
+					<daylight>Sakhalin dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samara">
@@ -3949,9 +4377,31 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<daylight draft="unconfirmed">Samara ŋkekeme gaƒoƒome</daylight>
 				</long>
 			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>Samoa gaƒoƒo me</generic>
+					<standard>Samoa nutome gaƒoƒo me</standard>
+					<daylight>Samoa kele gaƒoƒo me</daylight>
+				</long>
+			</metazone>
 			<metazone type="Seychelles">
 				<long>
-					<standard draft="unconfirmed">Sɛtsels gaƒoƒome</standard>
+					<standard>Seychelles gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Singapore nutome gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Solomon Islands gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>South Georgia gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Suriname">
@@ -3959,105 +4409,174 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>Suriname gaƒoƒome</standard>
 				</long>
 			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Syowa gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Tahiti gaƒoƒo me</standard>
+				</long>
+			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic draft="unconfirmed">Taipei gaƒoƒome</generic>
-					<standard draft="unconfirmed">Taipei gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Taipei ŋkekeme gaƒoƒome</daylight>
+					<generic>Taipei gaƒoƒo me</generic>
+					<standard>Taipei nutome gaƒoƒo me</standard>
+					<daylight>Taipei kele gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
 				<long>
-					<standard draft="unconfirmed">Tadzikistan gaƒoƒome</standard>
+					<standard>Tajikistan gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>Tokelau gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Tonga gaƒoƒo me</generic>
+					<standard>Tonga nutome gaƒoƒo me</standard>
+					<daylight>Tonga dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Chuuk gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
-					<generic draft="unconfirmed">Tɛkmenistan gaƒoƒome</generic>
-					<standard draft="unconfirmed">Tɛkmenistan gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Tɛkmenistan dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Turkmenistan gaƒoƒo me</generic>
+					<standard>Turkmenistan nutome gaƒoƒo me</standard>
+					<daylight>Turkmenistan dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>Tuvalu gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Uruguay">
 				<long>
-					<generic draft="unconfirmed">Uruguai gaƒoƒome</generic>
-					<standard draft="unconfirmed">Uruguai gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Uruguai dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Uruguay gaƒoƒo me</generic>
+					<standard>Uruguay nutome gaƒoƒo me</standard>
+					<daylight>Uruguay dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
-					<generic draft="unconfirmed">Uzbekistan gaƒoƒome</generic>
-					<standard draft="unconfirmed">Uzbekistan gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Uzbekistan dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Uzbekistan gaƒoƒo me</generic>
+					<standard>Uzbekistan nutome gaƒoƒo me</standard>
+					<daylight>Uzbekistan dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Vanuatu gaƒoƒo me</generic>
+					<standard>Vanuatu nutome gaƒoƒo me</standard>
+					<daylight>Vanuatu dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Venezuela">
 				<long>
-					<standard draft="unconfirmed">Venezuela gaƒoƒome</standard>
+					<standard>Venezuela gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Vladivostok">
 				<long>
-					<generic draft="unconfirmed">Vladivostok gaƒoƒome</generic>
-					<standard draft="unconfirmed">Vladivostok gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Vladivostok dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Vladivostok gaƒoƒo me</generic>
+					<standard>Vladivostok nutome gaƒoƒo me</standard>
+					<daylight>Vladivostok dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
-					<generic draft="unconfirmed">Vogograd gaƒoƒome</generic>
-					<standard draft="unconfirmed">Vogograd gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Vogograd dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Volgograd gaƒoƒo me</generic>
+					<standard>Volgograd nutome gaƒoƒo me</standard>
+					<daylight>Vogograd dzomeŋɔli gaƒoƒo me</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Vostok gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>Wake Island gaƒoƒo me</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>Wallis &amp; Futuna gaƒoƒo me</standard>
 				</long>
 			</metazone>
 			<metazone type="Yakutsk">
 				<long>
-					<generic draft="unconfirmed">Yakutsk gaƒoƒome</generic>
-					<standard draft="unconfirmed">Yakutsk gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Yakutsk dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Yakutsk gaƒoƒo me</generic>
+					<standard>Yakutsk nutome gaƒoƒo me</standard>
+					<daylight>Yakutsk dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
-					<generic draft="unconfirmed">Yekateringburg gaƒoƒome</generic>
-					<standard draft="unconfirmed">Yekateringburg gaƒoƒoɖoanyime</standard>
-					<daylight draft="unconfirmed">Yekaterinburg dzomeŋɔli gaƒoƒome</daylight>
+					<generic>Yekaterinburg gaƒoƒo me</generic>
+					<standard>Yekaterinburg nutome gaƒoƒo me</standard>
+					<daylight>Yekaterinburg dzomeŋɔli gaƒoƒo me</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<minimumGroupingDigits draft="contributed">3</minimumGroupingDigits>
 		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
 			<nan>mnn</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
-					<pattern type="1000" count="one" draft="unconfirmed">akpe 0</pattern>
-					<pattern type="1000" count="other" draft="unconfirmed">akpe 0</pattern>
-					<pattern type="10000" count="one" draft="unconfirmed">akpe 00</pattern>
-					<pattern type="10000" count="other" draft="unconfirmed">akpe 00</pattern>
-					<pattern type="100000" count="one" draft="unconfirmed">akpe 000</pattern>
-					<pattern type="100000" count="other" draft="unconfirmed">akpe 000</pattern>
-					<pattern type="1000000" count="one" draft="unconfirmed">miliɔn 0</pattern>
-					<pattern type="1000000" count="other" draft="unconfirmed">miliɔn 0</pattern>
-					<pattern type="10000000" count="one" draft="unconfirmed">miliɔn 00</pattern>
-					<pattern type="10000000" count="other" draft="unconfirmed">miliɔn 00</pattern>
-					<pattern type="100000000" count="one" draft="unconfirmed">miliɔn 000</pattern>
-					<pattern type="100000000" count="other" draft="unconfirmed">miliɔn 000</pattern>
-					<pattern type="1000000000" count="one" draft="unconfirmed">miliɔn 0000</pattern>
-					<pattern type="1000000000" count="other" draft="unconfirmed">miliɔn 0000</pattern>
-					<pattern type="10000000000" count="one" draft="unconfirmed">miliɔn 00000</pattern>
-					<pattern type="10000000000" count="other" draft="unconfirmed">miliɔn 00000</pattern>
-					<pattern type="100000000000" count="one" draft="unconfirmed">miliɔn 000000</pattern>
-					<pattern type="100000000000" count="other" draft="unconfirmed">miliɔn 000000</pattern>
-					<pattern type="1000000000000" count="one" draft="unconfirmed">biliɔn 0</pattern>
-					<pattern type="1000000000000" count="other" draft="unconfirmed">biliɔn 0</pattern>
-					<pattern type="10000000000000" count="one" draft="unconfirmed">biliɔn 00</pattern>
-					<pattern type="10000000000000" count="other" draft="unconfirmed">biliɔn 00</pattern>
-					<pattern type="100000000000000" count="one" draft="unconfirmed">biliɔn 000</pattern>
-					<pattern type="100000000000000" count="other" draft="unconfirmed">biliɔn 000</pattern>
+					<pattern type="1000" count="one">akpe 0</pattern>
+					<pattern type="1000" count="other">akpe 0</pattern>
+					<pattern type="10000" count="one">akpe 00</pattern>
+					<pattern type="10000" count="other">akpe 00</pattern>
+					<pattern type="100000" count="one">akpe 000</pattern>
+					<pattern type="100000" count="other">akpe 000</pattern>
+					<pattern type="1000000" count="one">miliɔn 0</pattern>
+					<pattern type="1000000" count="other">miliɔn 0</pattern>
+					<pattern type="10000000" count="one">miliɔn 00</pattern>
+					<pattern type="10000000" count="other">miliɔn 00</pattern>
+					<pattern type="100000000" count="one">miliɔn 000</pattern>
+					<pattern type="100000000" count="other">miliɔn 000</pattern>
+					<pattern type="1000000000" count="one">biliɔn 0</pattern>
+					<pattern type="1000000000" count="other">biliɔn 0</pattern>
+					<pattern type="10000000000" count="one">biliɔn 00</pattern>
+					<pattern type="10000000000" count="other">biliɔn 00</pattern>
+					<pattern type="100000000000" count="one">biliɔn 000</pattern>
+					<pattern type="100000000000" count="other">biliɔn 000</pattern>
+					<pattern type="1000000000000" count="one">0 triliɔn</pattern>
+					<pattern type="1000000000000" count="other">0 triliɔn</pattern>
+					<pattern type="10000000000000" count="one">triliɔn 00</pattern>
+					<pattern type="10000000000000" count="other">triliɔn 00</pattern>
+					<pattern type="100000000000000" count="one">triliɔn 000</pattern>
+					<pattern type="100000000000000" count="other">triliɔn 000</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
@@ -4074,21 +4593,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="10000000" count="other">00M</pattern>
 					<pattern type="100000000" count="one">000M</pattern>
 					<pattern type="100000000" count="other">000M</pattern>
-					<pattern type="1000000000" count="one">0000M</pattern>
-					<pattern type="1000000000" count="other">0000M</pattern>
-					<pattern type="10000000000" count="one">00000M</pattern>
-					<pattern type="10000000000" count="other">00000M</pattern>
-					<pattern type="100000000000" count="one">000000M</pattern>
-					<pattern type="100000000000" count="other">000000M</pattern>
-					<pattern type="1000000000000" count="one">0B</pattern>
-					<pattern type="1000000000000" count="other">0B</pattern>
-					<pattern type="10000000000000" count="one">00B</pattern>
-					<pattern type="10000000000000" count="other">00B</pattern>
-					<pattern type="100000000000000" count="one">000B</pattern>
-					<pattern type="100000000000000" count="other">000B</pattern>
+					<pattern type="1000000000" count="one">0B</pattern>
+					<pattern type="1000000000" count="other">0B</pattern>
+					<pattern type="10000000000" count="one">00B</pattern>
+					<pattern type="10000000000" count="other">00B</pattern>
+					<pattern type="100000000000" count="one">000B</pattern>
+					<pattern type="100000000000" count="other">000B</pattern>
+					<pattern type="1000000000000" count="one">0T</pattern>
+					<pattern type="1000000000000" count="other">0T</pattern>
+					<pattern type="10000000000000" count="one">00T</pattern>
+					<pattern type="10000000000000" count="other">00T</pattern>
+					<pattern type="100000000000000" count="one">000T</pattern>
+					<pattern type="100000000000000" count="other">000T</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -4100,30 +4633,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">¤0K</pattern>
-					<pattern type="1000" count="other" draft="provisional">¤0K</pattern>
-					<pattern type="10000" count="one" draft="provisional">¤00K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤00K</pattern>
-					<pattern type="100000" count="one" draft="provisional">¤000K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤000K</pattern>
-					<pattern type="1000000" count="one" draft="provisional">¤0M</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤0M</pattern>
-					<pattern type="10000000" count="one" draft="provisional">¤00M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤00M</pattern>
-					<pattern type="100000000" count="one" draft="provisional">¤000M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤000M</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">¤0000M</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤0000M</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">¤00000M</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤00000M</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">¤000000M</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤000000M</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">¤0B</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤0B</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">¤00B</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤00B</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">¤000B</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤000B</pattern>
+					<pattern type="1000" count="one">¤0K</pattern>
+					<pattern type="1000" count="other">¤0K</pattern>
+					<pattern type="10000" count="one">¤00K</pattern>
+					<pattern type="10000" count="other">¤00K</pattern>
+					<pattern type="100000" count="one">¤000K</pattern>
+					<pattern type="100000" count="other">¤000K</pattern>
+					<pattern type="1000000" count="one">¤0M</pattern>
+					<pattern type="1000000" count="other">¤0M</pattern>
+					<pattern type="10000000" count="one">¤00M</pattern>
+					<pattern type="10000000" count="other">¤00M</pattern>
+					<pattern type="100000000" count="one">¤000M</pattern>
+					<pattern type="100000000" count="other">¤000M</pattern>
+					<pattern type="1000000000" count="one">¤0B</pattern>
+					<pattern type="1000000000" count="other">¤0B</pattern>
+					<pattern type="10000000000" count="one">¤00B</pattern>
+					<pattern type="10000000000" count="other">¤00B</pattern>
+					<pattern type="100000000000" count="one">¤000B</pattern>
+					<pattern type="100000000000" count="other">¤000B</pattern>
+					<pattern type="1000000000000" count="one">¤0T</pattern>
+					<pattern type="1000000000000" count="other">¤0T</pattern>
+					<pattern type="10000000000000" count="one">¤00T</pattern>
+					<pattern type="10000000000000" count="other">¤00T</pattern>
+					<pattern type="100000000000000" count="one">¤000T</pattern>
+					<pattern type="100000000000000" count="other">¤000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{1} {0}</unitPattern>
@@ -4159,6 +4692,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>albaniaga lek</displayName>
 				<displayName count="one">albaniaga lek</displayName>
 				<displayName count="other">albaniaga lek</displayName>
+				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>armeniaga dram</displayName>
@@ -4166,9 +4700,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">armeniaga dram</displayName>
 			</currency>
 			<currency type="ANG">
-				<displayName>nedalands antilleaga guilder</displayName>
-				<displayName count="one">nedalands antilleaga guilder</displayName>
-				<displayName count="other">nedalands antilleaga guilder</displayName>
+				<displayName>netherlands antilleaga guilder</displayName>
+				<displayName count="one">netherlands antilleaga guilder</displayName>
+				<displayName count="other">netherlands antilleaga guilder</displayName>
+				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>angolaga kwanza</displayName>
@@ -4214,6 +4749,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>argentinaga peso</displayName>
 				<displayName count="one">argentinaga peso</displayName>
 				<displayName count="other">argentinaga peso</displayName>
+				<symbol draft="contributed">ARS</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>ɔstriaga schilling</displayName>
@@ -4231,6 +4768,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>arubaga lorin</displayName>
 				<displayName count="one">arubaga florin</displayName>
 				<displayName count="other">arubaga florin</displayName>
+				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>azerbaidzanga manat (1993–2006)</displayName>
@@ -4251,6 +4789,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>bosnia-herzegovinaga convertible mark</displayName>
 				<displayName count="one">bosnia-herzegovinaga convertible mark</displayName>
 				<displayName count="other">bosnia-herzegovinaga convertible mark</displayName>
+				<symbol draft="contributed">BAM</symbol>
+				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName>bosnia kple herzegovinaga dinar yeyètɔ (1994–1997)</displayName>
@@ -4258,9 +4798,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">bosnia kple herzegovinaga dinar yeyètɔ (1994–1997)</displayName>
 			</currency>
 			<currency type="BBD">
-				<displayName>barbadiaga dollar</displayName>
-				<displayName count="one">barbadiaga dollar</displayName>
-				<displayName count="other">barbadiaga dollar</displayName>
+				<displayName>barbadosga dollar</displayName>
+				<displayName count="one">barbadosga dollar</displayName>
+				<displayName count="other">barbadosga dollar</displayName>
+				<symbol draft="contributed">BBD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>bangladeshga taka</displayName>
@@ -4296,6 +4838,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>bulgariaga lev</displayName>
 				<displayName count="one">bulgariaga lev</displayName>
 				<displayName count="other">bulgariaga lev</displayName>
+				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName>bulgariaga lev (1879–1952)</displayName>
@@ -4316,6 +4859,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>bermudaga dollar</displayName>
 				<displayName count="one">bermudaga dollar</displayName>
 				<displayName count="other">bermudaga dollar</displayName>
+				<symbol draft="contributed">BMD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>bruneiga dollar</displayName>
@@ -4326,6 +4871,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>boliviaga boliviano</displayName>
 				<displayName count="one">boliviaga boliviano</displayName>
 				<displayName count="other">boliviaga boliviano</displayName>
+				<symbol draft="contributed">BOB</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName>boliviaga boliviano (1863–1963)</displayName>
@@ -4358,9 +4905,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">braziliaga cruzeiro xoxotɔ gbãtɔwo (1990–1993)</displayName>
 			</currency>
 			<currency type="BRL">
-				<displayName>Braziliaga real</displayName>
-				<displayName count="one">Brazilga real</displayName>
-				<displayName count="other">Braziliaga real</displayName>
+				<displayName>braziliaga real</displayName>
+				<displayName count="one">braziliaga real</displayName>
+				<displayName count="other">braziliaga real</displayName>
 				<symbol draft="contributed">R$</symbol>
 				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
@@ -4380,9 +4927,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">braziliaga cruzeiro (1942–1967)</displayName>
 			</currency>
 			<currency type="BSD">
-				<displayName>bahamiaga dollar</displayName>
-				<displayName count="one">bahamiaga dollar</displayName>
-				<displayName count="other">bahamiaga dollar</displayName>
+				<displayName>bahamasga dollar</displayName>
+				<displayName count="one">bahamasga dollar</displayName>
+				<displayName count="other">bahamasga dollar</displayName>
+				<symbol draft="contributed">BSD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>bhutanga ngultrum</displayName>
@@ -4404,20 +4953,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">belarusiaga ruble yeytɔ (1994–1999)</displayName>
 				<displayName count="other">belarusiaga ruble yeyetɔ (1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>belarusiaga ruble</displayName>
 				<displayName count="one">belarusiaga ruble</displayName>
 				<displayName count="other">belarusiaga rublewo</displayName>
+				<symbol draft="contributed">BYN</symbol>
+				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>belarusiaga ruble (2000–2016)</displayName>
+				<displayName count="one">belarusiaga ruble (2000–2016)</displayName>
+				<displayName count="other">belarusiaga rublewo (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>belizega dollar</displayName>
 				<displayName count="one">belizega dollar</displayName>
 				<displayName count="other">belizega dollar</displayName>
+				<symbol draft="contributed">BZD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
-				<displayName>Canadaga dollar</displayName>
-				<displayName count="one">Canadaga dollar</displayName>
-				<displayName count="other">Canadaga dollar</displayName>
+				<displayName>canadaga dollar</displayName>
+				<displayName count="one">canadaga dollar</displayName>
+				<displayName count="other">canadaga dollar</displayName>
 				<symbol draft="contributed">CA$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -4432,9 +4990,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">WIR eurowo CHE</displayName>
 			</currency>
 			<currency type="CHF">
-				<displayName>Swissga franc</displayName>
-				<displayName count="one">Swissga franc</displayName>
-				<displayName count="other">Swissga franc</displayName>
+				<displayName>switzerlandga franc</displayName>
+				<displayName count="one">switzerlandga franc</displayName>
+				<displayName count="other">switzerlandga franc</displayName>
 				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CHW">
@@ -4453,9 +5011,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">tsilegakɔnta dzidzenu UF</displayName>
 			</currency>
 			<currency type="CLP">
-				<displayName>tsilega peso</displayName>
-				<displayName count="one">tsilega peso</displayName>
-				<displayName count="other">tsilega pesowo</displayName>
+				<displayName>chilega peso</displayName>
+				<displayName count="one">chilega peso</displayName>
+				<displayName count="other">chilega peso</displayName>
+				<symbol draft="contributed">CLP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName>tsainatɔwo ƒe gadzraɖoƒe dollar</displayName>
@@ -4470,9 +5030,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="COP">
-				<displayName>kolombiaga peso</displayName>
-				<displayName count="one">kolombiaga peso</displayName>
-				<displayName count="other">kolombiaga peso</displayName>
+				<displayName>colombiaga peso</displayName>
+				<displayName count="one">colombiaga peso</displayName>
+				<displayName count="other">colombiaga peso</displayName>
+				<symbol draft="contributed">COP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>kolombiaga vavãtɔ</displayName>
@@ -4480,9 +5042,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">kolombiaga vavãtɔ</displayName>
 			</currency>
 			<currency type="CRC">
-				<displayName>kosta rikaga kolón</displayName>
-				<displayName count="one">kosta rikaga kolón</displayName>
-				<displayName count="other">kosta rikaga kolón</displayName>
+				<displayName>costa ricaga colón</displayName>
+				<displayName count="one">costa ricaga colón</displayName>
+				<displayName count="other">costa ricaga colón</displayName>
+				<symbol draft="contributed">CRC</symbol>
+				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>serbiaga dinar (2002–2006)</displayName>
@@ -4495,14 +5059,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">tsɛkoslovakiaga hard koruna</displayName>
 			</currency>
 			<currency type="CUC">
-				<displayName>kubaga convertible peso</displayName>
-				<displayName count="one">kubaga convertible peso</displayName>
-				<displayName count="other">kubaga convertible peso</displayName>
+				<displayName>cubaga convertible peso</displayName>
+				<displayName count="one">cubaga convertible peso</displayName>
+				<displayName count="other">cubaga convertible peso</displayName>
+				<symbol draft="contributed">CUC</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
-				<displayName>kubaga peso</displayName>
-				<displayName count="one">kubaga peso</displayName>
-				<displayName count="other">kubaga peso</displayName>
+				<displayName>cubaga peso</displayName>
+				<displayName count="one">cubaga peso</displayName>
+				<displayName count="other">cubaga peso</displayName>
+				<symbol draft="contributed">CUP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>kape verdega escudo</displayName>
@@ -4515,9 +5083,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">saipriɔtga pound</displayName>
 			</currency>
 			<currency type="CZK">
-				<displayName>tsɛk repɔblikga koruna</displayName>
-				<displayName count="one">tsɛk repɔblikga koruna</displayName>
-				<displayName count="other">tsɛk repɔblikga koruna</displayName>
+				<displayName>czechga koruna</displayName>
+				<displayName count="one">czechga koruna</displayName>
+				<displayName count="other">czechga koruna</displayName>
+				<symbol draft="contributed">CZK</symbol>
+				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>ɣedzeƒe germaniaga mark</displayName>
@@ -4535,9 +5105,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">dzibutiga franc</displayName>
 			</currency>
 			<currency type="DKK">
-				<displayName>Denmarkga krone</displayName>
-				<displayName count="one">Denmarkga krone</displayName>
-				<displayName count="other">Denmarkga krone</displayName>
+				<displayName>denmarkga krone</displayName>
+				<displayName count="one">denmarkga krone</displayName>
+				<displayName count="other">denmarkga krone</displayName>
 				<symbol draft="contributed">DKK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
@@ -4545,6 +5115,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>dominicaga peso</displayName>
 				<displayName count="one">dominikaga peso</displayName>
 				<displayName count="other">dominikaga peso</displayName>
+				<symbol draft="contributed">DOP</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>aldzeriaga dinar</displayName>
@@ -4614,9 +5186,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">fidziga dollar</displayName>
 			</currency>
 			<currency type="FKP">
-				<displayName>falklanɖ ƒudomekpo dukɔwo ƒe ga pound</displayName>
-				<displayName count="one">falkland ƒudomekpo dukɔwo ƒe ga pound</displayName>
-				<displayName count="other">falkland ƒudomekpo dukɔwo ƒe ga pound</displayName>
+				<displayName>falkland islands pound</displayName>
+				<displayName count="one">falkland islands pound</displayName>
+				<displayName count="other">falkland islands pound</displayName>
+				<symbol draft="contributed">FKP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>frentsiga franc</displayName>
@@ -4624,9 +5198,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">frentsiga franc</displayName>
 			</currency>
 			<currency type="GBP">
-				<displayName>Britishga pound</displayName>
-				<displayName count="one">Britishga pound</displayName>
-				<displayName count="other">Britishga pound</displayName>
+				<displayName>britainga pound</displayName>
+				<displayName count="one">britainga pound</displayName>
+				<displayName count="other">britainga pound</displayName>
 				<symbol draft="contributed">£</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
@@ -4652,9 +5226,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>GH₵</symbol>
 			</currency>
 			<currency type="GIP">
-				<displayName>gilbrataga pound</displayName>
-				<displayName count="one">gilbrataga pound</displayName>
-				<displayName count="other">gilbrataga pound</displayName>
+				<displayName>gilbratarga pound</displayName>
+				<displayName count="one">gilbratarga pound</displayName>
+				<displayName count="other">gilbratarga pound</displayName>
+				<symbol draft="contributed">GIP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>gambiaga dalasi</displayName>
@@ -4685,6 +5261,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>guatemalaga quetzal</displayName>
 				<displayName count="one">guatemalaga quetzal</displayName>
 				<displayName count="other">guatemalaga quetzal</displayName>
+				<symbol draft="contributed">GTQ</symbol>
+				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>pɔtugaltɔwo ƒe giniga escudo</displayName>
@@ -4700,6 +5278,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>guyanaga dollar</displayName>
 				<displayName count="one">guyanaga dollar</displayName>
 				<displayName count="other">guyanaga dollar</displayName>
+				<symbol draft="contributed">GYD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>Hong Kongga dollar</displayName>
@@ -4712,6 +5292,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>honduraga lempira</displayName>
 				<displayName count="one">honduraga lempira</displayName>
 				<displayName count="other">honduraga lempira</displayName>
+				<symbol draft="contributed">HNL</symbol>
+				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>kroatiaga dinar</displayName>
@@ -4719,19 +5301,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">kroatiaga dinar</displayName>
 			</currency>
 			<currency type="HRK">
-				<displayName>kroatiaga kuna</displayName>
-				<displayName count="one">kroatiaga kuna</displayName>
-				<displayName count="other">kroatiaga kuna</displayName>
+				<displayName>croatiaga kuna</displayName>
+				<displayName count="one">croatiaga kuna</displayName>
+				<displayName count="other">croatiaga kuna</displayName>
+				<symbol draft="contributed">HRK</symbol>
+				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>haitiga gourde</displayName>
 				<displayName count="one">haitiga gourde</displayName>
 				<displayName count="other">haitiga gourde</displayName>
+				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>hungariaga forint</displayName>
 				<displayName count="one">hungariaga forint</displayName>
 				<displayName count="other">hungariaga forint</displayName>
+				<symbol draft="contributed">HUF</symbol>
+				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>Indonesiaga rupiah</displayName>
@@ -4784,9 +5371,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">aiselandga krónur (1918–1981)</displayName>
 			</currency>
 			<currency type="ISK">
-				<displayName>aiselandga króna</displayName>
-				<displayName count="one">aiselandga króna</displayName>
-				<displayName count="other">aiselandga krónur</displayName>
+				<displayName>icelandga króna</displayName>
+				<displayName count="one">icelandga króna</displayName>
+				<displayName count="other">icelandga króna</displayName>
+				<symbol draft="contributed">ISK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>italiaga lira</displayName>
@@ -4794,9 +5383,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">italiaga lira</displayName>
 			</currency>
 			<currency type="JMD">
-				<displayName>dzamaikaga dollar</displayName>
-				<displayName count="one">dzamaikaga dollar</displayName>
-				<displayName count="other">dzamaikaga dollar</displayName>
+				<displayName>jamaicaga dollar</displayName>
+				<displayName count="one">jamaicaga dollar</displayName>
+				<displayName count="other">jamaicaga dollar</displayName>
+				<symbol draft="contributed">JMD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>yɔdanga dinar</displayName>
@@ -4858,9 +5449,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">kuwaitga dinar</displayName>
 			</currency>
 			<currency type="KYD">
-				<displayName>kayman ƒudomekpoga dollar</displayName>
-				<displayName count="one">kayman ƒudomekpoga dollar</displayName>
-				<displayName count="other">kayman ƒudomekpoga dollar</displayName>
+				<displayName>cayman islandsga dollar</displayName>
+				<displayName count="one">cayman islandsga dollar</displayName>
+				<displayName count="other">cayman islandsga dollar</displayName>
+				<symbol draft="contributed">KYD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>kazakhstanga tenge</displayName>
@@ -4956,6 +5549,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>moldovaga leu</displayName>
 				<displayName count="one">moldovaga leu</displayName>
 				<displayName count="other">moldovaga leu</displayName>
+				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>malagasega ariary</displayName>
@@ -4968,9 +5562,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">malagasega franc</displayName>
 			</currency>
 			<currency type="MKD">
-				<displayName>makedoniaga denar</displayName>
+				<displayName>marcedoniaga denar</displayName>
 				<displayName count="one">makedoniaga denar</displayName>
-				<displayName count="other">makedoniaga denari</displayName>
+				<displayName count="other">marcedoniaga denar</displayName>
+				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName>makedoniaga denar (1992–1993)</displayName>
@@ -4998,6 +5593,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">makanesega pataca</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>mɔritaniaga ouguiya (1973–2017)</displayName>
+				<displayName count="one">mɔritaniaga ouguiya (1973–2017)</displayName>
+				<displayName count="other">mɔritaniaga ouguiya (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>mɔritaniaga ouguiya</displayName>
 				<displayName count="one">mɔritaniaga ouguiya</displayName>
 				<displayName count="other">mɔritaniaga ouguiya</displayName>
@@ -5028,9 +5628,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other" draft="unconfirmed">malawiga kwacha</displayName>
 			</currency>
 			<currency type="MXN">
-				<displayName>Mexicoga peso</displayName>
-				<displayName count="one">Mexicoga peso</displayName>
-				<displayName count="other">Mexicoga peso</displayName>
+				<displayName>mexicoga peso</displayName>
+				<displayName count="one">mexicoga peso</displayName>
+				<displayName count="other">mexicoga peso</displayName>
 				<symbol draft="contributed">MX$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -5058,9 +5658,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">nikaraguaga córdoba (1988–1991)</displayName>
 			</currency>
 			<currency type="NIO">
-				<displayName>nikaraguaga córdoba</displayName>
-				<displayName count="one">nikaraguaga córdoba</displayName>
-				<displayName count="other">nikaraguaga córdoba</displayName>
+				<displayName>nicaraguaga córdoba</displayName>
+				<displayName count="one">nicaraguaga córdoba</displayName>
+				<displayName count="other">nicaraguaga córdoba</displayName>
+				<symbol draft="contributed">NIO</symbol>
+				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>hollandga guilder</displayName>
@@ -5068,9 +5670,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">hollandga guilder</displayName>
 			</currency>
 			<currency type="NOK">
-				<displayName>Norwayga krone</displayName>
-				<displayName count="one">Norwayga krone</displayName>
-				<displayName count="other">Norwayga krone</displayName>
+				<displayName>norwayga krone</displayName>
+				<displayName count="one">norwayga krone</displayName>
+				<displayName count="other">norwayga krone</displayName>
 				<symbol draft="contributed">NOK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
@@ -5094,6 +5696,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>panamaga balboa</displayName>
 				<displayName count="one">panamaga balboa</displayName>
 				<displayName count="other">panamaga balboa</displayName>
+				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>peruga inti</displayName>
@@ -5101,14 +5704,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">peruga inti</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>peruga nuevo sol</displayName>
-				<displayName count="one">peruga nuevo sol</displayName>
-				<displayName count="other">peruga nuevo sol</displayName>
+				<displayName>peruga sol</displayName>
+				<displayName count="one">peruga sol</displayName>
+				<displayName count="other">peruga sol</displayName>
+				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PES">
-				<displayName>peruga nuevo sol (1863–1965)</displayName>
-				<displayName count="one">peruga nuevo sol (1863–1965)</displayName>
-				<displayName count="other">peruga nuevo sol (1863–1965)</displayName>
+				<displayName>peruga sol (1863–1965)</displayName>
+				<displayName count="one">peruga sol (1863–1965)</displayName>
+				<displayName count="other">peruga sol (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>papua new guineaga kina</displayName>
@@ -5126,9 +5730,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">pakistanga rupee</displayName>
 			</currency>
 			<currency type="PLN">
-				<displayName>polanɖga zloty</displayName>
+				<displayName>polandga zloty</displayName>
 				<displayName count="one">polandga zloty</displayName>
 				<displayName count="other">polandga zloty</displayName>
+				<symbol draft="contributed">PLN</symbol>
+				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>polanɖga zloty (1950–1995)</displayName>
@@ -5144,6 +5750,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>paraguayga guarani</displayName>
 				<displayName count="one">paraguayga guarani</displayName>
 				<displayName count="other">paraguayga guarani</displayName>
+				<symbol draft="contributed">PYG</symbol>
+				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>katarga rial</displayName>
@@ -5164,16 +5772,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>romaniaga leu</displayName>
 				<displayName count="one">romaniaga leu</displayName>
 				<displayName count="other">romaniaga leu</displayName>
+				<symbol draft="contributed">RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>serbiaga dinar</displayName>
 				<displayName count="one">serbiaga dinar</displayName>
 				<displayName count="other">serbiaga dinar</displayName>
+				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
-				<displayName>Russiaga ruble</displayName>
-				<displayName count="one">Russiaga ruble</displayName>
-				<displayName count="other">Russiaga ruble</displayName>
+				<displayName>russiaga ruble</displayName>
+				<displayName count="one">russiaga ruble</displayName>
+				<displayName count="other">russiaga ruble</displayName>
 				<symbol draft="contributed">RUB</symbol>
 				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
@@ -5219,9 +5830,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">sudanga pound (1957–1998)</displayName>
 			</currency>
 			<currency type="SEK">
-				<displayName>Swedishga krone</displayName>
-				<displayName count="one">Swedishga krone</displayName>
-				<displayName count="other">Swedishga krone</displayName>
+				<displayName>swedenga krone</displayName>
+				<displayName count="one">swedenga krone</displayName>
+				<displayName count="other">swedenga krone</displayName>
 				<symbol draft="contributed">SEK</symbol>
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
@@ -5259,6 +5870,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>surinamga dollar</displayName>
 				<displayName count="one">surinamga dollar</displayName>
 				<displayName count="other">surinamga dollar</displayName>
+				<symbol draft="contributed">SRD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>surinamega guilder</displayName>
@@ -5271,6 +5884,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other" draft="unconfirmed">anyiehe sudanga pound</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>são tomé kple príncipega dobra (1977–2017)</displayName>
+				<displayName count="one">são tomé kple príncipega dobra (1977–2017)</displayName>
+				<displayName count="other">são tomé kple príncipega dobra (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>são tomé kple príncipega dobra</displayName>
 				<displayName count="one">são tomé kple príncipega dobra</displayName>
 				<displayName count="other">são tomé kple príncipega dobra</displayName>
@@ -5351,9 +5969,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
-				<displayName>trinidad kple tobagoga dollar</displayName>
-				<displayName count="one">trinidad kple tobagoga dollar</displayName>
-				<displayName count="other">trinidad kple tobagoga dollar</displayName>
+				<displayName>trinidad &amp; tobagoga dollar</displayName>
+				<displayName count="one">trinidad &amp; tobagoga dollar</displayName>
+				<displayName count="other">trinidad &amp; tobagoga dollar</displayName>
+				<symbol draft="contributed">TTD</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>Taiwanga dollar</displayName>
@@ -5371,6 +5991,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ukrainega hryvnia</displayName>
 				<displayName count="one">ukrainega hryvnia</displayName>
 				<displayName count="other">ukrainega hryvnia</displayName>
+				<symbol draft="contributed">UAH</symbol>
+				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>ukrainega karbovanet</displayName>
@@ -5388,9 +6010,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">ugandaga shilling</displayName>
 			</currency>
 			<currency type="USD">
-				<displayName>US ga dollar</displayName>
-				<displayName count="one">US ga dollar</displayName>
-				<displayName count="other">US ga dollar</displayName>
+				<displayName>us ga dollar</displayName>
+				<displayName count="one">us ga dollar</displayName>
+				<displayName count="other">us ga dollar</displayName>
 				<symbol draft="contributed">US$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -5418,6 +6040,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>uruguayga peso</displayName>
 				<displayName count="one">uruguayga peso</displayName>
 				<displayName count="other">uruguayga peso</displayName>
+				<symbol draft="contributed">UYU</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>uzbekistanga som</displayName>
@@ -5433,6 +6057,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>venezuelaga bolívar</displayName>
 				<displayName count="one">venezuelaga bolívar</displayName>
 				<displayName count="other">venezuelaga bolívar</displayName>
+				<symbol draft="contributed">VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>vietnamga dong</displayName>
@@ -5491,10 +6117,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">europaga (XBD)</displayName>
 			</currency>
 			<currency type="XCD">
-				<displayName>ɣedzeƒe caribbeaga dollar</displayName>
-				<displayName count="one">ɣedzeƒe karibbeaga dollar</displayName>
-				<displayName count="other">ɣedzeƒe karibbeaga dollar</displayName>
-				<symbol draft="unconfirmed">EC$</symbol>
+				<displayName>east caribbeanga dollar</displayName>
+				<displayName count="one">east caribbeanga dollar</displayName>
+				<displayName count="other">east caribbeanga dollar</displayName>
+				<symbol draft="contributed">EC$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>gaɖuɖu ɖoɖo tɔxɛ</displayName>
@@ -5629,6 +6256,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">zimbabwega dollar (2008)</displayName>
 			</currency>
 		</currencies>
+		<miscPatterns numberSystem="latn">
+			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
+		<minimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="contributed">{0}lia</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5793,4 +6427,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

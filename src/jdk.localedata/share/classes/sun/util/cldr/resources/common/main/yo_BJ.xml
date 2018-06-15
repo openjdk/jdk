@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2016 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12417 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="yo"/>
 		<territory type="BJ"/>
 	</identity>
@@ -232,7 +233,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="US">Orílɛ́ède Orilɛede Amerika</territory>
 			<territory type="UY">Orílɛ́ède Nruguayi</territory>
 			<territory type="UZ">Orílɛ́ède Nshibɛkisitani</territory>
-			<territory type="VA">Orílɛ́ède Fatikani</territory>
 			<territory type="VC">Orílɛ́ède Fisɛnnti ati Genadina</territory>
 			<territory type="VE">Orílɛ́ède Fɛnɛshuɛla</territory>
 			<territory type="VG">Orílɛ́ède Etíkun Fágínì ti ìlú Bírítísì</territory>
@@ -285,10 +285,78 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="12">Oshù Ɔ̀pɛ̀</month>
 						</monthWidth>
 					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">Shɛ́rɛ́</month>
+							<month type="2">Èrèlè</month>
+							<month type="3">Ɛrɛ̀nà</month>
+							<month type="4">Ìgbé</month>
+							<month type="5">Ɛ̀bibi</month>
+							<month type="6">Òkúdu</month>
+							<month type="7">Agɛmɔ</month>
+							<month type="8">Ògún</month>
+							<month type="9">Owewe</month>
+							<month type="10">Ɔ̀wàrà</month>
+							<month type="11">Bélú</month>
+							<month type="12">Ɔ̀pɛ̀</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Oshù Shɛ́rɛ́</month>
+							<month type="2">Oshù Èrèlè</month>
+							<month type="3">Oshù Ɛrɛ̀nà</month>
+							<month type="4">Oshù Ìgbé</month>
+							<month type="5">Oshù Ɛ̀bibi</month>
+							<month type="6">Oshù Òkúdu</month>
+							<month type="7">Oshù Agɛmɔ</month>
+							<month type="8">Oshù Ògún</month>
+							<month type="9">Oshù Owewe</month>
+							<month type="10">Oshù Ɔ̀wàrà</month>
+							<month type="11">Oshù Bélú</month>
+							<month type="12">Oshù Ɔ̀pɛ̀</month>
+						</monthWidth>
+					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
+							<day type="sun">Àìkú</day>
+							<day type="mon">Ajé</day>
+							<day type="tue">Ìsɛ́gun</day>
+							<day type="wed">Ɔjɔ́rú</day>
+							<day type="thu">Ɔjɔ́bɔ</day>
+							<day type="fri">Ɛtì</day>
+							<day type="sat">Àbámɛ́ta</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Àìkú</day>
+							<day type="mon">Ajé</day>
+							<day type="tue">Ìsɛ́gun</day>
+							<day type="wed">Ɔjɔ́rú</day>
+							<day type="thu">Ɔjɔ́bɔ</day>
+							<day type="fri">Ɛtì</day>
+							<day type="sat">Àbámɛ́ta</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Ɔjɔ́ Àìkú</day>
+							<day type="mon">Ɔjɔ́ Ajé</day>
+							<day type="tue">Ɔjɔ́ Ìsɛ́gun</day>
+							<day type="wed">Ɔjɔ́rú</day>
+							<day type="thu">Ɔjɔ́bɔ</day>
+							<day type="fri">Ɔjɔ́ Ɛtì</day>
+							<day type="sat">Ɔjɔ́ Àbámɛ́ta</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">Àìkú</day>
+							<day type="mon">Ajé</day>
+							<day type="tue">Ìsɛ́gun</day>
+							<day type="wed">Ɔjɔ́rú</day>
+							<day type="thu">Ɔjɔ́bɔ</day>
+							<day type="fri">Ɛtì</day>
+							<day type="sat">Àbámɛ́ta</day>
+						</dayWidth>
+						<dayWidth type="short">
 							<day type="sun">Àìkú</day>
 							<day type="mon">Ajé</day>
 							<day type="tue">Ìsɛ́gun</day>
@@ -317,10 +385,36 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<quarter type="4">Kɔ́tà Kɛrin</quarter>
 						</quarterWidth>
 					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="wide">
+							<quarter type="1">Kɔ́tà Kínní</quarter>
+							<quarter type="2">Kɔ́tà Kejì</quarter>
+							<quarter type="3">Kɔ́à Keta</quarter>
+							<quarter type="4">Kɔ́tà Kɛrin</quarter>
+						</quarterWidth>
+					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">Àárɔ̀</dayPeriod>
+							<dayPeriod type="pm">Ɔ̀sán</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">Àárɔ̀</dayPeriod>
+							<dayPeriod type="pm">Ɔ̀sán</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">Àárɔ̀</dayPeriod>
+							<dayPeriod type="pm">Ɔ̀sán</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">Àárɔ̀</dayPeriod>
+							<dayPeriod type="pm">Ɔ̀sán</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">Àárɔ̀</dayPeriod>
 							<dayPeriod type="pm">Ɔ̀sán</dayPeriod>
 						</dayPeriodWidth>
@@ -451,6 +545,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Faransi ti Orílɛ́ède Malagasi</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ouguiya ti Orílɛ́ède Maritania (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ouguiya ti Orílɛ́ède Maritania</displayName>
 			</currency>
 			<currency type="MUR">
@@ -490,6 +587,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Sile ti Orílɛ́ède Somali</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobira ti Orílɛ́ède Sao tome Ati Pirisipe (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobira ti Orílɛ́ède Sao tome Ati Pirisipe</displayName>
 			</currency>
 			<currency type="TND">
@@ -531,4 +631,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

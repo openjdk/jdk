@@ -1,15 +1,42 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12217 $"/>
+		<version number="$Revision: 13839 $"/>
 		<language type="es"/>
 		<territory type="CO"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ace" draft="contributed">acehnés</language>
+			<language type="arp" draft="contributed">arapaho</language>
+			<language type="bho" draft="contributed">bhojpuri</language>
+			<language type="eu" draft="contributed">euskera</language>
+			<language type="grc" draft="contributed">griego antiguo</language>
+			<language type="lo" draft="contributed">lao</language>
+			<language type="nso" draft="contributed">sotho septentrional</language>
+			<language type="pa" draft="contributed">punyabí</language>
+			<language type="ss" draft="contributed">siswati</language>
+			<language type="sw" draft="contributed">suajili</language>
+			<language type="sw_CD" draft="contributed">suajili del Congo</language>
+			<language type="tn" draft="contributed">setswana</language>
+			<language type="wo" draft="contributed">wolof</language>
+			<language type="zgh" draft="contributed">tamazight marroquí estándar</language>
+		</languages>
+		<territories>
+			<territory type="BA" draft="contributed">Bosnia y Herzegovina</territory>
+			<territory type="GB" alt="short" draft="contributed">RU</territory>
+			<territory type="TA" draft="contributed">Tristán de Acuña</territory>
+			<territory type="TL" draft="contributed">Timor-Leste</territory>
+			<territory type="UM" draft="contributed">Islas menores alejadas de EE. UU.</territory>
+			<territory type="VI" draft="contributed">Islas Vírgenes de EE. UU.</territory>
+		</territories>
+	</localeDisplayNames>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -38,10 +65,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="GyMMMEd" draft="contributed">E, d MMM 'de' y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMM" draft="contributed">MMM 'de' y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd" draft="contributed">d 'de' MMM 'de' y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd" draft="contributed">EEE, d 'de' MMM 'de' y G</dateFormatItem>
-						<dateFormatItem id="yyyyQQQ" draft="contributed">QQQ 'de' y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback draft="contributed">{0} ‘al’ {1}</intervalFormatFallback>
@@ -150,6 +173,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</monthContext>
 				</months>
 				<days>
+					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun" draft="contributed">D</day>
+							<day type="mon" draft="contributed">L</day>
+							<day type="tue" draft="contributed">M</day>
+							<day type="wed" draft="contributed">M</day>
+							<day type="thu" draft="contributed">J</day>
+							<day type="fri" draft="contributed">V</day>
+							<day type="sat" draft="contributed">S</day>
+						</dayWidth>
+					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="narrow">
 							<day type="sun" draft="contributed">d</day>
@@ -163,11 +197,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dayContext>
 				</days>
 				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="noon">m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+							<dayPeriod type="morning2">de la mañana</dayPeriod>
+							<dayPeriod type="evening1">de la tarde</dayPeriod>
+							<dayPeriod type="night1">de la noche</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="noon" draft="contributed">m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="provisional">a. m.</dayPeriod>
-							<dayPeriod type="noon" draft="provisional">m.</dayPeriod>
-							<dayPeriod type="pm" draft="provisional">p. m.</dayPeriod>
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="noon" draft="contributed">m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -219,9 +276,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<availableFormats>
 						<dateFormatItem id="GyMMM" draft="contributed">MMM 'de' y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="contributed">E, d MMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="H" draft="contributed">H</dateFormatItem>
+						<dateFormatItem id="Hm" draft="contributed">H:mm</dateFormatItem>
+						<dateFormatItem id="Hms" draft="contributed">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="contributed">d 'de' MMM</dateFormatItem>
 						<dateFormatItem id="MMMdd" draft="contributed">d 'de' MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="contributed">E, d 'de' MMM</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="contributed">EEE, d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMM" draft="contributed">MMM 'de' y</dateFormatItem>
 						<dateFormatItem id="yMMMd" draft="contributed">d 'de' MMM 'de' y</dateFormatItem>
 					</availableFormats>
@@ -343,13 +404,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<decimal>,</decimal>
 			<group>.</group>
 		</symbols>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -365,9 +419,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>US$</symbol>
 			</currency>
 		</currencies>
-		<miscPatterns numberSystem="latn">
-			<pattern type="range" draft="contributed">de {0} a {1}</pattern>
-		</miscPatterns>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -436,4 +487,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</unitLength>
 	</units>
 </ldml>
-

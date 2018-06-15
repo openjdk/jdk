@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc. CLDR data files are interpreted
+<!-- Copyright © 1991-2018 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
 according to the LDML specification (http://unicode.org/reports/tr35/) For
 terms of use, see http://www.unicode.org/copyright.html
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="dsb"/>
 	</identity>
 	<localeDisplayNames>
@@ -706,6 +710,7 @@ terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a b c č ć d e ě f g h {ch} i j k ł l m n ń o ó p q r ŕ s š ś t u v w x y z ž ź]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ą ā æ ç ď đ é è ĕ ê ë ė ę ē ğ í ì ĭ î ï İ ī ı ĺ ľ ň ñ ò ŏ ô ö ő ø ō œ ř ş ß ť ú ù ŭ û ů ü ű ū ý ÿ ż]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Č Ć D E F G H {Ch} I J K Ł L M N O P Q R S Š Ś T U V W X Y Z Ž Ź]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 	</characters>
 	<delimiters>
@@ -3570,12 +3575,19 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="few">běłoruske ruble (1994–1999)</displayName>
 				<displayName count="other">běłoruskich rublow (1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>běłoruski rubl</displayName>
 				<displayName count="one">běłoruski rubl</displayName>
 				<displayName count="two">běłoruskej rubla</displayName>
 				<displayName count="few">běłoruske ruble</displayName>
 				<displayName count="other">běłoruskich rublow</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>běłoruski rubl (2000–2016)</displayName>
+				<displayName count="one">běłoruski rubl (2000–2016)</displayName>
+				<displayName count="two">běłoruskej rubla (2000–2016)</displayName>
+				<displayName count="few">běłoruske ruble (2000–2016)</displayName>
+				<displayName count="other">běłoruskich rublow (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>belizeski dolar</displayName>
@@ -4064,6 +4076,13 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">macaoskich pataca</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>mauretański ouguiya (1973–2017)</displayName>
+				<displayName count="one">mauretański ouguiya (1973–2017)</displayName>
+				<displayName count="two">mauretańskej ouguiya (1973–2017)</displayName>
+				<displayName count="few">mauretańske ouguiya (1973–2017)</displayName>
+				<displayName count="other">mauretański ouguiya (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>mauretański ouguiya</displayName>
 				<displayName count="one">mauretański ouguiya</displayName>
 				<displayName count="two">mauretańskej ouguiya</displayName>
@@ -4185,11 +4204,11 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">panamaskich balboa</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>peruski nowy sol</displayName>
-				<displayName count="one">peruski nowy sol</displayName>
-				<displayName count="two">peruskej nowej sola</displayName>
-				<displayName count="few">peruske nowe sole</displayName>
-				<displayName count="other">peruskich nowych solow</displayName>
+				<displayName>peruski sol</displayName>
+				<displayName count="one">peruski sol</displayName>
+				<displayName count="two">peruskej sola</displayName>
+				<displayName count="few">peruske sole</displayName>
+				<displayName count="other">peruskich solow</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>papua-neuguinejska kina</displayName>
@@ -4340,6 +4359,13 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">pódpołdnjowosudańskich puntow</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>são-tomeska dobra (1977–2017)</displayName>
+				<displayName count="one">são-tomeska dobra (1977–2017)</displayName>
+				<displayName count="two">são-tomeskej dobrje (1977–2017)</displayName>
+				<displayName count="few">são-tomeske dobry (1977–2017)</displayName>
+				<displayName count="other">são-tomeskich dobrow (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>são-tomeska dobra</displayName>
 				<displayName count="one">são-tomeska dobra</displayName>
 				<displayName count="two">são-tomeskej dobrje</displayName>
@@ -6548,4 +6574,3 @@ terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

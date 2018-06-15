@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2014 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11977 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="cu"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="ab" draft="unconfirmed">а҆бха́зскїй</language>
 			<language type="ar" draft="unconfirmed">а҆ра́вскїй</language>
+			<language type="az" draft="unconfirmed">а҆зербайджа́нскїй</language>
 			<language type="be" draft="unconfirmed">бѣлорꙋ́сскїй</language>
+			<language type="bg" draft="unconfirmed">бо́лгарскїй</language>
 			<language type="cu" draft="unconfirmed">церковнослове́нскїй</language>
 			<language type="de" draft="unconfirmed">нѣме́цкїй</language>
 			<language type="de_AT" draft="unconfirmed">а҆ѵстрі́йскїй нѣме́цкїй</language>
 			<language type="de_CH" draft="unconfirmed">є҆лветі́йскїй нѣме́цкїй</language>
+			<language type="el" draft="unconfirmed">є҆́ллинскїй</language>
 			<language type="en" draft="unconfirmed">а҆нглі́йскїй</language>
 			<language type="en_AU" draft="unconfirmed">а҆ѵстралі́йскїй а҆нглі́йскїй</language>
 			<language type="en_CA" draft="unconfirmed">кана́дскїй а҆нглі́йскїй</language>
@@ -28,18 +33,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="es_419" draft="unconfirmed">латїноамерїка́нскїй і҆спа́нскїй</language>
 			<language type="es_ES" draft="unconfirmed">є҆ѵрѡпе́йскїй і҆спа́нскїй</language>
 			<language type="es_MX" draft="unconfirmed">і҆спанскїй (ме́ѯїка)</language>
+			<language type="et" draft="unconfirmed">є҆сто́нскїй</language>
+			<language type="fi" draft="unconfirmed">фі́нскїй</language>
 			<language type="fr" draft="unconfirmed">францꙋ́зскїй</language>
 			<language type="fr_CA" draft="unconfirmed">кана́дскїй францꙋ́зскїй</language>
 			<language type="fr_CH" draft="unconfirmed">є҆лветі́йскїй францꙋ́зскїй</language>
+			<language type="he" draft="unconfirmed">є҆вре́йскїй</language>
+			<language type="hy" draft="unconfirmed">а҆рме́нскїй</language>
 			<language type="it" draft="unconfirmed">і҆талїа́нскїй</language>
 			<language type="ja" draft="unconfirmed">ꙗ҆пѡ́нскїй</language>
+			<language type="ka" draft="unconfirmed">і҆́верскїй</language>
 			<language type="kk" draft="unconfirmed">каза́хскїй</language>
+			<language type="la" draft="unconfirmed">латі́нскїй</language>
+			<language type="lt" draft="unconfirmed">лїто́вскїй</language>
+			<language type="lv" draft="unconfirmed">латві́йскїй</language>
 			<language type="pt" draft="unconfirmed">портога́льскїй</language>
 			<language type="pt_BR" draft="unconfirmed">бразі́льскїй портога́льскїй</language>
 			<language type="pt_PT" draft="unconfirmed">є҆ѵрѡпе́йскїй портога́льскїй</language>
 			<language type="ro" draft="unconfirmed">дакорꙋмы́нскїй</language>
 			<language type="ro_MD" draft="unconfirmed">молда́вскїй</language>
 			<language type="ru" draft="unconfirmed">рꙋ́сскїй</language>
+			<language type="sr" draft="unconfirmed">се́рбскїй</language>
 			<language type="uk" draft="unconfirmed">ᲂу҆краи́нскїй</language>
 			<language type="und" draft="unconfirmed">невѣ́домый ѧ҆зы́къ</language>
 			<language type="zh" draft="unconfirmed">хи́нскїй</language>
@@ -76,7 +90,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MX" draft="unconfirmed">Ме́ѯїко</territory>
 			<territory type="RU" draft="unconfirmed">рѡссі́а</territory>
 			<territory type="UA" draft="unconfirmed">ᲂу҆краи́на</territory>
-			<territory type="US" draft="unconfirmed">а҆мерїка̑нскїѧ соедине̑нныѧ держа̑вы</territory>
+			<territory type="US" draft="unconfirmed">а҆мерїка̑нскїѧ соединє́нныѧ держа̑вы</territory>
 			<territory type="ZZ" draft="unconfirmed">невѣ́домаѧ страна̀</territory>
 		</territories>
 		<types>
@@ -97,10 +111,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\u0487 \u0483 \u2DE0 \u2DE1 \u2DE2 \u2DE3 \u2DE4 \u2DE5 \u2DE6 \u2DE7 \u2DE8 \u2DE9 \u2DEA \u2DEC \u2DED \u2DEF \u2DF1 ⸯ \uA67D ꙿ \u2DF4 ҂ а б в г д е є ж ѕ з ꙁ и і ї й к л м н ѻ о ѡ ꙍ ѽ ѿ п р с т ꙋ у ф х ц ч ш щ ъ ы ь ѣ ю ꙗ ѧ ѫ ѯ ѱ ѳ ѵ ѷ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200D\uFE2F \u2DF6 \u2DF7 \uA674 \uA675 \uA676 \uA67B \u2DEB \u2DF5 \u2DEE \u2DF9 \uA677 \u2DF0 \u2DF2 \u2DF3 \uA678 \uA679 \uA67A \u2DFA \u2DFB \u2DFC \u2DFD \u2DFE \u2DFF \u0488\u0489\uA670\uA671\uA672 \u0484 \uFE2E \uA66F ꙣ ꙃ ꙅ ꙇ ꙉ \u2DF8 ꙥ ꙧ ҥ ꙩꙫꙭꙮꚙꚛ ҁ \uA69E ꙡ џ ꙏ ꙑ ꙓ ꙕ ѥ \uA69F ꙙ ꙛ ѩ ꙝ ѭ ꙟ]</exemplarCharacters>
-		<exemplarCharacters type="index">[А Б В Г Д Є Ж Ѕ З И І К Л М Н Ѻ О Ѡ Ѿ П Р С Т Ꙋ Ф Х Ц Ч Ш Щ Ъ Ы Ь Ѣ Ю Ꙗ Ѧ Ѫ Ѯ Ѱ Ѳ Ѵ]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[꙾ , \- . \: ; _ – — ꙳ ‐ ! ? ( ) /]</exemplarCharacters>
+		<exemplarCharacters>[\u0487\uA67D \u0483 ҂ а б \u2DE0 в \u2DE1 г \u2DE2 д \u2DE3 е є ж \u2DE4 \u2DE5 ѕ з ꙁ и й і ї к \u2DE6 л \u2DE7 м \u2DE8 н \u2DE9 ѻ о \u2DEA п р \u2DEC с \u2DED т у ꙋ ф х \u2DEF ѡ ѿ ꙍ ѽ ц ч \u2DF1 ш щ ⸯ ꙿ ъ ы ь ѣ ю ѫ ꙗ ѧ ѯ ѱ ѳ ѵ ѷ \u2DF4]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u0488\u0489\u200C\u200D\uA670\uA671\uA672\uFE2F \u0484 \uFE2E \uA66F \u2DF6 ꙣ \u2DF7 \uA674 ꙃ ꙅ \uA675 \uA676 ꙇ ꙉ \u2DF8 ꙥ ꙧ ҥ ꙩꙫꙭꙮꚙꚛ \u2DEB ҁ \u2DF5 \u2DEE \uA677 \u2DF9 \uA69E \uA67B \u2DF0 ꙡ џ \u2DF2 \u2DF3 ꙏ \uA678 ꙑ \uA679 \uA67A \u2DFA ꙓ \u2DFB ꙕ \u2DFC ѥ \uA69F \u2DFD ꙙ \u2DFE ꙛ ѩ ꙝ ѭ \u2DFF ꙟ]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Б В Г Д Є Ж Ѕ З И І К Л М Н Ѻ О П Р С Т Ꙋ Ф Х Ѡ Ѿ Ц Ч Ш Щ Ъ Ы Ь Ѣ Ю Ѫ Ꙗ Ѧ Ѯ Ѱ Ѳ Ѵ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[_ \- ‐ – — ⹃ , ; \: ! ? . ( ) ꙳ / ꙾]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart draft="unconfirmed">«</quotationStart>
@@ -331,10 +346,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">а҃-ѧ чеⷡ҇</quarter>
-							<quarter type="2" draft="unconfirmed">в҃-ѧ чеⷡ҇</quarter>
-							<quarter type="3" draft="unconfirmed">г҃-ѧ чеⷡ҇</quarter>
-							<quarter type="4" draft="unconfirmed">д҃-ѧ чеⷡ҇</quarter>
+							<quarter type="1" draft="unconfirmed">а҃_ѧ че́тверть</quarter>
+							<quarter type="2" draft="unconfirmed">в҃_ѧ че́тверть</quarter>
+							<quarter type="3" draft="unconfirmed">г҃_ѧ че́тверть</quarter>
+							<quarter type="4" draft="unconfirmed">д҃_ѧ че́тверть</quarter>
 						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1" draft="unconfirmed">а҃</quarter>
@@ -343,10 +358,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<quarter type="4" draft="unconfirmed">д҃</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">а҃-ѧ че́тверть</quarter>
-							<quarter type="2" draft="unconfirmed">в҃-ѧ че́тверть</quarter>
-							<quarter type="3" draft="unconfirmed">г҃-ѧ че́тверть</quarter>
-							<quarter type="4" draft="unconfirmed">д҃-ѧ че́тверть</quarter>
+							<quarter type="1" draft="unconfirmed">а҃_ѧ че́тверть</quarter>
+							<quarter type="2" draft="unconfirmed">в҃_ѧ че́тверть</quarter>
+							<quarter type="3" draft="unconfirmed">г҃_ѧ че́тверть</quarter>
+							<quarter type="4" draft="unconfirmed">д҃_ѧ че́тверть</quarter>
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
@@ -363,10 +378,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<quarter type="4" draft="unconfirmed">д҃</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">а҃-ѧ че́тверть</quarter>
-							<quarter type="2" draft="unconfirmed">в҃-ѧ че́тверть</quarter>
-							<quarter type="3" draft="unconfirmed">г҃-ѧ че́тверть</quarter>
-							<quarter type="4" draft="unconfirmed">д҃-ѧ че́тверть</quarter>
+							<quarter type="1" draft="unconfirmed">а҃_ѧ че́тверть</quarter>
+							<quarter type="2" draft="unconfirmed">в҃_ѧ че́тверть</quarter>
+							<quarter type="3" draft="unconfirmed">г҃_ѧ че́тверть</quarter>
+							<quarter type="4" draft="unconfirmed">д҃_ѧ че́тверть</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -403,7 +418,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</eraNames>
 					<eraAbbr>
 						<era type="0" draft="unconfirmed">пре́дъ р. х.</era>
-						<era type="1" draft="unconfirmed">по р. х.</era>
+						<era type="0" alt="variant" draft="unconfirmed">пре́дъ р. х.</era>
+						<era type="1" draft="unconfirmed">ѿ р. х.</era>
+						<era type="1" alt="variant" draft="unconfirmed">ѿ р. х.</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -574,6 +591,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight" draft="unconfirmed">{0} (лѣ́тнее вре́мѧ)</regionFormat>
 			<regionFormat type="standard" draft="unconfirmed">{0} (зи́мнее вре́мѧ)</regionFormat>
 			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
+			<zone type="Etc/UTC">
+				<long>
+					<standard draft="unconfirmed">всемі́рное сѷгхронїзи́рованное вре́мѧ</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity draft="unconfirmed">невѣ́домый гра́дъ</exemplarCity>
 			</zone>
@@ -879,11 +901,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="unconfirmed">R$</symbol>
 				<symbol alt="narrow" draft="unconfirmed">R$</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName draft="unconfirmed">бѣлорꙋ́сскїй рꙋ́бль</displayName>
 				<displayName count="other" draft="unconfirmed">бѣлорꙋ́сскагѡ рꙋблѧ̀</displayName>
-				<symbol draft="unconfirmed">BYR</symbol>
+				<symbol draft="unconfirmed">BYN</symbol>
 				<symbol alt="narrow" draft="unconfirmed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName draft="unconfirmed">бѣлорꙋ́сскїй рꙋ́бль (2000–2016)</displayName>
+				<displayName count="other" draft="unconfirmed">бѣлорꙋ́сскагѡ рꙋблѧ̀ (2000–2016)</displayName>
+				<symbol draft="unconfirmed">BYR</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName draft="unconfirmed">хи́нскїй ю҆а́нь</displayName>
@@ -994,4 +1021,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

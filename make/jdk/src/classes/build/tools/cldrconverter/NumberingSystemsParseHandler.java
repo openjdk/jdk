@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,9 @@ class NumberingSystemsParseHandler extends AbstractLDMLHandler<String> {
 
                     if (Character.isSurrogate(digits.charAt(0))) {
                         // DecimalFormatSymbols doesn't support supplementary characters as digit zero.
+                        // Replace supplementary digits with latin digits. This is a restriction till JDK-8204092 is resolved.
+                        digits = "0123456789";
+                        put(script, digits);
                         break numberingSystem;
                     }
                     // in case digits are in the reversed order, reverse back the order.

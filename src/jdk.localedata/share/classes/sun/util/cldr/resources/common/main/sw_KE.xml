@@ -1,14 +1,137 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11914 $"/>
+		<version number="$Revision: 13839 $"/>
 		<language type="sw"/>
 		<territory type="KE"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ain">Ainu</language>
+			<language type="ar_001">Kiarabu cha Sasa Kilichosanifishwa</language>
+			<language type="arq">Kiarabu cha Aljeria</language>
+			<language type="az">Kiazabajani</language>
+			<language type="bug">Kibugini</language>
+			<language type="ckb">Kikurdi cha Kati</language>
+			<language type="dsb">Kisorbian cha Chini</language>
+			<language type="grc">Kigiriki cha Kale</language>
+			<language type="hsb">Kisorbia cha Juu</language>
+			<language type="inh">Kingushi</language>
+			<language type="jbo">Kilojbani</language>
+			<language type="kac">Kikachin</language>
+			<language type="khq">Kikoyra Chiini</language>
+			<language type="kkj">Kikako</language>
+			<language type="koi">Kikomipermyak</language>
+			<language type="kru">Kikurukh</language>
+			<language type="lam">Kilamba</language>
+			<language type="li">Kilimbugish</language>
+			<language type="mdf">Kimoksha</language>
+			<language type="mic">Kimicmac</language>
+			<language type="mk">Kimasedonia</language>
+			<language type="moh">Kimohoki</language>
+			<language type="nnh">Kiingiemboon</language>
+			<language type="nqo">Kiin’ko</language>
+			<language type="or">Kiodia</language>
+			<language type="pcm">Pijini ya Nijeria</language>
+			<language type="root">Kiroot</language>
+			<language type="sco">sco</language>
+			<language type="ses">Kikoyraboro Senni</language>
+			<language type="shu">Kiarabu cha Chadi</language>
+			<language type="srn">Kiscran Tongo</language>
+			<language type="swb">Kicomoro</language>
+			<language type="syr">Kisyria</language>
+			<language type="tw">Kitwi</language>
+			<language type="tzm">Lugha ya Central Atlas Tamazight</language>
+			<language type="udm">Kiudumurti</language>
+			<language type="wa">Kiwaloon</language>
+			<language type="wae">Kiwalser</language>
+			<language type="zgh">Tamazight Sanifu ya Moroko</language>
+		</languages>
+		<territories>
+			<territory type="AQ">Antaktika</territory>
+			<territory type="AZ">Azabajani</territory>
+			<territory type="CI">Ivorikosti</territory>
+			<territory type="CX">Kisiwa cha Christmas</territory>
+			<territory type="CY">Saiprasi</territory>
+			<territory type="FM">Mikronesia</territory>
+			<territory type="GP">Gwadelupe</territory>
+			<territory type="JO">Yordani</territory>
+			<territory type="LB">Lebanoni</territory>
+			<territory type="LI">Lishtensteni</territory>
+			<territory type="LS">Lesotho</territory>
+			<territory type="LU">Lasembagi</territory>
+			<territory type="LV">Lativia</territory>
+			<territory type="MV">Maldivi</territory>
+			<territory type="NC">Nyukaledonia</territory>
+			<territory type="NE">Nijer</territory>
+			<territory type="NG">Nijeria</territory>
+			<territory type="NO">Norwe</territory>
+			<territory type="NP">Nepali</territory>
+			<territory type="OM">Omani</territory>
+			<territory type="PF">Polinesia ya Ufaransa</territory>
+			<territory type="PR">Puetoriko</territory>
+			<territory type="QA">Katari</territory>
+			<territory type="ST">Sao Tome na Prinsipe</territory>
+			<territory type="TD">Chadi</territory>
+			<territory type="VN">Vietnamu</territory>
+		</territories>
+	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'saa' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'saa' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'saa' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'saa' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
 </ldml>
-

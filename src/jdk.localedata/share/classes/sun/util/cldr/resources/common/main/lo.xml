@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="lo"/>
 	</identity>
 	<localeDisplayNames>
@@ -38,7 +41,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ar">ອາຣັບ</language>
 			<language type="ar_001">ອາຣາບິກມາດຕະຖານສະໄໝໃໝ່</language>
 			<language type="arc">ອາລາມິກ</language>
-			<language type="arn">ອາຣົວຄານຽນ</language>
+			<language type="arn">ມາພຸດຊີ</language>
 			<language type="arp">ອາຣາປາໂຮ</language>
 			<language type="arw">ອາຣາແວກ</language>
 			<language type="as">ອັສຊາມີສ</language>
@@ -104,6 +107,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="cop">ຄອບຕິກ</language>
 			<language type="cr">ຄີ</language>
 			<language type="crh">ຄຣີເມນເຕີຄິຊ</language>
+			<language type="crs">ເຊເຊວາ ໂຄຣດ ຝຣັ່ງ</language>
 			<language type="cs">ເຊກ</language>
 			<language type="csb">ກາຊູບຽນ</language>
 			<language type="cu">ໂບດສລາວິກ</language>
@@ -139,6 +143,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="elx">ອີລາໄມ</language>
 			<language type="en">ອັງກິດ</language>
 			<language type="en_AU">ອັງກິດ (ໂອດສະຕາລີ)</language>
+			<language type="en_CA">ອັງກິດແຄນາດາ</language>
 			<language type="en_GB">ອັງກິດ (ບຣິດທິຊ)</language>
 			<language type="en_GB" alt="short">ອັງກິດ (ສະຫະລາດຊະອານາຈັກ)</language>
 			<language type="en_US">ອັງກິດ (ອາເມລິກັນ)</language>
@@ -163,6 +168,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="fon">ຟອນ</language>
 			<language type="fr">ຝຣັ່ງ</language>
 			<language type="fr_CA">ຟລັງ(ການາດາ)</language>
+			<language type="fr_CH" draft="provisional">ຝຣັ່ງ (ສວິສ)</language>
 			<language type="frm">ຟຮັ່ງເສດກາງ</language>
 			<language type="fro">ຟຮັ່ງເສດໂບຮານ</language>
 			<language type="frr">ຟຣີຊຽນເໜືອ</language>
@@ -318,7 +324,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mi">ມາວຣິ</language>
 			<language type="mic">ມິກແມກ</language>
 			<language type="min">ທີແນງກາບູ</language>
-			<language type="mk">ແມັກເຊໂດນຽນ</language>
+			<language type="mk">ແມຊິໂດນຽນ</language>
 			<language type="ml">ມາເລອາລຳ</language>
 			<language type="mn">ມອງໂກເລຍ</language>
 			<language type="mnc">ແມນຈູ</language>
@@ -381,11 +387,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pam">ປາມປານກາ</language>
 			<language type="pap">ປາມເປຍເມັນໂທ</language>
 			<language type="pau">ປາລົວອານ</language>
+			<language type="pcm">ໄນຈີຣຽນພິດກິນ</language>
 			<language type="peo">ເປີເຊຍໂບຮານ</language>
 			<language type="phn">ຟີນີເຊຍ</language>
 			<language type="pi">ປາລີ</language>
 			<language type="pl">ໂປລິຊ</language>
 			<language type="pon">ພອນເພ</language>
+			<language type="prg" draft="provisional">ປຣັສຊຽນ</language>
 			<language type="pro">ໂປວອງຊານໂບຮານ</language>
 			<language type="ps">ປາສໂຕ</language>
 			<language type="pt">ປອກຕຸຍກິສ</language>
@@ -422,7 +430,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sd">ສິນທິ</language>
 			<language type="sdh">ພາກໄຕ້ ຂອງ ກູດິດ</language>
 			<language type="se">ຊາມິເໜືອ</language>
-			<language type="see" draft="provisional">ຊີນີກາ</language>
+			<language type="see">ຊີນີກາ</language>
 			<language type="seh">ຊີນາ</language>
 			<language type="sel">ເຊນຄັບ</language>
 			<language type="ses">ໂຄຍຣາໂບໂຣ ເຊນນິ</language>
@@ -430,7 +438,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sga">ອີຣິຊເກົ່າ</language>
 			<language type="sh">ເຊີໂບ-ໂກເຊຍ</language>
 			<language type="shi">ທາເຊວຫິດ</language>
-			<language type="shn">ໄທໃຫ່ຍ</language>
+			<language type="shn">ຊານ</language>
 			<language type="shu">ອາລັບ-ຊາດ</language>
 			<language type="si">ສິນຫາລາ</language>
 			<language type="sid">ຊິດາໂມ</language>
@@ -541,7 +549,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</languages>
 		<scripts>
 			<script type="Afak">ອັບຟາກາ</script>
-			<script type="Arab">ອາລັບ</script>
+			<script type="Arab">ອາຣາບິກ</script>
 			<script type="Armi">ອິມພີຮຽນ ອາເມອິກ</script>
 			<script type="Armn">ອາເມນຽນ</script>
 			<script type="Avst">ອະເວສຕະ</script>
@@ -549,7 +557,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Bamu">ບາມູມ</script>
 			<script type="Bass">ບັດຊາ</script>
 			<script type="Batk">ບາຕັກ</script>
-			<script type="Beng">ເບັງກາລິ</script>
+			<script type="Beng">ເບັງກາ</script>
 			<script type="Blis">ບລິກຊິມໂບລສ</script>
 			<script type="Bopo">ຈູ້ອິນ</script>
 			<script type="Brah">ພຮາຫມີ</script>
@@ -578,9 +586,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Glag">ກລາໂກລິຕິກ</script>
 			<script type="Goth">ໂກຮິກ</script>
 			<script type="Gran">ເຄນທາ</script>
-			<script type="Grek">ກະເລັກ</script>
+			<script type="Grek">ກຣີກ</script>
 			<script type="Gujr">ຈູຈາຣາທີ</script>
 			<script type="Guru">ກົວມູຄີ</script>
+			<script type="Hanb">ຮັນ</script>
 			<script type="Hang">ຮັນກູນ</script>
 			<script type="Hani">ຮານ</script>
 			<script type="Hano">ຮານູໂນໂອ</script>
@@ -592,17 +601,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hira">ຣິຣະງະນະ</script>
 			<script type="Hluw">ອັກລຮະອານາໂຕເລຍ</script>
 			<script type="Hmng">ປາເຮາເມັງ</script>
-			<script type="Hrkt">ຄະຕະກະນະຫຮືຮີຮະງະນະ</script>
+			<script type="Hrkt">ຕາຕາລາງພະຍາງພາສາຍີ່ປຸ່ນ</script>
 			<script type="Hung">ຮັງກາຮີໂບຮານ</script>
 			<script type="Inds">ອິນດັດ</script>
 			<script type="Ital">ອີຕາລີໂບຮານ</script>
+			<script type="Jamo">ຈາໂມ</script>
 			<script type="Java">ຈາວາ</script>
 			<script type="Jpan">ຍີ່ປຸ່ນ</script>
 			<script type="Jurc">ຈູຮເຊັນ</script>
 			<script type="Kali">ຄຍາ</script>
 			<script type="Kana">ຄະຕະກະນະ</script>
 			<script type="Khar">ຂໍໂຮກສີ</script>
-			<script type="Khmr">ຂະໝຽນ</script>
+			<script type="Khmr">ຂະແມ</script>
 			<script type="Khoj">ຄໍຈຄີ</script>
 			<script type="Knda">ຄັນນາດາ</script>
 			<script type="Kore">ເກົາຫຼີ</script>
@@ -627,7 +637,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mend">ເມນເດ</script>
 			<script type="Merc">ເຄເລີຊີເມໂຮອິຕິກ</script>
 			<script type="Mero">ເມໂຮຕິກ</script>
-			<script type="Mlym">ມາລາຍັນ</script>
+			<script type="Mlym">ມາເລຢາລາມ</script>
 			<script type="Mong">ມົງໂກນ</script>
 			<script type="Moon">ມູນ</script>
 			<script type="Mroo">ເມໂຮ</script>
@@ -641,7 +651,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Ogam">ອອກຄອນ</script>
 			<script type="Olck">ໂອຊິກິ</script>
 			<script type="Orkh">ອອກສມັນຍາ</script>
-			<script type="Orya">ໂອຣິຢາ</script>
+			<script type="Orya">ໂອເດຍ</script>
 			<script type="Palm">ພາລໄມຮິນ</script>
 			<script type="Perm">ເພີມີໂບຮານ</script>
 			<script type="Phag">ຟາກສ-ປາ</script>
@@ -677,7 +687,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Taml">ທາມິລ</script>
 			<script type="Tang">ຕັນກັນ</script>
 			<script type="Tavt">ໄທຫວຽດ</script>
-			<script type="Telu">ເຕລູກູ</script>
+			<script type="Telu">ເທລູກູ</script>
 			<script type="Teng">ເທງກວາຮ</script>
 			<script type="Tfng">ທີຟີນາກ</script>
 			<script type="Tglg">ຕາກາລອກ</script>
@@ -695,10 +705,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii">ຍີ</script>
 			<script type="Zinh">ອິນເຮຮິດ</script>
 			<script type="Zmth">ເຄື່ອງໝາຍທາງຄະນິດສາດ</script>
+			<script type="Zsye">ອີໂມຈິ</script>
 			<script type="Zsym">ສັນຍາລັກ</script>
 			<script type="Zxxx">ບໍ່ມີພາສາຂຽນ</script>
 			<script type="Zyyy">ສາມັນ</script>
-			<script type="Zzzz">ການຂຽນທີ່ບໍ່ຮູ້ຈັກ</script>
+			<script type="Zzzz">ແບບຂຽນທີ່ບໍ່ຮູ້ຈັກ</script>
 		</scripts>
 		<territories>
 			<territory type="001">ໂລກ</territory>
@@ -711,7 +722,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="014">ອາຟຣິກາຕາເວັນອອກ</territory>
 			<territory type="015">ອາຟຣິກາເໜືອ</territory>
 			<territory type="017">ອາຟຣິກາກາງ</territory>
-			<territory type="018">ອາຟຣິກາໃຕ້</territory>
+			<territory type="018">ອາຟຣິກາຕອນໃຕ້</territory>
 			<territory type="019">ອາເມຣິກາ</territory>
 			<territory type="021">ພາກເໜືອອາເມລີກາ</territory>
 			<territory type="029">ຄາຣິບບຽນ</territory>
@@ -730,30 +741,31 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">ຢູໂຣບຕາເວັນອອກ</territory>
 			<territory type="154">ຢູໂຣບເໜືອ</territory>
 			<territory type="155">ຢູໂຣບຕາເວັນຕົກ</territory>
+			<territory type="202">ຊັບ ຊາຮາຣານ ອາຟຣິກາ</territory>
 			<territory type="419">ລາຕິນ ອາເມລິກາ</territory>
 			<territory type="AC">ເກາະອາເຊນຊັນ</territory>
 			<territory type="AD">ອັນດໍຣາ</territory>
 			<territory type="AE">ສະຫະລັດອາຣັບເອມິເຣດ</territory>
-			<territory type="AF">ອາຟການິສຖານ</territory>
-			<territory type="AG">ອາທິກົວ ບາບູດາ</territory>
+			<territory type="AF">ອາຟການິດສະຖານ</territory>
+			<territory type="AG">ແອນທິກົວ ແລະ ບາບູດາ</territory>
 			<territory type="AI">ແອນກຸຍລາ</territory>
 			<territory type="AL">ແອວເບເນຍ</territory>
 			<territory type="AM">ອາເມເນຍ</territory>
-			<territory type="AO">ອັນໂກລາ</territory>
+			<territory type="AO">ແອງໂກລາ</territory>
 			<territory type="AQ">ແອນຕາດຕິກາ</territory>
 			<territory type="AR">ອາເຈນທິນາ</territory>
 			<territory type="AS">ອາເມຣິກາ ຊາມົວ</territory>
-			<territory type="AT">ໂອຕາລິກ</territory>
+			<territory type="AT">ອອສເທຣຍ</territory>
 			<territory type="AU">ອອສເຕຣເລຍ</territory>
-			<territory type="AW">ອໍຣູບາ</territory>
+			<territory type="AW">ອາຣູບາ</territory>
 			<territory type="AX">ຫມູ່ເກາະໂອລັນ</territory>
 			<territory type="AZ">ອາເຊີໄບຈານ</territory>
 			<territory type="BA">ບອດສະເນຍ ແລະ ແຮສໂກວີນາ</territory>
 			<territory type="BB">ບາບາໂດສ</territory>
 			<territory type="BD">ບັງກະລາເທດ</territory>
-			<territory type="BE">ແບລຊິກ</territory>
+			<territory type="BE">ເບວຢຽມ</territory>
 			<territory type="BF">ເບີກິນາ ຟາໂຊ</territory>
-			<territory type="BG">ບູລກາຣິ</territory>
+			<territory type="BG">ບັງກາເຣຍ</territory>
 			<territory type="BH">ບາເຣນ</territory>
 			<territory type="BI">ບູຣຸນດິ</territory>
 			<territory type="BJ">ເບນິນ</territory>
@@ -762,14 +774,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BN">ບຣູໄນ</territory>
 			<territory type="BO">ໂບລິເວຍ</territory>
 			<territory type="BQ">ຄາຣິບບຽນ ເນເທີແລນ</territory>
-			<territory type="BR">ບະເລຊີນ</territory>
+			<territory type="BR">ບຣາຊິວ</territory>
 			<territory type="BS">ບາຮາມາສ</territory>
 			<territory type="BT">ພູຖານ</territory>
 			<territory type="BV">ເກາະບູເວດ</territory>
 			<territory type="BW">ບອດສະວານາ</territory>
 			<territory type="BY">ເບວບາຣຸສ</territory>
 			<territory type="BZ">ເບລີຊ</territory>
-			<territory type="CA">ການາດາ</territory>
+			<territory type="CA">ແຄນາດາ</territory>
 			<territory type="CC">ຫມູ່ເກາະໂກໂກສ</territory>
 			<territory type="CD">ຄອງໂກ - ຄິນຊາຊາ</territory>
 			<territory type="CD" alt="variant">ຄອງໂກ (ສາທາລະນະລັດປະຊາທິປະໄຕ)</territory>
@@ -780,18 +792,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CI">ໂຄຕີ ວົວ</territory>
 			<territory type="CI" alt="variant">ໄອໂວຣີ ໂຄທ</territory>
 			<territory type="CK">ໝູ່ເກາະຄຸກ</territory>
-			<territory type="CL">ຈີເລ</territory>
+			<territory type="CL">ຊິລີ</territory>
 			<territory type="CM">ຄາເມຣູນ</territory>
 			<territory type="CN">ຈີນ</territory>
 			<territory type="CO">ໂຄລົມເບຍ</territory>
 			<territory type="CP">ເກາະຄລິບເປີຕັນ</territory>
 			<territory type="CR">ໂຄສຕາ ຣິກາ</territory>
-			<territory type="CU">ກຸຍບາ</territory>
+			<territory type="CU">ຄິວບາ</territory>
 			<territory type="CV">ເຄບ ເວີດ</territory>
 			<territory type="CW">ຄູຣາຊາວ</territory>
 			<territory type="CX">ເກາະຄຣິສມາດ</territory>
 			<territory type="CY">ໄຊປຣັສ</territory>
-			<territory type="CZ">ສາທາລະນະລັດເຊກ</territory>
+			<territory type="CZ">ເຊັກເຊຍ</territory>
+			<territory type="CZ" alt="variant">ສາທາລະນະລັດເຊັກ</territory>
 			<territory type="DE">ເຢຍລະມັນ</territory>
 			<territory type="DG">ດິເອໂກ ກາເຊຍ</territory>
 			<territory type="DJ">ຈິບູຕິ</territory>
@@ -808,7 +821,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">ສະເປນ</territory>
 			<territory type="ET">ອີທິໂອເປຍ</territory>
 			<territory type="EU">ສະຫະພາບຢູໂຣບ</territory>
-			<territory type="FI">ຝຽກລັງ</territory>
+			<territory type="EZ">ເຂດຢູໂຣບ</territory>
+			<territory type="FI">ຟິນແລນ</territory>
 			<territory type="FJ">ຟິຈິ</territory>
 			<territory type="FK">ຫມູ່ເກາະຟອກແລນ</territory>
 			<territory type="FK" alt="variant">ໝູ່ເກາະຟອກແລນ (ອິສລາສ ມາວິນນາສ)</territory>
@@ -828,15 +842,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GM">ສາທາລະນະລັດແກມເບຍ</territory>
 			<territory type="GN">ກິນີ</territory>
 			<territory type="GP">ກົວດາລູບ</territory>
-			<territory type="GQ">ອີຄົວໂຕຣຽວ ກີນີ</territory>
+			<territory type="GQ">ເອຄົວໂທຣຽວ ກີນີ</territory>
 			<territory type="GR">ກຣີຊ</territory>
-			<territory type="GS">ໝູ່ເກາະຈໍເຈຍ &amp; ເຊົາ ແຊນວິດ</territory>
+			<territory type="GS">ໝູ່ເກາະ ຈໍເຈຍຕອນໃຕ້ ແລະ ແຊນວິດຕອນໃຕ້</territory>
 			<territory type="GT">ກົວເທມາລາ</territory>
-			<territory type="GU">ກວມ</territory>
+			<territory type="GU">ກວາມ</territory>
 			<territory type="GW">ກິນີ-ບິສເຊົາ</territory>
 			<territory type="GY">ກາຍຢານາ</territory>
-			<territory type="HK">ຮອງກົງ ເຂດປົກຄອງພິເສດ ຈີນ</territory>
-			<territory type="HK" alt="short">ຮອງກົງ</territory>
+			<territory type="HK">ຮົງກົງ ເຂດປົກຄອງພິເສດ ຈີນ</territory>
+			<territory type="HK" alt="short">ຮົງກົງ</territory>
 			<territory type="HM">ໝູ່ເກາະເຮີດ &amp; ແມັກໂດນອລ</territory>
 			<territory type="HN">ຮອນດູຣັສ</territory>
 			<territory type="HR">ໂຄຣເອເທຍ</territory>
@@ -844,13 +858,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="HU">ຮັງກາຣີ</territory>
 			<territory type="IC">ໝູ່ເກາະຄານາຣີ</territory>
 			<territory type="ID">ອິນໂດເນເຊຍ</territory>
-			<territory type="IE">ໄອຣ໌ແລນ</territory>
+			<territory type="IE">ໄອແລນ</territory>
 			<territory type="IL">ອິສຣາເອວ</territory>
 			<territory type="IM">ເອວ ອອບ ແມນ</territory>
 			<territory type="IN">ອິນເດຍ</territory>
-			<territory type="IO">ເຂດແດນບຣິທິສອິນດຽນໂອຊຽນ</territory>
+			<territory type="IO">ເຂດແດນອັງກິດໃນມະຫາສະມຸດອິນເດຍ</territory>
 			<territory type="IQ">ອີຣັກ</territory>
-			<territory type="IR">ອີຣ່ານ</territory>
+			<territory type="IR">ອີຣານ</territory>
 			<territory type="IS">ໄອສແລນ</territory>
 			<territory type="IT">ອິຕາລີ</territory>
 			<territory type="JE">ເຈີຊີ</territory>
@@ -858,7 +872,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="JO">ຈໍແດນ</territory>
 			<territory type="JP">ຍີ່ປຸ່ນ</territory>
 			<territory type="KE">ເຄນຢາ</territory>
-			<territory type="KG">ຄີກິສຖານ</territory>
+			<territory type="KG">ຄຽກກິດສະຖານ</territory>
 			<territory type="KH">ກຳປູເຈຍ</territory>
 			<territory type="KI">ຄິຣິບາທິ</territory>
 			<territory type="KM">ໂຄໂມໂຣສ</territory>
@@ -866,7 +880,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KP">ເກົາຫລີເໜືອ</territory>
 			<territory type="KR">ເກົາຫລີໃຕ້</territory>
 			<territory type="KW">ກູເວດ</territory>
-			<territory type="KY">ເຄແມນ ໄອແລນ</territory>
+			<territory type="KY">ໝູ່ເກາະ ເຄແມນ</territory>
 			<territory type="KZ">ຄາຊັກສະຖານ</territory>
 			<territory type="LA">ລາວ</territory>
 			<territory type="LB">ເລບານອນ</territory>
@@ -876,7 +890,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="LR">ລິເບີເຣຍ</territory>
 			<territory type="LS">ເລໂຊໂທ</territory>
 			<territory type="LT">ລິທົວເນຍ</territory>
-			<territory type="LU">ລຸກຊຳບົວ</territory>
+			<territory type="LU">ລຸກແຊມເບີກ</territory>
 			<territory type="LV">ລັດເວຍ</territory>
 			<territory type="LY">ລິເບຍ</territory>
 			<territory type="MA">ໂມຣັອກໂຄ</territory>
@@ -884,15 +898,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MD">ໂມນໂດວາ</territory>
 			<territory type="ME">ມອນເຕເນໂກຣ</territory>
 			<territory type="MF">ເຊນ ມາທິນ</territory>
-			<territory type="MG">ມາດາກາສກາ</territory>
+			<territory type="MG">ມາດາກາສະກາ</territory>
 			<territory type="MH">ຫມູ່ເກາະມາແຊວ</territory>
 			<territory type="MK">ແມຊິໂດເນຍ</territory>
 			<territory type="MK" alt="variant">ແມຊິໂດເນຍ (FYROM)</territory>
-			<territory type="ML">ມາລິ</territory>
+			<territory type="ML">ມາລີ</territory>
 			<territory type="MM">ມຽນມາ (ເບີມາ)</territory>
-			<territory type="MN">ມົງໂກລີ</territory>
-			<territory type="MO">ມາເກົ້າ ເຂດປົກຄອງພິເສດ ຈີນ</territory>
-			<territory type="MO" alt="short">ມາເກົ້າ</territory>
+			<territory type="MN">ມອງໂກເລຍ</territory>
+			<territory type="MO">ມາກາວ ເຂດປົກຄອງພິເສດ ຈີນ</territory>
+			<territory type="MO" alt="short">ມາກາວ</territory>
 			<territory type="MP">ຫມູ່ເກາະມາແຊວຕອນເຫນືອ</territory>
 			<territory type="MQ">ມາຕິນີກ</territory>
 			<territory type="MR">ມົວຣິເທເນຍ</territory>
@@ -901,7 +915,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MU">ມົວຣິຊຽສ</territory>
 			<territory type="MV">ມັນດິຟ</territory>
 			<territory type="MW">ມາລາວີ</territory>
-			<territory type="MX">ແມັກຊີໂກ</territory>
+			<territory type="MX">ເມັກຊິໂກ</territory>
 			<territory type="MY">ມາເລເຊຍ</territory>
 			<territory type="MZ">ໂມແຊມບິກ</territory>
 			<territory type="NA">ນາມີເບຍ</territory>
@@ -911,7 +925,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="NG">ໄນຈີເຣຍ</territory>
 			<territory type="NI">ນິກຄາຣາກົວ</territory>
 			<territory type="NL">ເນເທີແລນ</territory>
-			<territory type="NO">ນອກແວ໊</territory>
+			<territory type="NO">ນໍເວ</territory>
 			<territory type="NP">ເນປານ</territory>
 			<territory type="NR">ນາອູຣູ</territory>
 			<territory type="NU">ນີອູເອ</territory>
@@ -919,23 +933,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="OM">ໂອມານ</territory>
 			<territory type="PA">ພານາມາ</territory>
 			<territory type="PE">ເປຣູ</territory>
-			<territory type="PF">ເຟຣນຊ໌ ໂພລີນີເຊຍ</territory>
+			<territory type="PF">ເຟຣນຊ໌ ໂພລິນີເຊຍ</territory>
 			<territory type="PG">ປາປົວນິວກີນີ</territory>
 			<territory type="PH">ຟິລິບປິນ</territory>
-			<territory type="PK">ປາກິສຖານ</territory>
-			<territory type="PL">ໂປໂລຍ</territory>
+			<territory type="PK">ປາກິດສະຖານ</territory>
+			<territory type="PL">ໂປແລນ</territory>
 			<territory type="PM">ເຊນ ປີແອ ມິເກວລອນ</territory>
 			<territory type="PN">ໝູ່ເກາະພິດແຄນ</territory>
 			<territory type="PR">ເພືອໂຕ ຣິໂກ</territory>
 			<territory type="PS">ດິນແດນ ປາເລສຕິນຽນ</territory>
-			<territory type="PS" alt="short">ປາເລສຕິນ</territory>
+			<territory type="PS" alt="short">ປາເລສຕາຍ</territory>
 			<territory type="PT">ພອລທູໂກ</territory>
-			<territory type="PW">ປາເລົາ</territory>
+			<territory type="PW">ປາລາວ</territory>
 			<territory type="PY">ພາຣາກວຍ</territory>
 			<territory type="QA">ກາຕາ</territory>
 			<territory type="QO">ເຂດຫ່າງໄກໂອຊີເນຍ</territory>
 			<territory type="RE">ເຣອູນິຍົງ</territory>
-			<territory type="RO">ໂຣມານີ</territory>
+			<territory type="RO">ໂຣແມເນຍ</territory>
 			<territory type="RS">ເຊີເບຍ</territory>
 			<territory type="RU">ຣັດເຊຍ</territory>
 			<territory type="RW">ຣວັນດາ</territory>
@@ -952,7 +966,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SL">ເຊຍຣາ ລີໂອນ</territory>
 			<territory type="SM">ແຊນ ມາຣິໂນ</territory>
 			<territory type="SN">ເຊນີໂກລ</territory>
-			<territory type="SO">ໂຊມາລີ</territory>
+			<territory type="SO">ໂຊມາເລຍ</territory>
 			<territory type="SR">ຊູຣິນາມ</territory>
 			<territory type="SS">ຊູດານໃຕ້</territory>
 			<territory type="ST">ເຊົາທູເມ ແລະ ພຣິນຊິບ</territory>
@@ -966,11 +980,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TF">ເຂດແດນທາງໃຕ້ຂອຝຮັ່ງ</territory>
 			<territory type="TG">ໂຕໂກ</territory>
 			<territory type="TH">ໄທ</territory>
-			<territory type="TJ">ທາຈິກິສຖານ</territory>
+			<territory type="TJ">ທາຈິກິດສະຖານ</territory>
 			<territory type="TK">ໂຕເກເລົາ</territory>
 			<territory type="TL">ທິມໍ-ເລສເຕ</territory>
 			<territory type="TL" alt="variant">ທິມໍ ຕາເວັນອອກ</territory>
-			<territory type="TM">ເທີກເມນິສຖານ</territory>
+			<territory type="TM">ເທີກເມນິສະຖານ</territory>
 			<territory type="TN">ຕູນິເຊຍ</territory>
 			<territory type="TO">ທອງກາ</territory>
 			<territory type="TR">ເທີຄີ</territory>
@@ -981,23 +995,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">ຢູເຄຣນ</territory>
 			<territory type="UG">ອູການດາ</territory>
 			<territory type="UM">ໝູ່ເກາະຮອບນອກຂອງສະຫະລັດຯ</territory>
+			<territory type="UN">ສະຫະປະຊາຊາດ</territory>
+			<territory type="UN" alt="short">ຢູເອັນ</territory>
 			<territory type="US">ສະຫະລັດ</territory>
 			<territory type="US" alt="short">ສະຫະລັດຯ</territory>
 			<territory type="UY">ອູຣຸກວຍ</territory>
-			<territory type="UZ">ອຸສເບກິສຖານ</territory>
+			<territory type="UZ">ອຸສເບກິສະຖານ</territory>
 			<territory type="VA">ນະຄອນ ວາຕິກັນ</territory>
-			<territory type="VC">ເຊນ ວິນເຊນ &amp; ເກຣເນດິນ</territory>
+			<territory type="VC">ເຊນ ວິນເຊນ ແລະ ເກຣເນດິນ</territory>
 			<territory type="VE">ເວເນຊູເອລາ</territory>
-			<territory type="VG">ໝູ່ເກາະ ບຣິທິຊ ເວີຈິນ</territory>
-			<territory type="VI">ໝູ່ເກາະ ຢູເອສ ເວີຈິນ</territory>
+			<territory type="VG">ໝູ່ເກາະ ເວີຈິນຂອງອັງກິດ</territory>
+			<territory type="VI">ໝູ່ເກາະ ເວີຈິນ ຂອງສະຫະລັດ</territory>
 			<territory type="VN">ຫວຽດນາມ</territory>
 			<territory type="VU">ວານົວຕູ</territory>
-			<territory type="WF">ວາລິສ ແລະ ຟຸຕູນາ</territory>
+			<territory type="WF">ວາລລິສ ແລະ ຟູຕູນາ</territory>
 			<territory type="WS">ຊາມົວ</territory>
 			<territory type="XK">ໂຄໂຊໂວ</territory>
 			<territory type="YE">ເຢເມນ</territory>
 			<territory type="YT">ມາຢັອດ</territory>
-			<territory type="ZA">ອາຟະລິກາໃຕ້</territory>
+			<territory type="ZA">ອາຟຣິກາໃຕ້</territory>
 			<territory type="ZM">ແຊມເບຍ</territory>
 			<territory type="ZW">ຊິມບັບເວ</territory>
 			<territory type="ZZ">ຂົງເຂດທີ່ບໍ່ຮູ້ຈັກ</territory>
@@ -1062,10 +1078,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">ປະຕິທິນ</key>
+			<key type="cf">ຮູບແບບສະກຸນເງິນ</key>
 			<key type="collation">ຮຽງລຳດັບ</key>
 			<key type="currency">ສະກຸນເງິນ</key>
-			<key type="hc">ຮອບວຽນຊົວໂມງ( 12 ຫຼື 24)</key>
-			<key type="lb">ຮູບແບບການຍຸດຜອນຕາມເສັ້ນຕົງ</key>
+			<key type="hc">ຮອບວຽນຊົ່ວໂມງ( 12 ຫຼື 24)</key>
+			<key type="lb">ຮູບແບບເສັ້ນຂັ້ນ</key>
 			<key type="ms">ລະບົບການວັດແທກ</key>
 			<key type="numbers">ຕົວເລກ</key>
 		</keys>
@@ -1085,6 +1102,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">ປະຕິທິນຍີ່ປຸ່ນ</type>
 			<type key="calendar" type="persian">ປະຕິທິນເປີຊຽນ</type>
 			<type key="calendar" type="roc">ປະຕິທິນໄຕ້ຫວັນ</type>
+			<type key="cf" type="account">ຮູບແບບສະກຸນເງິນການບັນຊີ</type>
+			<type key="cf" type="standard">ຮູບແບບສະກຸນເງິນມາດຕະຖານ</type>
 			<type key="collation" type="big5han">ລຽງຕາມອັກສອນຈີນດັ້ງເດີມ</type>
 			<type key="collation" type="dictionary">ລຽງຕາມພົດຈະນານຸກົມ</type>
 			<type key="collation" type="ducet">ຮຽງຕາມລຳດັບຢູນິໂຄດເລີ່ມຕົ້ນ</type>
@@ -1098,32 +1117,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="collation" type="stroke">ລຽງຕາມການລາກເສັ້ນ</type>
 			<type key="collation" type="traditional">ລຽງຕາມແບບດັ້ງເດີມ</type>
 			<type key="collation" type="unihan">ລຽງລຳດັບຕາມຈຳນວນຂີດ</type>
-			<type key="hc" type="h11">ຕາມລະບົບ 12 ຊົວໂມງ (0–11)</type>
-			<type key="hc" type="h12">ຕາມລະບົບ 12 ຊົວໂມງ (1–12)</type>
-			<type key="hc" type="h23">ຕາມລະບົບ 24 ຊົວໂມງ (0–23)</type>
-			<type key="hc" type="h24">ຕາມລະບົບ 24 ຊົວໂມງ (1–24)</type>
-			<type key="lb" type="loose">ຮູບແບບການຍຸດຜອນຕາມເສັ້ນລວມ</type>
-			<type key="lb" type="normal">ຮູບແບບການຍຸດຜອນຕາມປົກກະຕິ</type>
-			<type key="lb" type="strict">ຮູບແບບການຍຸດຜອນແບບເຄັ່ມຫງວດ</type>
-			<type key="ms" type="metric">ລະບົບແມັດຕິດ</type>
-			<type key="ms" type="uksystem">ລະບົບການວັດແທກແບບຕາເວັນຕົກ</type>
+			<type key="hc" type="h11">ຕາມລະບົບ 12 ຊົ່ວໂມງ (0–11)</type>
+			<type key="hc" type="h12">ຕາມລະບົບ 12 ຊົ່ວໂມງ (1–12)</type>
+			<type key="hc" type="h23">ຕາມລະບົບ 24 ຊົ່ວໂມງ (0–23)</type>
+			<type key="hc" type="h24">ຕາມລະບົບ 24 ຊົ່ວໂມງ (1–24)</type>
+			<type key="lb" type="loose">ຮູບແບບເສັ້ນຂັ້ນແບບຫຼວມ</type>
+			<type key="lb" type="normal">ຮູບແບບເສັ້ນຂັ້ນແບບປົກກະຕິ</type>
+			<type key="lb" type="strict">ຮູບແບບເສັ້ນຂັ້ນແບບເຄັ່ງຄັດ</type>
+			<type key="ms" type="metric">ລະບົບເມທຣິກ</type>
+			<type key="ms" type="uksystem">ລະບົບການວັດແທກແບບອິມເພີຣຽວ</type>
 			<type key="ms" type="ussystem">ລະບົບການວັດແທກແບບສະຫະລັດ</type>
 			<type key="numbers" type="arab">ຕົວເລກອາຣາບິກ-ອິນດິກ</type>
 			<type key="numbers" type="arabext">ຕົວເລກອາຣາບິກ-ອິນດິກຕົວເຕັມ</type>
 			<type key="numbers" type="armn">ຕົວເລກອາເມນຽນ</type>
 			<type key="numbers" type="armnlow">ຕົວເລກອາເມນຽນຕົວພິມນ້ອຍ</type>
 			<type key="numbers" type="bali">ຕົວເລກບາລີ</type>
-			<type key="numbers" type="beng">ຕົວເລກເບັງກາລີ</type>
+			<type key="numbers" type="beng">ຕົວເລກບັງກລາ</type>
 			<type key="numbers" type="cham">ຕົວເລກຊຣາມ</type>
-			<type key="numbers" type="deva">ຕົວເລກເນວັນເນກາຣີ</type>
+			<type key="numbers" type="deva">ຕົວເລກເດວານາກາຣີ</type>
 			<type key="numbers" type="ethi">ຕົວເລກເອທິໂອປິກ</type>
 			<type key="numbers" type="fullwide">ຕົວເລກຄວາມກວ້າງເຕັມ</type>
 			<type key="numbers" type="geor">ຕົວເລກຈໍຈຽນ</type>
 			<type key="numbers" type="grek">ຕົວເລກກຣີກ</type>
 			<type key="numbers" type="greklow">ຕົວເລກກຣີກຕົວພິມນ້ອຍ</type>
-			<type key="numbers" type="gujr">ຕົວເລກກຸຈາລາຕິ</type>
+			<type key="numbers" type="gujr">ຕົວເລກກຸຈາຣາທີ</type>
 			<type key="numbers" type="guru">ຕົວເລກກົວມູຄິ</type>
-			<type key="numbers" type="hanidec">ຕົວເລກທົດສະນິນົມຈີນ</type>
+			<type key="numbers" type="hanidec">ຕົວເລກທົດສະນິຍົມຈີນ</type>
 			<type key="numbers" type="hans">ຕົວເລກຈີນແບບຮຽບງ່າຍ</type>
 			<type key="numbers" type="hansfin">ຕົວເລກທາງການເງິນແບບຮຽບງ່າຍຂອງຈີນ</type>
 			<type key="numbers" type="hant">ຕົວເລກຈີນແບບດັ້ງເດີມ</type>
@@ -1133,7 +1152,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="jpan">ຕົວເລກຍີ່ປຸ່ນ</type>
 			<type key="numbers" type="jpanfin">ຕົວເລກທາງການເງິນຂອງຍີ່ປຸ່ນ</type>
 			<type key="numbers" type="kali">ຕົວເລກກາຢາ</type>
-			<type key="numbers" type="khmr">ຕົວເລກຂະໝຽນ</type>
+			<type key="numbers" type="khmr">ຕົວເລກຂະແມ</type>
 			<type key="numbers" type="knda">ຕົວເລກແຄນນາດາ</type>
 			<type key="numbers" type="lana">ຕົວເລກໄທທຳໂຮລາ</type>
 			<type key="numbers" type="lanatham">ຕົວເລກໄທທຳທຳ</type>
@@ -1148,13 +1167,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="mymrshan">ຕົວເລກຊານພະມ້າ</type>
 			<type key="numbers" type="nkoo">ຕົວເລກເອັນໂກ້</type>
 			<type key="numbers" type="olck">ຕົວເລກໂອລຈິກິ</type>
-			<type key="numbers" type="orya">ຕົວເລກໂອຣິຢາ</type>
+			<type key="numbers" type="orya">ຕົວເລກໂອດິອາ</type>
 			<type key="numbers" type="roman">ຕົວເລກໂຣມັນ</type>
 			<type key="numbers" type="romanlow">ຕົວເລກໂຣມັນຕົວພິມນ້ອຍ</type>
 			<type key="numbers" type="saur">ຕົວເລກເສົາລັດທາ</type>
 			<type key="numbers" type="sund">ຕົວເລກຊຸນດາ</type>
 			<type key="numbers" type="talu">ຕົວເລກໄຕລື້ໃໝ່</type>
-			<type key="numbers" type="taml">ຕົວເລກທາມິວແບບດັ້ງເດີມ</type>
+			<type key="numbers" type="taml">ຕົວເລກທາມິລແບບດັ້ງເດີມ</type>
 			<type key="numbers" type="tamldec">ຕົວເລກທາມິວ</type>
 			<type key="numbers" type="telu">ຕົວເລກເຕລູກູ</type>
 			<type key="numbers" type="thai">ຕົວເລກໄທ</type>
@@ -1164,7 +1183,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<measurementSystemNames>
 			<measurementSystemName type="metric">ເມທຣິກ</measurementSystemName>
 			<measurementSystemName type="UK">ອັງກິດ</measurementSystemName>
-			<measurementSystemName type="US">ອາເມລິກາ</measurementSystemName>
+			<measurementSystemName type="US">ອາເມຣິກາ</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">{0}</codePattern>
@@ -1176,6 +1195,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[\u0EC8 \u0EC9 \u0ECA \u0ECB \u0ECC \u0ECD ໆ ກ ຂ ຄ ງ ຈ ສ ຊ ຍ ດ ຕ ຖ ທ ນ ບ ປ ຜ ຝ ພ ຟ ມ ຢ ຣ ລ ວ ຫ ໜ ໝ ອ ຮ ຯ ະ \u0EB1 າ ຳ \u0EB4 \u0EB5 \u0EB6 \u0EB7 \u0EB8 \u0EB9 \u0EBB \u0EBC ຽ ເ ແ ໂ ໃ ໄ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200B ໐ ໑ ໒ ໓ ໔ ໕ ໖ ໗ ໘ ໙]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ກ ຂ ຄ ງ ຈ ສ ຊ ຍ ດ ຕ ຖ ທ ນ ບ ປ ຜ ຝ ພ ຟ ມ ຢ ຣ ລ ວ ຫ {ຫງ} {ຫຍ} {ຫນ} {ຫມ} {ຫລ} {ຫວ} ອ ຮ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1658,9 +1679,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G d MMM y</dateFormatItem>
@@ -1687,7 +1717,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yyyyMMM">G MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">G d MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, G d MMM y</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">G MMMM y</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">G QQQ y</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
 					</availableFormats>
@@ -1732,58 +1762,58 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM-dd – dd</greatestDifference>
-							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, MM-dd – E, MM-dd</greatestDifference>
-							<greatestDifference id="M">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="d">E, dd-MM – E, dd-MM</greatestDifference>
+							<greatestDifference id="M">E, dd-MM – E, dd-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">LLL–LLL</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MM-d – d</greatestDifference>
-							<greatestDifference id="M">MM-d – MM-d</greatestDifference>
+							<greatestDifference id="M">d-MM – d-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, MM-d – E, MM-d</greatestDifference>
-							<greatestDifference id="M">E, MM-d – E, MM-d</greatestDifference>
+							<greatestDifference id="d">E, d-MM – E, d-MM</greatestDifference>
+							<greatestDifference id="M">E, d-MM – E, d-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">G y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">G y-MM – MM</greatestDifference>
-							<greatestDifference id="y">G y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">G y-MM-dd – dd</greatestDifference>
-							<greatestDifference id="M">G y-MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="y">G y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, G y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="M">E, G y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="y">E, G y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">G y-MM – MM</greatestDifference>
-							<greatestDifference id="y">G y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">G y-MM-d – d</greatestDifference>
-							<greatestDifference id="M">G y-MM-dd – MM-d</greatestDifference>
-							<greatestDifference id="y">G y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d">d–d MMM, y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM, y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, G y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="M">E, G y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="y">E, G y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="d">E, G dd-MM-y – E, dd-MM-y</greatestDifference>
+							<greatestDifference id="M">E, G dd-MM-y – E, dd-MM-y</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">G y-MM – MM</greatestDifference>
-							<greatestDifference id="y">G y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1882,22 +1912,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">ວັນອາທິດ</day>
-							<day type="mon">ວັນຈັນ</day>
-							<day type="tue">ວັນອັງຄານ</day>
-							<day type="wed">ວັນພຸດ</day>
-							<day type="thu">ວັນພະຫັດ</day>
-							<day type="fri">ວັນສຸກ</day>
-							<day type="sat">ວັນເສົາ</day>
+							<day type="sun">ອາທິດ</day>
+							<day type="mon">ຈັນ</day>
+							<day type="tue">ອັງຄານ</day>
+							<day type="wed">ພຸດ</day>
+							<day type="thu">ພະຫັດ</day>
+							<day type="fri">ສຸກ</day>
+							<day type="sat">ເສົາ</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun">1</day>
-							<day type="mon">2</day>
-							<day type="tue">3</day>
-							<day type="wed">4</day>
-							<day type="thu">5</day>
-							<day type="fri">6</day>
-							<day type="sat">7</day>
+							<day type="sun">ອາ</day>
+							<day type="mon">ຈ</day>
+							<day type="tue">ອ</day>
+							<day type="wed">ພ</day>
+							<day type="thu">ພຫ</day>
+							<day type="fri">ສຸ</day>
+							<day type="sat">ສ</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">ອາ.</day>
@@ -1929,7 +1959,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="sat">ເສົາ</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun">ອ</day>
+							<day type="sun">ອາ</day>
 							<day type="mon">ຈ</day>
 							<day type="tue">ອ</day>
 							<day type="wed">ພ</day>
@@ -2004,7 +2034,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">ທ່ຽງຄືນ</dayPeriod>
 							<dayPeriod type="am">ກ່ອນທ່ຽງ</dayPeriod>
-							<dayPeriod type="noon">ທ່ຽງ</dayPeriod>
+							<dayPeriod type="noon">ຕອນທ່ຽງ</dayPeriod>
 							<dayPeriod type="pm">ຫຼັງທ່ຽງ</dayPeriod>
 							<dayPeriod type="morning1">ຕອນເຊົ້າ</dayPeriod>
 							<dayPeriod type="afternoon1">ຕອນບ່າຍ</dayPeriod>
@@ -2012,19 +2042,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">ກາງຄືນ</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">ທ່ຽງຄືນ</dayPeriod>
-							<dayPeriod type="am">ຕອນເຊົ້າ</dayPeriod>
+							<dayPeriod type="midnight">ທຄ</dayPeriod>
+							<dayPeriod type="am">ກທ</dayPeriod>
 							<dayPeriod type="noon">ທ</dayPeriod>
 							<dayPeriod type="pm">ຫຼທ</dayPeriod>
 							<dayPeriod type="morning1">ຕອນເຊົ້າ</dayPeriod>
 							<dayPeriod type="afternoon1">ຕອນທ່ຽງ</dayPeriod>
 							<dayPeriod type="evening1">ຕອນແລງ</dayPeriod>
-							<dayPeriod type="night1">ກາງຄືນ1</dayPeriod>
+							<dayPeriod type="night1">ກາງຄືນ</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">ທ່ຽງຄືນ</dayPeriod>
 							<dayPeriod type="am">ກ່ອນທ່ຽງ</dayPeriod>
-							<dayPeriod type="noon">ທ່ຽງ</dayPeriod>
+							<dayPeriod type="noon">ຕອນທ່ຽງ</dayPeriod>
 							<dayPeriod type="pm">ຫຼັງທ່ຽງ</dayPeriod>
 							<dayPeriod type="morning1">ຕອນເຊົ້າ</dayPeriod>
 							<dayPeriod type="afternoon1">ຕອນບ່າຍ</dayPeriod>
@@ -2036,7 +2066,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">ທ່ຽງ​ຄືນ</dayPeriod>
 							<dayPeriod type="am">ກ່ອນທ່ຽງ</dayPeriod>
-							<dayPeriod type="noon">ຕອນທ່ຽງ</dayPeriod>
+							<dayPeriod type="noon">ທ່ຽງ</dayPeriod>
 							<dayPeriod type="pm">ຫຼັງທ່ຽງ</dayPeriod>
 							<dayPeriod type="morning1">​ເຊົ້າ</dayPeriod>
 							<dayPeriod type="afternoon1">ສວຍ</dayPeriod>
@@ -2044,17 +2074,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">​ກາງ​ຄືນ</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">ທ່ຽງ​ຄືນ</dayPeriod>
+							<dayPeriod type="midnight">ທຄ</dayPeriod>
 							<dayPeriod type="am">ກທ</dayPeriod>
 							<dayPeriod type="noon">ຕອນທ່ຽງ</dayPeriod>
 							<dayPeriod type="pm">ຫຼທ</dayPeriod>
-							<dayPeriod type="morning1">​ເຊົ້າ</dayPeriod>
-							<dayPeriod type="afternoon1">ສວຍ</dayPeriod>
-							<dayPeriod type="evening1">ແລງ</dayPeriod>
-							<dayPeriod type="night1">​ກາງ​ຄືນ</dayPeriod>
+							<dayPeriod type="morning1">ຊ</dayPeriod>
+							<dayPeriod type="afternoon1">ສ</dayPeriod>
+							<dayPeriod type="evening1">ລ</dayPeriod>
+							<dayPeriod type="night1">ກຄ</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">ທ່ຽງ​ຄືນ</dayPeriod>
+							<dayPeriod type="midnight">ທ່ຽງຄືນ</dayPeriod>
 							<dayPeriod type="am">ກ່ອນທ່ຽງ</dayPeriod>
 							<dayPeriod type="noon">ຕອນທ່ຽງ</dayPeriod>
 							<dayPeriod type="pm">ຫຼັງທ່ຽງ</dayPeriod>
@@ -2145,8 +2175,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2173,6 +2208,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">ອາທິດທີ່ W ຂອງເດືອນ M</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -2181,9 +2217,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">ອາທິດທີ່ w ຂອງປີ Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -2954,6 +2991,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>ສະໄໝ</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>ສະໄໝ</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>ສະໄໝ</displayName>
+			</field>
 			<field type="year">
 				<displayName>ປີ</displayName>
 				<relative type="-1">ປີກາຍ</relative>
@@ -2967,7 +3010,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName>ປ.</displayName>
+				<displayName>ປີ</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ໃນອີກ {0} ປີ</relativeTimePattern>
 				</relativeTime>
@@ -2976,7 +3019,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
-				<displayName>ປ.</displayName>
+				<displayName>ປີ</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ໃນອີກ {0} ປີ</relativeTimePattern>
 				</relativeTime>
@@ -2985,30 +3028,33 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="quarter">
-				<displayName>ໄຕມາດ</displayName>
+				<displayName>ໄຕຣມາດ</displayName>
+				<relative type="-1">ໄຕຣມາດກ່ອນໜ້າ</relative>
+				<relative type="0">ໄຕຣມາດນີ້</relative>
+				<relative type="1">ໄຕຣມາດໜ້າ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ໃນອີກ {0} ຄວດເຕີ</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນອີກ {0} ໄຕຣມາດ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ຄວດເຕີກ່ອນ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ໄຕຣມາດກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-short">
 				<displayName>ຕມ.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ໃນອີກ {0} ຄຕ.</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນ {0} ຕມ.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ຄຕ. ກ່ອນ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ຕມ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
 				<displayName>ຕມ.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} ຄຕ.</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນ {0} ຕມ.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} ຄຕ.</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ຕມ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -3052,6 +3098,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ອາທິດກ່ອນ</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>ອາທິດທີ {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>ອ.</displayName>
@@ -3061,15 +3108,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ອທ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>ອາທິດທີ {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>ອ.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} ອທ.</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນອີກ {0} ອທ.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ອທ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>ອາທິດທີ {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>ອາທິດຂອງເດືອນ</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>ອທ ຂອງ ດ</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>ອທ ຂອງ ດ</displayName>
 			</field>
 			<field type="day">
 				<displayName>ມື້</displayName>
@@ -3113,119 +3171,276 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} ມື້ກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>ມື້ຂອງປີ</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>ມື້ຂອງປີ</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>ມື້ຂອງປີ</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>ມື້ຂອງອາທິດ</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>ມື້ຂອງອາທິດ</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>ມື້ຂອງອາທິດ</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>ມື້ເຮັດວຽກຂອງເດືອນ</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>ມຮວ ຂອງ ດ</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>ມຮວ ຂອງ ດ</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">ວັນອາທິດແລ້ວ</relative>
 				<relative type="0">ວັນອາທິດນີ້</relative>
 				<relative type="1">ວັນອາທິດໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນອາທິດ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນອາທິດກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">ວັນທິດແລ້ວ</relative>
-				<relative type="0">ວັນອາທິດນີ້</relative>
-				<relative type="1">ວັນອາທິດໜ້າ</relative>
+				<relative type="0">ວັນທິດນີ້</relative>
+				<relative type="1">ວັນທິດໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນອາທິດ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນອາທິດກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">ອາ. ແລ້ວ</relative>
 				<relative type="0">ອາ. ນີ້</relative>
 				<relative type="1">ອາ. ໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນອາທິດ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນອາທິດກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">ວັນຈັນແລ້ວ</relative>
 				<relative type="0">ວັນຈັນນີ້</relative>
 				<relative type="1">ວັນຈັນໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນຈັນ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນຈັນກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">ຈັນແລ້ວ</relative>
 				<relative type="0">ຈັນນີ້</relative>
 				<relative type="1">ຈັນໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນຈັນ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນຈັນກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">ຈ. ແລ້ວ</relative>
 				<relative type="0">ຈ. ນີ້</relative>
 				<relative type="1">ຈ. ໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນຈັນ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນຈັນກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">ວັນອັງຄານແລ້ວ</relative>
 				<relative type="0">ວັນອັງຄານນີ້</relative>
 				<relative type="1">ວັນອັງຄານໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນອັງຄານ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນອັງຄານກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">ອັງຄານແລ້ວ</relative>
 				<relative type="0">ອັງຄານນີ້</relative>
 				<relative type="1">ອັງຄານໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນອັງຄານ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນອັງຄານກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
-				<relative type="-1">ອ. ແລ້ວ</relative>
-				<relative type="0">ອ. ນີ້</relative>
-				<relative type="1">ອ. ໜ້າ</relative>
+				<relative type="-1">ອັງຄານແລ້ວ</relative>
+				<relative type="0">ອັງຄານນີ້</relative>
+				<relative type="1">ອັງຄານໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນອັງຄານ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນອັງຄານກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">ວັນພຸດແລ້ວ</relative>
 				<relative type="0">ວັນພຸດນີ້</relative>
 				<relative type="1">ວັນພຸດໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນພຸດ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນພຸດກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">ພຸດແລ້ວ</relative>
 				<relative type="0">ພຸດນີ້</relative>
 				<relative type="1">ພຸດໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນພຸດ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນພຸດກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
-				<relative type="-1">ພ. ແລ້ວ</relative>
-				<relative type="0">ພ. ນີ້</relative>
-				<relative type="1">ພ. ໜ້າ</relative>
+				<relative type="-1">ພຸ. ແລ້ວ</relative>
+				<relative type="0">ພຸ. ນີ້</relative>
+				<relative type="1">ພຸ. ໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນພຸດ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນພຸດກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">ວັນພະຫັດແລ້ວ</relative>
 				<relative type="0">ວັນພະຫັດນີ້</relative>
 				<relative type="1">ວັນພະຫັດໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນພະຫັດ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນພະຫັດກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">ພະຫັດແລ້ວ</relative>
 				<relative type="0">ພະຫັດນີ້</relative>
 				<relative type="1">ພະຫັດໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນພະຫັດ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນພະຫັດກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">ພຫ. ແລ້ວ</relative>
 				<relative type="0">ພຫ. ນີ້</relative>
 				<relative type="1">ພຫ. ໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນພະຫັດ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນພະຫັດກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">ວັນສຸກແລ້ວ</relative>
 				<relative type="0">ວັນສຸກນີ້</relative>
 				<relative type="1">ວັນສຸກໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນອີກ {0} ວັນສຸກ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນສຸກກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">ສຸກແລ້ວ</relative>
 				<relative type="0">ສຸກນີ້</relative>
 				<relative type="1">ສຸກໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນອີກ {0} ວັນສຸກ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນສຸກກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">ສຸ. ແລ້ວ</relative>
 				<relative type="0">ສຸ. ນີ້</relative>
 				<relative type="1">ສຸ. ໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນອີກ {0} ວັນສຸກ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນສຸກກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">ວັນເສົາແລ້ວ</relative>
 				<relative type="0">ວັນເສົານີ້</relative>
 				<relative type="1">ວັນເສົາໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນເສົາ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນເສົາກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">ເສົາແລ້ວ</relative>
 				<relative type="0">ເສົານີ້</relative>
 				<relative type="1">ເສົາໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນເສົາ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນເສົາກ່ອນ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">ສ. ແລ້ວ</relative>
 				<relative type="0">ສ. ນີ້</relative>
 				<relative type="1">ສ. ໜ້າ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ໃນ {0} ວັນເສົາ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ວັນເສົາກ່ອນ</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>ກ່ອນທ່ຽງ/ຫຼັງທ່ຽງ</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>ກ່ອນທ່ຽງ/ຫຼັງທ່ຽງ</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>ກ່ອນທ່ຽງ/ຫຼັງທ່ຽງ</displayName>
+			</field>
 			<field type="hour">
 				<displayName>ຊົ່ວໂມງ</displayName>
+				<relative type="0">ຊົ່ວໂມງນີ້</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ໃນອີກ {0} ຊົ່ວໂມງ</relativeTimePattern>
 				</relativeTime>
@@ -3236,23 +3451,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="hour-short">
 				<displayName>ຊມ.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ໃນອີກ {0} ຊົ່ວໂມງ</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນອີກ {0} ຊມ.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ຊົ່ວໂມງກ່ອນ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ຊມ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-narrow">
-				<displayName>ຊມ</displayName>
+				<displayName>ຊມ.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ໃນອີກ {0} ຊົ່ວໂມງ</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນອີກ {0} ຊມ.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ຊົ່ວໂມງກ່ອນ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ຊມ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>ນາທີ</displayName>
+				<relative type="0">ນາທີນີ້</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} ໃນອີກ 0 ນາທີ</relativeTimePattern>
 				</relativeTime>
@@ -3263,19 +3479,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="minute-short">
 				<displayName>ນທ.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ໃນອີກ {0} ນາທີ</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນ {0} ນທ.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ນາທີກ່ອນ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ນທ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute-narrow">
-				<displayName>ນ.</displayName>
+				<displayName>ນທ.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ໃນອີກ {0} ນາທີ</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນ {0} ນທ.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ນາທີກ່ອນ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ນທ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second">
@@ -3291,22 +3507,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="second-short">
 				<displayName>ວິ.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ໃນອີກ {0} ວິນາທີ</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນ {0} ວິ.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ວິນາທີກ່ອນ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ວິ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
-				<displayName>ວ.</displayName>
+				<displayName>ວິ.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ໃນອີກ {0} ວິນາທີ</relativeTimePattern>
+					<relativeTimePattern count="other">ໃນ {0} ວິ.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} ວິນາທີກ່ອນ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ວິ. ກ່ອນ</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="zone">
+				<displayName>ເຂດເວລາ</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>ເຂດເວລາ</displayName>
+			</field>
+			<field type="zone-narrow">
 				<displayName>ເຂດເວລາ</displayName>
 			</field>
 		</fields>
@@ -3315,9 +3537,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>ເວລາ {0}</regionFormat>
-			<regionFormat type="daylight">{0} (+1)</regionFormat>
-			<regionFormat type="standard">{0} (+0)</regionFormat>
+			<regionFormat type="daylight">ເວລາກາງເວັນ {0}</regionFormat>
+			<regionFormat type="standard">ເວລາມາດຕະຖານ {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>ຊານຕາ ອິດຊາເບວ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ໂຮໂນລູລູ</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>ເວລາສາກົນເຊີງພິກັດ</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>ບໍ່ຮູ້ຊື່ເມືອງ</exemplarCity>
 			</zone>
@@ -3331,7 +3564,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ຄາບູ</exemplarCity>
 			</zone>
 			<zone type="America/Antigua">
-				<exemplarCity>ແອນຕີກາ</exemplarCity>
+				<exemplarCity>ແອນທິກົວ</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
 				<exemplarCity>ແອນກິນລາ</exemplarCity>
@@ -3582,6 +3815,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>ແວນຄູເວີ</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>ຟອດ ເນວສັນ</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>ດໍສັນ ຄຣີກ</exemplarCity>
 			</zone>
@@ -3678,6 +3914,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>ເອສເຕີ</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>ພຸນທາ ອະຣີນາສ໌</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>ຊັນຕີອາໂກ</exemplarCity>
 			</zone>
@@ -3710,6 +3949,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>ນິໂຄເຊຍ</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>ຟາມາກັສທາ</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>ປຣາກ</exemplarCity>
@@ -3820,7 +4062,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ທູເລ</exemplarCity>
 			</zone>
 			<zone type="America/Godthab">
-				<exemplarCity>ນຸກ</exemplarCity>
+				<exemplarCity>ນູກ</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
 				<exemplarCity>ອິໂຕຄໍທົວມິດ</exemplarCity>
@@ -3969,6 +4211,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>ອໍຣໍ</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>ອັດທີເຣົາ</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>ອັດໂທບີ</exemplarCity>
 			</zone>
@@ -4083,9 +4328,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Tijuana">
 				<exemplarCity>ທີຈົວນາ</exemplarCity>
 			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>ຊານຕາ ອິດຊາເບວ</exemplarCity>
-			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>ເອໂມຊິໂຢ</exemplarCity>
 			</zone>
@@ -4168,7 +4410,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ມາສຄັດ</exemplarCity>
 			</zone>
 			<zone type="America/Panama">
-				<exemplarCity>ປານາມາ</exemplarCity>
+				<exemplarCity>ພານາມາ</exemplarCity>
 			</zone>
 			<zone type="America/Lima">
 				<exemplarCity>ລີມາ</exemplarCity>
@@ -4251,6 +4493,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>ວອລໂກກຣາດ</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>ຊາຣາທອບ</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>ອາສຕຣາຄານ</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>ອູລີອານອບສຄ໌</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>ກິໂຣບ</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>ຊາມາຣາ</exemplarCity>
 			</zone>
@@ -4262,6 +4516,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>ໂນໂວຊີບີສຄ໌</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>ບານົວ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>ທອມສກ໌</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>ໂນໂວຄຸສເນັດ</exemplarCity>
@@ -4369,7 +4629,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ອຳບາບາເນ</exemplarCity>
 			</zone>
 			<zone type="America/Grand_Turk">
-				<exemplarCity>ແກຣນທັກ</exemplarCity>
+				<exemplarCity>ແກຣນ ເທີກ</exemplarCity>
 			</zone>
 			<zone type="Africa/Ndjamena">
 				<exemplarCity>ເອນຈາເມນ່າ</exemplarCity>
@@ -4431,9 +4691,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>ມິດເວ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ຈອນສະໂຕນ</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>ເວກ</exemplarCity>
 			</zone>
@@ -4443,8 +4700,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>ນອມ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ໂຮໂນລູລູ</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>ຈອນສະໂຕນ</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ແອນເຄີເຣກ</exemplarCity>
@@ -4641,21 +4898,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ເວລາຕາເວັນອອກ</generic>
 					<standard>ເວລາມາດຕະຖານຕາເວັນອອກ</standard>
-					<daylight>ເວລາຕອນທ່ຽງທາງຕາເວັນອອກ</daylight>
+					<daylight>ເວລາກາງເວັນຕາເວັນອອກ</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
 					<generic>ເວລາແຖບພູເຂົາ</generic>
 					<standard>ເວລາມາດຕະຖານແຖບພູເຂົາ</standard>
-					<daylight>ເວລາກາງເວັນແຖວພູເຂົາ</daylight>
+					<daylight>ເວລາກາງເວັນແຖບພູເຂົາ</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>ເວລາປາຊີຟິກ</generic>
-					<standard>ເວລາມາດຕະຖານຂອງປາຊີຟິກ</standard>
-					<daylight>ເວລາກາງເວັນຂອງປາຊີຟິກ</daylight>
+					<generic>ເວລາແປຊິຟິກ</generic>
+					<standard>ເວລາມາດຕະຖານແປຊິຟິກ</standard>
+					<daylight>ເວລາກາງເວັນແປຊິຟິກ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Apia">
@@ -4683,7 +4940,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ເວ​ລາ​ອາ​ຣາ​ບຽນ</generic>
 					<standard>ເວ​ລາ​ມາດ​ຕະ​ຖານອາ​ຣາ​ບຽນ</standard>
-					<daylight>ເວ​ລາ​ຕອນ​ທ່ຽງອາ​ຣາ​ບຽນ</daylight>
+					<daylight>ເວລາກາງເວັນອາຣາບຽນ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
@@ -4858,7 +5115,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ເວລາຄິວບາ</generic>
 					<standard>ເວລາມາດຕະຖານຂອງຄິວບາ</standard>
-					<daylight>ເວລາຕອນທ່ຽງຂອງຄິວບາ</daylight>
+					<daylight>ເວລາກາງເວັນຄິວບາ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
@@ -4935,7 +5192,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>ເວລາຝຣັ່ງຕອນໃຕ້ແລະແອນຕາກຕິກ</standard>
+					<standard>ເວລາຝຣັ່ງຕອນໃຕ້ ແລະ ແອນຕາກຕິກ</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
@@ -5063,7 +5320,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ເວ​ລາ​ອິ​ສ​ຣາ​ເອວ</generic>
 					<standard>ເວ​ລາ​ມາດ​ຕະ​ຖານອິ​ສ​ຣາ​ເອວ</standard>
-					<daylight>ເວ​ລາ​ຕອນ​ທ່ຽງອິ​ສ​ຣາ​ເອວ</daylight>
+					<daylight>ເວລາກາງເວັນອິສຣາເອວ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
@@ -5104,7 +5361,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
-					<standard>ເວລາຄຣີກິສຖານ</standard>
+					<standard>ເວລາເຄຍກິສຖານ</standard>
 				</long>
 			</metazone>
 			<metazone type="Lanka">
@@ -5179,14 +5436,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>​ເວ​ລາ​ນອດ​ເວ​ສ​ເມັກ​ຊິ​ໂກ</generic>
 					<standard>​ເວ​ລາ​ມາດ​ຕະ​ຖານນອດ​ເວ​ສ​ເມັກ​ຊິ​ໂກ</standard>
-					<daylight>​ເວ​ລາ​ຕອນ​ທ່ຽງນອດ​ເວ​ສ​ເມັກ​ຊິ​ໂກ</daylight>
+					<daylight>ເວລາກາງເວັນເມັກຊິກັນນອດເວສ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
-					<generic>​ເວ​ລາ​ເມັກ​ຊິ​ກັນ​ປາ​ຊິ​ຟິກ</generic>
-					<standard>​ເວ​ລາ​​ມາດ​ຕະ​ຖານເມັກ​ຊິ​ກັນ​ປາ​ຊິ​ຟິກ​</standard>
-					<daylight>​ເວ​ລາ​ຕອນ​ທ່ຽງ​ເມັກ​ຊິ​ກັນ​ປາ​ຊິ​ຟິກ</daylight>
+					<generic>ເວລາແປຊິຟິກເມັກຊິກັນ</generic>
+					<standard>ເວລາມາດຕະຖານແປຊິຟິກເມັກຊິກັນ</standard>
+					<daylight>ເວລາກາງເວັນແປຊິຟິກເມັກຊິກັນ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -5236,7 +5493,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ເວ​ລາ​ນິວ​ຟາວ​ແລນ</generic>
 					<standard>ເວ​ລາ​ມາດ​ຕະ​ຖານ​ນິວ​ຟາວ​ແລນ</standard>
-					<daylight>​ເວ​ລາ​ຕອນ​ທ່ຽງ​ນິວ​ຟາວ​ແລນ</daylight>
+					<daylight>ເວລາກາງເວັນນິວຟາວແລນ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
@@ -5333,6 +5590,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Ponape">
 				<long>
 					<standard>ເວລາໂປເນບ</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>ເວລາປຽງຢາງ</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -5494,7 +5756,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Wallis">
 				<long>
-					<standard>ເວລາວາລລີສແລະຟຸຕູນາ</standard>
+					<standard>ເວລາວາລລິສ ແລະ ຟູຕູນາ</standard>
 				</long>
 			</metazone>
 			<metazone type="Yakutsk">
@@ -5601,8 +5863,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="10000000000" count="other">00 ຕື້</pattern>
 					<pattern type="100000000000" count="other">000 ຕື້</pattern>
 					<pattern type="1000000000000" count="other">0 ລ້ານລ້ານ</pattern>
-					<pattern type="10000000000000" count="other">00 ລ້ານລ້ານ</pattern>
-					<pattern type="100000000000000" count="other">000 ລ້ານລ້ານ</pattern>
+					<pattern type="10000000000000" count="other">00ລລ</pattern>
+					<pattern type="100000000000000" count="other">000ລລ</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -5865,11 +6127,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="BYB">
 				<displayName>ຣູໂບ ເບຣາຣຸສ ໃໝ່(1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>ເບ​ລາ​ຣຸ​ສ​ຊຽນ ຣູ​ເບິນ</displayName>
 				<displayName count="other">ເບ​ລາ​ຣຸ​ສ​ຊຽນ ຣູ​ເບິນ</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>ເບ​ລາ​ຣຸ​ສ​ຊຽນ ຣູ​ເບິນ (2000–2016)</displayName>
+				<displayName count="other">ເບ​ລາ​ຣຸ​ສ​ຊຽນ ຣູ​ເບິນ (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>ໂດ​ລ່າ​ເບ​ລິ​ຊ</displayName>
@@ -5910,6 +6177,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">ຊິ​ລຽນ ເປ​ໂຊ</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>ຢວນຈີນ (ນອກປະເທດ)</displayName>
+				<displayName count="other">ຢວນຈີນ (ນອກປະເທດ)</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>ຈີນ ຢວນ</displayName>
@@ -6063,6 +6334,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ຈໍ​ຈຽນ ລາ​ຣິ</displayName>
 				<displayName count="other">ຈໍ​ຈຽນ ລາ​ຣິ</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">ລາຣີ</symbol>
 			</currency>
 			<currency type="GHC">
@@ -6380,9 +6652,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>ມົວ​ຣິ​ທາ​ນຽນ ອູ​ກິວ​ຢາ (1973–2017)</displayName>
+				<displayName count="other">ມົວ​ຣິ​ທາ​ນຽນ ອູ​ກິວ​ຢາ (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>ມົວ​ຣິ​ທາ​ນຽນ ອູ​ກິວ​ຢາ</displayName>
 				<displayName count="other">ມົວ​ຣິ​ທາ​ນຽນ ອູ​ກິວ​ຢາ</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>ລິຣາ ມອນຕາ</displayName>
@@ -6491,8 +6767,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ອິນຕິ ເປຣູ</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>ເປ​ຣູ​ວຽນ ນູ​ໂວ ໂຊ​ລ໌</displayName>
-				<displayName count="other">ເປ​ຣູ​ວຽນ ນູ​ໂວ ໂຊ​ລ໌</displayName>
+				<displayName>ເປ​ຣູ​ວຽນ ໂຊ​ລ໌</displayName>
+				<displayName count="other">ເປ​ຣູ​ວຽນ ໂຊ​ລ໌</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
@@ -6646,9 +6922,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>ເຊົາ ໂທ​ເມ ແອນ ພ​ຣິນ​ຊິ​ປີ ໂດບຣາ (1977–2017)</displayName>
+				<displayName count="other">ເຊົາ ໂທ​ເມ ແອນ ພ​ຣິນ​ຊິ​ປີ ໂດບຣາ (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>ເຊົາ ໂທ​ເມ ແອນ ພ​ຣິນ​ຊິ​ປີ ໂດບຣາ</displayName>
 				<displayName count="other">ເຊົາ ໂທ​ເມ ແອນ ພ​ຣິນ​ຊິ​ປີ ໂດບຣາ</displayName>
-				<symbol>STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -6773,8 +7053,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
-				<displayName>ອຸສ​ເບ​ກິ​ສ​ຖານ ໂຊມ</displayName>
-				<displayName count="other">ອຸສ​ເບ​ກິ​ສ​ຖານ ໂຊມ</displayName>
+				<displayName>ອຸສເບກິສຖານິ ໂຊມ</displayName>
+				<displayName count="other">ອຸສເບກິສຖານິ ໂຊມ</displayName>
 				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
@@ -6806,7 +7086,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
-				<displayName>ຟຣັງ ເຊຟານ ທະນາຄານລັດອາຟຣິກາກາງ</displayName>
+				<displayName>ສາທາລະນະລັດອາຟຣິກາກາງ</displayName>
 				<displayName count="other">ຟຣັງ ເຊຟານ ທະນາຄານລັດອາຟຣິກາກາງ</displayName>
 				<symbol>FCFA</symbol>
 			</currency>
@@ -6869,8 +7149,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ລະຫັດທົດສອບສະກຸນເງິນ</displayName>
 			</currency>
 			<currency type="XXX">
-				<displayName>ສະ​ກຸນ​ເງິນ​ທີ່ບໍ່​ຮູັ​ຈັກ</displayName>
-				<displayName count="other">ສະ​ກຸນ​ເງິນ​ທີ່ບໍ່​ຮູັ​ຈັກ</displayName>
+				<displayName>ສະກຸນເງິນທີ່ບໍ່ຮູ້ຈັກ</displayName>
+				<displayName count="other">(ສະກຸນເງິນທີ່ບໍ່ຮູ້ຈັກ)</displayName>
 			</currency>
 			<currency type="YDD">
 				<displayName>ດີນາ ເຢເມນ</displayName>
@@ -6930,6 +7210,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other">{0} ມື້</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">ລ້ຽວຂວາທຳອິດ.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">ລ້ຽວຂວາທີ {0}.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -6967,6 +7252,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-kilometer">
 				<displayName>ກິໂລຕາແມັດ</displayName>
 				<unitPattern count="other">{0} ກິໂລຕາແມັດ</unitPattern>
+				<perUnitPattern>{0} ຕໍ່ຕາກິໂລແມັດກ້ອນ</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ເຮັກຕາ</displayName>
@@ -6985,6 +7271,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-mile">
 				<displayName>ຕາ​ລາງໄມລ໌</displayName>
 				<unitPattern count="other">{0} ຕາ​ລາງໄມລ໌</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ເອເຄີ</displayName>
@@ -7007,6 +7294,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ກະຣັດ</displayName>
 				<unitPattern count="other">{0} ກະຣັດ</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>ມິລິກຣັມຕໍ່ເດຊິລິດ</displayName>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ມິລິໂມລຕໍ່ລິດ</displayName>
+				<unitPattern count="other">{0} ມິລິໂມລຕໍ່ລິດ</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ພາດຕໍ່ລ້ານ</displayName>
+				<unitPattern count="other">{0} ພາດຕໍ່ລ້ານ</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ລ/ກມ</displayName>
 				<unitPattern count="other">{0} ລິດຕໍ່ກິໂລແມັດ</unitPattern>
@@ -7018,6 +7317,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ໄມລ໌ຕໍ່ແກລອນ</displayName>
 				<unitPattern count="other">{0} ໄມລ໌ຕໍ່ແກລອນ</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ໄມລ໌ຕໍ່ແກລລອນອັງກິດ</displayName>
+				<unitPattern count="other">{0} ໄມລ໌ຕໍ່ແກລລອນອັງກິດ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -7202,8 +7505,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ປິໂກແມັດ</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName>ໄມ</displayName>
-				<unitPattern count="other">{0} ໄມ</unitPattern>
+				<displayName>ໄມລ໌</displayName>
+				<unitPattern count="other">{0} ໄມລ໌</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>ຫລາ</displayName>
@@ -7238,6 +7541,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-mile-scandinavian">
 				<displayName>ໄມລ໌ສະກັງດີນາວຽນ</displayName>
 				<unitPattern count="other">{0} ໄມລ໌ສະກັງດີນາວຽນ</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ຈຸດ</displayName>
+				<unitPattern count="other">{0} ຈຸດ</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -7353,7 +7660,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>ອົງສາເຊວຊຽສ</displayName>
-				<unitPattern count="other">{0} ອົງສາເຊວຊຽສ</unitPattern>
+				<unitPattern count="other">{0} ອົງສາ ຊີ.</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>ອົງສາຟາເຣນຮາຍ</displayName>
@@ -7435,6 +7742,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0} per gallon</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ແກລລອນອັງກິດ</displayName>
+				<unitPattern count="other">{0} ແກລລອນອັງກິດ</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
 				<unitPattern count="other">{0} qt</unitPattern>
@@ -7501,6 +7813,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-kilometer">
 				<displayName>ກມ²</displayName>
 				<unitPattern count="other">{0} ກມ²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ເຮັກຕາ</displayName>
@@ -7519,6 +7832,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-mile">
 				<displayName>sq miles</displayName>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ເອເຄີ</displayName>
@@ -7541,6 +7855,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ກະຣັດ</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ມິລິໂມນ/ລິດ</displayName>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ພາດ/ລ້ານ</displayName>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ລ/ກມ</displayName>
 				<unitPattern count="other">{0} ລ/ກມ</unitPattern>
@@ -7552,6 +7878,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ໄມລ໌/ແກລ</displayName>
 				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ໄມລ໌/ແກລລອນອັງກິດ</displayName>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -7600,7 +7930,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-year">
 				<displayName>ປີ</displayName>
 				<unitPattern count="other">{0} ປີ</unitPattern>
-				<perUnitPattern>{0}/y</perUnitPattern>
+				<perUnitPattern>{0}/ປີ</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>ເດືອນ</displayName>
@@ -7619,18 +7949,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ຊົ່ວໂມງ</displayName>
-				<unitPattern count="other">{0} ຊມ.</unitPattern>
-				<perUnitPattern>{0}/ຊມ.</perUnitPattern>
+				<unitPattern count="other">{0} ຊມ</unitPattern>
+				<perUnitPattern>{0}/ຊມ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>ນທ.</displayName>
-				<unitPattern count="other">{0} ນທ.</unitPattern>
+				<unitPattern count="other">{0} ນທ</unitPattern>
 				<perUnitPattern>{0}/ນາທີ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>ວິ.</displayName>
-				<unitPattern count="other">{0} ວິ.</unitPattern>
-				<perUnitPattern>{0}/ວິ.</perUnitPattern>
+				<unitPattern count="other">{0} ວິ</unitPattern>
+				<perUnitPattern>{0}/ວິ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ມິນລີວິ</displayName>
@@ -7703,16 +8033,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-kilometer">
 				<displayName>ກມ</displayName>
 				<unitPattern count="other">{0} ກມ</unitPattern>
-				<perUnitPattern>{0}/ກິໂລແມັດ</perUnitPattern>
+				<perUnitPattern>{0}/ກມ</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>ແມັດ</displayName>
 				<unitPattern count="other">{0} ມ</unitPattern>
-				<perUnitPattern>{0}/ແມັດ</perUnitPattern>
+				<perUnitPattern>{0}/ມ</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName>dm</displayName>
-				<unitPattern count="other">{0} dm</unitPattern>
+				<displayName>ດມ</displayName>
+				<unitPattern count="other">{0} ດມ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>ຊມ</displayName>
@@ -7728,15 +8058,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} µm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<displayName>nm</displayName>
-				<unitPattern count="other">{0} nm</unitPattern>
+				<displayName>ນມ</displayName>
+				<unitPattern count="other">{0} ນມ</unitPattern>
 			</unit>
 			<unit type="length-picometer">
-				<displayName>pm</displayName>
-				<unitPattern count="other">{0} pm</unitPattern>
+				<displayName>ປມ</displayName>
+				<unitPattern count="other">{0} ປມ</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName>ໄມ</displayName>
+				<displayName>ໄມລ໌</displayName>
 				<unitPattern count="other">{0} ໄມ</unitPattern>
 			</unit>
 			<unit type="length-yard">
@@ -7746,12 +8076,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-foot">
 				<displayName>ຟຸດ</displayName>
 				<unitPattern count="other">{0} ຟ</unitPattern>
-				<perUnitPattern>{0}/ຟຸດ</perUnitPattern>
+				<perUnitPattern>{0}/ຟ</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>ນິ້ວ</displayName>
 				<unitPattern count="other">{0} ນິ</unitPattern>
-				<perUnitPattern>{0}/ນີວ</perUnitPattern>
+				<perUnitPattern>{0}/ນິ</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>parsecs</displayName>
@@ -7772,6 +8102,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-mile-scandinavian">
 				<displayName>smi</displayName>
 				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>ຈຸດ</displayName>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -7937,7 +8271,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ລິດ</displayName>
-				<unitPattern count="other">{0} ລິດ</unitPattern>
+				<unitPattern count="other">{0} L</unitPattern>
 				<perUnitPattern>{0}/l</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -7968,6 +8302,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>gal</displayName>
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
@@ -8170,7 +8509,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ລິດ</displayName>
-				<unitPattern count="other">{0} ລ</unitPattern>
+				<unitPattern count="other">{0}L</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
@@ -8191,6 +8530,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</units>
 	<listPatterns>
 		<listPattern>
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0} ແລະ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ຫຼື {1}</listPatternPart>
+			<listPatternPart type="2">{0} ຫຼື {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
@@ -8221,5 +8572,102 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>no:n</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — ທັງໝົດ</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — ຄວາມເຂົ້າກັນໄດ້</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — ລ້ອມໄວ້ແລ້ວ</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — ຂະຫຍາຍແລ້ວ</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — ທາງປະຫວັດສາດ</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — ເບັດຕະເລັດ</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — ອື່ນໆ</characterLabelPattern>
+		<characterLabelPattern type="scripts">ແບບຂຽນ — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} ສະໂຕຣກ</characterLabelPattern>
+		<characterLabel type="activities">ການເຄື່ອນໄຫວ</characterLabel>
+		<characterLabel type="african_scripts">ແບບຂຽນອາຟຣິກັນ</characterLabel>
+		<characterLabel type="american_scripts">ແບບຂຽນອາເມຣິກັນ</characterLabel>
+		<characterLabel type="animal">ສັດ</characterLabel>
+		<characterLabel type="animals_nature">ສັດ ແລະ ທຳມະຊາດ</characterLabel>
+		<characterLabel type="arrows">ລູກສອນ</characterLabel>
+		<characterLabel type="body">ຮ່າງກາຍ</characterLabel>
+		<characterLabel type="box_drawing">ການແຕ້ມກ່ອງ</characterLabel>
+		<characterLabel type="braille">ອັກສອນເບຣວ</characterLabel>
+		<characterLabel type="building">ຕຶກ</characterLabel>
+		<characterLabel type="bullets_stars">ຈຸດນຳ/ດາວ</characterLabel>
+		<characterLabel type="consonantal_jamo">ພະຍັນຊະນະຈາໂມ</characterLabel>
+		<characterLabel type="currency_symbols">ສັນຍາລັກສະກຸນເງິນ</characterLabel>
+		<characterLabel type="dash_connector">ຂີດ/ຕົວເຊື່ອມ</characterLabel>
+		<characterLabel type="digits">ຕົວເລກ</characterLabel>
+		<characterLabel type="dingbats">ຟອນສັນຍາລັກ</characterLabel>
+		<characterLabel type="divination_symbols">ສັນຍາລັກພະຍາກອນ</characterLabel>
+		<characterLabel type="downwards_arrows">ລູກສອນຊີ້ລົງ</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">ລູກສອນຊີ້ຂຶ້ນລົງ</characterLabel>
+		<characterLabel type="east_asian_scripts">ແບບຂຽນຊາວເອເຊຍຕາເວັນອອກ</characterLabel>
+		<characterLabel type="emoji">ອີໂມຈິ</characterLabel>
+		<characterLabel type="european_scripts">ແບບຂຽນຢູໂຣບ</characterLabel>
+		<characterLabel type="female">ຍິງ</characterLabel>
+		<characterLabel type="flag">ທຸງ</characterLabel>
+		<characterLabel type="flags">ທຸງ</characterLabel>
+		<characterLabel type="food_drink">ອາຫານ ແລະ ເຄື່ອງດື່ມ</characterLabel>
+		<characterLabel type="format">ຮູບແບບ</characterLabel>
+		<characterLabel type="format_whitespace">ຮູບແບບ ແລະ ຊ່ອງຫວ່າງ</characterLabel>
+		<characterLabel type="full_width_form_variant">ຄ່າປ່ຽນຜັນຮູບແບບຄວາມກວ້າງເຕັມ</characterLabel>
+		<characterLabel type="geometric_shapes">ຮູບຊົງເລຂາຄະນິດ</characterLabel>
+		<characterLabel type="half_width_form_variant">ຄ່າປ່ຽນຜັນຮູບແບບຄວາມເຄິ່ງໜຶ່ງ</characterLabel>
+		<characterLabel type="han_characters">ຕົວອັກສອນຮັນ</characterLabel>
+		<characterLabel type="han_radicals">ໝວດຄຳອັກສອນຈີນ</characterLabel>
+		<characterLabel type="hanja">ຮັນຈາ</characterLabel>
+		<characterLabel type="hanzi_simplified">ຕົວອັກສອນຈີນ (ແບບງ່າຍ)</characterLabel>
+		<characterLabel type="hanzi_traditional">ຕົວອັກສອນຈີນ (ດັ້ງເດີມ)</characterLabel>
+		<characterLabel type="heart">ຫົວໃຈ</characterLabel>
+		<characterLabel type="historic_scripts">ແບບຂຽນປະຫວັດສາດ</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ຕົວອັກສອນຄຳອະທິບາຍພາບສະແດງຄວາມໝາຍ</characterLabel>
+		<characterLabel type="japanese_kana">ຕົວອັກສອນຄານະຍີ່ປຸ່ນ</characterLabel>
+		<characterLabel type="kanbun">ຄັນບຸນ</characterLabel>
+		<characterLabel type="kanji">ຄັນຈິ</characterLabel>
+		<characterLabel type="keycap">ແປ້ນແຄັບ</characterLabel>
+		<characterLabel type="leftwards_arrows">ລູກສອນຊີ້ໄປຊ້າຍ</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">ລູກສອນຊີ້ໄປຊ້າຍຂວາ</characterLabel>
+		<characterLabel type="letterlike_symbols">ສັນຍາລັກແບບຕົວຂຽນ</characterLabel>
+		<characterLabel type="limited_use">ໃຊ້ຈຳກັດ</characterLabel>
+		<characterLabel type="male">ຊາຍ</characterLabel>
+		<characterLabel type="math_symbols">ສັນຍາລັກເລກ</characterLabel>
+		<characterLabel type="middle_eastern_scripts">ແບບຂຽນຕາເວັນອອກກາງ</characterLabel>
+		<characterLabel type="miscellaneous">ເບັດຕະເລັດ</characterLabel>
+		<characterLabel type="modern_scripts">ແບບຂຽນສະໄໝໃໝ່</characterLabel>
+		<characterLabel type="modifier">ຕົວແກ້ໄຂ</characterLabel>
+		<characterLabel type="musical_symbols">ສັນຍາລັກດົນຕີ</characterLabel>
+		<characterLabel type="nature">ທຳມະຊາດ</characterLabel>
+		<characterLabel type="nonspacing">ບໍ່ມີຍະຫວ່າງ</characterLabel>
+		<characterLabel type="numbers">ຕົວເລກ</characterLabel>
+		<characterLabel type="objects">ອອບເຈັກ</characterLabel>
+		<characterLabel type="other">ອື່ນໆ</characterLabel>
+		<characterLabel type="paired">ຈັບຄູ່ແລ້ວ</characterLabel>
+		<characterLabel type="person">ຄົນ</characterLabel>
+		<characterLabel type="phonetic_alphabet">ພະຍັນຊະນະການອອກສຽງ</characterLabel>
+		<characterLabel type="pictographs">ສັນຍາລັກຮູບພາບ</characterLabel>
+		<characterLabel type="place">ສະຖານທີ່</characterLabel>
+		<characterLabel type="plant">ພືດ</characterLabel>
+		<characterLabel type="punctuation">ເຄື່ອງໝາຍວັກຕອນ</characterLabel>
+		<characterLabel type="rightwards_arrows">ລູກສອນຊີ້ໄປຂວາ</characterLabel>
+		<characterLabel type="sign_standard_symbols">ສັນຍາລັກ ປ້າຍ/ມາດຕະຖານ</characterLabel>
+		<characterLabel type="small_form_variant">ຄວາມປ່ຽນຜັນຮູບແບບນ້ອຍ</characterLabel>
+		<characterLabel type="smiley">ຍິ້ມ</characterLabel>
+		<characterLabel type="smileys_people">ຮູບຍິ້ມ ແລະ ຄົນ</characterLabel>
+		<characterLabel type="south_asian_scripts">ແບບຂຽນຊາວເອເຊຍໃຕ້</characterLabel>
+		<characterLabel type="southeast_asian_scripts">ແບບຂຽນຊາວເອເຊຍຕາເວັນອອກສ່ຽງໃຕ້</characterLabel>
+		<characterLabel type="spacing">ຊ່ອງຫວ່າງ</characterLabel>
+		<characterLabel type="sport">ກິລາ</characterLabel>
+		<characterLabel type="symbols">ສັນຍາລັກ</characterLabel>
+		<characterLabel type="technical_symbols">ສັນຍາລັກທາງເທັກນິກ</characterLabel>
+		<characterLabel type="tone_marks">ັວັນນະຍຸດ</characterLabel>
+		<characterLabel type="travel">ທ່ອງທ່ຽວ</characterLabel>
+		<characterLabel type="travel_places">ທ່ອງທ່ຽວ ແລະ ສະຖານທີ່ຕ່າງໆ</characterLabel>
+		<characterLabel type="upwards_arrows">ລູກສອນຊີ້ຂຶ້ນເທິງ</characterLabel>
+		<characterLabel type="variant_forms">ຮູບແບບຄວາມປ່ຽນຜັນ</characterLabel>
+		<characterLabel type="vocalic_jamo">ຈາໂມທີ່ປະກອບດ້ວຍສຽງສະຫລະ</characterLabel>
+		<characterLabel type="weather">ສະພາບອາກາດ</characterLabel>
+		<characterLabel type="western_asian_scripts">ແບບຂຽນຊາວເອເຊຍຕາເວັນຕົກ</characterLabel>
+		<characterLabel type="whitespace">ຊ່ອງຫວ່າງ</characterLabel>
+	</characterLabels>
 </ldml>
-

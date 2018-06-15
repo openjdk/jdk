@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="km"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,54 +19,88 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}៖ {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="aa">ភាសាអាហ្វារ</language>
+			<language type="aa">អាហ្វារ</language>
 			<language type="ab">អាប់ខាហ៊្សាន</language>
-			<language type="ae">ភាសាអាវែស្តង់</language>
+			<language type="ace">អាកហ៊ីនឺស</language>
+			<language type="ada">អាដេងមី</language>
+			<language type="ady">អាឌីហ្គី</language>
+			<language type="ae">អាវេស្ថាន</language>
 			<language type="af">អាហ្វ្រិកាន</language>
 			<language type="agq">អាហ្គីម</language>
+			<language type="ain">អាយនូ</language>
 			<language type="ak">អាកាន</language>
-			<language type="am">អាមហារីច</language>
-			<language type="an">ភាសាអារ៉ាហ្គោន</language>
+			<language type="ale">អាលូត</language>
+			<language type="alt">អាល់តៃខាងត្បូង</language>
+			<language type="am">អាំហារិក</language>
+			<language type="an">អារ៉ាហ្គោន</language>
+			<language type="anp">អាហ្គីកា</language>
 			<language type="ar">អារ៉ាប់</language>
-			<language type="ar_001">អារ៉ាប់ផ្លូវការ</language>
+			<language type="ar_001">អារ៉ាប់ (ស្តង់ដារ)</language>
 			<language type="arn">ម៉ាពូឈី</language>
+			<language type="arp">អារ៉ាប៉ាហូ</language>
 			<language type="as">អាសាមីស</language>
 			<language type="asa">អាស៊ូ</language>
-			<language type="ay">ភាសាអីម៉ារ៉ា</language>
-			<language type="az">អាហ៊្សែរបែហ្សង់</language>
+			<language type="ast">អាស្ទូរី</language>
+			<language type="av">អាវ៉ារីក</language>
+			<language type="awa">អាវ៉ាឌី</language>
+			<language type="ay">អីម៉ារ៉ា</language>
+			<language type="az">អាស៊ែបៃហ្សង់</language>
 			<language type="az" alt="short">អាហ្សេរី</language>
-			<language type="ba">បែស្កឺ</language>
-			<language type="be">បេឡារុស្ស</language>
+			<language type="ba">បាស្គៀ</language>
+			<language type="ban">បាលី</language>
+			<language type="bas">បាសា</language>
+			<language type="be">បេឡារុស</language>
 			<language type="bem">បេមបា</language>
 			<language type="bez">បេណា</language>
-			<language type="bg">ប៊ុលហ្ការី</language>
+			<language type="bg">ប៊ុលហ្គារី</language>
 			<language type="bgn">បាឡូជីខាងលិច</language>
+			<language type="bho">បូចពូរី</language>
+			<language type="bi">ប៊ីស្លាម៉ា</language>
+			<language type="bin">ប៊ីនី</language>
+			<language type="bla">ស៊ីកស៊ីកា</language>
 			<language type="bm">បាម្បារា</language>
 			<language type="bn">បង់ក្លាដែស</language>
 			<language type="bo">ទីបេ</language>
 			<language type="br">ប្រីស្តុន</language>
 			<language type="brx">បូដូ</language>
 			<language type="bs">បូស្នី</language>
+			<language type="bug">ប៊ុកហ្គី</language>
+			<language type="byn">ប្ល៊ីន</language>
 			<language type="ca">កាតាឡាន</language>
 			<language type="ce">ឈីឆេន</language>
+			<language type="ceb">ស៊ីប៊ូអាណូ</language>
 			<language type="cgg">ឈីហ្គា</language>
+			<language type="ch">ឈីម៉ូរ៉ូ</language>
+			<language type="chk">ឈូគី</language>
+			<language type="chm">ម៉ារី</language>
+			<language type="cho">ឆុកតាវ</language>
 			<language type="chr">ឆេរូគី</language>
-			<language type="ckb">ខឺដកណ្តាល</language>
+			<language type="chy">ឈីយីនី</language>
+			<language type="ckb">ឃើដភាគកណ្តាល</language>
 			<language type="co">កូស៊ីខាន</language>
-			<language type="cs">ឆេក</language>
+			<language type="crs">សេសេលវ៉ាគ្រីអូល (បារាំង)</language>
+			<language type="cs">ឆែក</language>
+			<language type="cu">ឈឺជស្លាវិក</language>
 			<language type="cv">ឈូវ៉ាស</language>
 			<language type="cy">វេល</language>
 			<language type="da">ដាណឺម៉ាក</language>
+			<language type="dak">ដាកូតា</language>
+			<language type="dar">ដាចវ៉ា</language>
 			<language type="dav">តៃតា</language>
 			<language type="de">អាល្លឺម៉ង់</language>
+			<language type="dgr">ដូគ្រីប</language>
 			<language type="dje">ហ្សាម៉ា</language>
 			<language type="dsb">សូប៊ីក្រោម</language>
-			<language type="dua">ឌូអាឡា</language>
+			<language type="dua">ឌួលឡា</language>
+			<language type="dv">ទេវីហ៊ី</language>
 			<language type="dyo">ចូឡាហ៊្វុនយី</language>
 			<language type="dz">ដុងខា</language>
+			<language type="dzg">ដាហ្សាហ្គា</language>
 			<language type="ebu">អេមប៊ូ</language>
 			<language type="ee">អ៊ីវ</language>
-			<language type="el">ក្រិច</language>
+			<language type="efi">អ៊ីហ្វិក</language>
+			<language type="eka">អ៊ីកាជុក</language>
+			<language type="el">ក្រិក</language>
 			<language type="en">អង់គ្លេស</language>
 			<language type="en_GB" alt="short">អង់គ្លេស (ច.អ.)</language>
 			<language type="en_US" alt="short">អង់គ្លេស (ស.រ.អ)</language>
@@ -71,193 +108,314 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="es">អេស្ប៉ាញ</language>
 			<language type="es_ES">អេស្ប៉ាញ (អ៊ឺរ៉ុប)</language>
 			<language type="et">អេស្តូនី</language>
-			<language type="eu">បាស្កេ</language>
+			<language type="eu">បាសខ៍</language>
+			<language type="ewo">អ៊ីវ៉ុនដូ</language>
 			<language type="fa">ភឺសៀន</language>
+			<language type="ff">ហ្វ៊ូឡា</language>
 			<language type="fi">ហ្វាំងឡង់</language>
 			<language type="fil">ហ្វីលីពីន</language>
 			<language type="fj">ហ៊្វីជី</language>
 			<language type="fo">ហ្វារូស</language>
+			<language type="fon">ហ្វ៊ុន</language>
 			<language type="fr">បារាំង</language>
+			<language type="fur">ហ៊្វ្រូលាន</language>
 			<language type="fy">ហ្វ្រីស៊ានខាងលិច</language>
 			<language type="ga">អៀរឡង់</language>
+			<language type="gaa">ហ្គា</language>
 			<language type="gag">កាគូស</language>
-			<language type="gd">ភាសាហ្កែលិគ (gd)</language>
+			<language type="gd">ស្កុតហ្កែលិគ</language>
+			<language type="gez">ជីស</language>
+			<language type="gil">ហ្គីលបឺទ</language>
 			<language type="gl">ហ្គាលីស្យាន</language>
 			<language type="gn">ហ្គូរ៉ានី</language>
+			<language type="gor">ហ្គូរុនតាឡូ</language>
 			<language type="gsw">អាល្លឺម៉ង (ស្វីស)</language>
 			<language type="gu">ហ្កុយ៉ារាទី</language>
 			<language type="guz">ហ្គូស៊ី</language>
 			<language type="gv">មេន</language>
+			<language type="gwi">ហ្គីចឈីន</language>
 			<language type="ha">ហូសា</language>
 			<language type="haw">ហាវៃ</language>
-			<language type="he">អ៊ីស្រាអែល</language>
+			<language type="he">ហេប្រឺ</language>
 			<language type="hi">ហិណ្ឌី</language>
+			<language type="hil">ហ៊ីលីហ្គេណុន</language>
+			<language type="hmn">ម៉ុង</language>
 			<language type="hr">ក្រូអាត</language>
 			<language type="hsb">សូប៊ីលើ</language>
 			<language type="ht">ហៃទី</language>
 			<language type="hu">ហុងគ្រី</language>
-			<language type="hy">អារមេនី</language>
-			<language type="ia" draft="unconfirmed">អីនធើលីង</language>
+			<language type="hup">ហ៊ូប៉ា</language>
+			<language type="hy">អាមេនី</language>
+			<language type="hz">ហឺរីរ៉ូ</language>
+			<language type="ia">អីនធើលីង</language>
+			<language type="iba">អ៊ីបាន</language>
+			<language type="ibb">អាយប៊ីប៊ីអូ</language>
 			<language type="id">ឥណ្ឌូណេស៊ី</language>
 			<language type="ig">អ៊ីកបូ</language>
 			<language type="ii">ស៊ីឈាន់យី</language>
+			<language type="ilo">អ៊ីឡូកូ</language>
+			<language type="inh">អ៊ិនហ្គូស</language>
+			<language type="io">អ៊ីដូ</language>
 			<language type="is">អ៊ីស្លង់</language>
 			<language type="it">អ៊ីតាលី</language>
 			<language type="iu">អ៊ីនុកទីទុត</language>
 			<language type="ja">ជប៉ុន</language>
+			<language type="jbo">លុចបាន</language>
 			<language type="jgo">ងុំបា</language>
 			<language type="jmc">ម៉ាឆាំ</language>
 			<language type="jv">ជ្វា</language>
 			<language type="ka">ហ្សក​ហ្ស៊ី</language>
 			<language type="kab">កាប៊ីឡេ</language>
+			<language type="kac">កាឈីន</language>
+			<language type="kaj">ជូ</language>
 			<language type="kam">កាំបា</language>
+			<language type="kbd">កាបាឌៀ</language>
+			<language type="kcg">យ៉ាប់</language>
 			<language type="kde">ម៉ាកូនដេ</language>
 			<language type="kea">កាប៊ូវឺឌៀនូ</language>
+			<language type="kfo">គូរូ</language>
+			<language type="kha">កាស៊ី</language>
 			<language type="khq">គុយរ៉ាឈីនី</language>
 			<language type="ki">គីគូយូ</language>
-			<language type="kk">កាហ្សាក់ស្តង់់</language>
+			<language type="kj">គូនយ៉ាម៉ា</language>
+			<language type="kk">កាហ្សាក់</language>
+			<language type="kkj">កាកូ</language>
 			<language type="kl">កាឡាលលីស៊ុត</language>
 			<language type="kln">កាលែនជីន</language>
 			<language type="km">ខ្មែរ</language>
-			<language type="kn">កន្នដ</language>
+			<language type="kmb">គីមប៊ុនឌូ</language>
+			<language type="kn">ខាណាដា</language>
 			<language type="ko">កូរ៉េ</language>
 			<language type="koi">គូមីភឹមយ៉ាគ</language>
 			<language type="kok">គុនកានី</language>
+			<language type="kpe">គ្លីប</language>
+			<language type="kr">កានូរី</language>
+			<language type="krc">ការ៉ាឆាយបាល់កា</language>
+			<language type="krl">ការីលា</language>
+			<language type="kru">គូរូក</language>
 			<language type="ks">កាស្មៀរ</language>
 			<language type="ksb">សាមបាឡា</language>
 			<language type="ksf">បាហ្វៀ</language>
+			<language type="ksh">កូឡូញ</language>
 			<language type="ku">ឃឺដ</language>
+			<language type="kum">គូមីគ</language>
+			<language type="kv">កូមី</language>
 			<language type="kw">កូនីស</language>
-			<language type="ky">គៀរហ្គីស្តង់</language>
+			<language type="ky">​កៀហ្ស៊ីស</language>
 			<language type="la">ឡាតំាង</language>
+			<language type="lad">ឡាឌីណូ</language>
 			<language type="lag">ឡានហ្គី</language>
-			<language type="lb">លុចហ្សំបួរ</language>
+			<language type="lb">លុចសំបួ</language>
+			<language type="lez">ឡេសហ្គី</language>
 			<language type="lg">ហ្គាន់ដា</language>
+			<language type="li">លីមប៊ូស</language>
 			<language type="lkt">ឡាកូតា</language>
 			<language type="ln">លីនកាឡា</language>
 			<language type="lo">ឡាវ</language>
+			<language type="loz">ឡូហ្ស៊ី</language>
 			<language type="lrc">លូរីខាងជើង</language>
 			<language type="lt">លីទុយអានី</language>
 			<language type="lu">លូបាកាតានហ្គា</language>
+			<language type="lua">លូបាលូឡា</language>
+			<language type="lun">លុនដា</language>
 			<language type="luo">លូអូ</language>
+			<language type="lus">មីហ្សូ</language>
 			<language type="luy">លូយ៉ា</language>
 			<language type="lv">ឡាតវី</language>
+			<language type="mad">ម៉ាឌូរីស</language>
+			<language type="mag">ម៉ាហ្គាហ៊ី</language>
+			<language type="mai">ម៉ៃធីលី</language>
+			<language type="mak">ម៉ាកាសា</language>
 			<language type="mas">ម៉ាសៃ</language>
+			<language type="mdf">មុខសា</language>
+			<language type="men">មេនឌី</language>
 			<language type="mer">មេរូ</language>
 			<language type="mfe">ម៉ូរីស៊ីន</language>
 			<language type="mg">ម៉ាឡាហ្គាស៊ី</language>
 			<language type="mgh">ម៉ាកគូវ៉ាមីតូ</language>
 			<language type="mgo">មេតា</language>
+			<language type="mh">ម៉ាស់សល</language>
 			<language type="mi">ម៉ោរី</language>
+			<language type="mic">មិកមេក</language>
+			<language type="min">មីណាងកាប៊ូ</language>
 			<language type="mk">ម៉ាសេដូនី</language>
-			<language type="ml">មលយាល័ម</language>
+			<language type="ml">ម៉ាឡាយ៉ាឡាម</language>
 			<language type="mn">ម៉ុងហ្គោលី</language>
+			<language type="mni">ម៉ានីពូរី</language>
 			<language type="moh">ម៊ូហាគ</language>
+			<language type="mos">មូស៊ី</language>
 			<language type="mr">ម៉ារ៉ាធី</language>
-			<language type="ms">ម៉ាឡេស៊ី</language>
+			<language type="ms">ម៉ាឡេ</language>
 			<language type="mt">ម៉ាល់តា</language>
 			<language type="mua">មុនដាង</language>
+			<language type="mul">ពហុភាសា</language>
+			<language type="mus">គ្រីក</language>
+			<language type="mwl">មីរ៉ានដេស</language>
 			<language type="my">ភូមា</language>
+			<language type="myv">អឺហ្ស៊ីយ៉ា</language>
 			<language type="mzn">ម៉ាហ្សានដឺរេនី</language>
+			<language type="na">ណូរូ</language>
+			<language type="nap">នាប៉ូលីតាន</language>
 			<language type="naq">ណាម៉ា</language>
 			<language type="nb">ន័រវែស បុកម៉ាល់</language>
 			<language type="nd">នេបេលេខាងជើង</language>
 			<language type="nds">អាល្លឺម៉ង់ក្រោម</language>
 			<language type="nds_NL">ហ្សាក់ស្យុងក្រោម</language>
 			<language type="ne">នេប៉ាល់</language>
-			<language type="nl">ហុល្លង់</language>
+			<language type="new">នេវ៉ាវី</language>
+			<language type="ng">នុនហ្គា</language>
+			<language type="nia">នីអាស</language>
+			<language type="niu">នូអៀន</language>
+			<language type="nl">ហូឡង់</language>
 			<language type="nl_BE">ផ្លាមីស</language>
 			<language type="nmg">ក្វាស្យូ</language>
 			<language type="nn">ន័រវែស នីនូស</language>
-			<language type="no">ភាសាន័រវែស</language>
+			<language type="nnh">ងៀមប៊ូន</language>
+			<language type="no">ន័រវែស</language>
+			<language type="nog">ណូហ្គៃ</language>
 			<language type="nqo">នគោ</language>
+			<language type="nr">នេប៊េលខាងត្បូង</language>
+			<language type="nso">សូថូខាងជើង</language>
 			<language type="nus">នូអ័រ</language>
+			<language type="nv">ណាវ៉ាចូ</language>
+			<language type="ny">ណានចា</language>
 			<language type="nyn">ណានកូលេ</language>
-			<language type="oc" draft="unconfirmed">អូសីតាន់</language>
+			<language type="oc">អូសីតាន់</language>
 			<language type="om">អូរ៉ូម៉ូ</language>
-			<language type="or">អូរីយ៉ា</language>
+			<language type="or">អូឌៀ</language>
+			<language type="os">អូស៊ីទិក</language>
 			<language type="pa">បឹនជាពិ</language>
+			<language type="pag">ភេនហ្គាស៊ីណាន</language>
+			<language type="pam">ផាមភេនហ្គា</language>
+			<language type="pap">ប៉ាប៉ៃមេនតូ</language>
+			<language type="pau">ប៉ាលូអាន</language>
+			<language type="pcm">ភាសាទំនាក់ទំនងនីហ្សេរីយ៉ា</language>
 			<language type="pl">ប៉ូឡូញ</language>
+			<language type="prg">ព្រូស៊ាន</language>
 			<language type="ps">បាស្តូ</language>
-			<language type="pt">ព័រទុយហ្កាល់</language>
+			<language type="pt">ព័រទុយហ្គាល់</language>
 			<language type="pt_PT">ព័រទុយហ្គាល់ (អឺរ៉ុប)</language>
-			<language type="qu">កេទជួអា</language>
+			<language type="qu">ហ្គិកឈួ</language>
 			<language type="quc">គីចឈី</language>
+			<language type="rap">រ៉ាប៉ានូ</language>
+			<language type="rar">រ៉ារ៉ូតុងហ្គាន</language>
 			<language type="rm">រ៉ូម៉ង់</language>
-			<language type="rn">រូន្ឌី</language>
+			<language type="rn">រុណ្ឌី</language>
 			<language type="ro">រូម៉ានី</language>
 			<language type="ro_MD">ម៉ុលដាវី</language>
 			<language type="rof">រុមបូ</language>
+			<language type="root">រូត</language>
 			<language type="ru">រុស្ស៊ី</language>
+			<language type="rup">អារ៉ូម៉ានី</language>
 			<language type="rw">គិនយ៉ាវ៉ាន់ដា</language>
 			<language type="rwk">រ៉្វា</language>
 			<language type="sa">សំស្ក្រឹត</language>
+			<language type="sad">សានដាវី</language>
+			<language type="sah">សាខា</language>
 			<language type="saq">សាមបូរូ</language>
+			<language type="sat">សាន់តាលី</language>
+			<language type="sba">ងាំបេយ</language>
 			<language type="sbp">សានហ្គូ</language>
+			<language type="sc">សាឌីនា</language>
+			<language type="scn">ស៊ីស៊ីលាន</language>
+			<language type="sco">ស្កុត</language>
 			<language type="sd">ស៊ីនឌី</language>
-			<language type="sdh">អម្បូរឃឺដខាងត្បូង</language>
+			<language type="sdh">ឃើដភាគខាងត្បូង</language>
 			<language type="se">សាមីខាងជើង</language>
 			<language type="seh">ស៊ីណា</language>
 			<language type="ses">គុយរ៉ាបូរ៉ុស៊ីនី</language>
 			<language type="sg">សានហ្គោ</language>
-			<language type="sh" draft="unconfirmed">សើបូក្រូទៀន</language>
+			<language type="sh">សឺបូក្រូអាត</language>
 			<language type="shi">តាឈីលហ៊ីត</language>
+			<language type="shn">សាន</language>
 			<language type="si">ស្រីលង្កា</language>
 			<language type="sk">ស្លូវ៉ាគី</language>
 			<language type="sl">ស្លូវ៉ានី</language>
-			<language type="sm">ភាសាសាមូអា</language>
+			<language type="sm">សាម័រ</language>
 			<language type="sma">សាមីខាងត្បូង</language>
 			<language type="smj">លូលីសាមី</language>
 			<language type="smn">អ៊ីណារីសាម៉ី</language>
 			<language type="sms">ស្កុលសាមី</language>
 			<language type="sn">សូណា</language>
+			<language type="snk">សូនីនគេ</language>
 			<language type="so">សូម៉ាលី</language>
 			<language type="sq">អាល់បានី</language>
 			<language type="sr">ស៊ែប</language>
-			<language type="st" draft="unconfirmed">សេសូដូ</language>
+			<language type="srn">ស្រាណានតុងហ្គោ</language>
+			<language type="ss">ស្វាទី</language>
+			<language type="ssy">សាហូ</language>
+			<language type="st">សូថូខាងត្បូង</language>
 			<language type="su">ស៊ូដង់</language>
-			<language type="sv">ស៊ុយអែដ</language>
+			<language type="suk">ស៊ូគូម៉ា</language>
+			<language type="sv">ស៊ុយអែត</language>
 			<language type="sw">ស្វាហ៊ីលី</language>
 			<language type="sw_CD">កុងហ្គោស្វាហ៊ីលី</language>
+			<language type="swb">កូម៉ូរី</language>
+			<language type="syr">ស៊ីរី</language>
 			<language type="ta">តាមីល</language>
 			<language type="te">តេលុគុ</language>
+			<language type="tem">ធីមនី</language>
 			<language type="teo">តេសូ</language>
-			<language type="tg">តាដហ្សីគីស្តង់</language>
+			<language type="tet">ទីទុំ</language>
+			<language type="tg">តាហ្ស៊ីគ</language>
 			<language type="th">ថៃ</language>
-			<language type="ti">ទីរិនយា</language>
-			<language type="tk">ទួគមេនីស្តង់</language>
-			<language type="tlh" draft="unconfirmed">ខ្លិងសុន</language>
-			<language type="to">តុងហ្គោ</language>
+			<language type="ti">ទីហ្គ្រីញ៉ា</language>
+			<language type="tig">ធីហ្គ្រា</language>
+			<language type="tk">តួកម៉េន</language>
+			<language type="tlh">ឃ្លីនហ្គុន</language>
+			<language type="tn">ស្វាណា</language>
+			<language type="to">តុងហ្គា</language>
+			<language type="tpi">ថុកពីស៊ីន</language>
 			<language type="tr">ទួរគី</language>
+			<language type="trv">តារ៉ូកូ</language>
+			<language type="ts">សុងហ្គា</language>
 			<language type="tt">តាតា</language>
-			<language type="tw" draft="unconfirmed">ទ្វី</language>
+			<language type="tum">ទុមប៊ូកា</language>
+			<language type="tvl">ទូវ៉ាលូ</language>
+			<language type="tw">ទ្វី</language>
 			<language type="twq">តាសាវ៉ាក់</language>
+			<language type="ty">តាហ៊ីទី</language>
+			<language type="tyv">ទូវីនៀ</language>
 			<language type="tzm">តាម៉ាសាយអាត្លាសកណ្តាល</language>
+			<language type="udm">អាត់មូដ</language>
 			<language type="ug">អ៊ុយហ្គឺរ</language>
 			<language type="uk">អ៊ុយក្រែន</language>
+			<language type="umb">អាម់ប៊ុនឌូ</language>
 			<language type="und">ភាសាមិនស្គាល់</language>
 			<language type="ur">អ៊ូរឌូ</language>
-			<language type="uz">អ៊ូហ្សបេគីស្តង់</language>
+			<language type="uz">អ៊ូសបេគ</language>
 			<language type="vai">វៃ</language>
+			<language type="ve">វេនដា</language>
 			<language type="vi">វៀតណាម</language>
+			<language type="vo">វូឡាពូក</language>
 			<language type="vun">វុនចូ</language>
+			<language type="wa">វ៉ាលូន</language>
+			<language type="wae">វេលសឺ</language>
+			<language type="wal">វ៉ូឡាយតា</language>
+			<language type="war">វ៉ារេយ</language>
 			<language type="wbp">វ៉ារីប៉ារី</language>
 			<language type="wo">វូឡុហ្វ</language>
+			<language type="xal">កាលមីគ</language>
 			<language type="xh">ឃសា</language>
 			<language type="xog">សូហ្គា</language>
-			<language type="yi">ភាសាយីឌីហ្ស</language>
+			<language type="yav">យ៉ាងបេន</language>
+			<language type="ybb">យេមបា</language>
+			<language type="yi">យ៉ីឌីស</language>
 			<language type="yo">យរូបា</language>
-			<language type="za">ភាសាចួង</language>
-			<language type="zgh">ម៉ារ៉ុក</language>
+			<language type="yue">កន្តាំង</language>
+			<language type="za">ហ្សួង</language>
+			<language type="zgh">តាម៉ាហ្សៃម៉ារ៉ុកស្តង់ដា</language>
 			<language type="zh">ចិន</language>
 			<language type="zh_Hans">ចិន​អក្សរ​កាត់</language>
 			<language type="zh_Hant">ចិន​អក្សរ​ពេញ</language>
-			<language type="zu">សូលូ</language>
+			<language type="zu">ហ្សូលូ</language>
+			<language type="zun">ហ្សូនី</language>
 			<language type="zxx">គ្មាន​ទិន្នន័យ​ភាសា</language>
+			<language type="zza">ហ្សាហ្សា</language>
 		</languages>
 		<scripts>
 			<script type="Arab">អារ៉ាប់</script>
-			<script type="Armn">អាម៉ានី</script>
+			<script type="Armn">អាមេនី</script>
 			<script type="Beng">បង់ក្លាដែស</script>
 			<script type="Bopo">បូផូម៉ូហ្វូ</script>
 			<script type="Brai">អក្សរ​សម្រាប់មនុស្ស​ពិការ​ភ្នែក</script>
@@ -268,6 +426,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">ក្រិច</script>
 			<script type="Gujr">គូចារ៉ាទី</script>
 			<script type="Guru">កុមុយឃី</script>
+			<script type="Hanb">ហានប៍</script>
 			<script type="Hang">ហាំងកុល</script>
 			<script type="Hani">ហាន</script>
 			<script type="Hans">អក្សរ​ចិន​កាត់</script>
@@ -276,23 +435,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hant" alt="stand-alone">អក្សរ​ហាន​ពេញ</script>
 			<script type="Hebr">អ៊ីស្រាអែល</script>
 			<script type="Hira">ហ៊ីរ៉ាកាណា</script>
+			<script type="Hrkt">សញ្ញាសំឡេងភាសាជប៉ុន</script>
+			<script type="Jamo">ចាម៉ូ</script>
 			<script type="Jpan">ជប៉ុន</script>
 			<script type="Kana">កាតាកាណា</script>
 			<script type="Khmr">ខ្មែរ</script>
-			<script type="Knda">កន្នដ</script>
+			<script type="Knda">ខាណាដា</script>
 			<script type="Kore">កូរ៉េ</script>
 			<script type="Laoo">ឡាវ</script>
 			<script type="Latn">ឡាតាំង</script>
 			<script type="Mlym">មលយាល័ម</script>
 			<script type="Mong">ម៉ុងហ្គោលី</script>
 			<script type="Mymr">ភូមា</script>
-			<script type="Orya">អូរីយ៉ា</script>
+			<script type="Orya">អូឌៀ</script>
 			<script type="Sinh">ស៊ីនហាឡា</script>
 			<script type="Taml">តាមីល</script>
 			<script type="Telu">តេលុគុ</script>
 			<script type="Thaa">ថាណា</script>
 			<script type="Thai">ថៃ</script>
 			<script type="Tibt">ទីបេ</script>
+			<script type="Zmth">និមិត្តសញ្ញាគណិតវិទ្យា</script>
+			<script type="Zsye">សញ្ញាអារម្មណ៍</script>
 			<script type="Zsym">និមិត្តសញ្ញា</script>
 			<script type="Zxxx">គ្មានការសរសេរ</script>
 			<script type="Zyyy">ទូទៅ</script>
@@ -328,55 +491,56 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">អឺរ៉ុប​ខាង​កើត</territory>
 			<territory type="154">អឺរ៉ុប​ខាង​ជើង</territory>
 			<territory type="155">អឺរ៉ុប​ខាង​លិច</territory>
+			<territory type="202">អនុតំបន់សាហារ៉ាអាហ្វ្រិក</territory>
 			<territory type="419">អាមេរិក​ឡាទីន</territory>
 			<territory type="AC">កោះ​អាសេនសិន</territory>
 			<territory type="AD">អង់ដូរ៉ា</territory>
-			<territory type="AE">អារ៉ាប់រួម</territory>
+			<territory type="AE">អេមីរ៉ាត​អារ៉ាប់​រួម</territory>
 			<territory type="AF">អាហ្វហ្គានីស្ថាន</territory>
-			<territory type="AG">អង់ទីគ័រ និង​បាបុយដា</territory>
-			<territory type="AI">អង់កូឡា</territory>
+			<territory type="AG">អង់ទីហ្គា និង បាប៊ុយដា</territory>
+			<territory type="AI">អង់ហ្គីឡា</territory>
 			<territory type="AL">អាល់បានី</territory>
-			<territory type="AM">អារមេនី</territory>
+			<territory type="AM">អាមេនី</territory>
 			<territory type="AO">អង់ហ្គោឡា</territory>
 			<territory type="AQ">អង់តាក់ទិក</territory>
 			<territory type="AR">អាហ្សង់ទីន</territory>
-			<territory type="AS">សាម៉ូអាអាមេរិក</territory>
+			<territory type="AS">សាម័រ អាមេរិកាំង</territory>
 			<territory type="AT">អូទ្រីស</territory>
 			<territory type="AU">អូស្ត្រាលី</territory>
 			<territory type="AW">អារូបា</territory>
-			<territory type="AX">កោះ​អាឡាំង</territory>
-			<territory type="AZ">អាហ៊្សែរបែហ្សង់</territory>
+			<territory type="AX">កោះ​អាឡង់</territory>
+			<territory type="AZ">អាស៊ែបៃហ្សង់</territory>
 			<territory type="BA">បូស្នី និងហឺហ្សីហ្គូវីណា</territory>
-			<territory type="BB">បារបាដូស</territory>
-			<territory type="BD">បង់ក្លាដេស្ហ</territory>
-			<territory type="BE">បែលហ្ស៉ិក</territory>
-			<territory type="BF">ប៊ូរគីណាហ្វាសូ</territory>
+			<territory type="BB">បាបាដុស</territory>
+			<territory type="BD">បង់ក្លាដែស</territory>
+			<territory type="BE">បែលហ្ស៊ិក</territory>
+			<territory type="BF">បួគីណាហ្វាសូ</territory>
 			<territory type="BG">ប៊ុលហ្គារី</territory>
 			<territory type="BH">បារ៉ែន</territory>
 			<territory type="BI">ប៊ូរុនឌី</territory>
 			<territory type="BJ">បេណាំង</territory>
-			<territory type="BL">សង់ បាតេឡេម៉ី</territory>
+			<territory type="BL">សាំង​បាថេឡេមី</territory>
 			<territory type="BM">ប៊ឺមុយដា</territory>
-			<territory type="BN">ប្រ៊ុយណេ</territory>
+			<territory type="BN">ព្រុយណេ</territory>
 			<territory type="BO">បូលីវី</territory>
-			<territory type="BQ">ហុល្លង់ ការ៉ាប៊ីន</territory>
+			<territory type="BQ">ហូឡង់ ការ៉ាប៊ីន</territory>
 			<territory type="BR">ប្រេស៊ីល</territory>
 			<territory type="BS">បាហាម៉ា</territory>
-			<territory type="BT">ប៊ូតាន</territory>
+			<territory type="BT">ប៊ូតង់</territory>
 			<territory type="BV">កោះ​ប៊ូវ៉េត</territory>
 			<territory type="BW">បុតស្វាណា</territory>
-			<territory type="BY">បេឡារុស្ស</territory>
-			<territory type="BZ">បេលីហ្ស</territory>
+			<territory type="BY">បេឡារុស</territory>
+			<territory type="BZ">បេលី</territory>
 			<territory type="CA">កាណាដា</territory>
-			<territory type="CC">កោះ​កូកូស</territory>
+			<territory type="CC">កោះ​កូកូស (គីលីង)</territory>
 			<territory type="CD">កុងហ្គោ- គីនស្ហាសា</territory>
 			<territory type="CD" alt="variant">កុងហ្គោ (សាធារណរដ្ឋ​ប្រជាធិបតេយ្យ)</territory>
 			<territory type="CF">សាធារណរដ្ឋអាហ្វ្រិកកណ្ដាល</territory>
 			<territory type="CG">កុងហ្គោ - ប្រាហ្សាវីល</territory>
-			<territory type="CG" alt="variant">កុងហ្គោ (សធារណៈរដ្ឋ)</territory>
+			<territory type="CG" alt="variant">កុងហ្គោ (សធារណរដ្ឋ)</territory>
 			<territory type="CH">ស្វីស</territory>
-			<territory type="CI">កូដឌីវ័រ</territory>
-			<territory type="CI" alt="variant">កូតឌីវ័រ</territory>
+			<territory type="CI">កូតឌីវ័រ</territory>
+			<territory type="CI" alt="variant">អាយវ៉ូរី ខូសថ៍</territory>
 			<territory type="CK">កោះ​ខូក</territory>
 			<territory type="CL">ស៊ីលី</territory>
 			<territory type="CM">កាមេរូន</territory>
@@ -385,59 +549,61 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CP">កោះ​ឃ្លីភឺតុន</territory>
 			<territory type="CR">កូស្តារីកា</territory>
 			<territory type="CU">គុយបា</territory>
-			<territory type="CV">កាបវែរ</territory>
+			<territory type="CV">កាប់វែរ</territory>
 			<territory type="CW">កូរ៉ាកៅ</territory>
 			<territory type="CX">កោះ​គ្រីស្មាស</territory>
-			<territory type="CY">ស៊ីពរ៍</territory>
-			<territory type="CZ">សាធារណរដ្ឋឆេក</territory>
+			<territory type="CY">ស៊ីប</territory>
+			<territory type="CZ">ឆែគា</territory>
+			<territory type="CZ" alt="variant">សាធារណរដ្ឋឆេក</territory>
 			<territory type="DE">អាល្លឺម៉ង់</territory>
 			<territory type="DG">ឌៀហ្គោហ្គាស៊ី</territory>
-			<territory type="DJ">ហ្ស៊ីបូទី</territory>
+			<territory type="DJ">ជីប៊ូទី</territory>
 			<territory type="DK">ដាណឺម៉ាក</territory>
-			<territory type="DM">ដូមីនីកា</territory>
-			<territory type="DO">សាធារណរដ្ឋដូមីនីកែន</territory>
+			<territory type="DM">ដូមីនីក</territory>
+			<territory type="DO">សាធារណរដ្ឋ​ដូមីនីក</territory>
 			<territory type="DZ">អាល់ហ្សេរី</territory>
 			<territory type="EA">ជឺតា និង​ម៉េលីឡា</territory>
-			<territory type="EC">អេក្វាឌ័រ</territory>
+			<territory type="EC">អេក្វាទ័រ</territory>
 			<territory type="EE">អេស្តូនី</territory>
 			<territory type="EG">អេហ្ស៊ីប</territory>
 			<territory type="EH">សាហារ៉ាខាងលិច</territory>
-			<territory type="ER">អេរីទ្រា</territory>
+			<territory type="ER">អេរីត្រេ</territory>
 			<territory type="ES">អេស្ប៉ាញ</territory>
 			<territory type="ET">អេត្យូពី</territory>
 			<territory type="EU">សហភាព​អឺរ៉ុប</territory>
+			<territory type="EZ">តំបន់ចាយលុយអឺរ៉ូ</territory>
 			<territory type="FI">ហ្វាំងឡង់</territory>
 			<territory type="FJ">ហ្វីជី</territory>
 			<territory type="FK">កោះ​ហ្វក់ឡែន</territory>
 			<territory type="FK" alt="variant">កោះ​ហ្វក់ឡែន (Islas Malvinas)</territory>
-			<territory type="FM">មីក្រូនេស៊ី</territory>
+			<territory type="FM">មីក្រូណេស៊ី</territory>
 			<territory type="FO">កោះ​ហ្វារ៉ូ</territory>
 			<territory type="FR">បារាំង</territory>
 			<territory type="GA">ហ្គាបុង</territory>
 			<territory type="GB">ចក្រភព​អង់គ្លេស</territory>
 			<territory type="GB" alt="short">ច.អ.</territory>
-			<territory type="GD">ហ្គ្រីណាដា</territory>
-			<territory type="GE">ហ្សកហ្ស៉ី</territory>
-			<territory type="GF">ហ្គៀណាបារាំង</territory>
+			<territory type="GD">ហ្គ្រើណាដ</territory>
+			<territory type="GE">ហ្សកហ្ស៊ី</territory>
+			<territory type="GF">ហ្គីអាណា បារាំង</territory>
 			<territory type="GG">ហ្គេនស៊ី</territory>
 			<territory type="GH">ហ្គាណា</territory>
-			<territory type="GI">ហ្គីប្រាលតា</territory>
+			<territory type="GI">ហ្ស៊ីប្រាល់តា</territory>
 			<territory type="GL">ហ្គ្រោអង់ឡង់</territory>
-			<territory type="GM">ហ្គាំប៊ី</territory>
+			<territory type="GM">ហ្គំប៊ី</territory>
 			<territory type="GN">ហ្គីណេ</territory>
 			<territory type="GP">ហ្គោដឺឡុប</territory>
 			<territory type="GQ">ហ្គីណេអេក្វាទ័រ</territory>
-			<territory type="GR">ក្រិច</territory>
-			<territory type="GS">កោះ​ហ្សកហ្ស៊ី​ខាង​ត្បូង និង​សាន់វិច​ខាង​ត្បូង</territory>
-			<territory type="GT">ហ្គាតេម៉ាឡា</territory>
+			<territory type="GR">ក្រិក</territory>
+			<territory type="GS">កោះ​ហ្សកហ្ស៊ី​ខាងត្បូង និង សង់វិច​ខាងត្បូង</territory>
+			<territory type="GT">ក្វាតេម៉ាឡា</territory>
 			<territory type="GU">ហ្គាំ</territory>
-			<territory type="GW">ហ្គីណេប៊ីសូ</territory>
-			<territory type="GY">ហ្គីយ៉ាណា</territory>
+			<territory type="GW">ហ្គីណេប៊ីស្សូ</territory>
+			<territory type="GY">ហ្គីយ៉ាន</territory>
 			<territory type="HK">ហុងកុង</territory>
-			<territory type="HK" alt="short">ហុងកុង</territory>
+			<territory type="HK" alt="short">ហុងកុង តំបន់រដ្ឋបាលពិសេសចិន</territory>
 			<territory type="HM">កោះ​ហឺដ និង​ម៉ាក់ដូណាល់</territory>
-			<territory type="HN">ហុងឌួរ៉ាស់</territory>
-			<territory type="HR">ក្រូអាត</territory>
+			<territory type="HN">ហុងឌូរ៉ាស</territory>
+			<territory type="HR">ក្រូអាស៊ី</territory>
 			<territory type="HT">ហៃទី</territory>
 			<territory type="HU">ហុងគ្រី</territory>
 			<territory type="IC">កោះ​កាណារី</territory>
@@ -446,162 +612,165 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="IL">អ៊ីស្រាអែល</territory>
 			<territory type="IM">អែលអុហ្វមែន</territory>
 			<territory type="IN">ឥណ្ឌា</territory>
-			<territory type="IO">ដែន​មហា​សមុទ្រ​ឥណ្ឌា ចក្រភព​អង់គ្លេស</territory>
+			<territory type="IO">ដែនដី​អង់គ្លេស​នៅ​មហា​សមុទ្រ​ឥណ្ឌា</territory>
 			<territory type="IQ">អ៊ីរ៉ាក់</territory>
 			<territory type="IR">អ៊ីរ៉ង់</territory>
 			<territory type="IS">អ៊ីស្លង់</territory>
 			<territory type="IT">អ៊ីតាលី</territory>
 			<territory type="JE">ជឺស៊ី</territory>
-			<territory type="JM">ចាម៉ៃកា</territory>
+			<territory type="JM">ហ្សាម៉ាអ៊ីក</territory>
 			<territory type="JO">ហ៊្សកដានី</territory>
 			<territory type="JP">ជប៉ុន</territory>
 			<territory type="KE">កេនយ៉ា</territory>
-			<territory type="KG">គៀរហ្គីស្តង់</territory>
+			<territory type="KG">កៀហ្ស៊ីស៊ីស្ថាន</territory>
 			<territory type="KH">កម្ពុជា</territory>
-			<territory type="KI">គិរិបាទី</territory>
-			<territory type="KM">កុំម៉ូរ៉ូស</territory>
-			<territory type="KN">សង់ឃីត និង​ណេវីស</territory>
+			<territory type="KI">គិរីបាទី</territory>
+			<territory type="KM">កូម័រ</territory>
+			<territory type="KN">សាំង​គីត និង ណេវីស</territory>
 			<territory type="KP">កូរ៉េ​ខាង​ជើង</territory>
 			<territory type="KR">កូរ៉េ​ខាង​ត្បូង</territory>
-			<territory type="KW">គុយវ៉ែត</territory>
+			<territory type="KW">កូវ៉ែត</territory>
 			<territory type="KY">កោះ​កៃម៉ង់</territory>
-			<territory type="KZ">កាហ្សាក់ស្តង់់</territory>
+			<territory type="KZ">កាហ្សាក់ស្ថាន</territory>
 			<territory type="LA">ឡាវ</territory>
 			<territory type="LB">លីបង់</territory>
-			<territory type="LC">សង់​លូសៀ</territory>
-			<territory type="LI">លិចទេនស្តែន</territory>
+			<territory type="LC">សាំងលូស៊ី</territory>
+			<territory type="LI">លិចតិនស្ដាញ</territory>
 			<territory type="LK">ស្រីលង្កា</territory>
 			<territory type="LR">លីបេរីយ៉ា</territory>
-			<territory type="LS">លើសូតូ</territory>
+			<territory type="LS">ឡេសូតូ</territory>
 			<territory type="LT">លីទុយអានី</territory>
-			<territory type="LU">លុចហ្សំបួរ</territory>
-			<territory type="LV">ឡាតវីយ៉ា</territory>
+			<territory type="LU">លុចសំបួ</territory>
+			<territory type="LV">ឡេតូនី</territory>
 			<territory type="LY">លីប៊ី</territory>
 			<territory type="MA">ម៉ារ៉ុក</territory>
 			<territory type="MC">ម៉ូណាកូ</territory>
-			<territory type="MD">សាធារណរដ្ឋម៉ុលដាវី</territory>
+			<territory type="MD">ម៉ុលដាវី</territory>
 			<territory type="ME">ម៉ុងតេណេហ្គ្រោ</territory>
-			<territory type="MF">សង់​ម៉ាទីន</territory>
-			<territory type="MG">ម៉ាដាហ្កាស្ការ</territory>
+			<territory type="MF">សាំង​ម៉ាទីន</territory>
+			<territory type="MG">ម៉ាដាហ្គាស្កា</territory>
 			<territory type="MH">កោះ​ម៉ាស់សល</territory>
-			<territory type="MK">ម៉ាសេដូនា</territory>
-			<territory type="MK" alt="variant">ម៉ាសេដូនា (FYROM)</territory>
+			<territory type="MK">ម៉ាសេដ្វាន</territory>
+			<territory type="MK" alt="variant">ម៉ាសេដ្វាន (អតីត​សាធារណរដ្ឋ​យូហ្គោស្លាវី)</territory>
 			<territory type="ML">ម៉ាលី</territory>
 			<territory type="MM">មីយ៉ាន់ម៉ា (ភូមា)</territory>
 			<territory type="MN">ម៉ុងហ្គោលី</territory>
-			<territory type="MO">ម៉ាកាវ</territory>
+			<territory type="MO">ម៉ាកាវ តំបន់រដ្ឋបាលពិសេសចិន</territory>
 			<territory type="MO" alt="short">ម៉ាកាវ</territory>
 			<territory type="MP">កោះ​ម៉ារីណា​ខាង​ជើង</territory>
 			<territory type="MQ">ម៉ាទីនីក</territory>
 			<territory type="MR">ម៉ូរីតានី</territory>
-			<territory type="MS">ម៉ុង​សេរ៉ង់</territory>
-			<territory type="MT">ម៉ាល់តា</territory>
-			<territory type="MU">ម៉ូរីទុស</territory>
+			<territory type="MS">ម៉ុងស៊ែរ៉ា</territory>
+			<territory type="MT">ម៉ាល់ត៍</territory>
+			<territory type="MU">ម៉ូរីស</territory>
 			<territory type="MV">ម៉ាល់ឌីវ</territory>
 			<territory type="MW">ម៉ាឡាវី</territory>
-			<territory type="MX">ម៉ិចសិក</territory>
+			<territory type="MX">ម៉ិកស៊ិក</territory>
 			<territory type="MY">ម៉ាឡេស៊ី</territory>
-			<territory type="MZ">ម៉ូហ្សាំប៊ិក</territory>
+			<territory type="MZ">ម៉ូសំប៊ិក</territory>
 			<territory type="NA">ណាមីប៊ី</territory>
-			<territory type="NC">ញូកាឡេដូនៀ</territory>
-			<territory type="NE">នីហ្សេរ</territory>
+			<territory type="NC">នូវែល​កាឡេដូនី</territory>
+			<territory type="NE">នីហ្សេ</territory>
 			<territory type="NF">កោះ​ណ័រហ្វក់</territory>
 			<territory type="NG">នីហ្សេរីយ៉ា</territory>
-			<territory type="NI">នីការ៉ាហ្គ័រ</territory>
-			<territory type="NL">ហុល្លង់</territory>
+			<territory type="NI">នីការ៉ាហ្គា</territory>
+			<territory type="NL">ហូឡង់</territory>
 			<territory type="NO">ន័រវែស</territory>
 			<territory type="NP">នេប៉ាល់</territory>
 			<territory type="NR">ណូរូ</territory>
 			<territory type="NU">ណៀ</territory>
-			<territory type="NZ">នូវែលហ្សេឡង់</territory>
+			<territory type="NZ">នូវែល​សេឡង់</territory>
 			<territory type="OM">អូម៉ង់</territory>
 			<territory type="PA">ប៉ាណាម៉ា</territory>
 			<territory type="PE">ប៉េរូ</territory>
 			<territory type="PF">ប៉ូលី​ណេស៊ី​បារាំង</territory>
-			<territory type="PG">ប៉ាពួញ៉ូហ្គីណេ</territory>
+			<territory type="PG">ប៉ាពូអាស៊ី​នូវែលហ្គីណេ</territory>
 			<territory type="PH">ហ្វីលីពីន</territory>
 			<territory type="PK">ប៉ាគីស្ថាន</territory>
 			<territory type="PL">ប៉ូឡូញ</territory>
 			<territory type="PM">សង់ព្យែរ និង​មីគីឡុង</territory>
-			<territory type="PN">កោះ​ភីតខារិន</territory>
+			<territory type="PN">កោះ​ភីតកាន</territory>
 			<territory type="PR">ព័រតូរីកូ</territory>
-			<territory type="PS">ដែន​ប៉ាលេស្ទីន</territory>
+			<territory type="PS">ដែន​ដីប៉ាលេស្ទីន</territory>
 			<territory type="PS" alt="short">ប៉ាលេស្ទីន</territory>
-			<territory type="PT">ព័រទុយហ្កាល់</territory>
+			<territory type="PT">ព័រទុយហ្គាល់</territory>
 			<territory type="PW">ផៅឡូ</territory>
 			<territory type="PY">ប៉ារ៉ាហ្គាយ</territory>
 			<territory type="QA">កាតា</territory>
 			<territory type="QO">តំបន់ជាយអូសេអានី</territory>
-			<territory type="RE">រ៉េអ៊ុយ៉ុង</territory>
+			<territory type="RE">រេអុយញ៉ុង</territory>
 			<territory type="RO">រូម៉ានី</territory>
-			<territory type="RS">ស៊ែប</territory>
+			<territory type="RS">សែប៊ី</territory>
 			<territory type="RU">រុស្ស៊ី</territory>
 			<territory type="RW">រវ៉ាន់ដា</territory>
-			<territory type="SA">អារ៉ាប៊ីសាអ៊ូឌីត</territory>
-			<territory type="SB">កោះ​ស៊ូឡូម៉ុង</territory>
-			<territory type="SC">សីសែល</territory>
+			<territory type="SA">អារ៉ាប៊ីសាអូឌីត</territory>
+			<territory type="SB">កោះ​សូឡូម៉ុង</territory>
+			<territory type="SC">សីស្ហែល</territory>
 			<territory type="SD">ស៊ូដង់</territory>
-			<territory type="SE">ស៊ុយអែដ</territory>
+			<territory type="SE">ស៊ុយអែត</territory>
 			<territory type="SG">សិង្ហបុរី</territory>
 			<territory type="SH">សង់​ហេឡេណា</territory>
 			<territory type="SI">ស្លូវេនី</territory>
-			<territory type="SJ">ស្វាប៊ឺត និង​ហ្យង់ម៉ាយេន</territory>
+			<territory type="SJ">ស្វាលបាដ និង ហ្សង់ម៉ាយេន</territory>
 			<territory type="SK">ស្លូវ៉ាគី</territory>
-			<territory type="SL">សេរ៉ាឡេអូន</territory>
+			<territory type="SL">សៀរ៉ាឡេអូន</territory>
 			<territory type="SM">សាន​ម៉ារីណូ</territory>
-			<territory type="SN">សេនេហ្កាល់</territory>
+			<territory type="SN">សេណេហ្គាល់</territory>
 			<territory type="SO">សូម៉ាលី</territory>
 			<territory type="SR">សូរីណាម</territory>
 			<territory type="SS">ស៊ូដង់​ខាង​ត្បូង</territory>
-			<territory type="ST">សៅ​តូមេ និង​ព្រីនស៊ីប៉េ</territory>
+			<territory type="ST">សៅតូម៉េ និង ប្រាំងស៊ីប</territory>
 			<territory type="SV">អែលសាល់វ៉ាឌ័រ</territory>
 			<territory type="SX">សីង​ម៉ាធីន</territory>
 			<territory type="SY">ស៊ីរី</territory>
-			<territory type="SZ">ស្វាហ្ស៊ីឡង់</territory>
+			<territory type="SZ">ស្វាស៊ីឡង់</territory>
 			<territory type="TA">ទ្រីស្តង់​ដា​ចូនហា</territory>
-			<territory type="TC">កោះ​កៃកូស និងទូក</territory>
+			<territory type="TC">កោះ​ទួគ និង កៃកូស</territory>
 			<territory type="TD">ឆាដ</territory>
-			<territory type="TF">ដែន​បារាំង​ខាង​ត្បូង</territory>
+			<territory type="TF">ដែនដី​បារាំង​នៅ​ភាគខាងត្បូង</territory>
 			<territory type="TG">តូហ្គោ</territory>
 			<territory type="TH">ថៃ</territory>
-			<territory type="TJ">តាជីគីស្តង់</territory>
+			<territory type="TJ">តាហ្ស៊ីគីស្ថាន</territory>
 			<territory type="TK">តូខេឡៅ</territory>
-			<territory type="TL">ទីម័រ</territory>
+			<territory type="TL">ទីម័រលីស</territory>
 			<territory type="TL" alt="variant">ទីម័រ​ខាង​កើត</territory>
-			<territory type="TM">ទួគមេនីស្តង់</territory>
-			<territory type="TN">ទុយនេស៊ី</territory>
+			<territory type="TM">តួកម៉េនីស្ថាន</territory>
+			<territory type="TN">ទុយនីស៊ី</territory>
 			<territory type="TO">តុងហ្គា</territory>
-			<territory type="TR">ទួរគី</territory>
+			<territory type="TR">តួកគី</territory>
 			<territory type="TT">ទ្រីនីដាត និង​តូបាហ្គោ</territory>
 			<territory type="TV">ទូវ៉ាលូ</territory>
 			<territory type="TW">តៃវ៉ាន់</territory>
-			<territory type="TZ">តង់ហ្សានី</territory>
+			<territory type="TZ">តង់សានី</territory>
 			<territory type="UA">អ៊ុយក្រែន</territory>
-			<territory type="UG">អ៊ូហ្កង់ដា</territory>
+			<territory type="UG">អ៊ូហ្គង់ដា</territory>
 			<territory type="UM">កោះ​អៅឡាយីង​អាមេរិក</territory>
+			<territory type="UN">អង្គការសហប្រជាជាតិ</territory>
+			<territory type="UN" alt="short">អង្គការ</territory>
 			<territory type="US">សហរដ្ឋអាមេរិក</territory>
 			<territory type="US" alt="short">ស.រ.អ</territory>
-			<territory type="UY">អ៊ុយរ៉ាហ្គាយ</territory>
-			<territory type="UZ">អ៊ូហ្សបេគីស្តង់</territory>
-			<territory type="VA">ទីក្រុងវ៉ាទីកង់</territory>
-			<territory type="VC">សាំង​វីនសេន និង​ឌឹ​ហ្គ្រីណាឌីនីស</territory>
-			<territory type="VE">វេនេហ្ស៊ុយឡា</territory>
+			<territory type="UY">អ៊ុយរូហ្គាយ</territory>
+			<territory type="UZ">អ៊ូសបេគីស្ថាន</territory>
+			<territory type="VA">បុរី​វ៉ាទីកង់</territory>
+			<territory type="VC">សាំង​វ៉ាំងសង់ និង ហ្គ្រេណាឌីន</territory>
+			<territory type="VE">វ៉េណេស៊ុយអេឡា</territory>
 			<territory type="VG">កោះ​វឺជិន​ចក្រភព​អង់គ្លេស</territory>
 			<territory type="VI">កោះ​វឺជីន​អាមេរិក</territory>
 			<territory type="VN">វៀតណាម</territory>
-			<territory type="VU">វ៉ានូអាទូ</territory>
+			<territory type="VU">វ៉ានូទូ</territory>
 			<territory type="WF">វ៉ាលីស និង​ហ្វូទូណា</territory>
-			<territory type="WS">សា​ម៉ូអា</territory>
+			<territory type="WS">សាម័រ</territory>
 			<territory type="XK">កូសូវ៉ូ</territory>
-			<territory type="YE">យេមែន</territory>
+			<territory type="YE">យេម៉ែន</territory>
 			<territory type="YT">ម៉ាយុត</territory>
 			<territory type="ZA">អាហ្វ្រិកខាងត្បូង</territory>
-			<territory type="ZM">ហ្សាំប៊ី</territory>
-			<territory type="ZW">ហ្ស៊ីមបាវ៉េ</territory>
+			<territory type="ZM">សំប៊ី</territory>
+			<territory type="ZW">ស៊ីមបាវ៉េ</territory>
 			<territory type="ZZ">តំបន់មិនស្គាល់</territory>
 		</territories>
 		<keys>
 			<key type="calendar">ប្រតិទិន</key>
+			<key type="cf">ទម្រង់រូបិយប័ណ្ណ</key>
 			<key type="collation">លំដាប់​តម្រៀប</key>
 			<key type="currency">រូបិយប័ណ្ណ</key>
 			<key type="hc">វដ្តម៉ោង (12 vs 24)</key>
@@ -610,7 +779,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">លេខ</key>
 		</keys>
 		<types>
-			<type key="calendar" type="buddhist">ប្រតិទិកពុទ្ធសាសនា</type>
+			<type key="calendar" type="buddhist">ប្រតិទិនពុទ្ធសាសនា</type>
 			<type key="calendar" type="chinese">ប្រតិទិន​ចិន</type>
 			<type key="calendar" type="dangi">ប្រតិទិនកូរ៉េ</type>
 			<type key="calendar" type="ethiopic">ប្រតិទិន​អេត្យូពី</type>
@@ -621,6 +790,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">ប្រតិទិន​ជប៉ុន</type>
 			<type key="calendar" type="persian">ប្រតិទិនពែក្ស</type>
 			<type key="calendar" type="roc">ប្រតិទិនមីងគ័រ</type>
+			<type key="cf" type="account">ទម្រង់រូបិយប័ណ្ណគណនី</type>
+			<type key="cf" type="standard">ទម្រង់រូបិយប័ណ្ណបទដ្ឋាន</type>
 			<type key="collation" type="ducet">លំដាប់​តម្រៀប​យូនីកូដ​លំនាំដើម</type>
 			<type key="collation" type="search">ស្វែងរក​ទូទៅ</type>
 			<type key="collation" type="standard">លំដាប់​តម្រៀប​ស្តង់ដារ</type>
@@ -656,12 +827,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="jpan">លេខ​ជប៉ុន</type>
 			<type key="numbers" type="jpanfin">លេខ​ហិរញ្ញវត្ថុ​ជប៉ុន</type>
 			<type key="numbers" type="khmr">លេខ​ខ្មែរ</type>
-			<type key="numbers" type="knda">លេខកន្នដ</type>
+			<type key="numbers" type="knda">លេខខាណាដា</type>
 			<type key="numbers" type="laoo">លេខ​ឡាវ</type>
 			<type key="numbers" type="latn">លេខ​បច្ចឹម​ប្រទេស</type>
 			<type key="numbers" type="mlym">លេខ​មលយាល័ម</type>
 			<type key="numbers" type="mymr">លេខ​ភូមា</type>
-			<type key="numbers" type="orya">លេខ​អូរីយ៉ា</type>
+			<type key="numbers" type="orya">លេខអូឌៀ</type>
 			<type key="numbers" type="roman">លេខ​រ៉ូមាំង</type>
 			<type key="numbers" type="romanlow">លេខ​តូច​រ៉ូមាំង</type>
 			<type key="numbers" type="taml">លេខ​តាមីល</type>
@@ -685,6 +856,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[\u17D0 ៈ \u17CB \u17C9 \u17CA \u17CD ក ខ គ ឃ ង ច ឆ ជ ឈ ញ ដ ឋ ឌ ឍ ណ ត ថ ទ ធ ន ប ផ ព ភ ម យ រ ឫ ឬ ល ឭ ឮ វ ស ហ ឡ អ {អា} ឥ ឦ ឧ {ឧក} ឩ ឪ ឯ ឰ ឱ ឲ ឳ ា \u17B7 \u17B8 \u17B9 \u17BA \u17BB \u17BC \u17BD ើ ឿ ៀ េ ែ ៃ ោ ៅ \u17C6 ះ \u17D2]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u17B4\u17B5\u200B \u17CC \u17CE \u17CF \u17D1 ឝ ឞ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[ក ខ គ ឃ ង ច ឆ ជ ឈ ញ ដ ឋ ឌ ឍ ណ ត ថ ទ ធ ន ប ផ ព ភ ម យ រ ឫ ឬ ល ឭ ឮ វ ស ហ ឡ អ ឥ ឦ ឧ ឩ ឪ ឯ ឰ ឱ ឳ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- , ៖ ! ? . ។ ៕ ‘ ’ &quot; “ ” ( ) \[ \] \{ \} ៙ ៚]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -713,12 +885,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d MMMM y G</pattern>
+							<pattern>EEEE d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>d MMMM, y G</pattern>
+							<pattern>d MMMM y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -735,12 +907,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
+							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
+							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -754,9 +926,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
@@ -768,18 +949,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d-M</dateFormatItem>
-						<dateFormatItem id="MEd">E, d-M</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E d/M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M-y GGGGG</dateFormatItem>
-						<dateFormatItem id="yyyyMd">d-M-y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, d-M-y G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
@@ -902,18 +1083,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="12">ធ្នូ</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
+							<month type="1">ម</month>
+							<month type="2">ក</month>
+							<month type="3">ម</month>
+							<month type="4">ម</month>
+							<month type="5">ឧ</month>
+							<month type="6">ម</month>
+							<month type="7">ក</month>
+							<month type="8">ស</month>
+							<month type="9">ក</month>
+							<month type="10">ត</month>
+							<month type="11">វ</month>
+							<month type="12">ធ</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">មករា</month>
@@ -946,18 +1127,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="12">ធ្នូ</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
+							<month type="1">ម</month>
+							<month type="2">ក</month>
+							<month type="3">ម</month>
+							<month type="4">ម</month>
+							<month type="5">ឧ</month>
+							<month type="6">ម</month>
+							<month type="7">ក</month>
+							<month type="8">ស</month>
+							<month type="9">ក</month>
+							<month type="10">ត</month>
+							<month type="11">វ</month>
+							<month type="12">ធ</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">មករា</month>
@@ -987,6 +1168,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="sat">សៅរ៍</day>
 						</dayWidth>
 						<dayWidth type="narrow">
+							<day type="sun">អ</day>
+							<day type="mon">ច</day>
+							<day type="tue">អ</day>
+							<day type="wed">ព</day>
+							<day type="thu">ព</day>
+							<day type="fri">ស</day>
+							<day type="sat">ស</day>
+						</dayWidth>
+						<dayWidth type="short">
 							<day type="sun">អា</day>
 							<day type="mon">ច</day>
 							<day type="tue">អ</day>
@@ -994,15 +1184,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="thu">ព្រ</day>
 							<day type="fri">សុ</day>
 							<day type="sat">ស</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">អាទិត្យ</day>
-							<day type="mon">ច័ន្ទ</day>
-							<day type="tue">អង្គារ</day>
-							<day type="wed">ពុធ</day>
-							<day type="thu">ព្រហស្បតិ៍</day>
-							<day type="fri">សុក្រ</day>
-							<day type="sat">សៅរ៍</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">អាទិត្យ</day>
@@ -1025,6 +1206,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="sat">សៅរ៍</day>
 						</dayWidth>
 						<dayWidth type="narrow">
+							<day type="sun">អ</day>
+							<day type="mon">ច</day>
+							<day type="tue">អ</day>
+							<day type="wed">ព</day>
+							<day type="thu">ព</day>
+							<day type="fri">ស</day>
+							<day type="sat">ស</day>
+						</dayWidth>
+						<dayWidth type="short">
 							<day type="sun">អា</day>
 							<day type="mon">ច</day>
 							<day type="tue">អ</day>
@@ -1032,15 +1222,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="thu">ព្រ</day>
 							<day type="fri">សុ</day>
 							<day type="sat">ស</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">អាទិត្យ</day>
-							<day type="mon">ច័ន្ទ</day>
-							<day type="tue">អង្គារ</day>
-							<day type="wed">ពុធ</day>
-							<day type="thu">ព្រហស្បតិ៍</day>
-							<day type="fri">សុក្រ</day>
-							<day type="sat">សៅរ៍</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">អាទិត្យ</day>
@@ -1098,30 +1279,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">អាធ្រាត្រ</dayPeriod>
-							<dayPeriod type="am">ព្រឹក</dayPeriod>
-							<dayPeriod type="noon">ថ្ងៃ</dayPeriod>
-							<dayPeriod type="pm">ល្ងាច</dayPeriod>
+							<dayPeriod type="midnight">អធ្រាត្រ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="noon">ថ្ងៃត្រង់</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ព្រឹក</dayPeriod>
 							<dayPeriod type="afternoon1">រសៀល</dayPeriod>
 							<dayPeriod type="evening1">ល្ងាច</dayPeriod>
 							<dayPeriod type="night1">យប់</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">កណ្តាលអាធ្រាត្រ</dayPeriod>
-							<dayPeriod type="am">ព្រឹក</dayPeriod>
+							<dayPeriod type="midnight">អធ្រាត្រ</dayPeriod>
+							<dayPeriod type="am">a</dayPeriod>
 							<dayPeriod type="noon">ថ្ងៃត្រង់</dayPeriod>
-							<dayPeriod type="pm">ល្ងាច</dayPeriod>
+							<dayPeriod type="pm">p</dayPeriod>
 							<dayPeriod type="morning1">ព្រឹក</dayPeriod>
 							<dayPeriod type="afternoon1">រសៀល</dayPeriod>
 							<dayPeriod type="evening1">ល្ងាច</dayPeriod>
 							<dayPeriod type="night1">យប់</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">អាធ្រាត្រ</dayPeriod>
-							<dayPeriod type="am">ព្រឹក</dayPeriod>
-							<dayPeriod type="noon">ថ្ងៃ</dayPeriod>
-							<dayPeriod type="pm">ល្ងាច</dayPeriod>
+							<dayPeriod type="midnight">អធ្រាត្រ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="noon">ថ្ងៃត្រង់</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ព្រឹក</dayPeriod>
 							<dayPeriod type="afternoon1">រសៀល</dayPeriod>
 							<dayPeriod type="evening1">ល្ងាច</dayPeriod>
@@ -1130,30 +1311,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">កណ្តាលអាធ្រាត្រ</dayPeriod>
-							<dayPeriod type="am">ព្រឹក</dayPeriod>
+							<dayPeriod type="midnight">អធ្រាត្រ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">ថ្ងៃ​ត្រង់</dayPeriod>
-							<dayPeriod type="pm">ល្ងាច</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ព្រឹក</dayPeriod>
 							<dayPeriod type="afternoon1">រសៀល</dayPeriod>
 							<dayPeriod type="evening1">ល្ងាច</dayPeriod>
 							<dayPeriod type="night1">យប់</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">កណ្តាលអាធ្រាត្រ</dayPeriod>
-							<dayPeriod type="am">ព្រឹក</dayPeriod>
+							<dayPeriod type="midnight">អធ្រាត្រ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">ថ្ងៃ​ត្រង់</dayPeriod>
-							<dayPeriod type="pm">ល្ងាច</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ព្រឹក</dayPeriod>
 							<dayPeriod type="afternoon1">រសៀល</dayPeriod>
 							<dayPeriod type="evening1">ល្ងាច</dayPeriod>
 							<dayPeriod type="night1">យប់</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">កណ្តាលអាធ្រាត្រ</dayPeriod>
-							<dayPeriod type="am">ព្រឹក</dayPeriod>
+							<dayPeriod type="midnight">អធ្រាត្រ</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">ថ្ងៃ​ត្រង់</dayPeriod>
-							<dayPeriod type="pm">ល្ងាច</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ព្រឹក</dayPeriod>
 							<dayPeriod type="afternoon1">រសៀល</dayPeriod>
 							<dayPeriod type="evening1">ល្ងាច</dayPeriod>
@@ -1164,11 +1345,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<eras>
 					<eraNames>
 						<era type="0">មុន​គ្រិស្តសករាជ</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">គ្រិស្តសករាជ</era>
+						<era type="1" alt="variant">CE</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">មុន គ.ស.</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">គ.ស.</era>
+						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -1218,12 +1403,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} នៅ {0}</pattern>
+							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} នៅ {0}</pattern>
+							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -1237,8 +1422,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1259,23 +1449,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d-M</dateFormatItem>
-						<dateFormatItem id="MEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E d/M</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">សប្តាហ៍ទី W នៃខែ MMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
-						<dateFormatItem id="yM">M-y</dateFormatItem>
-						<dateFormatItem id="yMd">d-M-y</dateFormatItem>
-						<dateFormatItem id="yMEd">E d-M-y</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">សប្តាហ៍ទី w នៃឆ្នាំ Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1382,13 +1574,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>សករាជ</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>សករាជ</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>សករាជ</displayName>
+			</field>
 			<field type="year">
 				<displayName>ឆ្នាំ</displayName>
 				<relative type="-1">ឆ្នាំ​មុន</relative>
 				<relative type="0">ឆ្នាំ​នេះ</relative>
 				<relative type="1">ឆ្នាំ​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ឆ្នាំ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ឆ្នាំទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ឆ្នាំ​មុន</relativeTimePattern>
@@ -1400,7 +1598,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ឆ្នាំ​នេះ</relative>
 				<relative type="1">ឆ្នាំ​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ឆ្នាំ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ឆ្នាំទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ឆ្នាំ​មុន</relativeTimePattern>
@@ -1412,7 +1610,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ឆ្នាំ​នេះ</relative>
 				<relative type="1">ឆ្នាំ​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ឆ្នាំ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ឆ្នាំទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ឆ្នាំ​មុន</relativeTimePattern>
@@ -1424,7 +1622,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ត្រីមាស​នេះ</relative>
 				<relative type="1">ត្រីមាស​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ត្រីមាស</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ត្រីមាសទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ត្រីមាស​មុន</relativeTimePattern>
@@ -1436,7 +1634,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ត្រីមាស​នេះ</relative>
 				<relative type="1">ត្រីមាស​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ត្រីមាស</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ត្រីមាសទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ត្រីមាស​មុន</relativeTimePattern>
@@ -1448,7 +1646,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ត្រីមាស​នេះ</relative>
 				<relative type="1">ត្រីមាស​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ត្រីមាស</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ត្រីមាសទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ត្រីមាស​មុន</relativeTimePattern>
@@ -1460,7 +1658,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ខែ​នេះ</relative>
 				<relative type="1">ខែ​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ខែ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ខែទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ខែមុន</relativeTimePattern>
@@ -1472,7 +1670,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ខែ​នេះ</relative>
 				<relative type="1">ខែ​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ខែ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ខែទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ខែមុន</relativeTimePattern>
@@ -1484,7 +1682,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ខែ​នេះ</relative>
 				<relative type="1">ខែ​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ខែ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ខែទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ខែមុន</relativeTimePattern>
@@ -1496,11 +1694,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">សប្ដាហ៍​នេះ</relative>
 				<relative type="1">សប្ដាហ៍​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} សប្ដាហ៍</relativeTimePattern>
+					<relativeTimePattern count="other">{0} សប្ដាហ៍ទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} សប្ដាហ៍​មុន</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>សប្តាហ៍នៃ {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>សប្ដាហ៍</displayName>
@@ -1508,11 +1707,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">សប្ដាហ៍​នេះ</relative>
 				<relative type="1">សប្ដាហ៍​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} សប្ដាហ៍</relativeTimePattern>
+					<relativeTimePattern count="other">{0} សប្ដាហ៍ទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} សប្ដាហ៍​មុន</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>សប្តាហ៍នៃ {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>សប្ដាហ៍</displayName>
@@ -1520,11 +1720,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">សប្ដាហ៍​នេះ</relative>
 				<relative type="1">សប្ដាហ៍​ក្រោយ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} សប្ដាហ៍</relativeTimePattern>
+					<relativeTimePattern count="other">{0} សប្ដាហ៍ទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} សប្ដាហ៍​មុន</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>សប្តាហ៍នៃ {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>សប្ដាហ៍នៃខែ</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>សប្ដាហ៍នៃខែ</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>សប្ដាហ៍នៃខែ</displayName>
 			</field>
 			<field type="day">
 				<displayName>ថ្ងៃ</displayName>
@@ -1534,7 +1744,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="1">ថ្ងៃ​ស្អែក</relative>
 				<relative type="2">​ខាន​ស្អែក</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ថ្ងៃ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ថ្ងៃទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ថ្ងៃ​មុន</relativeTimePattern>
@@ -1548,7 +1758,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="1">ថ្ងៃស្អែក</relative>
 				<relative type="2">​ខាន​ស្អែក</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ថ្ងៃ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ថ្ងៃទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ថ្ងៃ​​មុន</relativeTimePattern>
@@ -1562,125 +1772,282 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="1">ថ្ងៃស្អែក</relative>
 				<relative type="2">​ខាន​ស្អែក</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ថ្ងៃទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ថ្ងៃ​​មុន</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>ថ្ងៃនៃឆ្នាំ</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>ថ្ងៃនៃឆ្នាំ</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>ថ្ងៃនៃឆ្នាំ</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>ថ្ងៃ​នៃ​សប្ដាហ៍</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>ថ្ងៃ​នៃ​សប្ដាហ៍</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>ថ្ងៃ​នៃ​សប្ដាហ៍</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>ថ្ងៃសប្ដាហ៍នៃខែ</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>ថ្ងៃសប្ដាហ៍នៃខែ</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>ថ្ងៃសប្ដាហ៍នៃខែ</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">ថ្ងៃ​អាទិត្យ​មុន</relative>
 				<relative type="0">ថ្ងៃ​អាទិត្យ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​អាទិត្យ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ថ្ងៃអាទិត្យ {0} សប្តាហ៍ទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">ថ្ងៃអាទិត្យ {0} សប្តាហ៍មុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">ថ្ងៃ​អាទិត្យ​មុន</relative>
 				<relative type="0">ថ្ងៃ​អាទិត្យ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​អាទិត្យ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ថ្ងៃអាទិត្យ {0} សប្តាហ៍ទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">ថ្ងៃអាទិត្យ {0} សប្តាហ៍មុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">ថ្ងៃ​អាទិត្យ​មុន</relative>
 				<relative type="0">ថ្ងៃ​អាទិត្យ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​អាទិត្យ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃអាទិត្យទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃអាទិត្យមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
-				<relative type="-1">ថ្ងៃ​ច័ន្ទ​មុន</relative>
-				<relative type="0">ថ្ងៃ​ច័ន្ទ​នេះ</relative>
-				<relative type="1">ថ្ងៃ​ច័ន្ទ​ក្រោយ</relative>
+				<relative type="-1">ថ្ងៃចន្ទមុន</relative>
+				<relative type="0">ថ្ងៃចន្ទនេះ</relative>
+				<relative type="1">ថ្ងៃចន្ទក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃចន្ទទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃចន្ទមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
-				<relative type="-1">ថ្ងៃ​ច័ន្ទ​មុន</relative>
-				<relative type="0">ថ្ងៃ​ច័ន្ទ​នេះ</relative>
-				<relative type="1">ថ្ងៃ​ច័ន្ទ​ក្រោយ</relative>
+				<relative type="-1">ថ្ងៃចន្ទមុន</relative>
+				<relative type="0">ថ្ងៃចន្ទនេះ</relative>
+				<relative type="1">ថ្ងៃចន្ទក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃចន្ទទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃចន្ទមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
-				<relative type="-1">ថ្ងៃ​ច័ន្ទ​មុន</relative>
-				<relative type="0">ថ្ងៃ​ច័ន្ទ​នេះ</relative>
-				<relative type="1">ថ្ងៃ​ច័ន្ទ​ក្រោយ</relative>
+				<relative type="-1">ថ្ងៃចន្ទមុន</relative>
+				<relative type="0">ថ្ងៃចន្ទនេះ</relative>
+				<relative type="1">ថ្ងៃចន្ទក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃចន្ទទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃចន្ទមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">ថ្ងៃ​អង្គារ​មុន</relative>
 				<relative type="0">ថ្ងៃ​អង្គារ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​អង្គារ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃអង្គារទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃអង្គារមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">ថ្ងៃ​អង្គារ​មុន</relative>
 				<relative type="0">ថ្ងៃ​អង្គារ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​អង្គារ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃអង្គារទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃអង្គារមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">ថ្ងៃ​អង្គារ​មុន</relative>
 				<relative type="0">ថ្ងៃ​អង្គារ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​អង្គារ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃអង្គារទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃអង្គារមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">ថ្ងៃ​ពុធ​មុន</relative>
 				<relative type="0">ថ្ងៃ​ពុធ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​ពុធ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃពុធទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃពុធមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">ថ្ងៃ​ពុធ​មុន</relative>
 				<relative type="0">ថ្ងៃ​ពុធ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​ពុធ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃពុធទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃពុធមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">ថ្ងៃ​ពុធ​មុន</relative>
 				<relative type="0">ថ្ងៃ​ពុធ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​ពុធ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃពុធទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃពុធមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">ថ្ងៃ​ព្រហស្បតិ៍​មុន</relative>
 				<relative type="0">ថ្ងៃ​ព្រហស្បតិ៍​នេះ</relative>
 				<relative type="1">ថ្ងៃ​ព្រហស្បតិ៍​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃព្រហស្បតិ៍ទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃព្រហស្បតិ៍មុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">ថ្ងៃ​ព្រហស្បតិ៍​មុន</relative>
 				<relative type="0">ថ្ងៃ​ព្រហស្បតិ៍​នេះ</relative>
 				<relative type="1">ថ្ងៃ​ព្រហស្បតិ៍​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃព្រហស្បតិ៍ទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃព្រហស្បតិ៍មុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">ថ្ងៃ​ព្រហស្បតិ៍​មុន</relative>
 				<relative type="0">ថ្ងៃ​ព្រហស្បតិ៍​នេះ</relative>
 				<relative type="1">ថ្ងៃ​ព្រហស្បតិ៍​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃព្រហស្បតិ៍ទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃព្រហស្បតិ៍មុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">ថ្ងៃ​សុក្រ​មុន</relative>
 				<relative type="0">ថ្ងៃ​សុក្រ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​សុក្រ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃសុក្រទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃសុក្រមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">ថ្ងៃ​សុក្រ​មុន</relative>
 				<relative type="0">ថ្ងៃ​សុក្រ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​សុក្រ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃសុក្រទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃសុក្រមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">ថ្ងៃ​សុក្រ​មុន</relative>
 				<relative type="0">ថ្ងៃ​សុក្រ​នេះ</relative>
 				<relative type="1">ថ្ងៃ​សុក្រ​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃសុក្រទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃសុក្រមុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">ថ្ងៃ​សៅរ៍​មុន</relative>
 				<relative type="0">ថ្ងៃ​សៅរ៍​នេះ</relative>
 				<relative type="1">ថ្ងៃ​សៅរ៍​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃសៅរ៍ ទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃសៅរ៍ មុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">ថ្ងៃ​សៅរ៍​មុន</relative>
 				<relative type="0">ថ្ងៃ​សៅរ៍​នេះ</relative>
 				<relative type="1">ថ្ងៃ​សៅរ៍​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃសៅរ៍ ទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃសៅរ៍ មុន</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">ថ្ងៃ​សៅរ៍​មុន</relative>
 				<relative type="0">ថ្ងៃ​សៅរ៍​នេះ</relative>
 				<relative type="1">ថ្ងៃ​សៅរ៍​ក្រោយ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ក្នុងពេល {0} ថ្ងៃសៅរ៍ ទៀត</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">កាលពី {0} ថ្ងៃសៅរ៍ មុន</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>ព្រឹក/ល្ងាច</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>ព្រឹក/ល្ងាច</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>ព្រឹក/ល្ងាច</displayName>
+			</field>
 			<field type="hour">
 				<displayName>ម៉ោង</displayName>
+				<relative type="0">ម៉ោងនេះ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ម៉ោង</relativeTimePattern>
 				</relativeTime>
@@ -1691,7 +2058,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="hour-short">
 				<displayName>ម៉ោង</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ម៉ោង</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ម៉ោងទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ម៉ោង​មុន</relativeTimePattern>
@@ -1700,7 +2067,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="hour-narrow">
 				<displayName>ម៉ោង</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈ​ពេល {0} ម៉ោង</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ម៉ោងទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} ម៉ោង​មុន</relativeTimePattern>
@@ -1708,8 +2075,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>នាទី</displayName>
+				<relative type="0">នាទីនេះ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈពេល {0} នាទី</relativeTimePattern>
+					<relativeTimePattern count="other">{0} នាទីទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} នាទី​មុន</relativeTimePattern>
@@ -1718,7 +2086,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="minute-short">
 				<displayName>នាទី</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈពេល {0} នាទី</relativeTimePattern>
+					<relativeTimePattern count="other">{0} នាទីទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} នាទី​​មុន</relativeTimePattern>
@@ -1727,7 +2095,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="minute-narrow">
 				<displayName>នាទី</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈពេល {0} នាទី</relativeTimePattern>
+					<relativeTimePattern count="other">{0} នាទីទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} នាទី​​មុន</relativeTimePattern>
@@ -1737,7 +2105,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>វិនាទី</displayName>
 				<relative type="0">ឥឡូវ</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈពេល {0} វិនាទី</relativeTimePattern>
+					<relativeTimePattern count="other">{0} វិនាទីទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} វិនាទី​មុន</relativeTimePattern>
@@ -1746,7 +2114,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="second-short">
 				<displayName>វិនាទី</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">ក្នុង​រយៈពេល {0} វិនាទី</relativeTimePattern>
+					<relativeTimePattern count="other">{0} វិនាទីទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} វិនាទី​មុន</relativeTimePattern>
@@ -1755,13 +2123,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="second-narrow">
 				<displayName>វិនាទី</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">{0} វិនាទី</relativeTimePattern>
+					<relativeTimePattern count="other">{0} វិនាទីទៀត</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} វិនាទី​មុន</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="zone">
+				<displayName>ល្វែងម៉ោង</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>ល្វែងម៉ោង</displayName>
+			</field>
+			<field type="zone-narrow">
 				<displayName>ល្វែងម៉ោង</displayName>
 			</field>
 		</fields>
@@ -1773,6 +2147,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">ម៉ោង​ពេល​ថ្ងៃ​នៅ​ {0}</regionFormat>
 			<regionFormat type="standard">ម៉ោង​ស្តង់ដារ​នៅ ​{0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>សាន់តាអ៊ីសាប៊ែល</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ហូណូលូលូ</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>ម៉ោងសកលដែលមានការសម្រួល</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>ទីក្រុង​មិនស្គាល់</exemplarCity>
 			</zone>
@@ -1831,7 +2216,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ម៉ាក់មុយដូ</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity>រ៉យហ្គាឡេហ្គូស</exemplarCity>
+				<exemplarCity>រីយ៉ូហ្គាឡេហ្គូស</exemplarCity>
 			</zone>
 			<zone type="America/Mendoza">
 				<exemplarCity>ម៉ែនឌូហ្សា</exemplarCity>
@@ -1843,10 +2228,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>អ៊ុយសូអៃ</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/La_Rioja">
-				<exemplarCity>ឡារ៉យ៉ា</exemplarCity>
+				<exemplarCity>ឡារីយ៉ូហា</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/San_Luis">
-				<exemplarCity>សានលូអ៊ីស</exemplarCity>
+				<exemplarCity>សាន់លូអ៊ីស</exemplarCity>
 			</zone>
 			<zone type="America/Catamarca">
 				<exemplarCity>កាតាម៉ាកា</exemplarCity>
@@ -1882,7 +2267,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ដាវីន</exemplarCity>
 			</zone>
 			<zone type="Australia/Adelaide">
-				<exemplarCity>អាឌីឡៃ</exemplarCity>
+				<exemplarCity>អាដេឡែត</exemplarCity>
 			</zone>
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>ប្រូកខិនហីល</exemplarCity>
@@ -1954,7 +2339,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ប៉ឺមុយដា</exemplarCity>
 			</zone>
 			<zone type="Asia/Brunei">
-				<exemplarCity>ប្រុយណេ</exemplarCity>
+				<exemplarCity>ព្រុយណេ</exemplarCity>
 			</zone>
 			<zone type="America/La_Paz">
 				<exemplarCity>ឡាប៉ាស</exemplarCity>
@@ -1966,7 +2351,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>អ៊ីរ៉ុយណេភី</exemplarCity>
 			</zone>
 			<zone type="America/Rio_Branco">
-				<exemplarCity>រ៉ៃអូប្រានកូ</exemplarCity>
+				<exemplarCity>រីយ៉ូប្រានកូ</exemplarCity>
 			</zone>
 			<zone type="America/Porto_Velho">
 				<exemplarCity>ព័រតូ​វិលហូ</exemplarCity>
@@ -1984,7 +2369,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>សាន់តារឹម</exemplarCity>
 			</zone>
 			<zone type="America/Campo_Grande">
-				<exemplarCity>ខេមបូហ្គ្រានឌី</exemplarCity>
+				<exemplarCity>ខេមប៉ូហ្គ្រង់​</exemplarCity>
 			</zone>
 			<zone type="America/Belem">
 				<exemplarCity>បេឡឹម</exemplarCity>
@@ -2008,7 +2393,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>រ៉េស៊ីហ្វី</exemplarCity>
 			</zone>
 			<zone type="America/Noronha">
-				<exemplarCity>ណូរ៉ុនហា</exemplarCity>
+				<exemplarCity>ណូរ៉ុនញ៉ា</exemplarCity>
 			</zone>
 			<zone type="America/Nassau">
 				<exemplarCity>ណាស្សូ</exemplarCity>
@@ -2029,13 +2414,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ដាវសុន</exemplarCity>
 			</zone>
 			<zone type="America/Whitehorse">
-				<exemplarCity>វាយហស</exemplarCity>
+				<exemplarCity>វ៉ាយហស</exemplarCity>
 			</zone>
 			<zone type="America/Inuvik">
 				<exemplarCity>អ៊ីនូវីក</exemplarCity>
 			</zone>
 			<zone type="America/Vancouver">
 				<exemplarCity>វ៉ាន់កូវើ</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>ហ្វតណេលសាន់</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>ដាវសុន​ក្រិក</exemplarCity>
@@ -2056,7 +2444,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ខេមប្រីដបេ</exemplarCity>
 			</zone>
 			<zone type="America/Regina">
-				<exemplarCity>រ៉េកីណា</exemplarCity>
+				<exemplarCity>រ៉េហ្គីណា</exemplarCity>
 			</zone>
 			<zone type="America/Winnipeg">
 				<exemplarCity>វីនីភិក</exemplarCity>
@@ -2122,7 +2510,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ប្រាស្ហាវីល</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
-				<exemplarCity>សូរីច</exemplarCity>
+				<exemplarCity>ហ៊្សូរីច</exemplarCity>
 			</zone>
 			<zone type="Africa/Abidjan">
 				<exemplarCity>អាប៊ីដ្យាន</exemplarCity>
@@ -2133,8 +2521,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>អ៊ីស្ទ័រ</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity draft="provisional">ពុនតា អារ៉េណា</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
-				<exemplarCity>សាន់ត្យាហ្គោ</exemplarCity>
+				<exemplarCity>សាន់ទីអេហ្គោ</exemplarCity>
 			</zone>
 			<zone type="Africa/Douala">
 				<exemplarCity>ឌូអ៊ូឡា</exemplarCity>
@@ -2166,6 +2557,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Nicosia">
 				<exemplarCity>នីកូស៊ី</exemplarCity>
 			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity draft="provisional">ហ្វ៉ាម៉ាហ្គុស្តា</exemplarCity>
+			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>ប្រាក</exemplarCity>
 			</zone>
@@ -2194,7 +2588,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ហ្គាឡាប៉ាហ្គោស</exemplarCity>
 			</zone>
 			<zone type="America/Guayaquil">
-				<exemplarCity>ហ្គុយ៉ាហ្គីល</exemplarCity>
+				<exemplarCity>ហ្គុយ៉ាគីល</exemplarCity>
 			</zone>
 			<zone type="Europe/Tallinn">
 				<exemplarCity>តាលិន</exemplarCity>
@@ -2236,7 +2630,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ផុនប៉ី</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kosrae">
-				<exemplarCity>កូស្រាអ៊ី</exemplarCity>
+				<exemplarCity>កូស្រែ</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity>ហ្វារ៉ូ</exemplarCity>
@@ -2260,7 +2654,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ប៊ីលីស៊ី</exemplarCity>
 			</zone>
 			<zone type="America/Cayenne">
-				<exemplarCity>ហ្គៃយ៉ាណេ</exemplarCity>
+				<exemplarCity>កាយ៉េន</exemplarCity>
 			</zone>
 			<zone type="Europe/Guernsey">
 				<exemplarCity>ហ្គេនស៊ី</exemplarCity>
@@ -2275,13 +2669,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ធុឡេ</exemplarCity>
 			</zone>
 			<zone type="America/Godthab">
-				<exemplarCity>ហ្កូដតាអាប</exemplarCity>
+				<exemplarCity>នូក</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity>ស្ករ៉េប៊ីសាន់</exemplarCity>
+				<exemplarCity>អ៊ីតូគ័រតូមីត</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
-				<exemplarCity>ដែនម៉ាក់ស្ហាវិន</exemplarCity>
+				<exemplarCity>ដានម៉ាកស្ហាវិន</exemplarCity>
 			</zone>
 			<zone type="Africa/Banjul">
 				<exemplarCity>បង់ហ្ស៊ុល</exemplarCity>
@@ -2323,7 +2717,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>សាគ្រែប</exemplarCity>
 			</zone>
 			<zone type="America/Port-au-Prince">
-				<exemplarCity>ព័រអូប៉្រប៉ាំង</exemplarCity>
+				<exemplarCity>ព័រអូប្រ៉ាំង</exemplarCity>
 			</zone>
 			<zone type="Europe/Budapest">
 				<exemplarCity>ប៊ុយដាប៉ែស</exemplarCity>
@@ -2362,10 +2756,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>បាកដាដ</exemplarCity>
 			</zone>
 			<zone type="Asia/Tehran">
-				<exemplarCity>តេអេរ៉ង់</exemplarCity>
+				<exemplarCity>តេហេរ៉ង់</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Reykjavik">
-				<exemplarCity>រីក្យាវីក</exemplarCity>
+				<exemplarCity>រ៉ៃក្យាវិក</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity>រ៉ូម</exemplarCity>
@@ -2395,7 +2789,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>អ៊ីនដឺប៊ូរី</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
-				<exemplarCity>គីរីទីម៉ាទី</exemplarCity>
+				<exemplarCity>គិរីទីម៉ាទិ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tarawa">
 				<exemplarCity>តារ៉ាវ៉ា</exemplarCity>
@@ -2424,11 +2818,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>អូរ៉ាល់</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity draft="provisional">អាទីរ៉ូ</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>អាកទូប៊ី</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
-				<exemplarCity>កីស៊ីឡូដា</exemplarCity>
+				<exemplarCity>គីហ្ស៊ីឡូដា</exemplarCity>
 			</zone>
 			<zone type="Asia/Almaty">
 				<exemplarCity>អាល់ម៉ាទី</exemplarCity>
@@ -2515,16 +2912,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>សៃប៉ាន</exemplarCity>
 			</zone>
 			<zone type="America/Martinique">
-				<exemplarCity>ម៉ាទីនីហ្គី</exemplarCity>
+				<exemplarCity>ម៉ាទីនីក</exemplarCity>
 			</zone>
 			<zone type="Africa/Nouakchott">
 				<exemplarCity>ណួកសុត</exemplarCity>
 			</zone>
 			<zone type="America/Montserrat">
-				<exemplarCity>ម៉ុងស៊ែរ៉ា</exemplarCity>
+				<exemplarCity>ម៉ុងស៊ែរ៉ាត​</exemplarCity>
 			</zone>
 			<zone type="Europe/Malta">
-				<exemplarCity>ម៉ាល់តា</exemplarCity>
+				<exemplarCity>ម៉ាល់ត៍</exemplarCity>
 			</zone>
 			<zone type="Indian/Mauritius">
 				<exemplarCity>ម៉ូរីស</exemplarCity>
@@ -2537,9 +2934,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>ទីយ្យូអាណា</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>សាន់តាអ៊ីសាប៊ែល</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>ហ៊ែម៉ូស៊ីឡូ</exemplarCity>
@@ -2560,7 +2954,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ម៉ុនតេរ៉េ</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity>ម៉ិកស៊ីកូ​ស៊ីធី</exemplarCity>
+				<exemplarCity>ទីក្រុងម៉ិចស៊ីកូ</exemplarCity>
 			</zone>
 			<zone type="America/Matamoros">
 				<exemplarCity>ម៉ាតាម៉ូរ៉ូស</exemplarCity>
@@ -2608,16 +3002,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>កាត់ម៉ាន់ឌូ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Nauru">
-				<exemplarCity>ណៅរ៉ូ</exemplarCity>
+				<exemplarCity>ណូរូ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Niue">
-				<exemplarCity>នុយ</exemplarCity>
+				<exemplarCity>នីវ៉េ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Chatham">
 				<exemplarCity>ចាថាំ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Auckland">
-				<exemplarCity>អកលែន</exemplarCity>
+				<exemplarCity>អកឡែន</exemplarCity>
 			</zone>
 			<zone type="Asia/Muscat">
 				<exemplarCity>ម៉ាស្កាត</exemplarCity>
@@ -2665,7 +3059,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>កាសា</exemplarCity>
 			</zone>
 			<zone type="Asia/Hebron">
-				<exemplarCity>ហេវ័ន</exemplarCity>
+				<exemplarCity>ហេបរុន</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Azores">
 				<exemplarCity>អាសូរ៉េស</exemplarCity>
@@ -2706,6 +3100,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>វ៉ុលហ្គោហ្គ្រាដ</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>សារ៉ាតាវ</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>អាស្ត្រាខាន់</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>អុលយ៉ាណូវស្កិ៍</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>គីរ៉ូវ</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>សាម៉ារ៉ា</exemplarCity>
 			</zone>
@@ -2713,28 +3119,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>យ៉េកាធឺរិនប៊ើក</exemplarCity>
 			</zone>
 			<zone type="Asia/Omsk">
-				<exemplarCity>អ៊ូម</exemplarCity>
+				<exemplarCity>អូមស្កិ៍</exemplarCity>
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>ណូវ៉ូស៊ីប៊ឺក</exemplarCity>
 			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>បានូល</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>ថមស្កិ៍</exemplarCity>
+			</zone>
 			<zone type="Asia/Novokuznetsk">
-				<exemplarCity>ណូវ៉ូឃូសណេត</exemplarCity>
+				<exemplarCity>ណូវ៉ូឃូសណេតស្កិ៍</exemplarCity>
 			</zone>
 			<zone type="Asia/Krasnoyarsk">
 				<exemplarCity>ក្រាសនុយ៉ាក</exemplarCity>
 			</zone>
 			<zone type="Asia/Irkutsk">
-				<exemplarCity>អ៊ីឃឺត</exemplarCity>
+				<exemplarCity>អៀរគុតស្កិ៍</exemplarCity>
 			</zone>
 			<zone type="Asia/Chita">
 				<exemplarCity>ឈីតា</exemplarCity>
 			</zone>
 			<zone type="Asia/Yakutsk">
-				<exemplarCity>យ៉ាកូត</exemplarCity>
+				<exemplarCity>យ៉ាគុតស្កិ៍</exemplarCity>
 			</zone>
 			<zone type="Asia/Vladivostok">
-				<exemplarCity>វ័រលាដីវ៉ូស្តុក</exemplarCity>
+				<exemplarCity>វ៉្លាដីវ៉ូស្តុក</exemplarCity>
 			</zone>
 			<zone type="Asia/Khandyga">
 				<exemplarCity>ខាន់ឌីហ្គា</exemplarCity>
@@ -2743,7 +3155,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>សាខាលីន</exemplarCity>
 			</zone>
 			<zone type="Asia/Ust-Nera">
-				<exemplarCity>អ៊ូសណេរ៉ា</exemplarCity>
+				<exemplarCity>អូស្តណេរ៉ា</exemplarCity>
 			</zone>
 			<zone type="Asia/Magadan">
 				<exemplarCity>ម៉ាហ្គាដាន</exemplarCity>
@@ -2788,7 +3200,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ឡុង​យ៉ា​ប៊ីយេន</exemplarCity>
 			</zone>
 			<zone type="Europe/Bratislava">
-				<exemplarCity>ប្រាទីសឡាវ៉ា</exemplarCity>
+				<exemplarCity>ប្រាទីស្លាវ៉ា</exemplarCity>
 			</zone>
 			<zone type="Africa/Freetown">
 				<exemplarCity>ហ្វ្រីថោន</exemplarCity>
@@ -2809,7 +3221,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ជូបា</exemplarCity>
 			</zone>
 			<zone type="Africa/Sao_Tome">
-				<exemplarCity>សៅតុំ</exemplarCity>
+				<exemplarCity>សៅតូម៉េ</exemplarCity>
 			</zone>
 			<zone type="America/El_Salvador">
 				<exemplarCity>អែលសាល់វ៉ាឌ័រ</exemplarCity>
@@ -2863,7 +3275,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ព័រអេស្ប៉ាញ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Funafuti">
-				<exemplarCity>ហ្វូណាហ្វូទី</exemplarCity>
+				<exemplarCity>ហ៊្វូណាហ៊្វូទី</exemplarCity>
 			</zone>
 			<zone type="Asia/Taipei">
 				<exemplarCity>តៃប៉ិ</exemplarCity>
@@ -2886,9 +3298,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>មីតវ៉េ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ចនស្តុន</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>វ៉ាគី</exemplarCity>
 			</zone>
@@ -2898,8 +3307,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>ណូម</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ហូណូលូលូ</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>ចនស្តុន</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>អង់ចូរ៉ាក</exemplarCity>
@@ -2914,13 +3323,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ហ្យូនៀ</exemplarCity>
 			</zone>
 			<zone type="America/Metlakatla">
-				<exemplarCity>មេត្លា ឃែតឡា</exemplarCity>
+				<exemplarCity>មេត្លា កាត្លា</exemplarCity>
 			</zone>
 			<zone type="America/Los_Angeles">
 				<exemplarCity>ឡូអង់ហ្គិឡេស</exemplarCity>
 			</zone>
 			<zone type="America/Boise">
-				<exemplarCity>ប៊ូអ៊ីសេ</exemplarCity>
+				<exemplarCity>ប៊ូស៊ី</exemplarCity>
 			</zone>
 			<zone type="America/Phoenix">
 				<exemplarCity>ផូនីក</exemplarCity>
@@ -2929,37 +3338,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ដែនវើ</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
-				<exemplarCity>ប៊ឺឡា ដាកូតា​ខាង​ត្បូង</exemplarCity>
+				<exemplarCity>ប៊ឺឡា ដាកូតា​ខាងជើង</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/New_Salem">
-				<exemplarCity>ញូ​សាឡឹម ដាកូតា​ខាង​ជើង</exemplarCity>
+				<exemplarCity>ញូវ​សាឡឹម ដាកូតា​ខាង​ជើង</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
-				<exemplarCity>សីនធឺ ដាកូតា​ខាង​ជើង</exemplarCity>
+				<exemplarCity>សិនធឺ ដាកូតា​ខាង​ជើង</exemplarCity>
 			</zone>
 			<zone type="America/Chicago">
-				<exemplarCity>ស៊ីកាកូ</exemplarCity>
+				<exemplarCity>ស៊ីកាហ្គោ</exemplarCity>
 			</zone>
 			<zone type="America/Menominee">
 				<exemplarCity>ម៉េណូមីនី</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vincennes">
-				<exemplarCity>វិនសេណេស ឥណ្ឌា</exemplarCity>
+				<exemplarCity>វិនសេណេស ឥណ្ឌាណា</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Petersburg">
-				<exemplarCity>ភីធើ​ប៊ឹក ឥណ្ឌា</exemplarCity>
+				<exemplarCity>ភីធើ​ប៊ឹក ឥណ្ឌាណា</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>ថែល​ស៊ីធី ឥណ្ឌា</exemplarCity>
+				<exemplarCity>ទីក្រុងថែល ឥណ្ឌាណា</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Knox">
-				<exemplarCity>ណុក ឥណ្ឌា</exemplarCity>
+				<exemplarCity>ណុក ឥណ្ឌាណា</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Winamac">
-				<exemplarCity>វីណាម៉ាក់ ឥណ្ឌា</exemplarCity>
+				<exemplarCity>វីណាម៉ាក់ ឥណ្ឌាណា</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Marengo">
-				<exemplarCity>ម៉ារេនកូ ឥណ្ឌា</exemplarCity>
+				<exemplarCity>ម៉ារេនកូ ឥណ្ឌាណា</exemplarCity>
 			</zone>
 			<zone type="America/Indianapolis">
 				<exemplarCity>ឥណ្ឌាណាប៉ូលីស</exemplarCity>
@@ -2968,7 +3377,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>លូអ៊ីវីល</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Vevay">
-				<exemplarCity>វេវ៉ៃ ឥណ្ឌា</exemplarCity>
+				<exemplarCity>វេវ៉ៃ ឥណ្ឌាយ៉ាណា</exemplarCity>
 			</zone>
 			<zone type="America/Kentucky/Monticello">
 				<exemplarCity>ម៉ងទីសេឡូ កេនទូគី</exemplarCity>
@@ -2977,7 +3386,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ដេត្រូអ៊ីត</exemplarCity>
 			</zone>
 			<zone type="America/New_York">
-				<exemplarCity>ញូយ៉ក</exemplarCity>
+				<exemplarCity>ញូវយ៉ក</exemplarCity>
 			</zone>
 			<zone type="America/Montevideo">
 				<exemplarCity>ម៉ុងតេវីដេអូ</exemplarCity>
@@ -2989,7 +3398,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>តាស្កិន</exemplarCity>
 			</zone>
 			<zone type="Europe/Vatican">
-				<exemplarCity>បុរីវ៉ាទីកង់</exemplarCity>
+				<exemplarCity>វ៉ាទីកង់</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
 				<exemplarCity>សាំង​វីនសេន</exemplarCity>
@@ -3054,7 +3463,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​អាហ្វ្រិក​ខាង​លិច</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អាហ្វ្រិក​ខាង​លិច</standard>
-					<daylight>ម៉ោង​​រដូវ​ក្ដៅ​នៅ​អាហ្វ្រិក​​​ខាងលិច</daylight>
+					<daylight>ម៉ោងនៅ​អាហ្វ្រិក​​​ខាងលិច​​នារដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3066,37 +3475,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Amazon">
 				<long>
-					<generic>ម៉ោង​នៅ​អាម៉ាសូន</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អាម៉ាសូន</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អាម៉ាសូន</daylight>
+					<generic>ម៉ោង​នៅ​អាម៉ាហ្សូន</generic>
+					<standard>ម៉ោងស្តង់ដារ​នៅ​អាម៉ាហ្សូន</standard>
+					<daylight>ម៉ោង​នៅ​អាម៉ាហ្សូននារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>ម៉ោង​ភាគ​កណ្ដាល​នៅ​អាមេរិក​ខាង​ជើង</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​ភាគ​កណ្ដាល​នៅ​អាមេរិក​ខាង​ជើង</standard>
-					<daylight>ម៉ោង​ពេល​ថ្ងៃ​ភាគ​កណ្ដាល​នៅ​អាមេរិក​ខាង​ជើង</daylight>
+					<generic>ម៉ោង​​នៅ​ទ្វីបអាមេរិក​ខាង​ជើងភាគកណ្តាល</generic>
+					<standard>ម៉ោង​​ស្តង់ដារនៅ​ទ្វីបអាមេរិក​ខាង​ជើងភាគកណ្តាល</standard>
+					<daylight>ម៉ោង​​ពេលថ្ងៃនៅ​ទ្វីបអាមេរិក​ខាង​ជើងភាគកណ្តាល</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>ម៉ោង​ភាគ​ខាង​កើត​នៅ​អាមេរិក​ខាង​ជើង</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​ភាគ​ខាង​កើត​នៅ​អាមេរិក​ខាង​ជើង</standard>
-					<daylight>ម៉ោង​ពេល​ថ្ងៃ​ភាគខាង​កើតនៅ​អាមេរិក​ខាង​ជើង</daylight>
+					<generic>ម៉ោងនៅទ្វីបអាមរិកខាងជើងភាគខាងកើត</generic>
+					<standard>ម៉ោងស្តង់ដារនៅទ្វីបអាមេរិកខាងជើងភាគខាងកើត</standard>
+					<daylight>ម៉ោងពេលថ្ងៃនៅទ្វីបអាមេរិកខាងជើងភាគខាងកើត</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>ម៉ោង​នៅ​តំបន់​ភ្នំ​អាមេរិក​ភាគ​ខាង​ជើង</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​តំបន់​ភ្នំ​អាមេរិក​ខាង​ជើង</standard>
-					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅ​តំបន់​ភ្នំ​អាមេរិក​ភាគ​ខាង​ជើង</daylight>
+					<generic>ម៉ោង​នៅតំបន់ភ្នំនៃទ្វីប​អាមេរិក​​​ខាង​ជើង</generic>
+					<standard>ម៉ោងស្តង់ដារ​នៅតំបន់ភ្នំនៃទ្វីប​អាមេរិក​​​ខាង​ជើង</standard>
+					<daylight>ម៉ោង​ពេលថ្ងៃនៅតំបន់ភ្នំនៃទ្វីប​អាមេរិក​​​ខាង​ជើង</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>ម៉ោង​ភាគ​ខាង​លិច​នៅ​អាមរិក​ខាង​ជើង</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​ភាគ​ខាង​លិច​នៅ​អាមេរិក​ខាង​ជើង</standard>
-					<daylight>ម៉ោង​ពេល​ថ្ងៃ​​ភាគ​ខាងលិច​នៅ​អាមេរិក​ភាគ​ខាង​ជើង</daylight>
+					<generic>ម៉ោង​​នៅទ្វីប​អាមរិក​ខាង​ជើងភាគខាងលិច</generic>
+					<standard>ម៉ោងស្តង់ដារ​​​នៅទ្វីប​អាមរិក​ខាង​ជើងភាគខាងលិច</standard>
+					<daylight>ម៉ោង​​ពេលថ្ងៃនៅទ្វីប​អាមរិក​ខាង​ជើងភាគខាងលិច</daylight>
 				</long>
 			</metazone>
 			<metazone type="Apia">
@@ -3115,23 +3524,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Argentina">
 				<long>
-					<generic>ម៉ោង​នៅ​អាសង់ទីន</generic>
-					<standard>ម៉ោង​​ស្តង់ដារ​នៅ​អាសង់ទីន</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អាសង់ទីន</daylight>
+					<generic>ម៉ោង​នៅ​អាហ្សង់ទីន</generic>
+					<standard>ម៉ោងស្តង់ដារ​នៅ​អាហ្សង់ទីន</standard>
+					<daylight>ម៉ោង​នៅ​អាហ្សង់ទីននារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
-					<generic>ម៉ោង​នៅ​អាសង់​ទីន​​ខាង​លិច</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អាសង់ទីន​​ខាង​លិច</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អាសង់ទីន​​ខាង​លិច</daylight>
+					<generic>ម៉ោង​នៅ​អាហ្សង់ទីនភាគខាងលិច</generic>
+					<standard>ម៉ោងស្តង់ដារ​នៅ​អាហ្សង់ទីនភាគខាងលិច</standard>
+					<daylight>ម៉ោង​នៅ​អាហ្សង់ទីនភាគខាងលិចនារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
 				<long>
 					<generic>ម៉ោង​នៅ​អាមេនី</generic>
 					<standard>ម៉ោង​ស្ដង់ដារ​នៅ​អាមេនី</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អាមេនី</daylight>
+					<daylight>ម៉ោង​នៅ​អាមេនីនារដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="Atlantic">
@@ -3173,26 +3582,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​អាស៊ែបៃហ្សង់</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អាស៊ែបៃហ្សង់</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អាស៊ែបៃហ្សង់</daylight>
+					<daylight>ម៉ោង​​នៅ​អាស៊ែបៃហ្សង់នារដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azores">
 				<long>
 					<generic>ម៉ោង​នៅ​អេហ្សស</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អេហ្សស</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អេហ្សស</daylight>
+					<daylight>ម៉ោង​​នៅ​អេហ្សសនារដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
 					<generic>ម៉ោង​នៅ​បង់ក្លាដែស</generic>
 					<standard>ម៉ោង​ស្ដង់ដារ​នៅ​បង់ក្លាដែស</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​បង់ក្លាដែស</daylight>
+					<daylight>ម៉ោង​​នៅ​បង់ក្លាដែសនារដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bhutan">
 				<long>
-					<standard>ម៉ោងនៅប៊ូតាន</standard>
+					<standard>ម៉ោងនៅប៊ូតង់</standard>
 				</long>
 			</metazone>
 			<metazone type="Bolivia">
@@ -3204,24 +3613,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​ប្រាស៊ីលីយ៉ា</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ប្រាស៊ីលីយ៉ា</standard>
-					<daylight>ម៉ោង​​រដូវ​ក្ដៅ​នៅ​ប្រាស៊ីលីយ៉ា</daylight>
+					<daylight>ម៉ោង​នៅ​ប្រាស៊ីលីយ៉ានា​​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
 				<long>
-					<standard>ម៉ោងនៅប្រ៊ុយណេដារូសាឡឹម</standard>
+					<standard>ម៉ោងនៅព្រុយណេដារូសាឡឹម</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
 					<generic>ម៉ោង​នៅ​កាប់វែរ</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​កាប់វែរ</standard>
-					<daylight>ម៉ោង​​រដូវ​ក្ដៅនៅ​កាប់វែរ</daylight>
+					<daylight>ម៉ោង​​នៅ​កាប់វែរនារដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chamorro">
 				<long>
-					<standard>ម៉ោង​នៅ​ចាំម៉ូរ៉ូ</standard>
+					<standard>ម៉ោង​ស្តង់ដារនៅ​ចាំម៉ូរ៉ូ</standard>
 				</long>
 			</metazone>
 			<metazone type="Chatham">
@@ -3233,9 +3642,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Chile">
 				<long>
-					<generic>ម៉ោងនៅឈីលី</generic>
-					<standard>ម៉ោងស្តង់ដារនៅឈីលី</standard>
-					<daylight>ម៉ោងរដូវក្តៅនៅឈីលី</daylight>
+					<generic>ម៉ោងនៅស៊ីលី</generic>
+					<standard>ម៉ោងស្តង់ដារនៅស៊ីលី</standard>
+					<daylight>ម៉ោងនៅស៊ីលីនារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
@@ -3249,7 +3658,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​ឆូបាល់សាន</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ឆូបាល់សាន</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​ឆូបាល់សាន</daylight>
+					<daylight>ម៉ោង​នៅ​ឆូបាល់សាននារដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -3259,21 +3668,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Cocos">
 				<long>
-					<standard>ម៉ោង​នៅ​កោះ​កូកូស</standard>
+					<standard>ម៉ោង​នៅ​ប្រជុំកោះ​កូកូស</standard>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
 				<long>
 					<generic>ម៉ោង​នៅ​កូឡុំប៊ី</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​កូឡុំប៊ី</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​កូឡុំប៊ី</daylight>
+					<daylight>ម៉ោង​នៅ​កូឡុំប៊ីនា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
 				<long>
-					<generic>ម៉ោង​នៅ​កោះ​ខូក</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​កោះ​ខូក</standard>
-					<daylight>ម៉ោង​​ពាក់កណ្ដាល​រដូវ​ក្ដៅ​នៅ​កោះ​ខូក</daylight>
+					<generic>ម៉ោង​នៅប្រជុំ​កោះ​ខូក</generic>
+					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ប្រជុំកោះ​ខូក</standard>
+					<daylight>ម៉ោង​នៅប្រជុំ​កោះ​ខូកនាពាក់កណ្ដាល​រដូវ​​​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
@@ -3300,9 +3709,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Easter">
 				<long>
-					<generic>ម៉ោង​នៅ​កោះ​​ខាង​កើត</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​កោះ​​​ខាង​កើត</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​កោះ​​ខាង​កើត</daylight>
+					<generic>ម៉ោងនៅកោះអ៊ីស្ទ័រ</generic>
+					<standard>ម៉ោងស្តង់ដារនៅកោះអ៊ីស្ទ័រ</standard>
+					<daylight>ម៉ោងនៅកោះអ៊ីស្ទ័រនារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
@@ -3314,50 +3723,50 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​អឺរ៉ុប​កណ្ដាល</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អឺរ៉ុប​កណ្ដាល</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អឺរ៉ុប​កណ្ដាល</daylight>
+					<daylight>ម៉ោង​នៅ​អឺរ៉ុប​កណ្ដាលនា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
 					<generic>ម៉ោង​នៅ​អឺរ៉ុប​​ខាង​កើត​</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​​នៅ​អឺរ៉ុប​​ខាង​កើត​</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អឺរ៉ុប​​ខាង​កើត​</daylight>
+					<daylight>ម៉ោង​នៅ​អឺរ៉ុប​​ខាង​កើត​នា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard>ម៉ោង​នៅ​ចុងភាគ​ខាង​កើត​អឺរ៉ុប​</standard>
+					<standard>ម៉ោង​នៅ​ចុងបូព៌ានៃទ្វីប​អឺរ៉ុប​</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
 					<generic>ម៉ោង​នៅ​អឺរ៉ុប​ខាង​លិច</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អឺរ៉ុប​ខាង​លិច</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អឺរ៉ុប​ខាង​លិច</daylight>
+					<daylight>ម៉ោង​នៅ​អឺរ៉ុប​ខាង​លិចនារដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>ម៉ោង​នៅ​កោះ​ហ្វក់ឡែន</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​កោះ​ហ្វក់ឡែន</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​កោះ​ហ្វក់ឡែន</daylight>
+					<generic>ម៉ោង​នៅ​ប្រជុំកោះ​ហ្វក់ឡែន</generic>
+					<standard>ម៉ោង​ស្តង់ដារ​នៅប្រជុំ​កោះ​ហ្វក់ឡែន</standard>
+					<daylight>ម៉ោង​​នៅប្រជុំ​កោះ​ហ្វក់ឡែននារដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
 				<long>
 					<generic>ម៉ោង​នៅ​ហ្វីជី</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ហ៊្វីជី</standard>
-					<daylight>ម៉ោង​​រដូវ​ក្ដៅ​នៅ​ហ៊្វីជី</daylight>
+					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ហ្វីជី</standard>
+					<daylight>ម៉ោង​នៅ​​ហ្វីជីនា​​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard>ម៉ោង​នៅ​ឃ្វីយ៉ាន​បារាំង</standard>
+					<standard>ម៉ោង​នៅ​ហ្គីយ៉ាន​បារាំង</standard>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>ម៉ោង​នៅ​អែតាឃីត និង​បារាំង​ខាង​ត្បូង</standard>
+					<standard>ម៉ោងនៅបារាំងខាងត្បូង និងនៅអង់តាំងទិក</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
@@ -3374,7 +3783,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​ហ្សកហ្ស៊ី</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ហ្សកហ្ស៊ី</standard>
-					<daylight>ម៉ោង​​រដូវ​ក្ដៅ​នៅ​ហ្សកហ្ស៊ី</daylight>
+					<daylight>ម៉ោង​នៅ​ហ្សកហ្ស៊ីនា​​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gilbert_Islands">
@@ -3391,14 +3800,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​​នៅ​ហ្គ្រីនលែន​ខាង​កើត</generic>
 					<standard>ម៉ោង​​​ស្តង់ដារ​នៅ​​ហ្គ្រីនលែន​ខាង​កើត</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​ហ្គ្រីនលែនខាង​កើត</daylight>
+					<daylight>ម៉ោង​នៅ​ហ្គ្រីនលែនខាង​កើតនា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
 					<generic>ម៉ោងនៅហ្គ្រីនលែនខាងលិច</generic>
 					<standard>ម៉ោងស្តង់ដារនៅហ្គ្រីនលែនខាងលិច</standard>
-					<daylight>ម៉ោងរដូវក្តៅនៅហ្គ្រីនលែនខាងលិច</daylight>
+					<daylight>ម៉ោងនៅហ្គ្រីនលែនខាងលិចនារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -3408,7 +3817,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Guyana">
 				<long>
-					<standard>ម៉ោង​នៅ​ឃ្វីយ៉ាន</standard>
+					<standard>ម៉ោង​នៅ​ហ្គីយ៉ាន</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
@@ -3422,19 +3831,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​ហុងកុង</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ហុងកុង</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​ហុងកុង</daylight>
+					<daylight>ម៉ោងនៅ​ហុងកុងនា​រដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hovd">
 				<long>
 					<generic>ម៉ោង​នៅ​ហូវ</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅហូវ</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​ហូវ</daylight>
+					<daylight>ម៉ោងនៅ​ហូវនា​រដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
 				<long>
-					<standard>ម៉ោង​នៅ​ឥណ្ឌា</standard>
+					<standard>ម៉ោង​ស្តង់ដារនៅ​ឥណ្ឌា</standard>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
@@ -3471,9 +3880,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
-					<generic>ម៉ោង​នៅ​អ៊ីគុត</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អ៊ីគុត</standard>
-					<daylight>ម៉ោង​នៅ​អ៊ីគុត​រដូវ​ក្ដៅ</daylight>
+					<generic>ម៉ោងនៅអៀរគុតស្កិ៍</generic>
+					<standard>ម៉ោងស្តង់ដារនៅអៀរគុតស្កិ៍</standard>
+					<daylight>ម៉ោងនៅអៀរគុតស្កិ៍នារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
@@ -3516,12 +3925,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​ក្រាណូយ៉ាស</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ក្រាណូយ៉ាស</standard>
-					<daylight>ម៉ោង​នៅ​ក្រាណូយ៉ាស​រដូវ​ក្ដៅ</daylight>
+					<daylight>ម៉ោង​នៅ​ក្រាណូយ៉ាសនា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
-					<standard>ម៉ោងនៅគៀរហ្គីស្តង់</standard>
+					<standard>ម៉ោងនៅកៀហ្ស៊ីស៊ីស្ថាន</standard>
 				</long>
 			</metazone>
 			<metazone type="Line_Islands">
@@ -3545,7 +3954,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​ម៉ាហ្កាដាន</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ម៉ាហ្កាដាន</standard>
-					<daylight>ម៉ោង​នៅ​ម៉ាហ្កាដាន​រដូវ​ក្ដៅ</daylight>
+					<daylight>ម៉ោង​នៅ​ម៉ាហ្កាដាន​នារដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Malaysia">
@@ -3583,34 +3992,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Mexico_Northwest">
 				<long>
 					<generic>ម៉ោង​នៅ​ម៉ិកស៊ិកភាគពាយព្យ</generic>
-					<standard>ម៉ោង​ស្តង់ដា​នៅ​ម៉ិកស៊ិកភាគពាយព្យ</standard>
+					<standard>ម៉ោង​ស្តង់ដារនៅ​ម៉ិកស៊ិកភាគពាយព្យ</standard>
 					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅ​ម៉ិកស៊ិកភាគពាយព្យ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
-					<generic>ម៉ោង​នៅ​ប៉ាសីុហ្វិក​ម៉ិកស៊ិក</generic>
-					<standard>ម៉ោង​ស្តង់ដា​នៅ​ប៉ាសីុហ្វិក​ម៉ិកស៊ិក</standard>
-					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅ​ប៉ាសីុហ្វិក​ម៉ិកស៊ិក</daylight>
+					<generic>ម៉ោង​នៅ​ប៉ាស៊ីហ្វិក​ម៉ិកស៊ិក</generic>
+					<standard>ម៉ោង​ស្តង់ដា​នៅ​ប៉ាស៊ីហ្វិក​ម៉ិកស៊ិក</standard>
+					<daylight>ម៉ោង​ពេល​ថ្ងៃ​នៅ​ប៉ាស៊ីហ្វិក​ម៉ិកស៊ិក</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
 					<generic>ម៉ោង​នៅ​អ៊ូឡាន​បាទូ</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អ៊ូឡាន​បាទូ</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អ៊ូឡាន​បាទូ</daylight>
+					<daylight>ម៉ោងនៅ​អ៊ូឡាន​បាទូនា​រដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
 				<long>
 					<generic>ម៉ោង​នៅ​មូស្គូ</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​មូស្គូ</standard>
-					<daylight>ម៉ោង​នៅ​មូស្គូ​ រដូវ​ក្ដៅ</daylight>
+					<daylight>ម៉ោង​នៅ​មូស្គូ​នារដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Myanmar">
 				<long>
-					<standard>ម៉ោង​នៅ​ភូមា</standard>
+					<standard>ម៉ោង​នៅ​មីយ៉ាន់ម៉ា</standard>
 				</long>
 			</metazone>
 			<metazone type="Nauru">
@@ -3625,9 +4034,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="New_Caledonia">
 				<long>
-					<generic>ម៉ោង​នៅ​កាឡេដូនៀ</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​កាឡេដូនៀ</standard>
-					<daylight>ម៉ោង​នៅ​ញូ​កាឡេដូនៀ រដូវ​ក្ដៅ</daylight>
+					<generic>ម៉ោង​នៅណូវ៉ែលកាឡេដូនៀ</generic>
+					<standard>ម៉ោងស្តង់ដារ​នៅណូវ៉ែលកាឡេដូនៀ</standard>
+					<daylight>ម៉ោង​នៅណូវ៉ែលកាឡេដូនៀនារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="New_Zealand">
@@ -3639,14 +4048,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic>ម៉ោង​​នៅ​ញូហ្វោនឡែន</generic>
-					<standard>ម៉ោង​​ស្តង់ដារ​​នៅ​ញូហ្វោនឡែន</standard>
-					<daylight>ម៉ោង​ពេលថ្ងៃ​នៅ​ញូហ្វោនឡែន</daylight>
+					<generic>ម៉ោង​​នៅញូវហ្វោនឡែន</generic>
+					<standard>ម៉ោង​​ស្តង់ដារ​​នៅ​ញូវហ្វោនឡែន</standard>
+					<daylight>ម៉ោង​ពេលថ្ងៃ​នៅ​ញូវហ្វោនឡែន</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
 				<long>
-					<standard>ម៉ោងនៅ​ដ្យូអៀ</standard>
+					<standard>ម៉ោងនៅ​នីវ៉េ</standard>
 				</long>
 			</metazone>
 			<metazone type="Norfolk">
@@ -3656,30 +4065,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Noronha">
 				<long>
-					<generic>ម៉ោង​នៅ​ហ្វឺណាន់ដូ​ដឺណូរ៉ុនហា</generic>
-					<standard>ម៉ោង​​ស្តង់ដារ​នៅ​ហ្វឺណាន់ដូ​ដឺណូរ៉ុនហា</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​ហ្វឺណាន់ដូ​ដឺណូរ៉ុនហា</daylight>
+					<generic>ម៉ោង​នៅហ្វ៊ែណាន់ដូ​ដឺណូរ៉ូញ៉ា</generic>
+					<standard>ម៉ោង​ស្តង់ដារនៅហ្វ៊ែណាន់ដូ​ដឺណូរ៉ូញ៉ា</standard>
+					<daylight>ម៉ោង​នៅហ្វ៊ែណាន់ដូ​ដឺណូរ៉ូញ៉ានារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>ម៉ោង​នៅ​ណូវ៉ូស៊ីប៊ីក</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ណូវ៉ូស៊ីប៊ីក</standard>
-					<daylight>ម៉ោង​នៅ​ណូវ៉ូស៊ីប៊ីក​រដូវ​ក្ដៅ</daylight>
+					<daylight>ម៉ោង​នៅ​ណូវ៉ូស៊ីប៊ីកនា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
 					<generic>ម៉ោង​នៅ​អូម</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អូម</standard>
-					<daylight>ម៉ោង​នៅ​អូម​រដូវ​ក្ដៅ</daylight>
+					<daylight>ម៉ោង​នៅ​អូមនា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
 					<generic>ម៉ោង​នៅ​ប៉ាគីស្ថាន</generic>
 					<standard>ម៉ោង​ស្ដង់ដារ​នៅ​ប៉ាគីស្ថាន</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​ប៉ាគីស្ថាន</daylight>
+					<daylight>ម៉ោងនៅ​ប៉ាគីស្ថាននា​រដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="Palau">
@@ -3689,28 +4098,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Papua_New_Guinea">
 				<long>
-					<standard>ម៉ោង​នៅ​ប៉ាបៅញូកីនៀ</standard>
+					<standard>ម៉ោង​នៅប៉ាពូអាស៊ី នូវែលហ្គីណេ</standard>
 				</long>
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
 					<generic>ម៉ោង​នៅ​ប៉ារ៉ាហ្គាយ</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ប៉ារ៉ាហ្គាយ</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅប៉ារ៉ាហ្គាយ</daylight>
+					<daylight>ម៉ោង​នៅប៉ារ៉ាហ្គាយនា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
 					<generic>ម៉ោង​នៅ​ប៉េរូ</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ប៉េរូ</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​ប៉េរូ</daylight>
+					<daylight>ម៉ោង​​នៅ​ប៉េរូនារដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Philippines">
 				<long>
 					<generic>ម៉ោង​នៅ​ហ្វីលីពីន</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​ហ្វីលីពីន</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​​នៅ​ហ្វីលីពីន</daylight>
+					<daylight>ម៉ោង​​នៅ​ហ្វីលីពីននា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Phoenix_Islands">
@@ -3735,6 +4144,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>ម៉ោង​នៅ​ប៉ូណាប់</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>ម៉ោងនៅព្យុងយ៉ាង</standard>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>ម៉ោងនៅរេអ៊ុយ៉ុង</standard>
@@ -3749,14 +4163,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ម៉ោង​នៅ​សាក់ខាលីន</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​សាក់ខាលីន</standard>
-					<daylight>ម៉ោង​នៅ​សាក់ខាលីន​រដួវ​ក្ដៅ</daylight>
+					<daylight>ម៉ោង​នៅ​សាក់ខាលីននា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>ម៉ោង​នៅ​សាម៉ៅ</generic>
-					<standard>ម៉ោង​ស្តង់ដារនៅ​សាម៉ៅ</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​សាម៉ៅ</daylight>
+					<generic>ម៉ោង​នៅ​សាម័រ</generic>
+					<standard>ម៉ោង​ស្តង់ដារនៅ​សាម័រ</standard>
+					<daylight>ម៉ោង​នៅ​សាម័រនារដូវក្តៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3803,7 +4217,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Tajikistan">
 				<long>
-					<standard>ម៉ោងនៅតាជីគីស្តង់</standard>
+					<standard>ម៉ោងនៅតាជីគីស្ថាន</standard>
 				</long>
 			</metazone>
 			<metazone type="Tokelau">
@@ -3813,9 +4227,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Tonga">
 				<long>
-					<generic>ម៉ោង​នៅ​តុងកា</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​​នៅ​តុងកា</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​តុងកា</daylight>
+					<generic>ម៉ោង​នៅ​តុងហ្គា</generic>
+					<standard>ម៉ោង​ស្តង់ដារ​​នៅ​តុងហ្គា</standard>
+					<daylight>ម៉ោង​​នៅ​តុងហ្គានារដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Truk">
@@ -3832,28 +4246,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Tuvalu">
 				<long>
-					<standard>ម៉ោង​នៅ​ទុយវ៉ាឡុ</standard>
+					<standard>ម៉ោង​នៅ​ទុយវ៉ាលូ</standard>
 				</long>
 			</metazone>
 			<metazone type="Uruguay">
 				<long>
 					<generic>ម៉ោង​នៅ​អ៊ុយរូហ្គាយ</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អ៊ុយរូហ្គាយ</standard>
-					<daylight>ម៉ោង​​រដូវ​ក្ដៅ​នៅ​អ៊ុយរូហ្គាយ</daylight>
+					<daylight>ម៉ោង​នៅ​អ៊ុយរូហ្គាយនា​​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
 					<generic>ម៉ោង​នៅ​អ៊ូសបេគីស្ថាន</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អ៊ូសបេគីស្ថាន</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​អ៊ូសបេគីស្ថាន</daylight>
+					<daylight>ម៉ោង​នៅ​អ៊ូសបេគីស្ថាននារដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
 					<generic>ម៉ោង​នៅ​វ៉ានូទូ</generic>
 					<standard>ម៉ោង​​ស្តង់ដារ​នៅ​វ៉ានូទូ</standard>
-					<daylight>ម៉ោង​រដូវ​ក្ដៅ​នៅ​វ៉ានូទូ</daylight>
+					<daylight>ម៉ោង​នៅ​វ៉ានូទូនារដូវ​ក្ដៅ​</daylight>
 				</long>
 			</metazone>
 			<metazone type="Venezuela">
@@ -3863,16 +4277,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Vladivostok">
 				<long>
-					<generic>ម៉ោង​នៅ​វ៉្លាឌីវ៉ូស្តក</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​វ៉្លាឌីវ៉ូស្តក</standard>
-					<daylight>ម៉ោង​នៅ​វ៉្លាឌីវ៉ូស្តក​រដូវ​ក្ដៅ</daylight>
+					<generic>ម៉ោង​នៅ​វ៉្លាឌីវ៉ូស្តុក</generic>
+					<standard>ម៉ោង​ស្តង់ដារ​នៅ​វ៉្លាឌីវ៉ូស្តុក</standard>
+					<daylight>ម៉ោង​នៅ​វ៉្លាឌីវ៉ូស្តុកនា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
-					<generic>ម៉ោង​នៅ​វ៉ូហ្កាក្រាត</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​វ៉ូហ្កាក្រាត</standard>
-					<daylight>ម៉ោង​នៅ​វ៉ូហ្កាក្រាត​រដូវ​ក្ដៅ</daylight>
+					<generic>ម៉ោង​នៅ​វ៉ូហ្កោក្រាដ</generic>
+					<standard>ម៉ោង​ស្តង់ដារ​នៅ​វ៉ូហ្កោក្រាដ</standard>
+					<daylight>ម៉ោង​នៅ​វ៉ូហ្កោក្រាដនា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vostok">
@@ -3887,21 +4301,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Wallis">
 				<long>
-					<standard>ម៉ោង​នៅ​វ៉ាលីស និង​ផូទូណា</standard>
+					<standard>ម៉ោង​នៅ​វ៉ាលីស និងហ្វ៊ុទូណា</standard>
 				</long>
 			</metazone>
 			<metazone type="Yakutsk">
 				<long>
-					<generic>ម៉ោង​នៅ​យ៉ាគុត</generic>
-					<standard>ម៉ោង​ស្តង់ដារ​នៅ​យ៉ាគុត</standard>
-					<daylight>ម៉ោង​នៅ​យ៉ាគុត​រដូវ​ក្ដៅ</daylight>
+					<generic>ម៉ោង​នៅ​យ៉ាគុតស្កិ៍</generic>
+					<standard>ម៉ោង​ស្តង់ដារ​នៅ​យ៉ាគុតស្កិ៍</standard>
+					<daylight>ម៉ោង​នៅ​យ៉ាគុតស្កិ៍នា​រដូវ​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
 					<generic>ម៉ោង​នៅ​អ៊ិខាធឺរីនប៊័ក</generic>
 					<standard>ម៉ោង​ស្តង់ដារ​នៅ​អ៊ិខាធឺរីនប៊័ក</standard>
-					<daylight>ម៉ោង​នៅ​អ៊ិខាធឺរីនប៊័ក​រដួវ​​ក្ដៅ</daylight>
+					<daylight>ម៉ោង​នៅ​អ៊ិខាធឺរីនប៊័កនា​រដូវ​​ក្ដៅ</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -3982,17 +4396,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤#,##0.00</pattern>
+					<pattern>#,##0.00¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern>#,##0.00¤;(#,##0.00¤)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">¤0ពាន់</pattern>
-					<pattern type="10000" count="other">¤0​មឺុន</pattern>
-					<pattern type="100000" count="other">¤0សែន</pattern>
+					<pattern type="10000" count="other">¤00ពាន់</pattern>
+					<pattern type="100000" count="other">¤000ពាន់</pattern>
 					<pattern type="1000000" count="other">¤0លាន</pattern>
 					<pattern type="10000000" count="other">¤0​ដប់​លាន</pattern>
 					<pattern type="100000000" count="other">¤0​រយលាន</pattern>
@@ -4134,11 +4548,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>រ៉ូបល​បេឡារុស</displayName>
 				<displayName count="other">រ៉ូបល​បេឡារុស</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>រ៉ូបល​បេឡារុស (2000–2016)</displayName>
+				<displayName count="other">រ៉ូបល​បេឡារុស (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>ដុល្លារ​បេលី</displayName>
@@ -4167,6 +4586,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">ប៉េសូឈីលី</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>យ៉ន់ចិន (ក្រៅប្រទេស)</displayName>
+				<displayName count="other">យ៉ន់ចិន (ក្រៅប្រទេស)</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>យ៉ន់​ចិន</displayName>
@@ -4347,8 +4770,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="ILS">
-				<displayName>ស្ស៊ីហ្គែល​អ៊ីស្រាអែល</displayName>
-				<displayName count="other">ស្ស៊ីហ្គែល​អ៊ីស្រាអែល</displayName>
+				<displayName>ស៊ីគែលថ្មីអ៊ីស្រាអែល</displayName>
+				<displayName count="other">ស៊ីគែលថ្មីអ៊ីស្រាអែល</displayName>
 				<symbol>₪</symbol>
 				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
@@ -4519,9 +4942,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>អ៊ូហ្គីយ៉ា​ម៉ូរីតានី (1973–2017)</displayName>
+				<displayName count="other">អ៊ូហ្គីយ៉ា​ម៉ូរីតានី (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>អ៊ូហ្គីយ៉ា​ម៉ូរីតានី</displayName>
 				<displayName count="other">អ៊ូហ្គីយ៉ា​ម៉ូរីតានី</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>រូពីម៉ូរីតានី</displayName>
@@ -4724,9 +5151,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>ឌូប្រា​សៅតូម៉េ និងប្រាំងស៊ីប (1977–2017)</displayName>
+				<displayName count="other">ឌូប្រា​សៅតូម៉េ និងប្រាំងស៊ីប (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>ឌូប្រា​សៅតូម៉េ និងប្រាំងស៊ីប</displayName>
 				<displayName count="other">ឌូប្រា​សៅតូម៉េ និងប្រាំងស៊ីប</displayName>
-				<symbol>STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
@@ -4815,8 +5246,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
-				<displayName>សុម​អ៊ូសបេគីស្ថាន</displayName>
-				<displayName count="other">សុម​អ៊ូសបេគីស្ថាន</displayName>
+				<displayName>សុមអ៊ូបេគីស្ថាន</displayName>
+				<displayName count="other">សុមអ៊ូបេគីស្ថាន</displayName>
 				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEF">
@@ -4891,6 +5322,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other">{0} ថ្ងៃ</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">បត់​ស្តាំ​លើក​ទី​ {0}</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -4918,16 +5353,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ដឺក្រេ</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>arcminutes</displayName>
-				<unitPattern count="other">{0} arcminutes</unitPattern>
+				<displayName>អាកនាទី</displayName>
+				<unitPattern count="other">{0} អាកនាទី</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName>arcseconds</displayName>
-				<unitPattern count="other">{0} arcseconds</unitPattern>
+				<displayName>អាកវិនាទី</displayName>
+				<unitPattern count="other">{0} អាកវិនាទី</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>គីឡូម៉ែត្រ​ការ៉េ</displayName>
 				<unitPattern count="other">{0} គីឡូម៉ែត្រ​ការ៉េ</unitPattern>
+				<perUnitPattern>{0} ក្នុងមួយគីឡូម៉ែត្រ​ការ៉េ</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ហិកតា</displayName>
@@ -4946,6 +5382,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-mile">
 				<displayName>ម៉ាយការ៉េ</displayName>
 				<unitPattern count="other">{0} ម៉ាយការ៉េ</unitPattern>
+				<perUnitPattern>{0} ក្នុងមួយម៉ាយការ៉េ</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>អា</displayName>
@@ -4968,6 +5405,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ការ៉ាត់</displayName>
 				<unitPattern count="other">{0} ការ៉ាត់</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>មិល្លីក្រាមក្នុងមួយដេស៊ីលីត្រ</displayName>
+				<unitPattern count="other">{0} មិល្លីក្រាមក្នុងមួយដេស៊ីលីត្រ</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>មិល្លីម៉ូលក្នុងមួយលីត្រ</displayName>
+				<unitPattern count="other">{0} មិល្លីម៉ូលក្នុងមួយលីត្រ</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ផ្នែកក្នុងមួយលាន</displayName>
+				<unitPattern count="other">{0} ផ្នែកក្នុងមួយលាន</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>លីត្រ​ក្នុង​មួយ​គីឡូម៉ែត្រ</displayName>
 				<unitPattern count="other">{0} លីត្រ​ក្នុង​មួយ​គីឡូម៉ែត្រ</unitPattern>
@@ -4979,6 +5428,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ម៉ាយក្នុង​មួយ​ហ្គាឡុង</displayName>
 				<unitPattern count="other">{0} ម៉ាយក្នុង​មួយ​ហ្គាឡុង</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ម៉ាយក្នុងមួយអ៊ីមភៀរៀលហ្គាឡុង</displayName>
+				<unitPattern count="other">{0} ម៉ាយក្នុងមួយអ៊ីមភៀរៀលហ្គាឡុង</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>តេរ៉ាបៃ</displayName>
@@ -5173,7 +5626,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-foot">
 				<displayName>ហ្វីត</displayName>
 				<unitPattern count="other">{0} ហ្វីត</unitPattern>
-				<perUnitPattern>{0} ក្នុងមួយហ៊្វូត</perUnitPattern>
+				<perUnitPattern>{0} ក្នុងមួយហ្វីត</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>អ៊ីញ</displayName>
@@ -5189,8 +5642,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ឆ្នាំ​ពន្លឺ</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName>ឯកតាលំហ</displayName>
-				<unitPattern count="other">{0} ឯកតាលំហ</unitPattern>
+				<displayName>ឯកតាតារាសាស្ត្រ</displayName>
+				<unitPattern count="other">{0} ឯកតាតារាសាស្ត្រ</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>ណូទិកម៉ាយ</displayName>
@@ -5199,6 +5652,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-mile-scandinavian">
 				<displayName>ម៉ាយស្កង់ឌីណាវ</displayName>
 				<unitPattern count="other">{0} ម៉ាយស្កង់ឌីណាវ</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -5396,6 +5853,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ហ្គាឡុង</unitPattern>
 				<perUnitPattern>{0} ក្នុងមួយហ្គាឡុង</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>អ៊ីមភៀរៀលហ្គាឡុង</displayName>
+				<unitPattern count="other">{0} អ៊ីមភៀរៀលហ្គាឡុង</unitPattern>
+				<perUnitPattern>{0}/អ៊ីមភៀរៀលហ្គាឡុង</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>ក្វាត</displayName>
 				<unitPattern count="other">{0} ក្វាត</unitPattern>
@@ -5452,16 +5914,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>arcmin</displayName>
-				<unitPattern count="other">{0} arcmins</unitPattern>
+				<displayName>អាកនាទី</displayName>
+				<unitPattern count="other">{0} អាកនាទី</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName>arcsecs</displayName>
-				<unitPattern count="other">{0} arcsecs</unitPattern>
+				<displayName>អាកវិនាទី</displayName>
+				<unitPattern count="other">{0} អាកវិនាទី</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>km²</displayName>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ហិកតា</displayName>
@@ -5480,6 +5943,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-mile">
 				<displayName>mi²</displayName>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>អា</displayName>
@@ -5502,8 +5966,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ការ៉ាត់</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName>L/km</displayName>
+				<displayName>លីត្រ/km</displayName>
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
@@ -5513,6 +5989,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ម៉ាយ​/​ហ្គាឡុង</displayName>
 				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ម៉ាយ/gal Imp.</displayName>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -5581,7 +6061,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-hour">
 				<displayName>ម៉ោង</displayName>
 				<unitPattern count="other">{0} ម៉ោង</unitPattern>
-				<perUnitPattern>{0} ក្នុង​មួយ​ម៉ោង</perUnitPattern>
+				<perUnitPattern>{0}/ម៉ោង</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>នាទី</displayName>
@@ -5591,7 +6071,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-second">
 				<displayName>វិនាទី</displayName>
 				<unitPattern count="other">{0} វិនាទី</unitPattern>
-				<perUnitPattern>{0} ក្នុង​មួយ​វិនាទី</perUnitPattern>
+				<perUnitPattern>{0}/វិនាទី</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>មិល្លី​វិនាទី</displayName>
@@ -5733,6 +6213,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-mile-scandinavian">
 				<displayName>smi</displayName>
 				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -5930,6 +6414,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>qts</displayName>
 				<unitPattern count="other">{0} qt</unitPattern>
@@ -6037,7 +6526,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="length-meter">
 				<displayName>ម៉ែត្រ</displayName>
-				<unitPattern count="other">{0} m</unitPattern>
+				<unitPattern count="other">{0}m</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>cm</displayName>
@@ -6148,6 +6637,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} និង {1}</listPatternPart>
 			<listPatternPart type="2">{0} និង​{1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ឬ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ឬ {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
 			<listPatternPart type="middle">{0} {1}</listPatternPart>
@@ -6173,5 +6668,102 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>ទេ​៖ n</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — ទាំងអស់</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — ភាពត្រូវគ្នា</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — បិទជិត</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — ពង្រីក</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — ជាប្រវត្តិសាស្ត្រ</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — ផ្សេងៗ</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — ផ្សេងទៀត</characterLabelPattern>
+		<characterLabelPattern type="scripts">អក្សរ — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} វាស</characterLabelPattern>
+		<characterLabel type="activities">សកម្មភាព</characterLabel>
+		<characterLabel type="african_scripts">ក្រុមអក្សរអាហ្វ្រិក</characterLabel>
+		<characterLabel type="american_scripts">ក្រុមអក្សរអាមេរិក</characterLabel>
+		<characterLabel type="animal">សត្វពាហនៈ</characterLabel>
+		<characterLabel type="animals_nature">សត្វ និងធម្មជាតិ</characterLabel>
+		<characterLabel type="arrows">ព្រួញ</characterLabel>
+		<characterLabel type="body">ខ្លួប្រាណ</characterLabel>
+		<characterLabel type="box_drawing">ការគូរប្រអប់</characterLabel>
+		<characterLabel type="braille">ប្រែល</characterLabel>
+		<characterLabel type="building">អាគារ</characterLabel>
+		<characterLabel type="bullets_stars">ចំណុច/ផ្កាយ</characterLabel>
+		<characterLabel type="consonantal_jamo">ព្យញ្ជនៈចាម៉ូ</characterLabel>
+		<characterLabel type="currency_symbols">និមិត្តសញ្ញារូបិយប័ណ្ណ</characterLabel>
+		<characterLabel type="dash_connector">ដាស៍/សញ្ញាភ្ជាប់</characterLabel>
+		<characterLabel type="digits">ខ្ទង់</characterLabel>
+		<characterLabel type="dingbats">សញ្ញាឌីងប៊ែត</characterLabel>
+		<characterLabel type="divination_symbols">និមិត្តសញ្ញាពិសិដ្ឋ</characterLabel>
+		<characterLabel type="downwards_arrows">ព្រួញចុះក្រោម</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">ព្រួញចុះឡើង</characterLabel>
+		<characterLabel type="east_asian_scripts">ក្រុមអក្សរអាស៊ីខាងកើត</characterLabel>
+		<characterLabel type="emoji">សញ្ញាអារម្មណ៍</characterLabel>
+		<characterLabel type="european_scripts">ក្រុមអក្សរអឺរ៉ុប</characterLabel>
+		<characterLabel type="female">នារី</characterLabel>
+		<characterLabel type="flag">ទីង់</characterLabel>
+		<characterLabel type="flags">ទង់ជាតិ</characterLabel>
+		<characterLabel type="food_drink">អាហារ និងភេសជ្ជៈ</characterLabel>
+		<characterLabel type="format">ទម្រង់</characterLabel>
+		<characterLabel type="format_whitespace">ទម្រង់ និងចន្លោះ</characterLabel>
+		<characterLabel type="full_width_form_variant">វ៉ារ្យ៉ង់ទម្រង់ទទឹងពេញលេញ</characterLabel>
+		<characterLabel type="geometric_shapes">ទម្រង់ធរណីមាត្រ</characterLabel>
+		<characterLabel type="half_width_form_variant">វ៉ារ្យ៉ង់ទម្រង់ទទឹង</characterLabel>
+		<characterLabel type="han_characters">តួអក្សរចិន</characterLabel>
+		<characterLabel type="han_radicals">​រ៉ាឌីកាល់អក្សរចិន</characterLabel>
+		<characterLabel type="hanja">ហានយ៉ា</characterLabel>
+		<characterLabel type="hanzi_simplified">ហានហ្ស៊ី (សាមញ្ញ)</characterLabel>
+		<characterLabel type="hanzi_traditional">ហានហ្ស៊ី (ប្រពៃណី)</characterLabel>
+		<characterLabel type="heart">បេះដូង</characterLabel>
+		<characterLabel type="historic_scripts">អក្សរជាប្រវត្តិសាស្ត្រ</characterLabel>
+		<characterLabel type="ideographic_desc_characters">តួអក្សរពិពណ៌នារូបសញ្ញា</characterLabel>
+		<characterLabel type="japanese_kana">អក្សរខាណាជប៉ុន</characterLabel>
+		<characterLabel type="kanbun">កានប៊ុន</characterLabel>
+		<characterLabel type="kanji">កានជី</characterLabel>
+		<characterLabel type="keycap">គម្របគ្រាប់ចុច</characterLabel>
+		<characterLabel type="leftwards_arrows">ព្រួញទៅឆ្វេង</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">ព្រួញទៅឆ្វេងស្តាំ</characterLabel>
+		<characterLabel type="letterlike_symbols">និមិត្តសញ្ញាដូចតួអក្សរ</characterLabel>
+		<characterLabel type="limited_use">ប្រើមានកំណត់</characterLabel>
+		<characterLabel type="male">បុរស</characterLabel>
+		<characterLabel type="math_symbols">និមិត្តសញ្ញាគណិតវិទ្យា</characterLabel>
+		<characterLabel type="middle_eastern_scripts">ក្រុមអក្សរមជ្ឈិមបូព៌ា</characterLabel>
+		<characterLabel type="miscellaneous">ផ្សេងៗ</characterLabel>
+		<characterLabel type="modern_scripts">អក្សរសម័យទំនើប</characterLabel>
+		<characterLabel type="modifier">អង្គបញ្ជាក់ន័យ</characterLabel>
+		<characterLabel type="musical_symbols">និមិត្តសញ្ញាតន្ត្រី</characterLabel>
+		<characterLabel type="nature">ធម្មជាតិ</characterLabel>
+		<characterLabel type="nonspacing">មិនដកឃ្លា</characterLabel>
+		<characterLabel type="numbers">លេខ</characterLabel>
+		<characterLabel type="objects">កម្មបទ</characterLabel>
+		<characterLabel type="other">ផ្សេងទៀត</characterLabel>
+		<characterLabel type="paired">ផ្គូផ្គង</characterLabel>
+		<characterLabel type="person">មនុស្ស</characterLabel>
+		<characterLabel type="phonetic_alphabet">អក្ខរក្រមសូរសព្ទ</characterLabel>
+		<characterLabel type="pictographs">អក្សររូប</characterLabel>
+		<characterLabel type="place">ទីកន្លែង</characterLabel>
+		<characterLabel type="plant">រុក្ខជាតិ</characterLabel>
+		<characterLabel type="punctuation">វិធីប្រើវណ្ណយុត្ដ</characterLabel>
+		<characterLabel type="rightwards_arrows">ព្រួញទៅស្តាំ</characterLabel>
+		<characterLabel type="sign_standard_symbols">សញ្ញា/និមិត្តសញ្ញាបទដ្ឋាន</characterLabel>
+		<characterLabel type="small_form_variant">វ៉ារ្យ៉ង់ទម្រង់តូច</characterLabel>
+		<characterLabel type="smiley">ញញឺម</characterLabel>
+		<characterLabel type="smileys_people">រូបសញ្ញាសើច និងមនុស្ស</characterLabel>
+		<characterLabel type="south_asian_scripts">ក្រុមអក្សរអាស៊ីអាគ្នេយ៍ខាងត្បូង</characterLabel>
+		<characterLabel type="southeast_asian_scripts">ក្រុមអក្សរអាស៊ីអាគ្នេយ៍</characterLabel>
+		<characterLabel type="spacing">ដកឃ្លា</characterLabel>
+		<characterLabel type="sport">កីឡា</characterLabel>
+		<characterLabel type="symbols">និមិត្តសញ្ញា</characterLabel>
+		<characterLabel type="technical_symbols">និមិត្តសញ្ញាបច្ចេកទេស</characterLabel>
+		<characterLabel type="tone_marks">សញ្ញាសំឡេង</characterLabel>
+		<characterLabel type="travel">ធ្វើដំណើរ</characterLabel>
+		<characterLabel type="travel_places">ដំណើរកម្សាន្ត និងទីកន្លែង</characterLabel>
+		<characterLabel type="upwards_arrows">ព្រួញឡើងលើ</characterLabel>
+		<characterLabel type="variant_forms">ទម្រង់វ៉ារ្យ៉ង់</characterLabel>
+		<characterLabel type="vocalic_jamo">ស្រៈចាម៉ូ</characterLabel>
+		<characterLabel type="weather">អាកាសធាតុ</characterLabel>
+		<characterLabel type="western_asian_scripts">ក្រុមអក្សរអាស៊ីខាងលិច</characterLabel>
+		<characterLabel type="whitespace">ចន្លោះ</characterLabel>
+	</characterLabels>
 </ldml>
-

@@ -1,5 +1,5 @@
 <!--
-Copyright © 2003-2015 Unicode, Inc. and others. All rights reserved. Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+Copyright © 2003-2017 Unicode, Inc. and others. All rights reserved. Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that (a) the above copyright notice(s) and this permission notice appear with all copies of the Data Files or Software, (b) both the above copyright notice(s) and this permission notice appear in associated documentation, and (c) there is clear notice in each modified Data File or in the Software as well as in the documentation associated with the Data File(s) or Software that the data or software has been modified.
 
@@ -7,18 +7,18 @@ THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
 
 Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
 
-    $Revision: 12436 $
+    $Revision: 13905 $
 -->
 
-<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope? ) >
+<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups? ) >
 
 <!ELEMENT version EMPTY >
     <!--@METADATA-->
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "29" >
+<!ATTLIST version cldrVersion CDATA #FIXED "33" >
     <!--@VALUE-->
-<!ATTLIST version unicodeVersion CDATA #FIXED "8.0.0" >
+<!ATTLIST version unicodeVersion CDATA #FIXED "10.0.0" >
     <!--@VALUE-->
 
 <!ELEMENT generation EMPTY >
@@ -114,6 +114,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ELEMENT subgroup EMPTY >
 <!ATTLIST subgroup type NMTOKEN #REQUIRED >
 <!ATTLIST subgroup subtype NMTOKEN #IMPLIED >
+    <!--@DEPRECATED-->
 <!ATTLIST subgroup contains NMTOKENS #IMPLIED >
     <!--@VALUE-->
 
@@ -159,6 +160,8 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
 <!ELEMENT languagePopulation EMPTY >
 <!ATTLIST languagePopulation type NMTOKEN #REQUIRED >
+<!ATTLIST languagePopulation literacyPercent NMTOKEN #IMPLIED >
+    <!--@VALUE-->
 <!ATTLIST languagePopulation writingPercent NMTOKEN #IMPLIED >
     <!--@VALUE-->
 <!ATTLIST languagePopulation populationPercent NMTOKEN #REQUIRED >
@@ -200,6 +203,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
 <!ELEMENT calendarSystem EMPTY >
 <!ATTLIST calendarSystem type (solar | lunar | lunisolar | other) #REQUIRED >
+    <!--@VALUE-->
 <!ATTLIST calendarSystem references CDATA #IMPLIED >
     <!--@METADATA-->
 
@@ -221,7 +225,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST calendarPreference ordering NMTOKENS #REQUIRED >
     <!--@VALUE-->
 
-<!ELEMENT weekData ( minDays*, firstDay*, weekendStart*, weekendEnd* ) >
+<!ELEMENT weekData ( minDays*, firstDay*, weekendStart*, weekendEnd*, weekOfPreference* ) >
 
 <!ELEMENT minDays EMPTY >
 <!ATTLIST minDays count (1 | 2 | 3 | 4 | 5 | 6 | 7) #REQUIRED >
@@ -266,6 +270,11 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST weekendEnd references CDATA #IMPLIED >
     <!--@METADATA-->
 <!ATTLIST weekendEnd alt NMTOKENS #IMPLIED >
+
+<!ELEMENT weekOfPreference EMPTY >
+<!ATTLIST weekOfPreference locales NMTOKENS #REQUIRED >
+<!ATTLIST weekOfPreference ordering NMTOKENS #REQUIRED >
+    <!--@VALUE-->
 
 <!ELEMENT timeData ( hours* ) >
 
@@ -472,8 +481,8 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ELEMENT variable ( #PCDATA ) >
     <!--@ORDERED-->
 <!ATTLIST variable type NMTOKEN #IMPLIED >
-<!ATTLIST variable id CDATA #REQUIRED >
     <!--@VALUE-->
+<!ATTLIST variable id CDATA #REQUIRED >
 <!ATTLIST variable draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
@@ -540,46 +549,61 @@ Except as contained in this notice, the name of a copyright holder shall not be 
     <!--@VALUE-->
 
 <!ELEMENT deprecated ( deprecatedItems* ) >
+    <!--@DEPRECATED-->
 <!ATTLIST deprecated draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
 
 <!ELEMENT deprecatedItems EMPTY >
+    <!--@DEPRECATED-->
 <!ATTLIST deprecatedItems type (standard | supplemental | ldml | supplementalData | ldmlBCP47) #IMPLIED >
-    <!--@DEPRECATED:standard, supplemental-->
+    <!--@DEPRECATED-->
 <!ATTLIST deprecatedItems elements NMTOKENS #IMPLIED >
+    <!--@DEPRECATED-->
 <!ATTLIST deprecatedItems attributes NMTOKENS #IMPLIED >
+    <!--@DEPRECATED-->
 <!ATTLIST deprecatedItems values CDATA #IMPLIED >
+    <!--@DEPRECATED-->
 <!ATTLIST deprecatedItems draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
-    <!--@DEPRECATED:true, false-->
+    <!--@DEPRECATED-->
 
 <!ELEMENT distinguishing ( distinguishingItems* ) >
     <!--@METADATA-->
+    <!--@DEPRECATED-->
 <!ATTLIST distinguishing draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
 
 <!ELEMENT distinguishingItems EMPTY >
+    <!--@DEPRECATED-->
 <!ATTLIST distinguishingItems exclude (true | false) #IMPLIED >
     <!--@VALUE-->
+    <!--@DEPRECATED-->
 <!ATTLIST distinguishingItems elements NMTOKENS #IMPLIED >
     <!--@VALUE-->
+    <!--@DEPRECATED-->
 <!ATTLIST distinguishingItems attributes NMTOKENS #IMPLIED >
+    <!--@DEPRECATED-->
 <!ATTLIST distinguishingItems draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
+    <!--@DEPRECATED-->
 
 <!ELEMENT blocking ( blockingItems* ) >
     <!--@METADATA-->
+    <!--@DEPRECATED-->
 <!ATTLIST blocking draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
 
 <!ELEMENT blockingItems EMPTY >
+    <!--@DEPRECATED-->
 <!ATTLIST blockingItems elements NMTOKENS #IMPLIED >
     <!--@VALUE-->
+    <!--@DEPRECATED-->
 <!ATTLIST blockingItems draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
+    <!--@DEPRECATED-->
 
 <!ELEMENT coverageAdditions ( languageCoverage*, scriptCoverage*, territoryCoverage*, currencyCoverage*, timezoneCoverage* ) >
     <!--@DEPRECATED-->
@@ -644,8 +668,10 @@ Except as contained in this notice, the name of a copyright holder shall not be 
     <!--@DEPRECATED-->
 
 <!ELEMENT skipDefaultLocale EMPTY >
+    <!--@DEPRECATED-->
 <!ATTLIST skipDefaultLocale services NMTOKENS #IMPLIED >
     <!--@VALUE-->
+    <!--@DEPRECATED-->
 
 <!ELEMENT defaultContent EMPTY >
 <!ATTLIST defaultContent locales NMTOKENS #IMPLIED >
@@ -738,7 +764,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST pluralRanges references CDATA #IMPLIED >
     <!--@METADATA-->
 
-<!ELEMENT pluralRange ( #PCDATA ) >
+<!ELEMENT pluralRange EMPTY >
 <!ATTLIST pluralRange start (zero | one | two | few | many | other) #IMPLIED >
     <!-- if missing, means *all* -->
 <!ATTLIST pluralRange end (zero | one | two | few | many | other) #IMPLIED >
@@ -843,17 +869,28 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
 <!ELEMENT languageMatching ( languageMatches* ) >
 
-<!ELEMENT languageMatches ( languageMatch* ) >
+<!ELEMENT languageMatches ( paradigmLocales*, matchVariable*, languageMatch* ) >
 <!ATTLIST languageMatches type NMTOKEN #REQUIRED >
+
+<!ELEMENT paradigmLocales EMPTY >
+<!ATTLIST paradigmLocales locales NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+
+<!ELEMENT matchVariable EMPTY >
+<!ATTLIST matchVariable id CDATA #REQUIRED >
+<!ATTLIST matchVariable value CDATA #REQUIRED >
+    <!--@VALUE-->
 
 <!ELEMENT languageMatch EMPTY >
     <!--@ORDERED-->
 <!ATTLIST languageMatch desired CDATA #REQUIRED >
+<!ATTLIST languageMatch supported CDATA #REQUIRED >
+<!ATTLIST languageMatch percent NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST languageMatch distance NMTOKEN #IMPLIED >
+    <!--@VALUE-->
 <!ATTLIST languageMatch oneway (true | false) #IMPLIED >
     <!--@VALUE-->
-<!ATTLIST languageMatch percent NMTOKEN #REQUIRED >
-    <!--@VALUE-->
-<!ATTLIST languageMatch supported CDATA #REQUIRED >
 
 <!-- # Day Periods -->
 
@@ -943,3 +980,8 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST rgPath path CDATA #REQUIRED >
 <!ATTLIST rgPath draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
+
+<!ELEMENT languageGroups ( languageGroup* ) >
+
+<!ELEMENT languageGroup ( #PCDATA ) >
+<!ATTLIST languageGroup parent NMTOKEN #REQUIRED >

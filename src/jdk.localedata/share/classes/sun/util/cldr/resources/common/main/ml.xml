@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="ml"/>
 	</identity>
 	<localeDisplayNames>
@@ -20,16 +23,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ab">അബ്‌ഖാസിയൻ</language>
 			<language type="ace">അചിനീസ്</language>
 			<language type="ach">അകോലി</language>
-			<language type="ada">അഡാങ്ഗമി</language>
+			<language type="ada">അഡാങ്‌മി</language>
 			<language type="ady">അഡൈഗേ</language>
 			<language type="ae">അവസ്റ്റാൻ</language>
 			<language type="af">ആഫ്രിക്കാൻസ്</language>
 			<language type="afh">ആഫ്രിഹിലി</language>
 			<language type="agq">ആഘേം</language>
-			<language type="ain">അയിനു</language>
+			<language type="ain">ഐനു</language>
 			<language type="ak">അകാൻ‌</language>
 			<language type="akk">അക്കാഡിയൻ</language>
-			<language type="ale">അലൈട്ട്</language>
+			<language type="ale">അലൂട്ട്</language>
 			<language type="alt">തെക്കൻ അൾത്തായി</language>
 			<language type="am">അംഹാരിക്</language>
 			<language type="an">അരഗോണീസ്</language>
@@ -37,15 +40,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="anp">ആൻഗിക</language>
 			<language type="ar">അറബിക്</language>
 			<language type="ar_001">ആധുനിക സ്റ്റാൻഡേർഡ് അറബിക്</language>
-			<language type="arc">അരമായഭാഷ</language>
+			<language type="arc">അരമായ</language>
 			<language type="arn">മാപുചി</language>
-			<language type="arp">അരപാഹോ</language>
+			<language type="arp">അറാപഹോ</language>
 			<language type="arw">അറാവക്</language>
 			<language type="as">ആസ്സാമീസ്</language>
 			<language type="asa">ആസു</language>
 			<language type="ast">ഓസ്‌ട്രിയൻ</language>
 			<language type="av">അവാരിക്</language>
-			<language type="awa">അവധി</language>
+			<language type="awa">അവാധി</language>
 			<language type="ay">അയ്മാറ</language>
 			<language type="az">അസർബൈജാനി</language>
 			<language type="az" alt="short">അസേരി</language>
@@ -62,7 +65,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bfd">ബാഫട്ട്</language>
 			<language type="bg">ബൾഗേറിയൻ</language>
 			<language type="bgn">പശ്ചിമ ബലൂചി</language>
-			<language type="bho">ഭോജ്‌പൂരി</language>
+			<language type="bho">ഭോജ്‌പുരി</language>
 			<language type="bi">ബിസ്‌ലാമ</language>
 			<language type="bik">ബികോൽ</language>
 			<language type="bin">ബിനി</language>
@@ -89,21 +92,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ce">ചെചൻ</language>
 			<language type="ceb">സെബുവാനോ</language>
 			<language type="cgg">ചിഗ</language>
-			<language type="ch">കമോറോ</language>
+			<language type="ch">ചമോറോ</language>
 			<language type="chb">ചിബ്ച</language>
-			<language type="chg">ചഗതൈ</language>
+			<language type="chg">ഷാഗതായ്</language>
 			<language type="chk">ചൂകീസ്</language>
 			<language type="chm">മാരി</language>
-			<language type="chn">ചിനൂഗ്-ജാർഗൺ</language>
+			<language type="chn">ചിനൂഗ് ജാർഗൺ</language>
 			<language type="cho">ചോക്റ്റാവ്</language>
 			<language type="chp">ചിപേവ്യൻ</language>
 			<language type="chr">ഷെരോക്കി</language>
-			<language type="chy">ചിയേന്നേ</language>
-			<language type="ckb">സൊറാനി കുർദിഷ്</language>
+			<language type="chy">ഷായാൻ</language>
+			<language type="ckb">സെൻട്രൽ കുർദിഷ്</language>
 			<language type="co">കോർസിക്കൻ</language>
 			<language type="cop">കോപ്റ്റിക്</language>
 			<language type="cr">ക്രീ</language>
 			<language type="crh">ക്രിമിയൻ ടർക്കിഷ്</language>
+			<language type="crs">സെഷൽവ ക്രിയോൾ ഫ്രഞ്ച്</language>
 			<language type="cs">ചെക്ക്</language>
 			<language type="csb">കാഷുബിയാൻ</language>
 			<language type="cu">ചർച്ച് സ്ലാവിക്</language>
@@ -116,7 +120,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="de">ജർമ്മൻ</language>
 			<language type="de_AT">ഓസ്‌ട്രിയൻ ജർമൻ</language>
 			<language type="de_CH">സ്വിസ് ഹൈ ജർമൻ</language>
-			<language type="del">ദലവാരെ</language>
+			<language type="del">ദെലവേർ</language>
 			<language type="den">സ്ലേവ്</language>
 			<language type="dgr">ഡോഗ്രിബ്</language>
 			<language type="din">ദിൻക</language>
@@ -131,7 +135,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="dz">സോങ്ക</language>
 			<language type="dzg">ഡാസാഗ</language>
 			<language type="ebu">എംബു</language>
-			<language type="ee">ഇവ്</language>
+			<language type="ee">യൂവ്</language>
 			<language type="efi">എഫിക്</language>
 			<language type="egy">പ്രാചീന ഈജിപ്ഷ്യൻ</language>
 			<language type="eka">എകാജുക്</language>
@@ -155,7 +159,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ewo">എവോൻഡോ</language>
 			<language type="fa">പേർഷ്യൻ</language>
 			<language type="fan">ഫങ്</language>
-			<language type="fat">ഫിലിപ്പീനോ</language>
+			<language type="fat">ഫാന്റി</language>
 			<language type="ff">ഫുല</language>
 			<language type="fi">ഫിന്നിഷ്</language>
 			<language type="fil">ഫിലിപ്പിനോ</language>
@@ -165,6 +169,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="fr">ഫ്രഞ്ച്</language>
 			<language type="fr_CA">കനേഡിയൻ ഫ്രഞ്ച്</language>
 			<language type="fr_CH">സ്വിസ് ഫ്രഞ്ച്</language>
+			<language type="frc" draft="contributed">കേജൺ ഫ്രഞ്ച്</language>
 			<language type="frm">മദ്ധ്യ ഫ്രഞ്ച്</language>
 			<language type="fro">പഴയ ഫ്രഞ്ച്</language>
 			<language type="frr">നോർത്തേൻ ഫ്രിഷ്യൻ</language>
@@ -174,46 +179,49 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ga">ഐറിഷ്</language>
 			<language type="gaa">ഗാ</language>
 			<language type="gag">ഗാഗൂസ്</language>
+			<language type="gan">ഗാൻ ചൈനീസ്</language>
 			<language type="gay">ഗയൊ</language>
 			<language type="gba">ഗബ്യ</language>
 			<language type="gd">സ്കോട്ടിഷ് ഗൈലിക്</language>
 			<language type="gez">ഗീസ്</language>
-			<language type="gil">ഗിൽബർസേ</language>
+			<language type="gil">ഗിൽബർട്ടീസ്</language>
 			<language type="gl">ഗലീഷ്യൻ</language>
 			<language type="gmh">മദ്ധ്യ ഉച്ച ജർമൻ</language>
 			<language type="gn">ഗ്വരനീ</language>
-			<language type="goh">പ്രാചീന ഉച്ച ജർമൻ</language>
+			<language type="goh">ഓൾഡ് ഹൈ ജർമൻ</language>
 			<language type="gon">ഗോണ്ഡി</language>
-			<language type="gor">ഗൊറോൻറാലോ</language>
+			<language type="gor">ഗൊറോന്റാലോ</language>
 			<language type="got">ഗോഥിക്ക്</language>
 			<language type="grb">ഗ്രബൊ</language>
-			<language type="grc">പുരാതന യവന ഭാഷ</language>
+			<language type="grc">പുരാതന ഗ്രീക്ക്</language>
 			<language type="gsw">സ്വിസ് ജർമ്മൻ</language>
 			<language type="gu">ഗുജറാത്തി</language>
 			<language type="guz">ഗുസീ</language>
 			<language type="gv">മാൻസ്</language>
-			<language type="gwi">ഗ്വിച്ച് ഇൻ</language>
+			<language type="gwi">ഗ്വിച്ചിൻ</language>
 			<language type="ha">ഹൗസ</language>
 			<language type="hai">ഹൈഡ</language>
+			<language type="hak">ഹാക്ക ചൈനീസ്</language>
 			<language type="haw">ഹവായിയൻ</language>
 			<language type="he">ഹീബ്രു</language>
 			<language type="hi">ഹിന്ദി</language>
 			<language type="hil">ഹിലിഗയ്നോൺ</language>
-			<language type="hit">ഹിറ്റൈറ്റേ</language>
+			<language type="hit">ഹിറ്റൈറ്റ്</language>
 			<language type="hmn">മോങ്</language>
 			<language type="ho">ഹിരി മോതു</language>
 			<language type="hr">ക്രൊയേഷ്യൻ</language>
 			<language type="hsb">അപ്പർ സോർബിയൻ</language>
-			<language type="ht">ഹെയ്‌തിയൻ</language>
+			<language type="hsn">ഷ്യാങ് ചൈനീസ്</language>
+			<language type="ht">ഹെയ്‌തിയൻ ക്രിയോൾ</language>
 			<language type="hu">ഹംഗേറിയൻ</language>
 			<language type="hup">ഹൂപ</language>
 			<language type="hy">അർമേനിയൻ</language>
 			<language type="hz">ഹെരേരൊ</language>
-			<language type="ia">ഇന്റർലിൻ‌ഗ്വാ</language>
+			<language type="ia">ഇന്റർലിംഗ്വ</language>
 			<language type="iba">ഇബാൻ</language>
 			<language type="ibb">ഇബീബിയോ</language>
-			<language type="id">ഇൻഡോനേഷ്യൻ</language>
-			<language type="ie">ഇന്റർലിംഗ്വ</language>
+			<language type="id">ഇന്തോനേഷ്യൻ</language>
+			<language type="ie">ഇന്റർലിംഗ്വേ</language>
 			<language type="ig">ഇഗ്ബോ</language>
 			<language type="ii">ഷുവാൻയി</language>
 			<language type="ik">ഇനുപിയാക്</language>
@@ -250,11 +258,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ki">കികൂയു</language>
 			<language type="kj">ക്വാന്യമ</language>
 			<language type="kk">കസാഖ്</language>
-			<language type="kkj">കക്കോ</language>
+			<language type="kkj">കാകോ</language>
 			<language type="kl">കലാല്ലിസട്ട്</language>
 			<language type="kln">കലെഞ്ഞിൻ</language>
 			<language type="km">ഖമെർ</language>
-			<language type="kmb">ക്ലിംഗൻ</language>
+			<language type="kmb">കിംബുണ്ടു</language>
 			<language type="kn">കന്നഡ</language>
 			<language type="ko">കൊറിയൻ</language>
 			<language type="koi">കോമി-പെർമ്യാക്ക്</language>
@@ -267,8 +275,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="kru">കുരുഖ്</language>
 			<language type="ks">കാശ്‌മീരി</language>
 			<language type="ksb">ഷംഭാള</language>
-			<language type="ksf">ഭാഫിയ</language>
-			<language type="ksh">കൊളോഞ്ഞിയൻ</language>
+			<language type="ksf">ബാഫിയ</language>
+			<language type="ksh">കൊളോണിയൻ</language>
 			<language type="ku">കുർദ്ദിഷ്</language>
 			<language type="kum">കുമൈക്</language>
 			<language type="kut">കുതേനൈ</language>
@@ -288,6 +296,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ln">ലിംഗാല</language>
 			<language type="lo">ലാവോ</language>
 			<language type="lol">മോങ്കോ</language>
+			<language type="lou" draft="contributed">ലൂസിയാന ക്രിയോൾ</language>
 			<language type="loz">ലൊസി</language>
 			<language type="lrc">വടക്കൻ ലൂറി</language>
 			<language type="lt">ലിത്വാനിയൻ</language>
@@ -323,7 +332,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mk">മാസിഡോണിയൻ</language>
 			<language type="ml">മലയാളം</language>
 			<language type="mn">മംഗോളിയൻ</language>
-			<language type="mnc">മൻചു</language>
+			<language type="mnc">മാൻ‌ചു</language>
 			<language type="mni">മണിപ്പൂരി</language>
 			<language type="moh">മോഹാക്</language>
 			<language type="mos">മൊസ്സി</language>
@@ -340,6 +349,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="myv">ഏഴ്സ്യ</language>
 			<language type="mzn">മസന്ററാനി</language>
 			<language type="na">നൗറു</language>
+			<language type="nan">മിൻ നാൻ ചൈനീസ്</language>
 			<language type="nap">നെപ്പോളിറ്റാൻ</language>
 			<language type="naq">നാമ</language>
 			<language type="nb">നോർവീജിയൻ ബുക്‌മൽ</language>
@@ -358,12 +368,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="nnh">ഗീംബൂൺ</language>
 			<language type="no">നോർവീജിയൻ</language>
 			<language type="nog">നോഗൈ</language>
-			<language type="non">പഴയ പേർഷ്യൻ</language>
+			<language type="non">പഴയ നോഴ്‌സ്</language>
 			<language type="nqo">ഇൻകോ</language>
 			<language type="nr">ദക്ഷിണ നെഡിബിൾ</language>
 			<language type="nso">നോർത്തേൻ സോതോ</language>
 			<language type="nus">നുവേർ</language>
-			<language type="nv">നവാഹൊ</language>
+			<language type="nv">നവാജോ</language>
 			<language type="nwc">ക്ലാസിക്കൽ നേവാരി</language>
 			<language type="ny">ന്യൻജ</language>
 			<language type="nym">ന്യാംവേസി</language>
@@ -381,15 +391,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pag">പങ്കാസിനൻ</language>
 			<language type="pal">പാഹ്ലവി</language>
 			<language type="pam">പാംപൻഗ</language>
-			<language type="pap">പാപിയാമെൻറൊ</language>
+			<language type="pap">പാപിയാമെന്റൊ</language>
 			<language type="pau">പലാവുൻ</language>
-			<language type="peo">പ്രാചീന പേർഷ്യൻ</language>
+			<language type="pcm">നൈജീരിയൻ പിഡ്‌ഗിൻ</language>
+			<language type="peo">പഴയ പേർഷ്യൻ</language>
 			<language type="phn">ഫീനിഷ്യൻ</language>
 			<language type="pi">പാലി</language>
 			<language type="pl">പോളിഷ്</language>
 			<language type="pon">പൊൻപിയൻ</language>
-			<language type="pro">പ്രൊവൻഷ്ൽ</language>
-			<language type="ps">പഷ്തു</language>
+			<language type="prg">പ്രഷ്യൻ</language>
+			<language type="pro">പഴയ പ്രൊവൻഷ്ൽ</language>
+			<language type="ps">പഷ്‌തോ</language>
 			<language type="ps" alt="variant">പുഷ്തോ</language>
 			<language type="pt">പോർച്ചുഗീസ്</language>
 			<language type="pt_BR">ബ്രസീലിയൻ പോർച്ചുഗീസ്</language>
@@ -404,7 +416,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ro">റൊമാനിയൻ</language>
 			<language type="ro_MD">മോൾഡാവിയൻ</language>
 			<language type="rof">റോംബോ</language>
-			<language type="rom">റോമനി</language>
+			<language type="rom">റൊമാനി</language>
 			<language type="root">മൂലഭാഷ</language>
 			<language type="ru">റഷ്യൻ</language>
 			<language type="rup">ആരോമാനിയൻ</language>
@@ -430,19 +442,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sel">സെൽകപ്</language>
 			<language type="ses">കൊയ്റാബൊറോ സെന്നി</language>
 			<language type="sg">സാംഗോ</language>
-			<language type="sga">പ്രാചീന ഐറിഷ്</language>
+			<language type="sga">പഴയ ഐറിഷ്</language>
 			<language type="sh">സെർബോ-ക്രൊയേഷ്യൻ</language>
 			<language type="shi">താച്ചലിറ്റ്</language>
 			<language type="shn">ഷാൻ</language>
-			<language type="shu">ചാഡ് അറബി</language>
+			<language type="shu">ചാഡിയൻ അറബി</language>
 			<language type="si">സിംഹള</language>
 			<language type="sid">സിഡാമോ</language>
 			<language type="sk">സ്ലോവാക്</language>
 			<language type="sl">സ്ലോവേനിയൻ</language>
 			<language type="sm">സമോവൻ</language>
-			<language type="sma">തെക്കൻ സാമി</language>
+			<language type="sma">തെക്കൻ സമി</language>
 			<language type="smj">ലൂലീ സമി</language>
-			<language type="smn">ഇനാരി സാമി</language>
+			<language type="smn">ഇനാരി സമി</language>
 			<language type="sms">സ്കോൾട്ട് സമി</language>
 			<language type="sn">ഷോണ</language>
 			<language type="snk">സോണിൻകെ</language>
@@ -482,17 +494,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tlh">ക്ലിംഗോൺ</language>
 			<language type="tli">ലിംഗ്വിറ്റ്</language>
 			<language type="tmh">ടമഷേക്</language>
-			<language type="tn">ത്സ്വാന</language>
+			<language type="tn">സ്വാന</language>
 			<language type="to">ടോംഗൻ</language>
 			<language type="tog">ന്യാസാ ഡോങ്ക</language>
 			<language type="tpi">ടോക് പിസിൻ</language>
 			<language type="tr">ടർക്കിഷ്</language>
 			<language type="trv">തരോക്കോ</language>
-			<language type="ts">ത്സോംഗ</language>
+			<language type="ts">സോംഗ</language>
 			<language type="tsi">സിംഷ്യൻ</language>
 			<language type="tt">ടാട്ടർ</language>
 			<language type="tum">ടുംബുക</language>
-			<language type="tvl">തുവാലു</language>
+			<language type="tvl">ടുവാലു</language>
 			<language type="tw">ട്വി</language>
 			<language type="twq">ടസവാക്ക്</language>
 			<language type="ty">താഹിതിയൻ</language>
@@ -512,14 +524,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="vi">വിയറ്റ്നാമീസ്</language>
 			<language type="vo">വോളാപുക്</language>
 			<language type="vot">വോട്ടിക്</language>
-			<language type="vun">വുഞ്ജോ</language>
+			<language type="vun">വുൻജോ</language>
 			<language type="wa">വല്ലൂൺ</language>
 			<language type="wae">വാൾസർ</language>
-			<language type="wal">വലമൊ</language>
+			<language type="wal">വൊലൈറ്റ</language>
 			<language type="war">വാരേയ്</language>
 			<language type="was">വാഷൊ</language>
-			<language type="wbp">വാൾപ്പിരി</language>
+			<language type="wbp">വൂൾപിരി</language>
 			<language type="wo">വൊളോഫ്</language>
+			<language type="wuu">വു ചൈനീസ്</language>
 			<language type="xal">കൽമൈക്</language>
 			<language type="xh">ഖോസ</language>
 			<language type="xog">സോഗോ</language>
@@ -534,8 +547,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zap">സാപ്പോടെക്</language>
 			<language type="zbl">ബ്ലിസ്സിംബൽസ്</language>
 			<language type="zen">സെനഗ</language>
-			<language type="zgh">മൊറോക്കൻ സാധാരണ താമസൈറ്റ്</language>
+			<language type="zgh">സ്റ്റാൻഡേർഡ് മൊറോക്കൻ റ്റാമസിയറ്റ്</language>
 			<language type="zh">ചൈനീസ്</language>
+			<language type="zh_Hans">ലളിതമാക്കിയ ചൈനീസ്</language>
+			<language type="zh_Hant">പരമ്പരാഗത ചൈനീസ്</language>
 			<language type="zu">സുലു</language>
 			<language type="zun">സുനി</language>
 			<language type="zxx">ഭാഷാപരമായ ഉള്ളടക്കമൊന്നുമില്ല</language>
@@ -579,6 +594,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">ഗ്രീക്ക്</script>
 			<script type="Gujr">ഗുജറാത്തി</script>
 			<script type="Guru">ഗുരുമുഖി</script>
+			<script type="Hanb">ഹൻബ്</script>
 			<script type="Hang">ഹാംഗുൽ</script>
 			<script type="Hani">ഹാൻ</script>
 			<script type="Hano">ഹനുനൂ</script>
@@ -589,10 +605,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hebr">ഹീബ്രു</script>
 			<script type="Hira">ഹിരഗാന</script>
 			<script type="Hmng">പഹ്വാ ഹമോംഗ്</script>
-			<script type="Hrkt">കടകാനയോ ഹിരാഗാനയോ</script>
+			<script type="Hrkt">ജാപ്പനീസ് സില്ലബറീസ്</script>
 			<script type="Hung">പുരാതന ഹംഗേറിയൻ</script>
 			<script type="Inds">സിന്ധു</script>
 			<script type="Ital">പഴയ ഇറ്റാലിയൻ</script>
+			<script type="Jamo">ജാമോ</script>
 			<script type="Java">ജാവനീസ്</script>
 			<script type="Jpan">ജാപ്പനീസ്</script>
 			<script type="Kali">കയാ ലി</script>
@@ -671,6 +688,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii">യി</script>
 			<script type="Zinh">പാരമ്പര്യമായ</script>
 			<script type="Zmth">ഗണിത രൂപം</script>
+			<script type="Zsye">ഇമോജി</script>
 			<script type="Zsym">ചിഹ്നങ്ങൾ</script>
 			<script type="Zxxx">എഴുതപ്പെടാത്തത്</script>
 			<script type="Zyyy">സാധാരണ</script>
@@ -706,9 +724,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">കിഴക്കൻ യൂറോപ്പ്</territory>
 			<territory type="154">വടക്കേ യൂറോപ്പ്</territory>
 			<territory type="155">പശ്ചിമ യൂറോപ്പ്</territory>
+			<territory type="202" draft="contributed">202</territory>
 			<territory type="419">ലാറ്റിനമേരിക്ക</territory>
 			<territory type="AC">അസൻഷൻ ദ്വീപ്</territory>
-			<territory type="AD">അന്റോറ</territory>
+			<territory type="AD">അൻഡോറ</territory>
 			<territory type="AE">യുണൈറ്റഡ് അറബ് എമിറൈറ്റ്‌സ്</territory>
 			<territory type="AF">അഫ്‌ഗാനിസ്ഥാൻ</territory>
 			<territory type="AG">ആൻറിഗ്വയും ബർബുഡയും</territory>
@@ -716,8 +735,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="AL">അൽബേനിയ</territory>
 			<territory type="AM">അർമേനിയ</territory>
 			<territory type="AO">അംഗോള</territory>
-			<territory type="AQ">അൻറാർട്ടിക്ക</territory>
-			<territory type="AR">അർജൻറീന</territory>
+			<territory type="AQ">അന്റാർട്ടിക്ക</territory>
+			<territory type="AR">അർജന്റീന</territory>
 			<territory type="AS">അമേരിക്കൻ സമോവ</territory>
 			<territory type="AT">ഓസ്ട്രിയ</territory>
 			<territory type="AU">ഓസ്‌ട്രേലിയ</territory>
@@ -728,7 +747,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BB">ബാർബഡോസ്</territory>
 			<territory type="BD">ബംഗ്ലാദേശ്</territory>
 			<territory type="BE">ബെൽജിയം</territory>
-			<territory type="BF">ബുർക്കിനാ ഫാസോ</territory>
+			<territory type="BF">ബർക്കിന ഫാസോ</territory>
 			<territory type="BG">ബൾഗേറിയ</territory>
 			<territory type="BH">ബഹ്റിൻ</territory>
 			<territory type="BI">ബറുണ്ടി</territory>
@@ -737,7 +756,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BM">ബർമുഡ</territory>
 			<territory type="BN">ബ്രൂണൈ</territory>
 			<territory type="BO">ബൊളീവിയ</territory>
-			<territory type="BQ">ബൊണെയ്ർ, സിന്റ് യുസ്റ്റേഷ്യസ്, സാബ എന്നിവ</territory>
+			<territory type="BQ">കരീബിയൻ നെതർലാൻഡ്സ്</territory>
 			<territory type="BR">ബ്രസീൽ</territory>
 			<territory type="BS">ബഹാമാസ്</territory>
 			<territory type="BT">ഭൂട്ടാൻ</territory>
@@ -749,7 +768,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CC">കോക്കസ് (കീലിംഗ്) ദ്വീപുകൾ</territory>
 			<territory type="CD">കോംഗോ - കിൻഷാസ</territory>
 			<territory type="CD" alt="variant">കോംഗോ (DRC)</territory>
-			<territory type="CF">സെൻട്രൽ ആഫ്രിക്കൻ റിപ്പബ്ലിക്</territory>
+			<territory type="CF">സെൻട്രൽ ആഫ്രിക്കൻ റിപ്പബ്ലിക്ക്</territory>
 			<territory type="CG">കോംഗോ - ബ്രാസവില്ലി</territory>
 			<territory type="CG" alt="variant">കോംഗോ (റിപ്പബ്ലിക്ക്)</territory>
 			<territory type="CH">സ്വിറ്റ്സർലാൻഡ്</territory>
@@ -763,17 +782,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CP">ക്ലിപ്പെർട്ടൻ ദ്വീപ്</territory>
 			<territory type="CR">കോസ്റ്ററിക്ക</territory>
 			<territory type="CU">ക്യൂബ</territory>
-			<territory type="CV">കേപ്പ് വെർദെ</territory>
+			<territory type="CV">കേപ്പ് വേർഡ്</territory>
 			<territory type="CW">കുറാകാവോ</territory>
 			<territory type="CX">ക്രിസ്മസ് ദ്വീപ്</territory>
 			<territory type="CY">സൈപ്രസ്</territory>
-			<territory type="CZ">ചെക്ക് റിപ്പബ്ലിക്</territory>
-			<territory type="DE">ജർമനി</territory>
+			<territory type="CZ">ചെക്കിയ</territory>
+			<territory type="CZ" alt="variant">ചെക്ക് റിപ്പബ്ലിക്ക്</territory>
+			<territory type="DE">ജർമ്മനി</territory>
 			<territory type="DG">ഡീഗോ ഗ്രാഷ്യ</territory>
 			<territory type="DJ">ദിജിബൗട്ടി</territory>
 			<territory type="DK">ഡെൻമാർക്ക്</territory>
 			<territory type="DM">ഡൊമിനിക്ക</territory>
-			<territory type="DO">ഡൊമിനിക്കൻ റിപ്പബ്ലിക്</territory>
+			<territory type="DO">ഡൊമിനിക്കൻ റിപ്പബ്ലിക്ക്</territory>
 			<territory type="DZ">അൾജീരിയ</territory>
 			<territory type="EA">സെയൂത്ത ആൻഡ് മെലിയ</territory>
 			<territory type="EC">ഇക്വഡോർ</territory>
@@ -784,6 +804,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">സ്‌പെയിൻ</territory>
 			<territory type="ET">എത്യോപ്യ</territory>
 			<territory type="EU">യൂറോപ്യൻ യൂണിയൻ</territory>
+			<territory type="EZ">യൂറോസോൺ</territory>
 			<territory type="FI">ഫിൻലാൻഡ്</territory>
 			<territory type="FJ">ഫിജി</territory>
 			<territory type="FK">ഫാക്ക്‌ലാന്റ് ദ്വീപുകൾ</territory>
@@ -811,8 +832,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GU">ഗ്വാം</territory>
 			<territory type="GW">ഗിനിയ-ബിസൗ</territory>
 			<territory type="GY">ഗയാന</territory>
-			<territory type="HK">ഹോങ്കോങ്ങ് (SAR) ചൈന</territory>
-			<territory type="HK" alt="short">ഹോങ്കോങ്ങ്</territory>
+			<territory type="HK">ഹോങ്കോങ് (SAR) ചൈന</territory>
+			<territory type="HK" alt="short">ഹോങ്കോങ്</territory>
 			<territory type="HM">ഹിയേർഡും മക്‌ഡൊണാൾഡ് ദ്വീപുകളും</territory>
 			<territory type="HN">ഹോണ്ടുറാസ്</territory>
 			<territory type="HR">ക്രൊയേഷ്യ</territory>
@@ -820,7 +841,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="HU">ഹംഗറി</territory>
 			<territory type="IC">കാനറി ദ്വീപുകൾ</territory>
 			<territory type="ID">ഇന്തോനേഷ്യ</territory>
-			<territory type="IE">അയർലാൻഡ്</territory>
+			<territory type="IE">അയർലൻഡ്</territory>
 			<territory type="IL">ഇസ്രായേൽ</territory>
 			<territory type="IM">ഐൽ ഓഫ് മാൻ</territory>
 			<territory type="IN">ഇന്ത്യ</territory>
@@ -842,11 +863,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KP">ഉത്തരകൊറിയ</territory>
 			<territory type="KR">ദക്ഷിണകൊറിയ</territory>
 			<territory type="KW">കുവൈറ്റ്</territory>
-			<territory type="KY">കേമാൻ ദ്വീപുകൾ</territory>
+			<territory type="KY">കേയ്മാൻ ദ്വീപുകൾ</territory>
 			<territory type="KZ">കസാഖിസ്ഥാൻ</territory>
 			<territory type="LA">ലാവോസ്</territory>
 			<territory type="LB">ലെബനൻ</territory>
-			<territory type="LC">സെൻറ് ലൂസിയ</territory>
+			<territory type="LC">സെന്റ് ലൂസിയ</territory>
 			<territory type="LI">ലിച്ചൺസ്റ്റൈൻ</territory>
 			<territory type="LK">ശ്രീലങ്ക</territory>
 			<territory type="LR">ലൈബീരിയ</territory>
@@ -859,9 +880,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MC">മൊണാക്കോ</territory>
 			<territory type="MD">മൾഡോവ</territory>
 			<territory type="ME">മോണ്ടെനെഗ്രോ</territory>
-			<territory type="MF">സെൻറ് മാർട്ടിൻ</territory>
+			<territory type="MF">സെന്റ് മാർട്ടിൻ</territory>
 			<territory type="MG">മഡഗാസ്കർ</territory>
-			<territory type="MH">മാർഷൽ‍‍ ദ്വീപുകൾ</territory>
+			<territory type="MH">മാർഷൽ ദ്വീപുകൾ</territory>
 			<territory type="MK">മാസിഡോണിയ</territory>
 			<territory type="MK" alt="variant">മാസിഡോണിയ (FYROM)</territory>
 			<territory type="ML">മാലി</territory>
@@ -881,7 +902,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MY">മലേഷ്യ</territory>
 			<territory type="MZ">മൊസാംബിക്ക്</territory>
 			<territory type="NA">നമീബിയ</territory>
-			<territory type="NC">പുതിയ കാലിഡോണിയ</territory>
+			<territory type="NC">ന്യൂ കാലിഡോണിയ</territory>
 			<territory type="NE">നൈജർ</territory>
 			<territory type="NF">നോർഫോക് ദ്വീപ്</territory>
 			<territory type="NG">നൈജീരിയ</territory>
@@ -897,12 +918,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PE">പെറു</territory>
 			<territory type="PF">ഫ്രഞ്ച് പോളിനേഷ്യ</territory>
 			<territory type="PG">പാപ്പുവ ന്യൂ ഗിനിയ</territory>
-			<territory type="PH">ഫിലിപ്പൈൻസ്</territory>
+			<territory type="PH">ഫിലിപ്പീൻസ്</territory>
 			<territory type="PK">പാക്കിസ്ഥാൻ</territory>
 			<territory type="PL">പോളണ്ട്</territory>
 			<territory type="PM">സെന്റ് പിയറിയും മിക്കലണും</territory>
 			<territory type="PN">പിറ്റ്‌കെയ്‌ൻ ദ്വീപുകൾ</territory>
-			<territory type="PR">പ്യൂർട്ടോ റിക്കോ</territory>
+			<territory type="PR">പോർട്ടോ റിക്കോ</territory>
 			<territory type="PS">പാലസ്‌തീൻ പ്രദേശങ്ങൾ</territory>
 			<territory type="PS" alt="short">പലസ്‌തീൻ</territory>
 			<territory type="PT">പോർച്ചുഗൽ</territory>
@@ -916,12 +937,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="RU">റഷ്യ</territory>
 			<territory type="RW">റുവാണ്ട</territory>
 			<territory type="SA">സൗദി അറേബ്യ</territory>
-			<territory type="SB">സോളമൻ‍ ദ്വീപുകൾ</territory>
-			<territory type="SC">സെയ്‌ഷെൽസ്</territory>
+			<territory type="SB">സോളമൻ ദ്വീപുകൾ</territory>
+			<territory type="SC">സീഷെൽസ്</territory>
 			<territory type="SD">സുഡാൻ</territory>
 			<territory type="SE">സ്വീഡൻ</territory>
-			<territory type="SG">സിംഗപ്പുർ</territory>
-			<territory type="SH">സെൻറ് ഹെലീന</territory>
+			<territory type="SG">സിംഗപ്പൂർ</territory>
+			<territory type="SH">സെന്റ് ഹെലീന</territory>
 			<territory type="SI">സ്ലോവേനിയ</territory>
 			<territory type="SJ">സ്വാൽബാഡും ജാൻ മായേനും</territory>
 			<territory type="SK">സ്ലോവാക്യ</territory>
@@ -929,13 +950,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SM">സാൻ മറിനോ</territory>
 			<territory type="SN">സെനഗൽ</territory>
 			<territory type="SO">സോമാലിയ</territory>
-			<territory type="SR">സുരിനെയിം</territory>
+			<territory type="SR">സുരിനാം</territory>
 			<territory type="SS">ദക്ഷിണ സുഡാൻ</territory>
 			<territory type="ST">സാവോ ടോമും പ്രിൻസിപെയും</territory>
 			<territory type="SV">എൽ സാൽവദോർ</territory>
 			<territory type="SX">സിന്റ് മാർട്ടെൻ</territory>
 			<territory type="SY">സിറിയ</territory>
-			<territory type="SZ">സ്വാസിലാൻറ്</territory>
+			<territory type="SZ">സ്വാസിലാന്റ്</territory>
 			<territory type="TA">ട്രസ്റ്റൻ ഡ കൂന</territory>
 			<territory type="TC">ടർക്ക്‌സും കെയ്‌ക്കോ ദ്വീപുകളും</territory>
 			<territory type="TD">ഛാഡ്</territory>
@@ -957,6 +978,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">ഉക്രെയ്‌ൻ</territory>
 			<territory type="UG">ഉഗാണ്ട</territory>
 			<territory type="UM">യു.എസ്. ദ്വീപസമൂഹങ്ങൾ</territory>
+			<territory type="UN">ഐക്യരാഷ്ട്രസഭ</territory>
+			<territory type="UN" alt="short">യുഎൻ</territory>
 			<territory type="US">അമേരിക്കൻ ഐക്യനാടുകൾ</territory>
 			<territory type="US" alt="short">യു.എസ്</territory>
 			<territory type="UY">ഉറുഗ്വേ</territory>
@@ -994,11 +1017,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">കലണ്ടർ</key>
+			<key type="cf">കറൻസി ഫോർമാറ്റ്</key>
 			<key type="colAlternate">ചിഹ്നങ്ങൾ പ്രകാരം അടുക്കുന്നത് അവഗണിക്കുക</key>
 			<key type="colBackwards">വിപരീതക്രമ ആക്‌സന്റ് പ്രകാരമുള്ള അടുക്കൽ</key>
 			<key type="colCaseFirst">വലിയക്ഷര/ചെറിയക്ഷര പ്രകാരമുള്ള അടുക്കൽ</key>
 			<key type="colCaseLevel">കേസ് സെൻസിറ്റീവ് അടുക്കൽ</key>
-			<key type="colHiraganaQuaternary">Kana അടുക്കൽ</key>
 			<key type="collation">അടുക്കൽ ക്രമം</key>
 			<key type="colNormalization">സാധാരണ അടുക്കൽ</key>
 			<key type="colNumeric">അക്കങ്ങൾ പ്രകാരമുള്ള അടുക്കൽ</key>
@@ -1010,7 +1033,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">അക്കങ്ങൾ‌</key>
 			<key type="timezone">സമയ മേഖല</key>
 			<key type="va">ഭാഷാ ഭേദം</key>
-			<key type="variableTop">ചിഹ്നങ്ങളായി അടുക്കുക</key>
 			<key type="x">സ്വകാര്യ ഉപയോഗം</key>
 		</keys>
 		<types>
@@ -1025,10 +1047,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="indian">ശകവർഷ കലണ്ടർ</type>
 			<type key="calendar" type="islamic">ഇസ്‌ലാമിക് കലണ്ടർ</type>
 			<type key="calendar" type="islamic-civil">ഇസ്ലാം-സിവിൽ കലണ്ടർ</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">ഇസ്ലാം-അറബിക് കലണ്ടർ</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">ഇസ്ലാം-ജ്യോതിഷ കലണ്ടർ</type>
+			<type key="calendar" type="islamic-umalqura" draft="contributed">ഇസ്‌ലാമിക് കലണ്ടർ (ഉം അൽ ഖുറ)</type>
 			<type key="calendar" type="iso8601">ഐഎസ്ഓ 8601 കലണ്ടർ</type>
 			<type key="calendar" type="japanese">ജാപ്പനീസ് കലണ്ടർ</type>
 			<type key="calendar" type="persian">പേർഷ്യൻ കലണ്ടർ</type>
 			<type key="calendar" type="roc">മിംഗ്വോ കലണ്ടർ</type>
+			<type key="cf" type="account">അക്കൗണ്ടിംഗ് കറൻസി ഫോർമാറ്റ്</type>
+			<type key="cf" type="standard">സാധാരണ കറൻസി ഫോർമാറ്റ്</type>
 			<type key="colAlternate" type="non-ignorable">ചിഹ്നങ്ങൾ അടുക്കുക</type>
 			<type key="colAlternate" type="shifted">അവഗണിക്കൽ ചിഹ്നങ്ങൾ അടുക്കുക</type>
 			<type key="colBackwards" type="no">സാധാരണ ആക്‌സന്റുകൾ പ്രകാരം അടുക്കുക</type>
@@ -1038,11 +1065,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper">ആദ്യം വലിയക്ഷരപ്രകാരം അടുക്കുക</type>
 			<type key="colCaseLevel" type="no">കേസ് സെൻസിറ്റീവ് പ്രകാരം അടുക്കുക</type>
 			<type key="colCaseLevel" type="yes">കേസ് സെൻസിറ്റീവ് അടുക്കുക</type>
-			<type key="colHiraganaQuaternary" type="no">Kana പ്രത്യേകം അടുക്കുക</type>
-			<type key="colHiraganaQuaternary" type="yes">Kana വ്യത്യസ്‌തമായി അടുക്കുക</type>
 			<type key="collation" type="big5han">പരമ്പരാഗത ചൈനീസ് ക്രമീകരണം - ബിഗ്5</type>
+			<type key="collation" type="compat" draft="contributed">അനുയോജ്യതയ്‌ക്കായുള്ള മുൻ അടുക്കൽ ക്രമം</type>
 			<type key="collation" type="dictionary" draft="contributed">നിഘണ്ടു അടുക്കൽ ക്രമം</type>
 			<type key="collation" type="ducet">സ്ഥിര യൂണികോഡ് അടുക്കൽ ക്രമം</type>
+			<type key="collation" type="emoji" draft="contributed">ഇമോജി അടുക്കൽ ക്രമം</type>
+			<type key="collation" type="eor" draft="contributed">യൂറോപ്യൻ അടുക്കൽ നിയമങ്ങൾ</type>
 			<type key="collation" type="gb2312han">ലളിതമായ ചൈനീസ് ക്രമീകരണം - ജീബി2312</type>
 			<type key="collation" type="phonebook">ഫോൺബുക്കിലെ ക്രമീകരണം</type>
 			<type key="collation" type="phonetic">സ്വരസൂചക അടുക്കൽ ക്രമം</type>
@@ -1054,6 +1082,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="collation" type="stroke">സ്റ്റ്രോക്ക് ക്രമീകരണം</type>
 			<type key="collation" type="traditional">പരമ്പരാഗത ക്രമീകരണം</type>
 			<type key="collation" type="unihan" draft="contributed">റാഡിക്കൽ-സ്ട്രോക്ക് അടുക്കൽ ക്രമം</type>
+			<type key="collation" type="zhuyin" draft="contributed">ജുയൻ അടുക്കൽ ക്രമം</type>
 			<type key="colNormalization" type="no">സാധാരണരീതി ഇല്ലാതെ അടുക്കുക</type>
 			<type key="colNormalization" type="yes">സാധാരണ യൂണിക്കോഡ് അടുക്കുക</type>
 			<type key="colNumeric" type="no">ഓരോ ഡിജിറ്റുകൾ പ്രകാരം അടുക്കുക</type>
@@ -1063,6 +1092,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary">ആക്‌സന്റുകൾ/കേസ്/വീതി/Kana അടുക്കുക</type>
 			<type key="colStrength" type="secondary">ആക്‌സന്റുകൾ അടുക്കുക</type>
 			<type key="colStrength" type="tertiary">ആക്‌സന്റുകൾ/കേസ്/വീതി അടുക്കുക</type>
+			<type key="d0" type="fwidth">ഫുൾവിഡ്‌ത്തിലേക്ക്</type>
+			<type key="d0" type="hwidth">ഹാഫ്‌വിഡ്‌ത്തിലേക്ക്</type>
+			<type key="d0" type="npinyin" draft="contributed">സംഖ്യാപരമായ</type>
 			<type key="hc" type="h11">12 മണിക്കൂർ സംവിധാനം (0–11)</type>
 			<type key="hc" type="h12">12 മണിക്കൂർ സംവിധാനം (1–12)</type>
 			<type key="hc" type="h23">24 മണിക്കൂർ സംവിധാനം (0–23)</type>
@@ -1070,19 +1102,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">അനിയന്ത്രിത രേഖാ വിഭാജി ശൈലി</type>
 			<type key="lb" type="normal">സാധാരണ രേഖാ വിഭാജി ശൈലി</type>
 			<type key="lb" type="strict">നിയന്ത്രിത രേഖാ വിഭാജി ശൈലി</type>
+			<type key="m0" type="bgn">യു.എസ്. BGN ലിപ്യന്തരണം</type>
+			<type key="m0" type="ungegn">യു.എൻ. GEGN ലിപ്യന്തരണം</type>
 			<type key="ms" type="metric">മെട്രിക്ക് സംവിധാനം</type>
 			<type key="ms" type="uksystem">ബ്രിട്ടീഷ് അളക്കൽ സംവിധാനം</type>
 			<type key="ms" type="ussystem">യുഎസ് അളക്കൽ സംവിധാനം</type>
+			<type key="numbers" type="ahom" draft="contributed">അഹോം അക്കങ്ങൾ</type>
 			<type key="numbers" type="arab">അറബിക്-ഇന്ത്യ അക്കങ്ങൾ</type>
-			<type key="numbers" type="arabext">വിപുലീകൃത അറബി-ഭാരതീയ അക്കങ്ങൾ</type>
+			<type key="numbers" type="arabext">വിപുലീകൃത അറബിക്-ഇന്ത്യ അക്കങ്ങൾ</type>
 			<type key="numbers" type="armn">അർമേനിയൻ സംഖ്യകൾ</type>
 			<type key="numbers" type="armnlow">അർമേനിയൻ ചെറിയ സംഖ്യകൾ</type>
+			<type key="numbers" type="bali" draft="contributed">ബെലിനീസ് അക്കങ്ങൾ</type>
 			<type key="numbers" type="beng">ബംഗാളി അക്കങ്ങൾ</type>
+			<type key="numbers" type="brah" draft="contributed">ബ്രാഹ്‌മി അക്കങ്ങൾ</type>
+			<type key="numbers" type="cakm" draft="contributed">ചക്മ അക്കങ്ങൾ</type>
+			<type key="numbers" type="cham" draft="contributed">ചാം അക്കങ്ങൾ</type>
+			<type key="numbers" type="cyrl" draft="contributed">സിറിലിക് അക്കങ്ങൾ</type>
 			<type key="numbers" type="deva">ദേവനാഗരി അക്കങ്ങൾ</type>
 			<type key="numbers" type="ethi">എത്യോപിക് സംഖ്യകൾ</type>
 			<type key="numbers" type="finance">സാമ്പത്തിക സംഖ്യകൾ</type>
 			<type key="numbers" type="fullwide">പൂർണ വലുപ്പമുള്ള സംഖ്യകൾ</type>
 			<type key="numbers" type="geor">ജോർജിയൻ സംഖ്യകൾ</type>
+			<type key="numbers" type="gonm" draft="contributed">മസാറം ഗോണ്ടി അക്കങ്ങൾ</type>
 			<type key="numbers" type="grek">ഗ്രീക്ക് സംഖ്യകൾ</type>
 			<type key="numbers" type="greklow">ഗ്രീക്ക് ചെറിയക്ഷര സംഖ്യകൾ</type>
 			<type key="numbers" type="gujr">ഗുജറാത്തി അക്കങ്ങൾ</type>
@@ -1093,39 +1134,57 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="hant">പരമ്പരാഗത ചൈനീസ് സംഖ്യകൾ</type>
 			<type key="numbers" type="hantfin">പരമ്പരാഗത ചൈനീസ് ധനകാര്യ സംഖ്യകൾ</type>
 			<type key="numbers" type="hebr">ഹീബ്രു സംഖ്യകൾ</type>
+			<type key="numbers" type="hmng" draft="contributed">പഹാവ് മോംഗ് അക്കങ്ങൾ</type>
+			<type key="numbers" type="java" draft="contributed">ജാവനീസ് അക്കങ്ങൾ</type>
 			<type key="numbers" type="jpan">ജാപ്പനീസ് സംഖ്യകൾ</type>
 			<type key="numbers" type="jpanfin">ജാപ്പനീസ് ധനകാര്യ സംഖ്യകൾ</type>
+			<type key="numbers" type="kali" draft="contributed">കയാഹ് ലി അക്കങ്ങൾ</type>
 			<type key="numbers" type="khmr">ഖമേർ അക്കങ്ങൾ</type>
 			<type key="numbers" type="knda">കന്നഡ സംഖ്യകൾ</type>
+			<type key="numbers" type="lana" draft="contributed">തായ് താം ഹോറ അക്കങ്ങൾ</type>
+			<type key="numbers" type="lanatham" draft="contributed">തായ് താം താം അക്കങ്ങൾ</type>
 			<type key="numbers" type="laoo">ലാവോ അക്കങ്ങൾ</type>
 			<type key="numbers" type="latn">പടിഞ്ഞാറൻ അക്കങ്ങൾ</type>
+			<type key="numbers" type="lepc" draft="contributed">ലെപ്‌ച അക്കങ്ങൾ</type>
+			<type key="numbers" type="limb" draft="contributed">ലിംബു അക്കങ്ങൾ</type>
+			<type key="numbers" type="mathbold" draft="contributed">ഗണിത ബോൾഡ് അക്കങ്ങൾ</type>
+			<type key="numbers" type="mathdbl" draft="contributed">ഗണിത ഏകസ്‌പെയ്‌സ് അക്കങ്ങൾ</type>
+			<type key="numbers" type="mathmono" draft="contributed">ഗണിത ഏകസ്‌പെയ്‌സ് അക്കങ്ങൾ</type>
+			<type key="numbers" type="mathsanb" draft="contributed">ഗണിത സാൻസ്‌-സെരീഫ് ബോൾഡ് അക്കങ്ങൾ</type>
+			<type key="numbers" type="mathsans" draft="contributed">ഗണിത സാൻസ്-സെരീഫ് അക്കങ്ങൾ</type>
 			<type key="numbers" type="mlym">മലയാളം അക്കങ്ങൾ</type>
+			<type key="numbers" type="modi" draft="contributed">മോഡി അക്കങ്ങൾ</type>
 			<type key="numbers" type="mong" draft="contributed">മംഗോളിയൻ സംഖ്യകൾ</type>
+			<type key="numbers" type="mroo" draft="contributed">മ്രോ അക്കങ്ങൾ</type>
+			<type key="numbers" type="mtei" draft="contributed">മീറ്റെയ് മായെക് അക്കങ്ങൾ</type>
 			<type key="numbers" type="mymr">മ്യാൻമാർ അക്കങ്ങൾ</type>
+			<type key="numbers" type="mymrshan" draft="contributed">മ്യാൻമാർ ഷാൻ അക്കങ്ങൾ</type>
+			<type key="numbers" type="mymrtlng" draft="contributed">മ്യാൻമാർ തായ് ലെയിംഗ് അക്കങ്ങൾ</type>
 			<type key="numbers" type="native">സ്വാഭാവിക ഡിജിറ്റുകൾ</type>
+			<type key="numbers" type="nkoo" draft="contributed">എൻകോ അക്കങ്ങൾ</type>
+			<type key="numbers" type="olck" draft="contributed">ഓൾ ചികി അക്കങ്ങൾ</type>
 			<type key="numbers" type="orya">ഒഡിയ അക്കങ്ങൾ</type>
+			<type key="numbers" type="osma" draft="contributed">ഒസ്‌മാന്യ അക്കങ്ങൾ</type>
 			<type key="numbers" type="roman">റോമൻ സംഖ്യകൾ</type>
 			<type key="numbers" type="romanlow">റോമൻ ചെറിയ സംഖ്യകൾ</type>
+			<type key="numbers" type="saur" draft="contributed">സൗരാഷ്‌ട്ര അക്കങ്ങൾ</type>
+			<type key="numbers" type="shrd" draft="contributed">ശാരദ അക്കങ്ങൾ</type>
+			<type key="numbers" type="sind" draft="contributed">ഖുഡവാഡി അക്കങ്ങൾ</type>
+			<type key="numbers" type="sinh" draft="contributed">സിംഹള ലിത് അക്കങ്ങൾ</type>
+			<type key="numbers" type="sora" draft="contributed">സോറ സോംപെങ് അക്കങ്ങൾ</type>
+			<type key="numbers" type="sund" draft="contributed">സുഡാനീസ് അക്കങ്ങൾ</type>
+			<type key="numbers" type="takr" draft="contributed">ടാക്രി അക്കങ്ങൾ</type>
+			<type key="numbers" type="talu" draft="contributed">പുതിയ തായ് ലൂ അക്കങ്ങൾ</type>
 			<type key="numbers" type="taml">പരമ്പരാഗത തമിഴ് സംഖ്യകൾ</type>
 			<type key="numbers" type="tamldec">തമിഴ് അക്കങ്ങൾ</type>
 			<type key="numbers" type="telu">തെലുങ്ക് സംഖ്യകൾ</type>
 			<type key="numbers" type="thai">തായി അക്കങ്ങൾ</type>
 			<type key="numbers" type="tibt">ടിബറ്റൻ അക്കങ്ങൾ</type>
+			<type key="numbers" type="tirh" draft="contributed">തിർഹുത്ത അക്കങ്ങൾ</type>
 			<type key="numbers" type="traditional">സാധാരണയായി ഉപയോഗിച്ചുവരുന്ന സംഖ്യകൾ</type>
 			<type key="numbers" type="vaii">വായ് സംഖ്യകൾ</type>
+			<type key="numbers" type="wara" draft="contributed">വറാങ് സിറ്റി അക്കങ്ങൾ</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN">BGN</transformName>
-			<transformName type="Numeric" draft="contributed">സംഖ്യാപരമായ</transformName>
-			<transformName type="Tone" draft="contributed">ശബ്ദം</transformName>
-			<transformName type="UNGEGN">UNGEGN</transformName>
-			<transformName type="x-Accents" draft="contributed">ആൿസൻറുകൾ‌</transformName>
-			<transformName type="x-Fullwidth" draft="contributed">പൂർണവീതി</transformName>
-			<transformName type="x-Halfwidth" draft="contributed">ഹാഫ്‍വിഡ്ത്ത്</transformName>
-			<transformName type="x-Jamo" draft="contributed">ജാമോ</transformName>
-			<transformName type="x-Pinyin" draft="contributed">പിൻയിൻ</transformName>
-			<transformName type="x-Publishing" draft="contributed">പ്രസിദ്ധീകരിക്കുന്നു</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">മെട്രിക്ക്</measurementSystemName>
 			<measurementSystemName type="UK">യുകെ</measurementSystemName>
@@ -1141,6 +1200,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[\u200C\u200D ഃ അ ആ ഇ ഈ ഉ ഊ ഋ ൠ ഌ ൡ എ ഏ ഐ ഒ ഓ ഔ ക ൿ ഖ ഗ ഘ ങ ച ഛ ജ ഝ ഞ ട ഠ ഡ ഢ ണ ൺ ത ഥ ദ ധ ന ൻ പ ഫ ബ ഭ മ ം യ ര ർ ല ൽ വ ശ ഷ സ ഹ ള ൾ ഴ റ ാ ി ീ \u0D41 \u0D42 \u0D43 െ േ ൈ ൊ ോ ൌ ൗ \u0D4D]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[അ ആ ഇ ഈ ഉ ഊ ഋ എ ഏ ഐ ഒ ഓ ഔ ക ഖ ഗ ഘ ങ ച ഛ ജ ഝ ഞ ട ഠ ഡ ഢ ണ ത ഥ ദ ധ ന പ ഫ ബ ഭ മ യ ര ല വ ശ ഷ സ ഹ ള ഴ റ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0൦ 1൧ 2൨ 3൩ 4൪ 5൫ 6൬ 7൭ 8൮ 9൯]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\- , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1149,6 +1209,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1158,6 +1237,243 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="buddhist">
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">BE</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">BE</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">BE</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="coptic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ടൗട്ട്</month>
+							<month type="2" draft="contributed">ബാബ</month>
+							<month type="3" draft="contributed">ഹാറ്റർ</month>
+							<month type="4" draft="contributed">കിയാക്ക്</month>
+							<month type="5" draft="contributed">ടോബ</month>
+							<month type="6" draft="contributed">ആംഷിർ</month>
+							<month type="7" draft="contributed">ബാരംഹാത്ത്</month>
+							<month type="8" draft="contributed">ബാരമൗഡ</month>
+							<month type="9" draft="contributed">ബാഷൻസ്</month>
+							<month type="10" draft="contributed">പവോണ</month>
+							<month type="11" draft="contributed">ഈപെപ്</month>
+							<month type="12" draft="contributed">മെസ്ര</month>
+							<month type="13" draft="contributed">നസീ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">ടൗ.</month>
+							<month type="2" draft="contributed">ബാ.</month>
+							<month type="3" draft="contributed">ഹാ.</month>
+							<month type="4" draft="contributed">കി.</month>
+							<month type="5" draft="contributed">ടോ.</month>
+							<month type="6" draft="contributed">ആം.</month>
+							<month type="7" draft="contributed">ബാ.</month>
+							<month type="8" draft="contributed">ബാ.</month>
+							<month type="9" draft="contributed">ബാ.</month>
+							<month type="10" draft="contributed">പ.</month>
+							<month type="11" draft="contributed">ഈ.</month>
+							<month type="12" draft="contributed">മെ.</month>
+							<month type="13" draft="contributed">ന.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">ടൗട്ട്</month>
+							<month type="2" draft="contributed">ബാബ</month>
+							<month type="3" draft="contributed">ഹാറ്റർ</month>
+							<month type="4" draft="contributed">കിയാക്ക്</month>
+							<month type="5" draft="contributed">ടോബ</month>
+							<month type="6" draft="contributed">ആംഷിർ</month>
+							<month type="7" draft="contributed">ബാരംഹാത്ത്</month>
+							<month type="8" draft="contributed">ബാരമൗഡ</month>
+							<month type="9" draft="contributed">ബാഷൻസ്</month>
+							<month type="10" draft="contributed">പവോണ</month>
+							<month type="11" draft="contributed">ഈപെപ്</month>
+							<month type="12" draft="contributed">മെസ്ര</month>
+							<month type="13" draft="contributed">നസീ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ടൗട്ട്</month>
+							<month type="2" draft="contributed">ബാബ</month>
+							<month type="3" draft="contributed">ഹാറ്റർ</month>
+							<month type="4" draft="contributed">കിയാക്ക്</month>
+							<month type="5" draft="contributed">ടോബ</month>
+							<month type="6" draft="contributed">ആംഷിർ</month>
+							<month type="7" draft="contributed">ബാരംഹാത്ത്</month>
+							<month type="8" draft="contributed">ബാരമൗഡ</month>
+							<month type="9" draft="contributed">ബാഷൻസ്</month>
+							<month type="10" draft="contributed">പവോണ</month>
+							<month type="11" draft="contributed">ഈപെപ്</month>
+							<month type="12" draft="contributed">മെസ്ര</month>
+							<month type="13" draft="contributed">നസീ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">ടൗ.</month>
+							<month type="2" draft="contributed">ബാ.</month>
+							<month type="3" draft="contributed">ഹാ.</month>
+							<month type="4" draft="contributed">കി.</month>
+							<month type="5" draft="contributed">ടോ.</month>
+							<month type="6" draft="contributed">ആം.</month>
+							<month type="7" draft="contributed">ബാ.</month>
+							<month type="8" draft="contributed">ബാ.</month>
+							<month type="9" draft="contributed">ബാ.</month>
+							<month type="10" draft="contributed">പ.</month>
+							<month type="11" draft="contributed">ഈ.</month>
+							<month type="12" draft="contributed">മെ.</month>
+							<month type="13" draft="contributed">ന.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">ടൗട്ട്</month>
+							<month type="2" draft="contributed">ബാബ</month>
+							<month type="3" draft="contributed">ഹാറ്റർ</month>
+							<month type="4" draft="contributed">കിയാക്ക്</month>
+							<month type="5" draft="contributed">ടോബ</month>
+							<month type="6" draft="contributed">ആംഷിർ</month>
+							<month type="7" draft="contributed">ബാരംഹാത്ത്</month>
+							<month type="8" draft="contributed">ബാരമൗഡ</month>
+							<month type="9" draft="contributed">ബാഷൻസ്</month>
+							<month type="10" draft="contributed">പവോണ</month>
+							<month type="11" draft="contributed">ഈപെപ്</month>
+							<month type="12" draft="contributed">മെസ്ര</month>
+							<month type="13" draft="contributed">നസീ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">കാലഘട്ടം0</era>
+						<era type="1" draft="contributed">കാലഘട്ടം1</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">കാലഘട്ടം0</era>
+						<era type="1" draft="contributed">കാലഘട്ടം1</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">കാലഘട്ടം0</era>
+						<era type="1" draft="contributed">കാലഘട്ടം1</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="ethiopic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">മെസ്‌കെരെം</month>
+							<month type="2" draft="contributed">ടെക്കെംറ്റ്</month>
+							<month type="3" draft="contributed">ഹേദർ</month>
+							<month type="4" draft="contributed">തഹ്‌സാസ്</month>
+							<month type="5" draft="contributed">ടെർ</month>
+							<month type="6" draft="contributed">യെക്കാറ്റിറ്റ്</month>
+							<month type="7" draft="contributed">മെഗാബിറ്റ്</month>
+							<month type="8" draft="contributed">മിയാസിയ</month>
+							<month type="9" draft="contributed">ഗെൻബോട്ട്</month>
+							<month type="10" draft="contributed">സെനെ</month>
+							<month type="11" draft="contributed">ഹാംലെ</month>
+							<month type="12" draft="contributed">നെഹാസെ</month>
+							<month type="13" draft="contributed">പാഗുമെൻ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">മെ.</month>
+							<month type="2" draft="contributed">ടെ.</month>
+							<month type="3" draft="contributed">ഹേ.</month>
+							<month type="4" draft="contributed">ത.</month>
+							<month type="5" draft="contributed">ടെ.</month>
+							<month type="6" draft="contributed">യെ.</month>
+							<month type="7" draft="contributed">മെ.</month>
+							<month type="8" draft="contributed">മി.</month>
+							<month type="9" draft="contributed">ഗെ.</month>
+							<month type="10" draft="contributed">സെ.</month>
+							<month type="11" draft="contributed">ഹാം</month>
+							<month type="12" draft="contributed">നെ.</month>
+							<month type="13" draft="contributed">പാ.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">മെസ്‌കെരെം</month>
+							<month type="2" draft="contributed">ടെക്കെംറ്റ്</month>
+							<month type="3" draft="contributed">ഹേദർ</month>
+							<month type="4" draft="contributed">തഹ്‌സാസ്</month>
+							<month type="5" draft="contributed">ടെർ</month>
+							<month type="6" draft="contributed">യെക്കാറ്റിറ്റ്</month>
+							<month type="7" draft="contributed">മെഗാബിറ്റ്</month>
+							<month type="8" draft="contributed">മിയാസിയ</month>
+							<month type="9" draft="contributed">ഗെൻബോട്ട്</month>
+							<month type="10" draft="contributed">സെനെ</month>
+							<month type="11" draft="contributed">ഹാംലെ</month>
+							<month type="12" draft="contributed">നെഹാസെ</month>
+							<month type="13" draft="contributed">പാഗുമെൻ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">മെസ്‌കെരെം</month>
+							<month type="2" draft="contributed">ടെക്കെംറ്റ്</month>
+							<month type="3" draft="contributed">ഹേദർ</month>
+							<month type="4" draft="contributed">തഹ്‌സാസ്</month>
+							<month type="5" draft="contributed">ടെർ</month>
+							<month type="6" draft="contributed">യെക്കാറ്റിറ്റ്</month>
+							<month type="7" draft="contributed">മെഗാബിറ്റ്</month>
+							<month type="8" draft="contributed">മിയാസിയ</month>
+							<month type="9" draft="contributed">ഗെൻബോട്ട്</month>
+							<month type="10" draft="contributed">സെനെ</month>
+							<month type="11" draft="contributed">ഹാംലെ</month>
+							<month type="12" draft="contributed">നെഹാസെ</month>
+							<month type="13" draft="contributed">പാഗുമെൻ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">മെ.</month>
+							<month type="2" draft="contributed">ടെ.</month>
+							<month type="3" draft="contributed">ഹേ.</month>
+							<month type="4" draft="contributed">ത.</month>
+							<month type="5" draft="contributed">ടെ.</month>
+							<month type="6" draft="contributed">യെ.</month>
+							<month type="7" draft="contributed">മെ.</month>
+							<month type="8" draft="contributed">മി.</month>
+							<month type="9" draft="contributed">ഗെ.</month>
+							<month type="10" draft="contributed">സെ.</month>
+							<month type="11" draft="contributed">ഹാം</month>
+							<month type="12" draft="contributed">നെ.</month>
+							<month type="13" draft="contributed">പാ.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">മെസ്‌കെരെം</month>
+							<month type="2" draft="contributed">ടെക്കെംറ്റ്</month>
+							<month type="3" draft="contributed">ഹേദർ</month>
+							<month type="4" draft="contributed">തഹ്‌സാസ്</month>
+							<month type="5" draft="contributed">ടെർ</month>
+							<month type="6" draft="contributed">യെക്കാറ്റിറ്റ്</month>
+							<month type="7" draft="contributed">മെഗാബിറ്റ്</month>
+							<month type="8" draft="contributed">മിയാസിയ</month>
+							<month type="9" draft="contributed">ഗെൻബോട്ട്</month>
+							<month type="10" draft="contributed">സെനെ</month>
+							<month type="11" draft="contributed">ഹാംലെ</month>
+							<month type="12" draft="contributed">നെഹാസെ</month>
+							<month type="13" draft="contributed">പാഗുമെൻ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">കാലഘട്ടം0</era>
+						<era type="1" draft="contributed">കാലഘട്ടം1</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">കാലഘട്ടം0</era>
+						<era type="1" draft="contributed">കാലഘട്ടം1</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">കാലഘട്ടം0</era>
+						<era type="1" draft="contributed">കാലഘട്ടം1</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1203,19 +1519,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="EBhm">E, B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
-						<dateFormatItem id="h" draft="contributed">h a</dateFormatItem>
-						<dateFormatItem id="H" draft="contributed">HH</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">MM-dd</dateFormatItem>
 						<dateFormatItem id="MEd">M/d, E</dateFormatItem>
@@ -1240,7 +1565,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -1358,14 +1683,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ജ</month>
-							<month type="2">ഫ</month>
+							<month type="2">ഫെ</month>
 							<month type="3">മാ</month>
 							<month type="4">ഏ</month>
 							<month type="5">മെ</month>
-							<month type="6">ജൂ</month>
+							<month type="6">ജൂൺ</month>
 							<month type="7">ജൂ</month>
 							<month type="8">ഓ</month>
-							<month type="9">സ</month>
+							<month type="9">സെ</month>
 							<month type="10">ഒ</month>
 							<month type="11">ന</month>
 							<month type="12">ഡി</month>
@@ -1406,7 +1731,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="3">മാ</month>
 							<month type="4">ഏ</month>
 							<month type="5">മെ</month>
-							<month type="6">ജൂ</month>
+							<month type="6">ജൂൺ</month>
 							<month type="7">ജൂ</month>
 							<month type="8">ഓ</month>
 							<month type="9">സെ</month>
@@ -1570,13 +1895,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">ഉച്ച</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">പു</dayPeriod>
-							<dayPeriod type="morning2">രാ</dayPeriod>
-							<dayPeriod type="afternoon1">ഉച്ചയ്</dayPeriod>
-							<dayPeriod type="afternoon2">ഉച്ചതി</dayPeriod>
-							<dayPeriod type="evening1">വൈ</dayPeriod>
-							<dayPeriod type="evening2">സ</dayPeriod>
-							<dayPeriod type="night1">രാ</dayPeriod>
+							<dayPeriod type="morning1">പുലർച്ചെ</dayPeriod>
+							<dayPeriod type="morning2">രാവിലെ</dayPeriod>
+							<dayPeriod type="afternoon1">ഉച്ചയ്ക്ക്</dayPeriod>
+							<dayPeriod type="afternoon2">ഉച്ചതിരിഞ്ഞ്</dayPeriod>
+							<dayPeriod type="evening1">വൈകുന്നേരം</dayPeriod>
+							<dayPeriod type="evening2">സന്ധ്യ</dayPeriod>
+							<dayPeriod type="night1">രാത്രി</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">അർദ്ധരാത്രി</dayPeriod>
@@ -1647,6 +1972,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<era type="1">എഡി</era>
 						<era type="1" alt="variant">സിഇ</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ക്രി.മു.</era>
+						<era type="0" alt="variant" draft="contributed">ബിസിഇ</era>
+						<era type="1" draft="contributed">എഡി</era>
+						<era type="1" alt="variant" draft="contributed">സിഇ</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1714,8 +2045,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E, B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1744,18 +2080,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMEd">MMMM d, E</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMM - ആഴ്ച W</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMM - ആഴ്ച W</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
-						<dateFormatItem id="yM">M-y</dateFormatItem>
+						<dateFormatItem id="yM">y-MM</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">d-M-y, E</dateFormatItem>
-						<dateFormatItem id="yMM">MM-y</dateFormatItem>
+						<dateFormatItem id="yMM">y-MM</dateFormatItem>
 						<dateFormatItem id="yMMM">y MMM</dateFormatItem>
 						<dateFormatItem id="yMMMd">y MMM d</dateFormatItem>
 						<dateFormatItem id="yMMMEd">y MMM d, E</dateFormatItem>
 						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
 						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y-ലെ ആഴ്ച w</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y-ലെ ആഴ്ച w</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1801,8 +2141,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">M/d – M/d</greatestDifference>
-							<greatestDifference id="M">M/d – M/d</greatestDifference>
+							<greatestDifference id="d">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">d/M, E – d/M, E</greatestDifference>
@@ -1860,9 +2200,152 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="hebrew">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">തിഷ്റി</month>
+							<month type="2" draft="contributed">ഹെഷ്‌വൻ</month>
+							<month type="3" draft="contributed">കിസ്‌ലെവ്</month>
+							<month type="4" draft="contributed">ടിവെറ്റ്</month>
+							<month type="5" draft="contributed">സീബാറ്റ്</month>
+							<month type="6" draft="contributed">അദാർ I</month>
+							<month type="7" draft="contributed">അദാർ</month>
+							<month type="7" yeartype="leap" draft="contributed">അദാർ II</month>
+							<month type="8" draft="contributed">നിസാൻ</month>
+							<month type="9" draft="contributed">ഇയാർ</month>
+							<month type="10" draft="contributed">സിവാൻ</month>
+							<month type="11" draft="contributed">താമൂസ്</month>
+							<month type="12" draft="contributed">അബ്</month>
+							<month type="13" draft="contributed">ഏലുൾ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">തി.</month>
+							<month type="2" draft="contributed">ഹെ.</month>
+							<month type="3" draft="contributed">കി.</month>
+							<month type="4" draft="contributed">ടി.</month>
+							<month type="5" draft="contributed">സീ.</month>
+							<month type="6" draft="contributed">അ I</month>
+							<month type="7" draft="contributed">അ.</month>
+							<month type="7" yeartype="leap" draft="contributed">അ II</month>
+							<month type="8" draft="contributed">നി.</month>
+							<month type="9" draft="contributed">ഇ.</month>
+							<month type="10" draft="contributed">സി.</month>
+							<month type="11" draft="contributed">താ.</month>
+							<month type="12" draft="contributed">അ.</month>
+							<month type="13" draft="contributed">ഏ.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">തിഷ്റി</month>
+							<month type="2" draft="contributed">ഹെഷ്‌വൻ</month>
+							<month type="3" draft="contributed">കിസ്‌ലെവ്</month>
+							<month type="4" draft="contributed">ടിവെറ്റ്</month>
+							<month type="5" draft="contributed">സീബാറ്റ്</month>
+							<month type="6" draft="contributed">അദാർ I</month>
+							<month type="7" draft="contributed">അദാർ</month>
+							<month type="7" yeartype="leap" draft="contributed">അദാർ II</month>
+							<month type="8" draft="contributed">നിസാൻ</month>
+							<month type="9" draft="contributed">ഇയാർ</month>
+							<month type="10" draft="contributed">സിവാൻ</month>
+							<month type="11" draft="contributed">താമൂസ്</month>
+							<month type="12" draft="contributed">അബ്</month>
+							<month type="13" draft="contributed">ഏലുൾ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">തിഷ്റി</month>
+							<month type="2" draft="contributed">ഹെഷ്‌വൻ</month>
+							<month type="3" draft="contributed">കിസ്‌ലെവ്</month>
+							<month type="4" draft="contributed">ടിവെറ്റ്</month>
+							<month type="5" draft="contributed">സീബാറ്റ്</month>
+							<month type="6" draft="contributed">അദാർ I</month>
+							<month type="7" draft="contributed">അദാർ</month>
+							<month type="7" yeartype="leap" draft="contributed">അദാർ II</month>
+							<month type="8" draft="contributed">നിസാൻ</month>
+							<month type="9" draft="contributed">ഇയാർ</month>
+							<month type="10" draft="contributed">സിവാൻ</month>
+							<month type="11" draft="contributed">താമൂസ്</month>
+							<month type="12" draft="contributed">അബ്</month>
+							<month type="13" draft="contributed">ഏലുൾ</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">തി.</month>
+							<month type="2" draft="contributed">ഹെ.</month>
+							<month type="3" draft="contributed">കി.</month>
+							<month type="4" draft="contributed">ടി.</month>
+							<month type="5" draft="contributed">സീ.</month>
+							<month type="6" draft="contributed">അ I</month>
+							<month type="7" draft="contributed">അ.</month>
+							<month type="7" yeartype="leap" draft="contributed">അ II</month>
+							<month type="8" draft="contributed">നി.</month>
+							<month type="9" draft="contributed">ഇ.</month>
+							<month type="10" draft="contributed">സി.</month>
+							<month type="11" draft="contributed">താ.</month>
+							<month type="12" draft="contributed">അ.</month>
+							<month type="13" draft="contributed">ഏ.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">തിഷ്റി</month>
+							<month type="2" draft="contributed">ഹെഷ്‌വൻ</month>
+							<month type="3" draft="contributed">കിസ്‌ലെവ്</month>
+							<month type="4" draft="contributed">ടിവെറ്റ്</month>
+							<month type="5" draft="contributed">സീബാറ്റ്</month>
+							<month type="6" draft="contributed">അദാർ I</month>
+							<month type="7" draft="contributed">അദാർ</month>
+							<month type="7" yeartype="leap" draft="contributed">അദാർ II</month>
+							<month type="8" draft="contributed">നിസാൻ</month>
+							<month type="9" draft="contributed">ഇയാർ</month>
+							<month type="10" draft="contributed">സിവാൻ</month>
+							<month type="11" draft="contributed">താമൂസ്</month>
+							<month type="12" draft="contributed">അബ്</month>
+							<month type="13" draft="contributed">ഏലുൾ</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">AM</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">AM</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">AM</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="indian">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ചൈത്രം</month>
+							<month type="2" draft="contributed">വൈശാഖം</month>
+							<month type="3" draft="contributed">ജ്യേഷ്ഠം</month>
+							<month type="4" draft="contributed">ആഷാഢം</month>
+							<month type="5" draft="contributed">ശ്രാവണം</month>
+							<month type="6" draft="contributed">ഭാദ്രപാദം</month>
+							<month type="7" draft="contributed">ആശ്വിനം</month>
+							<month type="8" draft="contributed">കാർത്തികം</month>
+							<month type="9" draft="contributed">മാർഗശീർഷം</month>
+							<month type="10" draft="contributed">പൗഷം</month>
+							<month type="11" draft="contributed">മാഘം</month>
+							<month type="12" draft="contributed">ഫൽഗുനം</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">ചൈ</month>
+							<month type="2" draft="contributed">വൈ</month>
+							<month type="3" draft="contributed">ജ്യേ</month>
+							<month type="4" draft="contributed">ആ</month>
+							<month type="5" draft="contributed">ശ്രാ</month>
+							<month type="6" draft="contributed">ഭാ</month>
+							<month type="7" draft="contributed">ആ</month>
+							<month type="8" draft="contributed">കാ</month>
+							<month type="9" draft="contributed">മാ</month>
+							<month type="10" draft="contributed">പൗ</month>
+							<month type="11" draft="contributed">മാ</month>
+							<month type="12" draft="contributed">ഫ</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ചൈത്രം</month>
 							<month type="2">വൈശാഖം</month>
@@ -1879,6 +2362,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ചൈത്രം</month>
+							<month type="2" draft="contributed">വൈശാഖം</month>
+							<month type="3" draft="contributed">ജ്യേഷ്ഠം</month>
+							<month type="4" draft="contributed">ആഷാഢം</month>
+							<month type="5" draft="contributed">ശ്രാവണം</month>
+							<month type="6" draft="contributed">ഭാദ്രപാദം</month>
+							<month type="7" draft="contributed">ആശ്വിനം</month>
+							<month type="8" draft="contributed">കാർത്തികം</month>
+							<month type="9" draft="contributed">മാർഗശീർഷം</month>
+							<month type="10" draft="contributed">പൗഷം</month>
+							<month type="11" draft="contributed">മാഘം</month>
+							<month type="12" draft="contributed">ഫൽഗുനം</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ചൈ</month>
 							<month type="2">വൈ</month>
@@ -1893,17 +2390,65 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="11">മാ</month>
 							<month type="12">ഫ</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">ചൈത്രം</month>
+							<month type="2" draft="contributed">വൈശാഖം</month>
+							<month type="3" draft="contributed">ജ്യേഷ്ഠം</month>
+							<month type="4" draft="contributed">ആഷാഢം</month>
+							<month type="5" draft="contributed">ശ്രാവണം</month>
+							<month type="6" draft="contributed">ഭാദ്രപാദം</month>
+							<month type="7" draft="contributed">ആശ്വിനം</month>
+							<month type="8" draft="contributed">കാർത്തികം</month>
+							<month type="9" draft="contributed">മാർഗശീർഷം</month>
+							<month type="10" draft="contributed">പൗഷം</month>
+							<month type="11" draft="contributed">മാഘം</month>
+							<month type="12" draft="contributed">ഫൽഗുനം</month>
+						</monthWidth>
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ശക</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">ശക</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ശക</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="islamic">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">മുഹ.</month>
+							<month type="2" draft="contributed">സഫ.</month>
+							<month type="3" draft="contributed">റബീഹുൽ അവ്വ.</month>
+							<month type="4" draft="contributed">റബീഹുൽ ആഖി.</month>
+							<month type="5" draft="contributed">ജമാദുൽ അവ്വ.</month>
+							<month type="6" draft="contributed">ജമാദുൽ ആഖി.</month>
+							<month type="7" draft="contributed">റജ.</month>
+							<month type="8" draft="contributed">ശഹബാ.</month>
+							<month type="9" draft="contributed">റമദാ.</month>
+							<month type="10" draft="contributed">ശവ്വാ.</month>
+							<month type="11" draft="contributed">ദുൽ ഖഹ.</month>
+							<month type="12" draft="contributed">ദുൽ ഹി.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">മു</month>
+							<month type="2" draft="contributed">സ</month>
+							<month type="3" draft="contributed">റ</month>
+							<month type="4" draft="contributed">റ</month>
+							<month type="5" draft="contributed">ജ</month>
+							<month type="6" draft="contributed">ജ</month>
+							<month type="7" draft="contributed">റ</month>
+							<month type="8" draft="contributed">ശ</month>
+							<month type="9" draft="contributed">റ</month>
+							<month type="10" draft="contributed">ശ</month>
+							<month type="11" draft="contributed">ദു</month>
+							<month type="12" draft="contributed">ദു</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="contributed">മുഹറം</month>
 							<month type="2" draft="contributed">സഫർ</month>
@@ -1920,6 +2465,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">മുഹ.</month>
+							<month type="2" draft="contributed">സഫ.</month>
+							<month type="3" draft="contributed">റബീഹുൽ അവ്വ.</month>
+							<month type="4" draft="contributed">റബീഹുൽ ആഖി.</month>
+							<month type="5" draft="contributed">ജമാദുൽ അവ്വ.</month>
+							<month type="6" draft="contributed">ജമാദുൽ ആഖി.</month>
+							<month type="7" draft="contributed">റജ.</month>
+							<month type="8" draft="contributed">ശഹബാ.</month>
+							<month type="9" draft="contributed">റമദാ.</month>
+							<month type="10" draft="contributed">ശവ്വാ.</month>
+							<month type="11" draft="contributed">ദുൽ ഖഹ.</month>
+							<month type="12" draft="contributed">ദുൽ ഹി.</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="contributed">മു</month>
 							<month type="2" draft="contributed">സ</month>
@@ -1934,17 +2493,162 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="11" draft="contributed">ദു</month>
 							<month type="12" draft="contributed">ദു</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">മുഹറം</month>
+							<month type="2" draft="contributed">സഫർ</month>
+							<month type="3" draft="contributed">റബീഹുൽ അവ്വൽ</month>
+							<month type="4" draft="contributed">റബീഹുൽ ആഖിർ</month>
+							<month type="5" draft="contributed">ജമാദുൽ അവ്വൽ</month>
+							<month type="6" draft="contributed">ജമാദുൽ ആഖിർ</month>
+							<month type="7" draft="contributed">റജബ്</month>
+							<month type="8" draft="contributed">ശഹബാൻ</month>
+							<month type="9" draft="contributed">റമദാൻ</month>
+							<month type="10" draft="contributed">ശവ്വാൽ</month>
+							<month type="11" draft="contributed">ദുൽ ഖഹദ്</month>
+							<month type="12" draft="contributed">ദുൽ ഹിജ്ജ</month>
+						</monthWidth>
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ഹിജറ</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0" draft="contributed">ഹിജറ</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ഹിജറ</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="persian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ഫർവാർദിൻ</month>
+							<month type="2" draft="contributed">ഓർഡിബെഹെഷ്‌റ്റ്</month>
+							<month type="3" draft="contributed">ഖോർദാദ്</month>
+							<month type="4" draft="contributed">ടിർ</month>
+							<month type="5" draft="contributed">മോർദാദ്</month>
+							<month type="6" draft="contributed">ഷഹ്‌രിവാർ</month>
+							<month type="7" draft="contributed">മെഹർ</month>
+							<month type="8" draft="contributed">അബാൻ</month>
+							<month type="9" draft="contributed">അസർ</month>
+							<month type="10" draft="contributed">ഡെയ്</month>
+							<month type="11" draft="contributed">ബഹ്‌മാൻ</month>
+							<month type="12" draft="contributed">എസ്‌ഫാൻഡ്</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">ഫ.</month>
+							<month type="2" draft="contributed">ഓ.</month>
+							<month type="3" draft="contributed">ഖോ</month>
+							<month type="4" draft="contributed">ടി.</month>
+							<month type="5" draft="contributed">മോ.</month>
+							<month type="6" draft="contributed">ഷ.</month>
+							<month type="7" draft="contributed">മെ.</month>
+							<month type="8" draft="contributed">അ.</month>
+							<month type="9" draft="contributed">അ.</month>
+							<month type="10" draft="contributed">ഡെ.</month>
+							<month type="11" draft="contributed">ബ.</month>
+							<month type="12" draft="contributed">എ.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">ഫർവാർദിൻ</month>
+							<month type="2" draft="contributed">ഓർഡിബെഹെഷ്‌റ്റ്</month>
+							<month type="3" draft="contributed">ഖോർദാദ്</month>
+							<month type="4" draft="contributed">ടിർ</month>
+							<month type="5" draft="contributed">മോർദാദ്</month>
+							<month type="6" draft="contributed">ഷഹ്‌രിവാർ</month>
+							<month type="7" draft="contributed">മെഹർ</month>
+							<month type="8" draft="contributed">അബാൻ</month>
+							<month type="9" draft="contributed">അസർ</month>
+							<month type="10" draft="contributed">ഡെയ്</month>
+							<month type="11" draft="contributed">ബഹ്‌മാൻ</month>
+							<month type="12" draft="contributed">എസ്‌ഫാൻഡ്</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ഫർവാർദിൻ</month>
+							<month type="2" draft="contributed">ഓർഡിബെഹെഷ്‌റ്റ്</month>
+							<month type="3" draft="contributed">ഖോർദാദ്</month>
+							<month type="4" draft="contributed">ടിർ</month>
+							<month type="5" draft="contributed">മോർദാദ്</month>
+							<month type="6" draft="contributed">ഷഹ്‌രിവാർ</month>
+							<month type="7" draft="contributed">മെഹർ</month>
+							<month type="8" draft="contributed">അബാൻ</month>
+							<month type="9" draft="contributed">അസർ</month>
+							<month type="10" draft="contributed">ഡെയ്</month>
+							<month type="11" draft="contributed">ബഹ്‌മാൻ</month>
+							<month type="12" draft="contributed">എസ്‌ഫാൻഡ്</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">ഫ.</month>
+							<month type="2" draft="contributed">ഓ.</month>
+							<month type="3" draft="contributed">ഖോ</month>
+							<month type="4" draft="contributed">ടി.</month>
+							<month type="5" draft="contributed">മോ.</month>
+							<month type="6" draft="contributed">ഷ.</month>
+							<month type="7" draft="contributed">മെ.</month>
+							<month type="8" draft="contributed">അ.</month>
+							<month type="9" draft="contributed">അ.</month>
+							<month type="10" draft="contributed">ഡെ.</month>
+							<month type="11" draft="contributed">ബ.</month>
+							<month type="12" draft="contributed">എ.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">ഫർവാർദിൻ</month>
+							<month type="2" draft="contributed">ഓർഡിബെഹെഷ്‌റ്റ്</month>
+							<month type="3" draft="contributed">ഖോർദാദ്</month>
+							<month type="4" draft="contributed">ടിർ</month>
+							<month type="5" draft="contributed">മോർദാദ്</month>
+							<month type="6" draft="contributed">ഷഹ്‌രിവാർ</month>
+							<month type="7" draft="contributed">മെഹർ</month>
+							<month type="8" draft="contributed">അബാൻ</month>
+							<month type="9" draft="contributed">അസർ</month>
+							<month type="10" draft="contributed">ഡെയ്</month>
+							<month type="11" draft="contributed">ബഹ്‌മാൻ</month>
+							<month type="12" draft="contributed">എസ്‌ഫാൻഡ്</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">AP</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">AP</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">AP</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="roc">
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">R.O.C-യ്‌ക്ക് മുമ്പ്</era>
+						<era type="1" draft="contributed">മിംഗ്വോ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">R.O.C-യ്‌ക്ക് മു.</era>
+						<era type="1" draft="contributed">മിംഗ്വോ</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">R.O.C-യ്‌ക്ക് മു.</era>
+						<era type="1" draft="contributed">മിംഗ്വോ</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
+				<displayName>കാലഘട്ടം</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>കാലഘട്ടം</displayName>
+			</field>
+			<field type="era-narrow">
 				<displayName>കാലഘട്ടം</displayName>
 			</field>
 			<field type="year">
@@ -1962,7 +2666,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<displayName>വർഷം</displayName>
+				<displayName>വ.</displayName>
 				<relative type="-1">കഴിഞ്ഞ വർഷം</relative>
 				<relative type="0">ഈ വർ‌ഷം</relative>
 				<relative type="1">അടുത്തവർഷം</relative>
@@ -1976,7 +2680,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
-				<displayName>വർഷം</displayName>
+				<displayName>വ.</displayName>
 				<relative type="-1">കഴിഞ്ഞ വർഷം</relative>
 				<relative type="0">ഈ വർ‌ഷം</relative>
 				<relative type="1">അടുത്തവർഷം</relative>
@@ -1991,6 +2695,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>പാദം</displayName>
+				<relative type="-1">കഴിഞ്ഞ പാദം</relative>
+				<relative type="0">ഈ പാദം</relative>
+				<relative type="1">അടുത്ത പാദം</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} പാദത്തിൽ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} പാദത്തിൽ</relativeTimePattern>
@@ -2037,7 +2744,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="month-short">
-				<displayName>മാസം</displayName>
+				<displayName>മാ.</displayName>
 				<relative type="-1">കഴിഞ്ഞ മാസം</relative>
 				<relative type="0">ഈ മാസം</relative>
 				<relative type="1">അടുത്ത മാസം</relative>
@@ -2051,7 +2758,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<displayName>മാസം</displayName>
+				<displayName>മാ.</displayName>
 				<relative type="-1">കഴിഞ്ഞ മാസം</relative>
 				<relative type="0">ഈ മാസം</relative>
 				<relative type="1">അടുത്ത മാസം</relative>
@@ -2077,9 +2784,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} ആഴ്ച മുമ്പ്</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ആഴ്ച മുമ്പ്</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} വരുന്ന ആഴ്ച</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>ആഴ്ച</displayName>
+				<displayName>ആ.</displayName>
 				<relative type="-1">കഴിഞ്ഞ ആഴ്‌ച</relative>
 				<relative type="0">ഈ ആഴ്ച</relative>
 				<relative type="1">അടുത്ത ആഴ്ച</relative>
@@ -2091,9 +2799,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} ആഴ്ച മുമ്പ്</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ആഴ്ച മുമ്പ്</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} വരുന്ന ആഴ്ച</relativePeriod>
 			</field>
 			<field type="week-narrow">
-				<displayName>ആഴ്ച</displayName>
+				<displayName>ആ.</displayName>
 				<relative type="-1">കഴിഞ്ഞ ആഴ്‌ച</relative>
 				<relative type="0">ഈ ആഴ്ച</relative>
 				<relative type="1">അടുത്ത ആഴ്ച</relative>
@@ -2105,6 +2814,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} ആഴ്ച മുമ്പ്</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ആഴ്ച മുമ്പ്</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} വരുന്ന ആഴ്ച</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>മാസത്തിലെ ആഴ്‌ച</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>മാസ. ആഴ്‌ച</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>മാസ. ആഴ്‌ച</displayName>
 			</field>
 			<field type="day">
 				<displayName>ദിവസം</displayName>
@@ -2154,119 +2873,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} ദിവസം മുമ്പ്</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>വർഷത്തിലെ ദിവസം</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>വർഷ. ദിവസം</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>വർഷ. ദിവസം</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>ആഴ്ചയിലെ ദിവസം</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>ആഴ്‌ച. ദിവസം</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>ആഴ്‌ച. ദിവസം</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>മാസത്തിലെ പ്രവർത്തിദിനം</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>മാസ. പ്രവർത്തിദിനം</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>മാസ. പ്രവർത്തിദിനം</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">കഴിഞ്ഞ ഞായറാഴ്ച</relative>
 				<relative type="0">ഈ ഞായറാഴ്ച</relative>
 				<relative type="1">അടുത്ത ഞായറാഴ്ച</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ഞായറാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ഞായറാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ഞായറാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ഞായറാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">കഴിഞ്ഞ ഞായർ</relative>
 				<relative type="0">ഈ ഞായർ</relative>
 				<relative type="1">അടുത്ത ഞായർ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ഞായറാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ഞായറാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ഞായറാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ഞായറാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">കഴിഞ്ഞ ഞായർ</relative>
 				<relative type="0">ഈ ഞായർ</relative>
 				<relative type="1">അടുത്ത ഞായർ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ഞായറാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ഞായറാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ഞായറാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ഞായറാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">കഴിഞ്ഞ തിങ്കളാഴ്ച</relative>
 				<relative type="0">ഈ തിങ്കളാഴ്ച</relative>
 				<relative type="1">അടുത്ത തിങ്കളാഴ്ച</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} തിങ്കളാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} തിങ്കളാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} തിങ്കളാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} തിങ്കളാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">കഴിഞ്ഞ തിങ്കൾ</relative>
 				<relative type="0">ഈ തിങ്കൾ</relative>
 				<relative type="1">അടുത്ത തിങ്കൾ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} തിങ്കളാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} തിങ്കളാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} തിങ്കളാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} തിങ്കളാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">കഴിഞ്ഞ തിങ്കൾ</relative>
 				<relative type="0">ഈ തിങ്കൾ</relative>
 				<relative type="1">അടുത്ത തിങ്കൾ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} തിങ്കളാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} തിങ്കളാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} തിങ്കളാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} തിങ്കളാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
-				<relative type="-1">കഴിഞ്ഞ ചൊവാഴ്ച</relative>
-				<relative type="0">ഈ ചൊവാഴ്ച</relative>
-				<relative type="1">അടുത്ത ചൊവാഴ്ച</relative>
+				<relative type="-1">കഴിഞ്ഞ ചൊവ്വാഴ്ച</relative>
+				<relative type="0">ഈ ചൊവ്വാഴ്ച</relative>
+				<relative type="1">അടുത്ത ചൊവ്വാഴ്ച</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ചൊവ്വാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ചൊവ്വാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ചൊവ്വാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ചൊവ്വാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">കഴിഞ്ഞ ചൊവ്വ</relative>
 				<relative type="0">ഈ ചൊവ്വ</relative>
 				<relative type="1">അടുത്ത ചൊവ്വ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ചൊവ്വാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ചൊവ്വാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ചൊവ്വാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ചൊവ്വാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">കഴിഞ്ഞ ചൊവ്വ</relative>
 				<relative type="0">ഈ ചൊവ്വ</relative>
 				<relative type="1">അടുത്ത ചൊവ്വ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ചൊവ്വാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ചൊവ്വാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ചൊവ്വാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ചൊവ്വാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">കഴിഞ്ഞ ബുധനാഴ്ച</relative>
 				<relative type="0">ഈ ബുധനാഴ്ച</relative>
 				<relative type="1">അടുത്ത ബുധനാഴ്ച</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ബുധനാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ബുധനാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ബുധനാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ബുധനാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">കഴിഞ്ഞ ബുധൻ</relative>
 				<relative type="0">ഈ ബുധൻ</relative>
 				<relative type="1">അടുത്ത ബുധൻ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ബുധനാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ബുധനാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ബുധനാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ബുധനാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">കഴിഞ്ഞ ബുധൻ</relative>
 				<relative type="0">ഈ ബുധൻ</relative>
 				<relative type="1">അടുത്ത ബുധൻ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ബുധനാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ബുധനാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ബുധനാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ബുധനാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">കഴിഞ്ഞ വ്യാഴാഴ്ച</relative>
 				<relative type="0">ഈ വ്യാഴാഴ്ച</relative>
 				<relative type="1">അടുത്ത വ്യാഴാഴ്ച</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} വ്യാഴാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വ്യാഴാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} വ്യാഴാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വ്യാഴാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">കഴിഞ്ഞ വ്യാഴം</relative>
 				<relative type="0">ഈ വ്യാഴം</relative>
 				<relative type="1">അടുത്ത വ്യാഴം</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} വ്യാഴാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വ്യാഴാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} വ്യാഴാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വ്യാഴാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">കഴിഞ്ഞ വ്യാഴം</relative>
 				<relative type="0">ഈ വ്യാഴം</relative>
 				<relative type="1">അടുത്ത വ്യാഴം</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} വ്യാഴാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വ്യാഴാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} വ്യാഴാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വ്യാഴാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">കഴിഞ്ഞ വെള്ളിയാഴ്ച</relative>
 				<relative type="0">ഈ വെള്ളിയാഴ്ച</relative>
 				<relative type="1">അടുത്ത വെള്ളിയാഴ്ച</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} വെള്ളിയാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വെള്ളിയാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} വെള്ളിയാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വെള്ളിയാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">കഴിഞ്ഞ വെള്ളി</relative>
 				<relative type="0">ഈ വെള്ളി</relative>
 				<relative type="1">അടുത്ത വെള്ളി</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} വെള്ളിയാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വെള്ളിയാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} വെള്ളിയാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വെള്ളിയാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">കഴിഞ്ഞ വെള്ളി</relative>
 				<relative type="0">ഈ വെള്ളി</relative>
 				<relative type="1">അടുത്ത വെള്ളി</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} വെള്ളിയാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വെള്ളിയാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} വെള്ളിയാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} വെള്ളിയാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">കഴിഞ്ഞ ശനിയാഴ്ച</relative>
 				<relative type="0">ഈ ശനിയാഴ്ച</relative>
 				<relative type="1">അടുത്ത ശനിയാഴ്ച</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ശനിയാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ശനിയാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ശനിയാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ശനിയാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">കഴിഞ്ഞ ശനി</relative>
 				<relative type="0">ഈ ശനി</relative>
 				<relative type="1">അടുത്ത ശനി</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ശനിയാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ശനിയാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ശനിയാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ശനിയാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">കഴിഞ്ഞ ശനി</relative>
 				<relative type="0">ഈ ശനി</relative>
 				<relative type="1">അടുത്ത ശനി</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ശനിയാഴ്ചയിൽ</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ശനിയാഴ്ചയിൽ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ശനിയാഴ്ച മുമ്പ്</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ശനിയാഴ്ച മുമ്പ്</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>AM/PM</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
+			</field>
 			<field type="hour">
 				<displayName>മണിക്കൂർ</displayName>
+				<relative type="0">ഈ മണിക്കൂറിൽ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} മണിക്കൂറിൽ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} മണിക്കൂറിൽ</relativeTimePattern>
@@ -2277,7 +3195,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="hour-short">
-				<displayName>മണിക്കൂർ</displayName>
+				<displayName>മ.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} മണിക്കൂറിൽ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} മണിക്കൂറിൽ</relativeTimePattern>
@@ -2288,7 +3206,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="hour-narrow">
-				<displayName>മണിക്കൂർ</displayName>
+				<displayName>മ.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} മണിക്കൂറിൽ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} മണിക്കൂറിൽ</relativeTimePattern>
@@ -2300,6 +3218,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>മിനിറ്റ്</displayName>
+				<relative type="0">ഈ മിനിറ്റിൽ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} മിനിറ്റിൽ</relativeTimePattern>
 					<relativeTimePattern count="other">{0} മിനിറ്റിൽ</relativeTimePattern>
@@ -2368,6 +3287,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>സമയ മേഖല</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>സമയ മേഖല</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>സമയ മേഖല</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
@@ -2377,6 +3302,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} ഡേലൈറ്റ് സമയം</regionFormat>
 			<regionFormat type="standard">{0} സ്റ്റാൻഡേർഡ് സമയം</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>സാന്ത ഇസബേൽ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ഹോണലൂലു</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>കോർഡിനേറ്റഡ് യൂണിവേഴ്‌സൽ ടൈം</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>അജ്ഞാത നഗരം</exemplarCity>
 			</zone>
@@ -2537,7 +3473,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ബ്രസ്സൽ‌സ്</exemplarCity>
 			</zone>
 			<zone type="Africa/Ouagadougou">
-				<exemplarCity>ഔഗാദൌഗൌ</exemplarCity>
+				<exemplarCity>ഔഗാദൗഗൗ</exemplarCity>
 			</zone>
 			<zone type="Europe/Sofia">
 				<exemplarCity>സോഫിയ</exemplarCity>
@@ -2585,10 +3521,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>കുയ്‌ബ</exemplarCity>
 			</zone>
 			<zone type="America/Santarem">
-				<exemplarCity>സാൻററെം</exemplarCity>
+				<exemplarCity>സാന്ററെം</exemplarCity>
 			</zone>
 			<zone type="America/Campo_Grande">
-				<exemplarCity>ക്യാന്പോ ഗ്രാൻഡെ</exemplarCity>
+				<exemplarCity>ക്യാമ്പോ ഗ്രാൻഡെ</exemplarCity>
 			</zone>
 			<zone type="America/Belem">
 				<exemplarCity>ബെലം</exemplarCity>
@@ -2641,6 +3577,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>വാൻ‌കൂവർ</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>ഫോർട്ട് നെൽസൺ</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>ഡോവ്സൺ ക്രീക്ക്</exemplarCity>
 			</zone>
@@ -2654,7 +3593,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>എഡ്മോൺടൺ</exemplarCity>
 			</zone>
 			<zone type="America/Swift_Current">
-				<exemplarCity>സ്വിഫ്റ്റ് കറൻറ്</exemplarCity>
+				<exemplarCity>സ്വിഫ്‌റ്റ് കറന്റ്</exemplarCity>
 			</zone>
 			<zone type="America/Cambridge_Bay">
 				<exemplarCity>കേംബ്രിഡ്‌ജ് ബേ</exemplarCity>
@@ -2675,7 +3614,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>റാങ്കിൻ ഇൻലെറ്റ്</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
-				<exemplarCity>ആത്തികോക്കൺ</exemplarCity>
+				<exemplarCity>ഏറ്റികോക്കൺ</exemplarCity>
 			</zone>
 			<zone type="America/Thunder_Bay">
 				<exemplarCity>തണ്ടർ ബേ</exemplarCity>
@@ -2708,7 +3647,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ബ്ലാങ്ക് സാബ്ലോൺ</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
-				<exemplarCity>സെന്റ്. ജോൺസ്</exemplarCity>
+				<exemplarCity>സെന്റ് ജോൺസ്</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
 				<exemplarCity>കോക്കോസ്</exemplarCity>
@@ -2723,7 +3662,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ബംഗുയി</exemplarCity>
 			</zone>
 			<zone type="Africa/Brazzaville">
-				<exemplarCity>ബ്രാസവില്ലി</exemplarCity>
+				<exemplarCity>ബ്രാസവിൽ</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
 				<exemplarCity>സൂറിച്ച്</exemplarCity>
@@ -2737,11 +3676,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>ഈസ്റ്റർ</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>പുന്റ അരീനസ്</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
-				<exemplarCity>സാൻറിയാഗോ</exemplarCity>
+				<exemplarCity>സാന്റിയാഗോ</exemplarCity>
 			</zone>
 			<zone type="Africa/Douala">
-				<exemplarCity>ഡൌല</exemplarCity>
+				<exemplarCity>ഡൗല</exemplarCity>
 			</zone>
 			<zone type="Asia/Urumqi">
 				<exemplarCity>ഉറുംഖി</exemplarCity>
@@ -2769,6 +3711,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>നിക്കോഷ്യ</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>ഫാമഗുസ്‌റ്റ</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>പ്രാഗ്</exemplarCity>
@@ -2837,7 +3782,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ട്രക്</exemplarCity>
 			</zone>
 			<zone type="Pacific/Ponape">
-				<exemplarCity>പൊനാപ്</exemplarCity>
+				<exemplarCity>പോൺപെ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kosrae">
 				<exemplarCity>കൊസ്രേ</exemplarCity>
@@ -2936,7 +3881,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ജക്കാർത്ത</exemplarCity>
 			</zone>
 			<zone type="Asia/Pontianak">
-				<exemplarCity>പൊൻറിയാനക്</exemplarCity>
+				<exemplarCity>പൊന്റിയാനക്</exemplarCity>
 			</zone>
 			<zone type="Asia/Makassar">
 				<exemplarCity>മകസ്സർ</exemplarCity>
@@ -2993,7 +3938,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ബിഷ്‌കേക്</exemplarCity>
 			</zone>
 			<zone type="Asia/Phnom_Penh">
-				<exemplarCity>നാം പെൻ</exemplarCity>
+				<exemplarCity>ഫെനോം പെൻ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>എൻഡബറി</exemplarCity>
@@ -3014,7 +3959,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>പ്യോംഗ്‌യാംഗ്</exemplarCity>
 			</zone>
 			<zone type="Asia/Seoul">
-				<exemplarCity>സിയോൾ</exemplarCity>
+				<exemplarCity>സോൾ</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuwait">
 				<exemplarCity>കുവൈത്ത്</exemplarCity>
@@ -3027,6 +3972,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Oral">
 				<exemplarCity>ഓറൽ</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>അറ്റിറോ</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>അഖ്‌തോബ്</exemplarCity>
@@ -3142,14 +4090,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Tijuana">
 				<exemplarCity>തിയുവാന</exemplarCity>
 			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>സാന്ത ഇസബേൽ</exemplarCity>
-			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>ഹെർമോസില്ലോ</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
-				<exemplarCity>മാസറ്റ്ലാൻ</exemplarCity>
+				<exemplarCity>മസറ്റ്‌ലാൻ</exemplarCity>
 			</zone>
 			<zone type="America/Chihuahua">
 				<exemplarCity>ചിഹ്വാഹ</exemplarCity>
@@ -3218,10 +4163,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>നിയു</exemplarCity>
 			</zone>
 			<zone type="Pacific/Chatham">
-				<exemplarCity>ചാതം</exemplarCity>
+				<exemplarCity>ചാത്തം</exemplarCity>
 			</zone>
 			<zone type="Pacific/Auckland">
-				<exemplarCity>ഓക്ക്‌‌ലാൻറ്</exemplarCity>
+				<exemplarCity>ഓക്ക്‌ലാന്റ്</exemplarCity>
 			</zone>
 			<zone type="Asia/Muscat">
 				<exemplarCity>മസ്കറ്റ്</exemplarCity>
@@ -3310,6 +4255,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>വോൾഗോഗ്രാഡ്</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>സരാറ്റോവ്</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>അസ്‌ട്രഖാൻ</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>ഉല്ല്യാനോവ്‌സ്‌ക്</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>കിറോ</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>സമാറ</exemplarCity>
 			</zone>
@@ -3321,6 +4278,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>നൊവോസിബിർസ്ക്</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>ബർണോൽ</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>ടോംസ്ക്</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>നോവോകുസെൻസ്‌ക്</exemplarCity>
@@ -3490,9 +4453,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>മിഡ്‌വേ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ജോൺസ്റ്റൺ</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>വെയ്ക്</exemplarCity>
 			</zone>
@@ -3502,8 +4462,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>നോം</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ഹോണലൂലു</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>ജോൺസ്റ്റൺ</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ആങ്കറേജ്</exemplarCity>
@@ -3563,7 +4523,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>വിനാമാക്, ഇൻഡ്യാന</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Marengo">
-				<exemplarCity>മരെങ്കോ, ഇൻഡ്യാനാ</exemplarCity>
+				<exemplarCity>മരെങ്കോ, ഇൻഡ്യാന</exemplarCity>
 			</zone>
 			<zone type="America/Indianapolis">
 				<exemplarCity>ഇൻഡ്യാനാപോലീസ്</exemplarCity>
@@ -3575,7 +4535,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>വിവെയ്, ഇൻഡ്യാന</exemplarCity>
 			</zone>
 			<zone type="America/Kentucky/Monticello">
-				<exemplarCity>മോണ്ടിസെല്ലോ, കെൻറക്കി</exemplarCity>
+				<exemplarCity>മോണ്ടിസെല്ലോ, കെന്റക്കി</exemplarCity>
 			</zone>
 			<zone type="America/Detroit">
 				<exemplarCity>ഡെട്രോയിറ്റ്</exemplarCity>
@@ -3590,13 +4550,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>സമർക്കന്ദ്</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
-				<exemplarCity>താഷ്‌ക്കൻറ്</exemplarCity>
+				<exemplarCity>താഷ്‌ക്കന്റ്</exemplarCity>
 			</zone>
 			<zone type="Europe/Vatican">
 				<exemplarCity>വത്തിക്കാൻ</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
-				<exemplarCity>സെൻറ് വിൻ‌സെൻറ്</exemplarCity>
+				<exemplarCity>സെന്റ് വിൻസെന്റ്</exemplarCity>
 			</zone>
 			<zone type="America/Caracas">
 				<exemplarCity>കരാക്കസ്</exemplarCity>
@@ -3605,7 +4565,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ടോർ‌ട്ടോള</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
-				<exemplarCity>സെൻറ്. തോമസ്</exemplarCity>
+				<exemplarCity>സെന്റ് തോമസ്</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>ഹോ ചി മിൻ സിറ്റി</exemplarCity>
@@ -3867,7 +4827,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>ചാത്തം സമയം</generic>
 					<standard>ചാത്തം സ്റ്റാൻഡേർഡ് സമയം</standard>
-					<daylight>ചാതം വേനൽക്കാല സമയം</daylight>
+					<daylight>ചാത്തം ഗ്രീഷ്‌മകാല സമയം</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
@@ -4406,6 +5366,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>പൊനാപ്പ് സമയം</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>പ്യോംഗ്‌യാംഗ് സമയം</standard>
+				</long>
+			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
 					<generic>ഖിസിലോർഡ സമയം</generic>
@@ -4441,7 +5406,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>സമോവ സമയം</generic>
 					<standard>സമോവ സ്റ്റാൻഡേർഡ് സമയം</standard>
-					<daylight>സമോവാ വേനൽക്കാല സമയം</daylight>
+					<daylight>സമോവാ ഗ്രീഷ്‌മകാല സമയം</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4619,9 +5584,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
 			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
-			<nan>സംഖ്യയല്ല</nan>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
@@ -4686,6 +5653,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<decimalFormats numberSystem="mlym">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -4693,7 +5667,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
+		<scientificFormats numberSystem="mlym">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
 		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mlym">
 			<percentFormatLength>
 				<percentFormat>
 					<pattern>#,##0%</pattern>
@@ -4739,6 +5727,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mlym">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -4862,9 +5857,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
-				<displayName>ബാർബഡോസ് ഡോളർ</displayName>
-				<displayName count="one">ബാർബഡോസ് ഡോളർ</displayName>
-				<displayName count="other">ബാർബഡോസ് ഡോളർ</displayName>
+				<displayName>ബാർബേഡിയൻ ഡോളർ</displayName>
+				<displayName count="one">ബാർബേഡിയൻ ഡോളർ</displayName>
+				<displayName count="other">ബാർബേഡിയൻ ഡോളർ</displayName>
 				<symbol>BBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -5006,12 +6001,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">ബെലാറഷ്യൻ ന്യൂ റൂബിൾ (BYB)</displayName>
 				<displayName count="other">ബെലാറഷ്യൻ ന്യൂ റൂബിൾസ് (BYB)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>ബെലാറുഷ്യൻ റൂബിൾ</displayName>
 				<displayName count="one">ബെലാറുഷ്യൻ റൂബിൾ</displayName>
 				<displayName count="other">ബെലാറുഷ്യൻ റൂബിൾ</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>ബെലാറുഷ്യൻ റൂബിൾ (2000–2016)</displayName>
+				<displayName count="one">ബെലാറുഷ്യൻ റൂബിൾ (2000–2016)</displayName>
+				<displayName count="other">ബെലാറുഷ്യൻ റൂബിൾ (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>ബെലീസ് ഡോളർ</displayName>
@@ -5060,6 +6061,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">ചിലിയൻ പെസോ</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>ചൈനീസ് യുവാൻ (ഓഫ്‌ഷോർ)</displayName>
+				<displayName count="one">ചൈനീസ് യുവാൻ (ഓഫ്‌ഷോർ)</displayName>
+				<displayName count="other">ചൈനീസ് യുവാൻ (ഓഫ്‌ഷോർ)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>ചൈനീസ് യുവാൻ</displayName>
@@ -5260,8 +6267,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="GEL">
 				<displayName>ജോർജ്ജിയൻ ലാറി</displayName>
 				<displayName count="one">ജോർജ്ജിയൻ ലാറി</displayName>
-				<displayName count="other">ജോർജ്ജിയൻ ലാറി</displayName>
+				<displayName count="other">ജോർജ്ജിയൻ ലാറിസ്</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
@@ -5502,9 +6510,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
-				<displayName>കസാക്കിസ്ഥാൻ ടെംഗെ</displayName>
-				<displayName count="one">കസാക്കിസ്ഥാൻ ടെംഗെ</displayName>
-				<displayName count="other">കസാക്കിസ്ഥാൻ ടെംഗെ</displayName>
+				<displayName>കസാക്കിസ്ഥാനി ടെംഗെ</displayName>
+				<displayName count="one">കസാക്കിസ്ഥാനി ടെംഗെ</displayName>
+				<displayName count="other">കസാക്കിസ്ഥാനി ടെംഗെ</displayName>
 				<symbol>KZT</symbol>
 				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
@@ -5639,10 +6647,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>മൗറിറ്റേനിയൻ ഔഗിയ (1973–2017)</displayName>
+				<displayName count="one">മൗറിറ്റേനിയൻ ഔഗിയ (1973–2017)</displayName>
+				<displayName count="other">മൗറിറ്റേനിയൻ ഔഗിയ (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>മൗറിറ്റേനിയൻ ഔഗിയ</displayName>
 				<displayName count="one">മൗറിറ്റേനിയൻ ഔഗിയ</displayName>
 				<displayName count="other">മൗറിറ്റേനിയൻ ഔഗിയ</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>മൽത്തീസ് ലിറ</displayName>
@@ -5773,15 +6786,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">പെറൂവിയൻ ഇൻറിസ്</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>പെറുവിയൻ ന്യൂവോ സോൾ</displayName>
-				<displayName count="one">പെറുവിയൻ ന്യൂവോ സോൾ</displayName>
-				<displayName count="other">പെറുവിയൻ ന്യൂവോ സോൾ</displayName>
+				<displayName>പെറുവിയൻ സോൾ</displayName>
+				<displayName count="one">പെറുവിയൻ സോൾ</displayName>
+				<displayName count="other">പെറുവിയൻ സോൾ</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
-				<displayName>പെറൂവിയൻ സോൾ</displayName>
-				<displayName count="one">പെറൂവിയൻ സോൾ</displayName>
-				<displayName count="other">പെറൂവിയൻ സോൾസ്</displayName>
+				<displayName>പെറൂവിയൻ സോൾ (1863–1965)</displayName>
+				<displayName count="one">പെറൂവിയൻ സോൾ (1863–1965)</displayName>
+				<displayName count="other">പെറൂവിയൻ സോൾസ് (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>പാപ്പുവ ന്യൂ ഗിനിയൻ കിന</displayName>
@@ -5840,6 +6853,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">റൊമാനിയൻ ലെയു</displayName>
 				<displayName count="other">റൊമാനിയൻ ലെയു</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>സെർബിയൻ ദിനാർ</displayName>
@@ -5952,10 +6966,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര (1977–2017)</displayName>
+				<displayName count="one">സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര (1977–2017)</displayName>
+				<displayName count="other">സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര</displayName>
 				<displayName count="one">സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര</displayName>
 				<displayName count="other">സാവോ ടോമി ആൻഡ് പ്രിൻസിപെ ഡോബ്ര</displayName>
-				<symbol>STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -5990,8 +7009,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other" draft="contributed">തജിക്സ്ഥാൻ റൂബിൾസ്</displayName>
 			</currency>
 			<currency type="TJS">
-				<displayName>താജിക്കിസ്ഥാനി സൊമോനി</displayName>
-				<displayName count="one">താജിക്കിസ്ഥാനി സൊമോനി</displayName>
+				<displayName>താജിക്കിസ്ഥാനി സോംനി</displayName>
+				<displayName count="one">താജിക്കിസ്ഥാനി സോംനി</displayName>
 				<displayName count="other">താജിക്കിസ്ഥാനി സൊമോനി</displayName>
 				<symbol>TJS</symbol>
 			</currency>
@@ -6111,9 +7130,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
-				<displayName>ഉസ്‌ബെക്കിസ്ഥാൻ സോം</displayName>
-				<displayName count="one">ഉസ്‌ബെക്കിസ്ഥാൻ സോം</displayName>
-				<displayName count="other">ഉസ്‌ബെക്കിസ്ഥാൻ സോം</displayName>
+				<displayName>ഉസ്‌ബെക്കിസ്ഥാനി സോം</displayName>
+				<displayName count="one">ഉസ്‌ബെക്കിസ്ഥാനി സോം</displayName>
+				<displayName count="other">ഉസ്‌ബെക്കിസ്ഥാനി സോം</displayName>
 				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEB">
@@ -6224,7 +7243,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="XPF">
 				<displayName>CFP ഫ്രാങ്ക്</displayName>
 				<displayName count="one">CFP ഫ്രാങ്ക്</displayName>
-				<displayName count="other">CFP ഫ്രാങ്ക്സ്</displayName>
+				<displayName count="other">CFP ഫ്രാങ്ക്</displayName>
 				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XPT">
@@ -6317,6 +7336,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} വ്യക്തി</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} വ്യക്തികൾ</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}-ാമത്തെ വലത്തേക്ക് തിരിയുക.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -6362,6 +7386,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ചതുരശ്ര കിലോമീറ്റർ</displayName>
 				<unitPattern count="one">{0} ചതുരശ്ര കിലോമീറ്റർ</unitPattern>
 				<unitPattern count="other">{0} ചതുരശ്ര കിലോമീറ്റർ</unitPattern>
+				<perUnitPattern>{0}/ചതുരശ്ര കിലോമീറ്റർ</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ഹെക്‌ടർ</displayName>
@@ -6384,6 +7409,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ചതുരശ്ര മൈൽ</displayName>
 				<unitPattern count="one">{0} ചതുരശ്ര മൈൽ</unitPattern>
 				<unitPattern count="other">{0} ചതുരശ്ര മൈൽ</unitPattern>
+				<perUnitPattern>{0} / ചതുരശ്ര മൈൽ</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ഏക്കർ</displayName>
@@ -6411,6 +7437,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} ക്യാരറ്റ്</unitPattern>
 				<unitPattern count="other">{0} ക്യാരറ്റ്</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>മില്ലിഗ്രാം / ഡെസിലിറ്റർ</displayName>
+				<unitPattern count="one">{0} മില്ലിഗ്രാം / ഡെസിലിറ്റർ</unitPattern>
+				<unitPattern count="other">{0} മില്ലിഗ്രാം / ഡെസിലിറ്റർ</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>മില്ലിമോൾ / ലിറ്റർ</displayName>
+				<unitPattern count="one">{0} മില്ലിമോൾ / ലിറ്റർ</unitPattern>
+				<unitPattern count="other">{0} മില്ലിമോൾ / ലിറ്റർ</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>പാർട്‌സ് / മില്ല്യൺ</displayName>
+				<unitPattern count="one">പാർട്ട് / മില്ല്യൺ</unitPattern>
+				<unitPattern count="other">{0} പാർട്‌സ് / മില്ല്യൺ</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ലിറ്റർ/കിലോമീറ്റർ</displayName>
 				<unitPattern count="one">{0} ലിറ്റർ/കിലോമീറ്റർ</unitPattern>
@@ -6425,6 +7466,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>മൈൽ/ഗാലൻ</displayName>
 				<unitPattern count="one">{0} മൈൽ/ഗാലൻ</unitPattern>
 				<unitPattern count="other">{0} മൈൽ/ഗാലൻ</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>മൈൽ / ഇംപീ. ഗാലൻ</displayName>
+				<unitPattern count="one">{0} മൈൽ / ഇംപീ. ഗാലൻ</unitPattern>
+				<unitPattern count="other">{0} മൈൽ / ഇംപീ. ഗാലൻ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ടെറാബൈറ്റ്</displayName>
@@ -6688,6 +7734,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} ജ്യോതിശാസ്‌ത്ര യൂണിറ്റ്</unitPattern>
 				<unitPattern count="other">{0} ജ്യോതിശാസ്‌ത്ര യൂണിറ്റ്</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName draft="contributed">ഫർലോങ്</displayName>
+				<unitPattern count="one" draft="contributed">{0} ഫർലോങ്</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ഫർലോങ്</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="contributed">ഫാതം</displayName>
+				<unitPattern count="one" draft="contributed">{0} ഫാതം</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ഫാതം</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>നോട്ടിക്കൽ മൈൽ</displayName>
 				<unitPattern count="one">{0} നോട്ടിക്കൽ മൈൽ</unitPattern>
@@ -6697,6 +7753,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>സ്കാൻഡിനേവിയൻ മൈൽ</displayName>
 				<unitPattern count="one">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
 				<unitPattern count="other">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>പോയിന്റ്</displayName>
+				<unitPattern count="one">{0} പോയിന്റ്</unitPattern>
+				<unitPattern count="other">{0} പോയിന്റ്</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>ലക്സ്</displayName>
@@ -6734,6 +7795,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ടൺ</displayName>
 				<unitPattern count="one">{0} ടൺ</unitPattern>
 				<unitPattern count="other">{0} ടൺ</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName draft="contributed">സ്റ്റോൺ</displayName>
+				<unitPattern count="one" draft="contributed">{0} സ്റ്റോൺ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} സ്റ്റോൺ</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>പൗണ്ട്</displayName>
@@ -6798,9 +7864,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} മില്ലീമീറ്റർ മെർക്കുറി</unitPattern>
 			</unit>
 			<unit type="pressure-pound-per-square-inch">
-				<displayName>ചതുരശ്ര ഇഞ്ചിലുള്ള റാത്തൽ</displayName>
-				<unitPattern count="one">{0} ചതുരശ്ര ഇഞ്ചിലുള്ള റാത്തൽ</unitPattern>
-				<unitPattern count="other">{0} ചതുരശ്ര ഇഞ്ചിലുള്ള റാത്തൽ</unitPattern>
+				<displayName>പൗണ്ട് / ചതുരശ്ര ഇഞ്ച്</displayName>
+				<unitPattern count="one">{0} പൗണ്ട് / ചതുരശ്ര ഇഞ്ച്</unitPattern>
+				<unitPattern count="other">{0} പൗണ്ട് / ചതുരശ്ര ഇഞ്ച്</unitPattern>
 			</unit>
 			<unit type="pressure-inch-hg">
 				<displayName>ഇഞ്ച് ഓഫ് മെർക്കുറി</displayName>
@@ -6941,6 +8007,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ഗാലൻ</unitPattern>
 				<perUnitPattern>{0} / ഗാലൻ</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ഇംപീ. ഗാലൻ</displayName>
+				<unitPattern count="one">{0} ഇംപീ. ഗാലൻ</unitPattern>
+				<unitPattern count="other">{0} ഇംപീ. ഗാലൻ</unitPattern>
+				<perUnitPattern>{0} / ഇംപീ. ഗാലൻ</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>ക്വാർട്ട്</displayName>
 				<unitPattern count="one">{0} ക്വാർട്ട്</unitPattern>
@@ -6972,10 +8044,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ടീസ്‌പൂൺ</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}കി.</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}വ.</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}തെ.</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}പ.</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} കിഴക്ക്</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} വടക്ക്</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} തെക്ക്</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} പടിഞ്ഞാറ്</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -7021,6 +8093,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>കി.മീ²</displayName>
 				<unitPattern count="one">{0} കി.മീ²</unitPattern>
 				<unitPattern count="other">{0} കി.മീ²</unitPattern>
+				<perUnitPattern>{0}/കി.മീ²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ഹെക്‌ടർ</displayName>
@@ -7043,6 +8116,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ചതു.മൈൽ</displayName>
 				<unitPattern count="one">{0} ചതു.മൈ</unitPattern>
 				<unitPattern count="other">{0} ചതു.മൈ</unitPattern>
+				<perUnitPattern>{0}/മൈ²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ഏക്കർ</displayName>
@@ -7070,6 +8144,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} ക്യാ.</unitPattern>
 				<unitPattern count="other">{0} ക്യാ.</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>മി.ഗ്രാം/ഡെ.ലി.</displayName>
+				<unitPattern count="one">{0} മി.ഗ്രാം/ഡെ.ലി.</unitPattern>
+				<unitPattern count="other">{0} മി.ഗ്രാം/ഡെ.ലി.</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>മില്ലിമോൾ/ലിറ്റർ</displayName>
+				<unitPattern count="one">{0} മി.മോ/ലി.</unitPattern>
+				<unitPattern count="other">{0} മി.മോ/ലി.</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>പാർട്‌സ്/മില്ല്യൺ</displayName>
+				<unitPattern count="one">{0} പാ.പെ.മി.</unitPattern>
+				<unitPattern count="other">{0} പാ.പെ.മി.</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ലിറ്റർ/കി.മീ.</displayName>
 				<unitPattern count="one">{0} ലി/കി.മീ.</unitPattern>
@@ -7085,10 +8174,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} മൈ/ഗാ.</unitPattern>
 				<unitPattern count="other">{0} മൈ/ഗാ.</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>മൈൽ/ഗാ. ഇംപീ.</displayName>
+				<unitPattern count="one">{0} മൈ.പെ.ഗാ./ഇം‌പീ.</unitPattern>
+				<unitPattern count="other">{0} മൈ.പെ.ഗാ./ഇം‌പീ.</unitPattern>
+			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ടെ.ബൈറ്റ്</displayName>
-				<unitPattern count="one">{0} ടെ.ബൈ.</unitPattern>
-				<unitPattern count="other">{0} ടെ.ബൈ.</unitPattern>
+				<unitPattern count="one">{0} ടിബി</unitPattern>
+				<unitPattern count="other">{0} ടിബി</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>ടെ.ബിറ്റ്</displayName>
@@ -7347,6 +8441,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} ജ്യോ.യൂ.</unitPattern>
 				<unitPattern count="other">{0} ജ്യോ.യൂ.</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName draft="contributed">ഫർലോങ്</displayName>
+				<unitPattern count="one" draft="contributed">{0} ഫർ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ഫർ.</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="contributed">ഫാതം</displayName>
+				<unitPattern count="one" draft="contributed">{0} ഫാ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ഫാ.</unitPattern>
+			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>നോ.മൈ.</displayName>
 				<unitPattern count="one">{0} നോ.മൈ.</unitPattern>
@@ -7356,6 +8460,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>സ്.മൈ.</displayName>
 				<unitPattern count="one">{0} സ്.മൈ.</unitPattern>
 				<unitPattern count="other">{0} സ്.മൈ.</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>പോയിന്റ്</displayName>
+				<unitPattern count="one">{0} പോ.</unitPattern>
+				<unitPattern count="other">{0} പോ.</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>ലക്സ്</displayName>
@@ -7394,6 +8503,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} ടൺ</unitPattern>
 				<unitPattern count="other">{0} ടൺ</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName draft="contributed">സ്റ്റോൺ</displayName>
+				<unitPattern count="one" draft="contributed">{0} സ്റ്റോ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} സ്റ്റോ.</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>പൗണ്ട്</displayName>
 				<unitPattern count="one">{0} പൗ</unitPattern>
@@ -7419,7 +8533,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="power-gigawatt">
 				<displayName>ജി.വാ.</displayName>
 				<unitPattern count="one">{0} ജി.വാ.</unitPattern>
-				<unitPattern count="other">{0} ജി.വാട്ട്</unitPattern>
+				<unitPattern count="other">{0} ജി.വാ.</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
 				<displayName>മെ.വാ.</displayName>
@@ -7427,7 +8541,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} മെ.വാ.</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
-				<displayName>കി.വാട്ട്</displayName>
+				<displayName>കി.വാ.</displayName>
 				<unitPattern count="one">{0} കി.വാ.</unitPattern>
 				<unitPattern count="other">{0} കി.വാ.</unitPattern>
 			</unit>
@@ -7600,6 +8714,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ഗാ.</unitPattern>
 				<perUnitPattern>{0}/ഗാ.</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ഇംപീ. ഗാലൻ</displayName>
+				<unitPattern count="one">{0} ഗാ. ഇംപീ.</unitPattern>
+				<unitPattern count="other">{0} ഗാ. ഇംപീ.</unitPattern>
+				<perUnitPattern>{0}/ഗാ. ഇംപീ.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>ക്വാ.</displayName>
 				<unitPattern count="one">{0} ക്വാ.</unitPattern>
@@ -7642,8 +8762,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName draft="contributed">ജി-ഫോഴ്‌സ്</displayName>
 				<unitPattern count="one">{0} ജി</unitPattern>
 				<unitPattern count="other">{0} ജി</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-second-squared">
+				<displayName draft="contributed">മീ/സെ²</displayName>
+				<unitPattern count="one" draft="contributed">{0}മീ/സെ²</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}മീ/സെ²</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<unitPattern count="one">{0}°</unitPattern>
@@ -7686,107 +8812,216 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0}ലി/100കിമി</unitPattern>
 				<unitPattern count="other">{0}ലി/100കിമി</unitPattern>
 			</unit>
+			<unit type="duration-century">
+				<displayName draft="contributed">നൂ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} നൂ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} നൂ.</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>വ</displayName>
 				<unitPattern count="one">{0} വ</unitPattern>
 				<unitPattern count="other">{0} വ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/വ.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>മാസം</displayName>
 				<unitPattern count="one">{0} മാ</unitPattern>
 				<unitPattern count="other">{0} മാ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/മാ.</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>ആ</displayName>
 				<unitPattern count="one">{0} ആ</unitPattern>
 				<unitPattern count="other">{0} ആ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ആ.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ദിവസം</displayName>
 				<unitPattern count="one">{0} ദി</unitPattern>
 				<unitPattern count="other">{0} ദി</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ദി.</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>മണിക്കൂർ</displayName>
 				<unitPattern count="one">{0} മ</unitPattern>
 				<unitPattern count="other">{0} മ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/മ.</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>മി.</displayName>
 				<unitPattern count="one">{0} മി.</unitPattern>
 				<unitPattern count="other">{0} മി.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/മി.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>സെ.</displayName>
 				<unitPattern count="one">{0} സെ.</unitPattern>
 				<unitPattern count="other">{0} സെ.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/സെ.</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>മി.സെ.</displayName>
 				<unitPattern count="one">{0} മി.സെ.</unitPattern>
 				<unitPattern count="other">{0} മി.സെ.</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="contributed">μ.സെ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} μ.സെ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} μ.സെ.</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="contributed">നാ.സെ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} നാ.സെ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} നാ.സെ.</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>കി.മീ.</displayName>
 				<unitPattern count="one">{0} കി.മീ.</unitPattern>
 				<unitPattern count="other">{0} കി.മീ.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/കി.മീ.</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>മീറ്റർ</displayName>
 				<unitPattern count="one">{0} മീ.</unitPattern>
 				<unitPattern count="other">{0} മീ.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/മീ.</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="contributed">ഡെ.മീ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} ഡെ.മീ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ഡെ.മീ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>സെ.മീ.</displayName>
 				<unitPattern count="one">{0} സെ.മീ.</unitPattern>
 				<unitPattern count="other">{0} സെ.മീ.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/സെ.മീ.</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>മി.മീ.</displayName>
 				<unitPattern count="one">{0} മി.മീ.</unitPattern>
 				<unitPattern count="other">{0} മി.മീ.</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="contributed">µമീ.</displayName>
+				<unitPattern count="one" draft="contributed">{0}µമീ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}µമീ.</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="contributed">നാ.മീ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} നാ.മീ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} നാ.മീ.</unitPattern>
+			</unit>
 			<unit type="length-picometer">
+				<displayName draft="contributed">പൈ.മീ.</displayName>
 				<unitPattern count="one">{0} പൈ.മീ</unitPattern>
 				<unitPattern count="other">{0} പൈ.മീ</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName draft="contributed">മൈൽ</displayName>
 				<unitPattern count="one">{0} മൈ</unitPattern>
 				<unitPattern count="other">{0} മൈ</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName draft="contributed">വാര</displayName>
 				<unitPattern count="one">{0} യാ</unitPattern>
 				<unitPattern count="other">{0} യാ</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName draft="contributed">അടി</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
+				<perUnitPattern draft="contributed">{0}/അടി</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName draft="contributed">ഇഞ്ച്</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ഇഞ്ച്</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="contributed">പാർസെക്</displayName>
+				<unitPattern count="one" draft="contributed">{0} പാ.സെ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} പാ.സെ.</unitPattern>
 			</unit>
 			<unit type="length-light-year">
+				<displayName draft="contributed">പ്ര.വ.</displayName>
 				<unitPattern count="one">{0} പ്ര.വ</unitPattern>
 				<unitPattern count="other">{0} പ്ര.വ</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName draft="contributed">ഫർലോങ്</displayName>
+				<unitPattern count="one" draft="contributed">{0}ഫർ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}ഫർ.</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="contributed">ഫാതം</displayName>
+				<unitPattern count="one" draft="contributed">{0}ഫാ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}ഫാ.</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="contributed">സ്.മൈ.</displayName>
+				<unitPattern count="one" draft="contributed">{0}സ്.മൈ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}സ്.മൈ.</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="contributed">പോ.</displayName>
+				<unitPattern count="one" draft="contributed">{0}പോ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}പോ.</unitPattern>
+			</unit>
+			<unit type="mass-metric-ton">
+				<displayName draft="contributed">ട.</displayName>
+				<unitPattern count="one" draft="contributed">{0}ട.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}ട.</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>കി.ഗ്രാം</displayName>
 				<unitPattern count="one">{0}കി.ഗ്രാം</unitPattern>
 				<unitPattern count="other">{0}കി.ഗ്രാം</unitPattern>
+				<perUnitPattern draft="contributed">{0}/കി.ഗ്രാം</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ഗ്രാം</displayName>
 				<unitPattern count="one">{0} ഗ്രാം</unitPattern>
 				<unitPattern count="other">{0} ഗ്രാം</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ഗ്രാം</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName draft="contributed">മി.ഗ്രാം.</displayName>
+				<unitPattern count="one" draft="contributed">{0}മി.ഗ്രാം.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}മി.ഗ്രാം.</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName draft="contributed">µ.ഗ്രാം.</displayName>
+				<unitPattern count="one" draft="contributed">{0}µ.ഗ്രാം.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}µ.ഗ്രാം.</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName draft="contributed">ടൺ</displayName>
+				<unitPattern count="one" draft="contributed">{0}ടൺ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}ടൺ</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName draft="contributed">സ്റ്റോൺ</displayName>
+				<unitPattern count="one" draft="contributed">{0}സ്റ്റോ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}സ്റ്റോ.</unitPattern>
 			</unit>
 			<unit type="mass-pound">
+				<displayName draft="contributed">പൗ</displayName>
 				<unitPattern count="one">{0} പൗ</unitPattern>
 				<unitPattern count="other">{0} പൗ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/പൗ.</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName draft="contributed">ഔ.</displayName>
 				<unitPattern count="one">{0} ഔ</unitPattern>
 				<unitPattern count="other">{0} ഔ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ഔ.</perUnitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName draft="contributed">ക്യാരറ്റ്</displayName>
+				<unitPattern count="one" draft="contributed">{0}CD</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}CD</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="one" draft="contributed">{0}kW</unitPattern>
@@ -7801,14 +9036,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName draft="contributed">ഹെ.പാ.</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-of-mercury">
+				<displayName draft="contributed">മിമീ.മെ.</displayName>
+				<unitPattern count="one" draft="contributed">{0}മിമീ.മെ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}മിമീ.മെ.</unitPattern>
+			</unit>
 			<unit type="pressure-inch-hg">
+				<displayName draft="contributed">ഇഞ്ച് മെ.</displayName>
 				<unitPattern count="one">{0}&quot; Hg</unitPattern>
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<displayName draft="contributed">മി.ബാ</displayName>
 				<unitPattern count="one">{0} മിബാ</unitPattern>
 				<unitPattern count="other">{0} മിബാ</unitPattern>
 			</unit>
@@ -7818,12 +9061,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}കി.മീ/മ.</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName draft="contributed">മീ/സെ.</displayName>
 				<unitPattern count="one">{0} മീ/സെ</unitPattern>
 				<unitPattern count="other">{0} മീ/സെ</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<displayName draft="contributed">മൈ/മ.</displayName>
 				<unitPattern count="one">{0} മൈ/മ</unitPattern>
 				<unitPattern count="other">{0} മൈ/മ</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName draft="contributed">നോട്ട്</displayName>
+				<unitPattern count="one" draft="contributed">{0}നോട്ട്</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}നോട്ട്</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName draft="contributed">°</displayName>
+				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°സെ</displayName>
@@ -7831,8 +9086,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}°സെ</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName draft="contributed">°ഫാ</displayName>
 				<unitPattern count="one">{0}°ഫാ</unitPattern>
 				<unitPattern count="other">{0}°ഫാ</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName draft="contributed">K</displayName>
+				<unitPattern count="one" draft="contributed">{0}K</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}K</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="one">{0} കിമീ³</unitPattern>
@@ -7871,6 +9132,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0}, {1} എന്നിവ</listPatternPart>
 			<listPatternPart type="2">{0} കൂടാതെ {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1} എന്നിവ</listPatternPart>
+			<listPatternPart type="middle">{0}, {1} എന്നിവ</listPatternPart>
+			<listPatternPart type="end">{0}, അല്ലെങ്കിൽ {1}</listPatternPart>
+			<listPatternPart type="2">{0} അല്ലെങ്കിൽ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, {1} എന്നിവ</listPatternPart>
+			<listPatternPart type="2">{0} കൂടാതെ {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
@@ -7892,9 +9165,107 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</listPatterns>
 	<posix>
 		<messages>
-			<yesstr>അതെ</yesstr>
+			<yesstr>ഉവ്വ്</yesstr>
 			<nostr>അല്ല</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — എല്ലാം</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — അനുയോജ്യത</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — ഉൾപ്പെടുത്തിയവ</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — വിപുലീകൃതം</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — ചരിത്രപരം</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — പലവക</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — മറ്റുള്ളവ</characterLabelPattern>
+		<characterLabelPattern type="scripts">ലിപികൾ — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} സ്‌ട്രോക്ക്</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} സ്‌ട്രോക്കുകൾ</characterLabelPattern>
+		<characterLabel type="activities">ആക്‌റ്റിവിറ്റി</characterLabel>
+		<characterLabel type="african_scripts">ആഫ്രിക്കൻ ലിപികൾ</characterLabel>
+		<characterLabel type="american_scripts">അമേരിക്കൻ ലിപികൾ</characterLabel>
+		<characterLabel type="animal">മൃഗം</characterLabel>
+		<characterLabel type="animals_nature">മൃഗങ്ങളും പ്രകൃതിയും</characterLabel>
+		<characterLabel type="arrows">അമ്പടയാളങ്ങൾ</characterLabel>
+		<characterLabel type="body">ശരീരം</characterLabel>
+		<characterLabel type="box_drawing">ബോക്‌സ് ഡ്രോയിംഗ്</characterLabel>
+		<characterLabel type="braille">ബ്രെയ്‌ലി</characterLabel>
+		<characterLabel type="building">കെട്ടിടം</characterLabel>
+		<characterLabel type="bullets_stars">ബുള്ളറ്റുകൾ/നക്ഷത്രങ്ങൾ</characterLabel>
+		<characterLabel type="consonantal_jamo">കൺസോണന്റൽ ജാമോ</characterLabel>
+		<characterLabel type="currency_symbols">നാണയ മുദ്രകൾ</characterLabel>
+		<characterLabel type="dash_connector">ഡാഷ്/കണക്‌ടർ</characterLabel>
+		<characterLabel type="digits">സംഖ്യകൾ</characterLabel>
+		<characterLabel type="dingbats">ഡിംഗ്‌ബാറ്റുകൾ</characterLabel>
+		<characterLabel type="divination_symbols">ആത്മീയ ചിഹ്നങ്ങൾ</characterLabel>
+		<characterLabel type="downwards_arrows">താഴേക്കുള്ള അമ്പടയാളങ്ങൾ</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">താഴേക്കും മുകളിലേക്കും ഉള്ള അമ്പടയാളങ്ങൾ</characterLabel>
+		<characterLabel type="east_asian_scripts">കിഴക്കനേഷ്യൻ ലിപികൾ</characterLabel>
+		<characterLabel type="emoji">ഇമോജി</characterLabel>
+		<characterLabel type="european_scripts">യൂറോപ്യൻ ലിപികൾ</characterLabel>
+		<characterLabel type="female">സ്ത്രീ</characterLabel>
+		<characterLabel type="flag">പതാക</characterLabel>
+		<characterLabel type="flags">പതാകകൾ</characterLabel>
+		<characterLabel type="food_drink">ഭക്ഷണപാനീയങ്ങൾ</characterLabel>
+		<characterLabel type="format">ഫോർമാറ്റ്</characterLabel>
+		<characterLabel type="format_whitespace">ഫോർമാറ്റും വൈറ്റ്‌സ്പെയ്‌സും</characterLabel>
+		<characterLabel type="full_width_form_variant">ഫുൾ-വിഡ്ത്ത് ഫോം വേരിയന്റ്</characterLabel>
+		<characterLabel type="geometric_shapes">ജ്യാമിതീയ രൂപങ്ങൾ</characterLabel>
+		<characterLabel type="half_width_form_variant">ഹാഫ്-വിഡ്‌ത്ത് വേരിയന്റ്</characterLabel>
+		<characterLabel type="han_characters">ഹാൻ പ്രതീകങ്ങൾ</characterLabel>
+		<characterLabel type="han_radicals">ഹാൻ മൂലസംഖ്യകൾ</characterLabel>
+		<characterLabel type="hanja">ഹഞ്ഞ</characterLabel>
+		<characterLabel type="hanzi_simplified">ഹൻസി (ലളിതമാക്കിയത്)</characterLabel>
+		<characterLabel type="hanzi_traditional">ഹൻസി (പരമ്പരാഗതം)</characterLabel>
+		<characterLabel type="heart">ഹൃദയം</characterLabel>
+		<characterLabel type="historic_scripts">ചരിത്രപരമായ ലിപികൾ</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ആശയലിപി വിവരണ പ്രതീകങ്ങൾ</characterLabel>
+		<characterLabel type="japanese_kana">ജാപ്പനീസ് കാന</characterLabel>
+		<characterLabel type="kanbun">കാൻബുൺ</characterLabel>
+		<characterLabel type="kanji">കാഞ്ചി</characterLabel>
+		<characterLabel type="keycap">കീക്യാപ്പ്</characterLabel>
+		<characterLabel type="leftwards_arrows">ഇടത്തേക്ക് ചൂണ്ടുന്ന അമ്പടയാളങ്ങൾ</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">ഇടത്തേക്കും വലത്തേക്കും ചൂണ്ടുന്ന അമ്പടയാളങ്ങൾ</characterLabel>
+		<characterLabel type="letterlike_symbols">അക്ഷരസമാനമായ ചിഹ്നങ്ങൾ</characterLabel>
+		<characterLabel type="limited_use">പരിമിത ഉപയോഗം</characterLabel>
+		<characterLabel type="male">പുരുഷൻ</characterLabel>
+		<characterLabel type="math_symbols">ഗണിത ചിഹ്നങ്ങൾ</characterLabel>
+		<characterLabel type="middle_eastern_scripts">പശ്ചിമേഷ്യൻ ലിപികൾ</characterLabel>
+		<characterLabel type="miscellaneous">പലവക</characterLabel>
+		<characterLabel type="modern_scripts">ആധുനിക ലിപികൾ</characterLabel>
+		<characterLabel type="modifier">മോഡിഫയർ</characterLabel>
+		<characterLabel type="musical_symbols">മ്യൂസിക്കൽ സിംബലുകൾ</characterLabel>
+		<characterLabel type="nature">പ്രകൃതി</characterLabel>
+		<characterLabel type="nonspacing">നോൺസ്പെയ്‌സിംഗ്</characterLabel>
+		<characterLabel type="numbers">അക്കങ്ങൾ</characterLabel>
+		<characterLabel type="objects">വസ്‌തുക്കൾ</characterLabel>
+		<characterLabel type="other">മറ്റുള്ളവ</characterLabel>
+		<characterLabel type="paired">ജോടിയാക്കിയവ</characterLabel>
+		<characterLabel type="person">വ്യക്തി</characterLabel>
+		<characterLabel type="phonetic_alphabet">സ്വരസൂചക അക്ഷരമാല</characterLabel>
+		<characterLabel type="pictographs">ചിത്രലേഖകൾ</characterLabel>
+		<characterLabel type="place">സ്ഥലം</characterLabel>
+		<characterLabel type="plant">സസ്യം</characterLabel>
+		<characterLabel type="punctuation">വിരാമചിഹ്നം</characterLabel>
+		<characterLabel type="rightwards_arrows">വലത്തേക്ക് ചൂണ്ടുന്ന അമ്പടയാളങ്ങൾ</characterLabel>
+		<characterLabel type="sign_standard_symbols">അടയാളങ്ങളും ചിഹ്നങ്ങളും</characterLabel>
+		<characterLabel type="small_form_variant">സ്മോൾ ഫോം വേരിയന്റുകൾ</characterLabel>
+		<characterLabel type="smiley">സ്‌മൈലി</characterLabel>
+		<characterLabel type="smileys_people">സ്മൈലികളും ആളുകളും</characterLabel>
+		<characterLabel type="south_asian_scripts">ദക്ഷിണേഷ്യൻ ലിപികൾ</characterLabel>
+		<characterLabel type="southeast_asian_scripts">തെക്കുകിഴക്കനേഷ്യൻ ലിപികൾ</characterLabel>
+		<characterLabel type="spacing">സ്പെയ്‌സിംഗ്</characterLabel>
+		<characterLabel type="sport">സ്പോർട്സ്</characterLabel>
+		<characterLabel type="symbols">ചിഹ്നങ്ങൾ</characterLabel>
+		<characterLabel type="technical_symbols">സാങ്കേതിക ചിഹ്നങ്ങൾ</characterLabel>
+		<characterLabel type="tone_marks">ടോൺ മാർക്കുകൾ</characterLabel>
+		<characterLabel type="travel">യാത്ര</characterLabel>
+		<characterLabel type="travel_places">യാത്രയും സ്ഥലങ്ങളും</characterLabel>
+		<characterLabel type="upwards_arrows">മുകളിലേക്ക് ചൂണ്ടുന്ന അമ്പടയാളങ്ങൾ</characterLabel>
+		<characterLabel type="variant_forms">വേരിയന്റ് ഫോമുകൾ</characterLabel>
+		<characterLabel type="vocalic_jamo">വൊക്കാലിക് ജാമോ</characterLabel>
+		<characterLabel type="weather">കാലാവസ്ഥ</characterLabel>
+		<characterLabel type="western_asian_scripts">പശ്ചിമേഷ്യൻ ലിപികൾ</characterLabel>
+		<characterLabel type="whitespace">വൈറ്റ്സ്പെയ്‌സ്</characterLabel>
+	</characterLabels>
 </ldml>
-

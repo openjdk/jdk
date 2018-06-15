@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="fy"/>
 	</identity>
 	<localeDisplayNames>
@@ -167,7 +168,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="frr" draft="contributed">Noard-Frysk</language>
 			<language type="frs" draft="contributed">East-Frysk</language>
 			<language type="fur" draft="contributed">Friulysk</language>
-			<language type="fy" draft="contributed">West-Frysk</language>
+			<language type="fy">Frysk</language>
 			<language type="ga" draft="contributed">Iersk</language>
 			<language type="gaa" draft="contributed">Ga</language>
 			<language type="gay" draft="contributed">Gayo</language>
@@ -589,6 +590,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hung" draft="contributed">Aldhongaars</script>
 			<script type="Inds" draft="contributed">Indus</script>
 			<script type="Ital" draft="contributed">Ald-italysk</script>
+			<script type="Jamo" draft="contributed">Jamo</script>
 			<script type="Java" draft="contributed">Javaansk</script>
 			<script type="Jpan" draft="contributed">Japans</script>
 			<script type="Jurc" draft="contributed">Jurchen</script>
@@ -1063,7 +1065,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="colBackwards" draft="contributed">Omgekeerd sortearje op accenten</key>
 			<key type="colCaseFirst" draft="contributed">Yndiele op haad/lytse letters</key>
 			<key type="colCaseLevel" draft="contributed">Haadlettergefoelich sortearje</key>
-			<key type="colHiraganaQuaternary" draft="contributed">Kana sortearje</key>
 			<key type="collation" draft="contributed">Sortearfolgorde</key>
 			<key type="colNormalization" draft="contributed">Genormaliseerd sortearje</key>
 			<key type="colNumeric" draft="contributed">Numeriek sortearje</key>
@@ -1072,7 +1073,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers" draft="contributed">Sifers</key>
 			<key type="timezone" draft="contributed">Tijdzone</key>
 			<key type="va" draft="contributed">Landvariant</key>
-			<key type="variableTop" draft="contributed">sortearje als symbolen</key>
 			<key type="x" draft="contributed">Privégebruik</key>
 		</keys>
 		<types>
@@ -1098,8 +1098,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper" draft="contributed">Eerst sortearje op haadletters</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Net haadlettergefoelich sortearje</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Hoofdlettergevoelig sortearje</type>
-			<type key="colHiraganaQuaternary" type="no" draft="contributed">Kana apart sortearje</type>
-			<type key="colHiraganaQuaternary" type="yes" draft="contributed">Kana oars sortearje</type>
 			<type key="collation" type="big5han" draft="contributed">Tradisjonele-Sineeske soartear oarder - Big5</type>
 			<type key="collation" type="dictionary" draft="contributed">Wurdboeksortearfolgorde</type>
 			<type key="collation" type="ducet" draft="contributed">Standert Unikoade-sortearfolgorde</type>
@@ -1123,6 +1121,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary" draft="contributed">sortearje neffens aksinten/haadletterbrûkme/breedte/Kana</type>
 			<type key="colStrength" type="secondary" draft="contributed">Sortearje op accenten</type>
 			<type key="colStrength" type="tertiary" draft="contributed">sortearje neffens aksinten/haadletterbrûkme/breedte</type>
+			<type key="d0" type="fwidth" draft="contributed">Volledige breedte</type>
+			<type key="d0" type="hwidth" draft="contributed">Halve breedte</type>
+			<type key="d0" type="npinyin" draft="contributed">Numeriek</type>
+			<type key="m0" type="bgn" draft="contributed">BGN</type>
+			<type key="m0" type="ungegn" draft="contributed">UNGEGN</type>
 			<type key="numbers" type="arab" draft="contributed">Arabysk-Indyske sifers</type>
 			<type key="numbers" type="arabext" draft="contributed">Utwreide Arabysk-Indyske sifers</type>
 			<type key="numbers" type="armn" draft="contributed">Armeense sifers</type>
@@ -1166,18 +1169,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional" draft="contributed">Tradisjonele sifers</type>
 			<type key="numbers" type="vaii" draft="contributed">Vai-sifers</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN" draft="contributed">BGN</transformName>
-			<transformName type="Numeric" draft="contributed">Numeriek</transformName>
-			<transformName type="Tone" draft="contributed">Toon</transformName>
-			<transformName type="UNGEGN" draft="contributed">UNGEGN</transformName>
-			<transformName type="x-Accents" draft="contributed">Accenten</transformName>
-			<transformName type="x-Fullwidth" draft="contributed">Volledige breedte</transformName>
-			<transformName type="x-Halfwidth" draft="contributed">Halve breedte</transformName>
-			<transformName type="x-Jamo" draft="contributed">Jamo</transformName>
-			<transformName type="x-Pinyin" draft="contributed">Pinyin</transformName>
-			<transformName type="x-Publishing" draft="contributed">Publicatie</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric" draft="contributed">Metriek</measurementSystemName>
 			<measurementSystemName type="UK" draft="contributed">Brits</measurementSystemName>
@@ -1212,9 +1203,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a á ä b c d e é ë f g h i ì ï {ij} {íj\u0301} j k l m n o ò ö p r s t u ú ü v w y ỳ z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à â æ è ê ô ù û]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P R S T U V W Y Z]</exemplarCharacters>
+		<exemplarCharacters>[a á à â ä b c d e é è ê ë f g h i í ï {ij} {íj\u0301} j k l m n o ó ô ö p r s t u ú û ü v w y ý z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[æ ò ù]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P R S T U V W X Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final" draft="contributed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="contributed">…{0}</ellipsis>
@@ -2090,251 +2082,255 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">jan.</month>
-							<month type="2" draft="contributed">feb.</month>
-							<month type="3" draft="contributed">mrt.</month>
-							<month type="4" draft="contributed">apr.</month>
-							<month type="5" draft="contributed">mai.</month>
-							<month type="6" draft="contributed">jun.</month>
-							<month type="7" draft="contributed">jul.</month>
-							<month type="8" draft="contributed">aug.</month>
-							<month type="9" draft="contributed">sep.</month>
-							<month type="10" draft="contributed">okt.</month>
-							<month type="11" draft="contributed">nov.</month>
-							<month type="12" draft="contributed">des.</month>
+							<month type="1">Jan</month>
+							<month type="2">Feb</month>
+							<month type="3">Mrt</month>
+							<month type="4">Apr</month>
+							<month type="5">Mai</month>
+							<month type="6">Jun</month>
+							<month type="7">Jul</month>
+							<month type="8">Aug</month>
+							<month type="9">Sep</month>
+							<month type="10">Okt</month>
+							<month type="11">Nov</month>
+							<month type="12">Des</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1" draft="contributed">J</month>
-							<month type="2" draft="contributed">F</month>
-							<month type="3" draft="contributed">M</month>
-							<month type="4" draft="contributed">A</month>
-							<month type="5" draft="contributed">M</month>
-							<month type="6" draft="contributed">J</month>
-							<month type="7" draft="contributed">J</month>
-							<month type="8" draft="contributed">A</month>
-							<month type="9" draft="contributed">S</month>
-							<month type="10" draft="contributed">O</month>
-							<month type="11" draft="contributed">N</month>
-							<month type="12" draft="contributed">D</month>
+							<month type="1">J</month>
+							<month type="2">F</month>
+							<month type="3">M</month>
+							<month type="4">A</month>
+							<month type="5">M</month>
+							<month type="6">J</month>
+							<month type="7">J</month>
+							<month type="8">A</month>
+							<month type="9">S</month>
+							<month type="10">O</month>
+							<month type="11">N</month>
+							<month type="12">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">jannewaris</month>
-							<month type="2" draft="contributed">febrewaris</month>
-							<month type="3" draft="contributed">maart</month>
-							<month type="4" draft="contributed">april</month>
-							<month type="5" draft="contributed">maaie</month>
-							<month type="6" draft="contributed">juny</month>
-							<month type="7" draft="contributed">july</month>
-							<month type="8" draft="contributed">augustus</month>
-							<month type="9" draft="contributed">septimber</month>
-							<month type="10" draft="contributed">oktober</month>
-							<month type="11" draft="contributed">novimber</month>
-							<month type="12" draft="contributed">desimber</month>
+							<month type="1">Jannewaris</month>
+							<month type="2">Febrewaris</month>
+							<month type="3">Maart</month>
+							<month type="4">April</month>
+							<month type="5">Maaie</month>
+							<month type="6">Juny</month>
+							<month type="7">July</month>
+							<month type="8">Augustus</month>
+							<month type="9">Septimber</month>
+							<month type="10">Oktober</month>
+							<month type="11">Novimber</month>
+							<month type="12">Desimber</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">jan</month>
-							<month type="2" draft="contributed">feb</month>
-							<month type="3" draft="contributed">mrt</month>
-							<month type="4" draft="contributed">apr</month>
-							<month type="5" draft="contributed">mai</month>
-							<month type="6" draft="contributed">jun</month>
-							<month type="7" draft="contributed">jul</month>
-							<month type="8" draft="contributed">aug</month>
-							<month type="9" draft="contributed">sep</month>
-							<month type="10" draft="contributed">okt</month>
-							<month type="11" draft="contributed">nov</month>
-							<month type="12" draft="contributed">des</month>
+							<month type="1">Jan</month>
+							<month type="2">Feb</month>
+							<month type="3">Mrt</month>
+							<month type="4">Apr</month>
+							<month type="5">Mai</month>
+							<month type="6">Jun</month>
+							<month type="7">Jul</month>
+							<month type="8">Aug</month>
+							<month type="9">Sep</month>
+							<month type="10">Okt</month>
+							<month type="11">Nov</month>
+							<month type="12">Des</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1" draft="contributed">J</month>
-							<month type="2" draft="contributed">F</month>
-							<month type="3" draft="contributed">M</month>
-							<month type="4" draft="contributed">A</month>
-							<month type="5" draft="contributed">M</month>
-							<month type="6" draft="contributed">J</month>
-							<month type="7" draft="contributed">J</month>
-							<month type="8" draft="contributed">A</month>
-							<month type="9" draft="contributed">S</month>
-							<month type="10" draft="contributed">O</month>
-							<month type="11" draft="contributed">N</month>
-							<month type="12" draft="contributed">D</month>
+							<month type="1">J</month>
+							<month type="2">F</month>
+							<month type="3">M</month>
+							<month type="4">A</month>
+							<month type="5">M</month>
+							<month type="6">J</month>
+							<month type="7">J</month>
+							<month type="8">A</month>
+							<month type="9">S</month>
+							<month type="10">O</month>
+							<month type="11">N</month>
+							<month type="12">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">jannewaris</month>
-							<month type="2" draft="contributed">febrewaris</month>
-							<month type="3" draft="contributed">maart</month>
-							<month type="4" draft="contributed">april</month>
-							<month type="5" draft="contributed">maaie</month>
-							<month type="6" draft="contributed">juny</month>
-							<month type="7" draft="contributed">july</month>
-							<month type="8" draft="contributed">augustus</month>
-							<month type="9" draft="contributed">septimber</month>
-							<month type="10" draft="contributed">oktober</month>
-							<month type="11" draft="contributed">novimber</month>
-							<month type="12" draft="contributed">desimber</month>
+							<month type="1">Jannewaris</month>
+							<month type="2">Febrewaris</month>
+							<month type="3">Maart</month>
+							<month type="4">April</month>
+							<month type="5">Maaie</month>
+							<month type="6">Juny</month>
+							<month type="7">July</month>
+							<month type="8">Augustus</month>
+							<month type="9">Septimber</month>
+							<month type="10">Oktober</month>
+							<month type="11">Novimber</month>
+							<month type="12">Desimber</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">si</day>
-							<day type="mon" draft="contributed">mo</day>
-							<day type="tue" draft="contributed">ti</day>
-							<day type="wed" draft="contributed">wo</day>
-							<day type="thu" draft="contributed">to</day>
-							<day type="fri" draft="contributed">fr</day>
-							<day type="sat" draft="contributed">so</day>
+							<day type="sun">si</day>
+							<day type="mon">mo</day>
+							<day type="tue">ti</day>
+							<day type="wed">wo</day>
+							<day type="thu">to</day>
+							<day type="fri">fr</day>
+							<day type="sat">so</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun" draft="contributed">Z</day>
-							<day type="mon" draft="contributed">M</day>
-							<day type="tue" draft="contributed">D</day>
-							<day type="wed" draft="contributed">W</day>
-							<day type="thu" draft="contributed">D</day>
-							<day type="fri" draft="contributed">V</day>
-							<day type="sat" draft="contributed">Z</day>
+							<day type="sun">S</day>
+							<day type="mon">M</day>
+							<day type="tue">T</day>
+							<day type="wed">W</day>
+							<day type="thu">T</day>
+							<day type="fri">F</day>
+							<day type="sat">S</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun" draft="contributed">si</day>
-							<day type="mon" draft="contributed">mo</day>
-							<day type="tue" draft="contributed">ti</day>
-							<day type="wed" draft="contributed">wo</day>
-							<day type="thu" draft="contributed">to</day>
-							<day type="fri" draft="contributed">fr</day>
-							<day type="sat" draft="contributed">so</day>
+							<day type="sun">si</day>
+							<day type="mon">mo</day>
+							<day type="tue">ti</day>
+							<day type="wed">wo</day>
+							<day type="thu">to</day>
+							<day type="fri">fr</day>
+							<day type="sat">so</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="contributed">snein</day>
-							<day type="mon" draft="contributed">moandei</day>
-							<day type="tue" draft="contributed">tiisdei</day>
-							<day type="wed" draft="contributed">woansdei</day>
-							<day type="thu" draft="contributed">tongersdei</day>
-							<day type="fri" draft="contributed">freed</day>
-							<day type="sat" draft="contributed">sneon</day>
+							<day type="sun">snein</day>
+							<day type="mon">moandei</day>
+							<day type="tue">tiisdei</day>
+							<day type="wed">woansdei</day>
+							<day type="thu">tongersdei</day>
+							<day type="fri">freed</day>
+							<day type="sat">sneon</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">si</day>
-							<day type="mon" draft="contributed">mo</day>
-							<day type="tue" draft="contributed">ti</day>
-							<day type="wed" draft="contributed">wo</day>
-							<day type="thu" draft="contributed">to</day>
-							<day type="fri" draft="contributed">fr</day>
-							<day type="sat" draft="contributed">so</day>
+							<day type="sun">si</day>
+							<day type="mon">mo</day>
+							<day type="tue">ti</day>
+							<day type="wed">wo</day>
+							<day type="thu">to</day>
+							<day type="fri">fr</day>
+							<day type="sat">so</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun" draft="contributed">Z</day>
-							<day type="mon" draft="contributed">M</day>
-							<day type="tue" draft="contributed">D</day>
-							<day type="wed" draft="contributed">W</day>
-							<day type="thu" draft="contributed">D</day>
-							<day type="fri" draft="contributed">V</day>
-							<day type="sat" draft="contributed">Z</day>
+							<day type="sun">S</day>
+							<day type="mon">M</day>
+							<day type="tue">T</day>
+							<day type="wed">W</day>
+							<day type="thu">T</day>
+							<day type="fri">F</day>
+							<day type="sat">S</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun" draft="contributed">si</day>
-							<day type="mon" draft="contributed">mo</day>
-							<day type="tue" draft="contributed">ti</day>
-							<day type="wed" draft="contributed">wo</day>
-							<day type="thu" draft="contributed">to</day>
-							<day type="fri" draft="contributed">fr</day>
-							<day type="sat" draft="contributed">so</day>
+							<day type="sun">si</day>
+							<day type="mon">mo</day>
+							<day type="tue">ti</day>
+							<day type="wed">wo</day>
+							<day type="thu">to</day>
+							<day type="fri">fr</day>
+							<day type="sat">so</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="contributed">snein</day>
-							<day type="mon" draft="contributed">moandei</day>
-							<day type="tue" draft="contributed">tiisdei</day>
-							<day type="wed" draft="contributed">woansdei</day>
-							<day type="thu" draft="contributed">tongersdei</day>
-							<day type="fri" draft="contributed">freed</day>
-							<day type="sat" draft="contributed">sneon</day>
+							<day type="sun">snein</day>
+							<day type="mon">moandei</day>
+							<day type="tue">tiisdei</day>
+							<day type="wed">woansdei</day>
+							<day type="thu">tongersdei</day>
+							<day type="fri">freed</day>
+							<day type="sat">sneon</day>
 						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="contributed">K1</quarter>
-							<quarter type="2" draft="contributed">K2</quarter>
-							<quarter type="3" draft="contributed">K3</quarter>
-							<quarter type="4" draft="contributed">K4</quarter>
+							<quarter type="1">K1</quarter>
+							<quarter type="2">K2</quarter>
+							<quarter type="3">K3</quarter>
+							<quarter type="4">K4</quarter>
 						</quarterWidth>
 						<quarterWidth type="narrow">
-							<quarter type="1" draft="contributed">1</quarter>
-							<quarter type="2" draft="contributed">2</quarter>
-							<quarter type="3" draft="contributed">3</quarter>
-							<quarter type="4" draft="contributed">4</quarter>
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="contributed">1e kwartaal</quarter>
-							<quarter type="2" draft="contributed">2e kwartaal</quarter>
-							<quarter type="3" draft="contributed">3e kwartaal</quarter>
-							<quarter type="4" draft="contributed">4e kwartaal</quarter>
+							<quarter type="1">1e fearnsjier</quarter>
+							<quarter type="2">2e fearnsjier</quarter>
+							<quarter type="3">3e fearnsjier</quarter>
+							<quarter type="4">4e fearnsjier</quarter>
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="contributed">K1</quarter>
-							<quarter type="2" draft="contributed">K2</quarter>
-							<quarter type="3" draft="contributed">K3</quarter>
-							<quarter type="4" draft="contributed">K4</quarter>
+							<quarter type="1">K1</quarter>
+							<quarter type="2">K2</quarter>
+							<quarter type="3">K3</quarter>
+							<quarter type="4">K4</quarter>
 						</quarterWidth>
 						<quarterWidth type="narrow">
-							<quarter type="1" draft="contributed">1</quarter>
-							<quarter type="2" draft="contributed">2</quarter>
-							<quarter type="3" draft="contributed">3</quarter>
-							<quarter type="4" draft="contributed">4</quarter>
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="contributed">1e kwartaal</quarter>
-							<quarter type="2" draft="contributed">2e kwartaal</quarter>
-							<quarter type="3" draft="contributed">3e kwartaal</quarter>
-							<quarter type="4" draft="contributed">4e kwartaal</quarter>
+							<quarter type="1">1e fearnsjier</quarter>
+							<quarter type="2">2e fearnsjier</quarter>
+							<quarter type="3">3e fearnsjier</quarter>
+							<quarter type="4">4e fearnsjier</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">PM</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="contributed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">PM</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="contributed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">PM</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">a.m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p.m.</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="contributed">foarmiddei</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p.m.</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">Foar Kristus</era>
-						<era type="0" alt="variant" draft="contributed">foar gewoane jiertelling</era>
-						<era type="1" draft="contributed">nei Kristus</era>
-						<era type="1" alt="variant" draft="contributed">gewoane jiertelling</era>
+						<era type="0">Foar Kristus</era>
+						<era type="0" alt="variant">foar gewoane jiertelling</era>
+						<era type="1">nei Kristus</era>
+						<era type="1" alt="variant">gewoane jiertelling</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="contributed">f.Kr.</era>
-						<era type="0" alt="variant" draft="contributed">f.g.j.</era>
-						<era type="1" draft="contributed">n.Kr.</era>
-						<era type="1" alt="variant" draft="contributed">g.j.</era>
+						<era type="0">f.Kr.</era>
+						<era type="0" alt="variant">f.g.j.</era>
+						<era type="1">n.Kr.</era>
+						<era type="1" alt="variant">g.j.</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="contributed">f.K.</era>
@@ -2346,208 +2342,212 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="contributed">EEEE d MMMM y</pattern>
+							<pattern>EEEE d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="contributed">d MMMM y</pattern>
+							<pattern>d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern draft="contributed">d MMM y</pattern>
+							<pattern>d MMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern draft="contributed">dd-MM-yy</pattern>
+							<pattern>dd-MM-yy</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern draft="contributed">HH:mm:ss zzzz</pattern>
+							<pattern>HH:mm:ss zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="contributed">HH:mm:ss z</pattern>
+							<pattern>HH:mm:ss z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="contributed">HH:mm:ss</pattern>
+							<pattern>HH:mm:ss</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern draft="contributed">HH:mm</pattern>
+							<pattern>HH:mm</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
+							<pattern>{1} 'om' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
+							<pattern>{1} 'om' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
-						<dateFormatItem id="E" draft="unconfirmed">ccc</dateFormatItem>
-						<dateFormatItem id="Ed" draft="contributed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm" draft="contributed">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm" draft="contributed">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms" draft="contributed">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms" draft="contributed">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy" draft="contributed">y G</dateFormatItem>
-						<dateFormatItem id="GyMMM" draft="contributed">MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd" draft="contributed">d MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd" draft="contributed">E d MMM y G</dateFormatItem>
-						<dateFormatItem id="h" draft="contributed">h a</dateFormatItem>
-						<dateFormatItem id="H" draft="contributed">HH</dateFormatItem>
-						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv" draft="unconfirmed">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv" draft="unconfirmed">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv" draft="unconfirmed">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv" draft="unconfirmed">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
-						<dateFormatItem id="Md" draft="contributed">d-M</dateFormatItem>
-						<dateFormatItem id="MEd" draft="contributed">E d-M</dateFormatItem>
-						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd" draft="contributed">d MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd" draft="contributed">E d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMd" draft="contributed">d MMMM</dateFormatItem>
-						<dateFormatItem id="ms" draft="contributed">mm:ss</dateFormatItem>
-						<dateFormatItem id="y" draft="contributed">y</dateFormatItem>
-						<dateFormatItem id="yM" draft="contributed">M-y</dateFormatItem>
-						<dateFormatItem id="yMd" draft="contributed">d-M-y</dateFormatItem>
-						<dateFormatItem id="yMEd" draft="contributed">E d-M-y</dateFormatItem>
-						<dateFormatItem id="yMMM" draft="contributed">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="contributed">d MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMEd" draft="contributed">E d MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMM" draft="contributed">MMMM y</dateFormatItem>
-						<dateFormatItem id="yQQQ" draft="contributed">QQQ y</dateFormatItem>
-						<dateFormatItem id="yQQQQ" draft="contributed">QQQQ y</dateFormatItem>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E d MMM y G</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">E d-M</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'wike' W 'fan' MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'wike' W 'fan' MMM</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">M-y</dateFormatItem>
+						<dateFormatItem id="yMd">d-M-y</dateFormatItem>
+						<dateFormatItem id="yMEd">E d-M-y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'wike' w 'fan' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'wike' w 'fan' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
-						<appendItem request="Timezone" draft="contributed">{0} {1}</appendItem>
+						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} - {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d" draft="contributed">d–d</greatestDifference>
+							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="contributed">HH–HH</greatestDifference>
+							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="contributed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="contributed">HH–HH v</greatestDifference>
+							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
+							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="contributed">dd-MM – dd-MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd-MM – dd-MM</greatestDifference>
+							<greatestDifference id="d">dd-MM – dd-MM</greatestDifference>
+							<greatestDifference id="M">dd-MM – dd-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="contributed">E dd-MM – E dd-MM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd-MM – E dd-MM</greatestDifference>
+							<greatestDifference id="d">E dd-MM – E dd-MM</greatestDifference>
+							<greatestDifference id="M">E dd-MM – E dd-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M" draft="contributed">MMM–MMM</greatestDifference>
+							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="contributed">d–d MMM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E d – E d MMM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d – E d MMM</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMM">
-							<greatestDifference id="M" draft="contributed">MMMM–MMMM</greatestDifference>
+							<greatestDifference id="M">MMMM–MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="contributed">y–y</greatestDifference>
+							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">MM-y – MM-y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MM-y – MM-y</greatestDifference>
+							<greatestDifference id="M">MM-y – MM-y</greatestDifference>
+							<greatestDifference id="y">MM-y – MM-y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">dd-MM-y – dd-MM-y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd-MM-y – dd-MM-y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">dd-MM-y – dd-MM-y</greatestDifference>
+							<greatestDifference id="d">dd-MM-y – dd-MM-y</greatestDifference>
+							<greatestDifference id="M">dd-MM-y – dd-MM-y</greatestDifference>
+							<greatestDifference id="y">dd-MM-y – dd-MM-y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E dd-MM-y – E dd-MM-y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd-MM-y – E dd-MM-y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E dd-MM-y – E dd-MM-y</greatestDifference>
+							<greatestDifference id="d">E dd-MM-y – E dd-MM-y</greatestDifference>
+							<greatestDifference id="M">E dd-MM-y – E dd-MM-y</greatestDifference>
+							<greatestDifference id="y">E dd-MM-y – E dd-MM-y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M" draft="contributed">MMM–MMM y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="M">MMM–MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="contributed">d–d MMM y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d MMM – d MMM y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d MMM y – d MMM y</greatestDifference>
+							<greatestDifference id="d">d–d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E d – E d MMM y</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E d MMM – E d MMM y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d MMM y – E d MMM y</greatestDifference>
+							<greatestDifference id="d">E d – E d MMM y</greatestDifference>
+							<greatestDifference id="M">E d MMM – E d MMM y</greatestDifference>
+							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M" draft="contributed">MMMM–MMMM y</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -4630,25 +4630,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<otherNumberingSystems>
 			<native draft="unconfirmed">latn</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="unconfirmed">1</minimumGroupingDigits>
+		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
-			<decimal draft="contributed">,</decimal>
-			<group draft="contributed">.</group>
+			<decimal>,</decimal>
+			<group>.</group>
 			<list draft="contributed">;</list>
-			<percentSign draft="contributed">%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
-			<exponential draft="contributed">E</exponential>
-			<superscriptingExponent draft="contributed">×</superscriptingExponent>
-			<perMille draft="contributed">‰</perMille>
-			<infinity draft="contributed">∞</infinity>
-			<nan draft="contributed">NaN</nan>
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -4711,24 +4711,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
+					<pattern>#E0</pattern>
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
+					<pattern>#,##0%</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern draft="contributed">¤ #,##0.00;¤ #,##0.00-</pattern>
+					<pattern>¤ #,##0.00;¤ #,##0.00-</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern draft="contributed">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern>¤ #,##0.00;(¤ #,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4759,8 +4759,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="100000000000000" count="other" draft="provisional">¤ 000 bln'.'</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one" draft="contributed">{0} {1}</unitPattern>
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5030,10 +5030,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one" draft="contributed">Wit-Russyske nieuwe roebel (1994–1999)</displayName>
 				<displayName count="other" draft="contributed">Wit-Russyske nieuwe roebel (1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName draft="contributed">Wit-Russyske roebel</displayName>
 				<displayName count="one" draft="contributed">Wit-Russyske roebel</displayName>
 				<displayName count="other" draft="contributed">Wit-Russyske roebel</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName draft="contributed">Wit-Russyske roebel (2000–2016)</displayName>
+				<displayName count="one" draft="contributed">Wit-Russyske roebel (2000–2016)</displayName>
+				<displayName count="other" draft="contributed">Wit-Russyske roebel (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName draft="contributed">Belizaanske dollar</displayName>
@@ -5598,6 +5603,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other" draft="contributed">Macause pataca</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName draft="contributed">Mauritaanske ouguiya (1973–2017)</displayName>
+				<displayName count="one" draft="contributed">Mauritaanske ouguiya (1973–2017)</displayName>
+				<displayName count="other" draft="contributed">Mauritaanske ouguiya (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName draft="contributed">Mauritaanske ouguiya</displayName>
 				<displayName count="one" draft="contributed">Mauritaanske ouguiya</displayName>
 				<displayName count="other" draft="contributed">Mauritaanske ouguiya</displayName>
@@ -5720,14 +5730,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other" draft="contributed">Peruaanske inti</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName draft="contributed">Peruaanske nieuwe sol</displayName>
-				<displayName count="one" draft="contributed">Peruaanske nieuwe sol</displayName>
-				<displayName count="other" draft="contributed">Peruaanske nieuwe sol</displayName>
-			</currency>
-			<currency type="PES">
 				<displayName draft="contributed">Peruaanske sol</displayName>
 				<displayName count="one" draft="contributed">Peruaanske sol</displayName>
 				<displayName count="other" draft="contributed">Peruaanske sol</displayName>
+			</currency>
+			<currency type="PES">
+				<displayName draft="contributed">Peruaanske sol (1863–1985)</displayName>
+				<displayName count="one" draft="contributed">Peruaanske sol (1863–1985)</displayName>
+				<displayName count="other" draft="contributed">Peruaanske sol (1863–1985)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName draft="contributed">Papuaanske kina</displayName>
@@ -5886,6 +5896,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other" draft="contributed">Sûd-Soedaneeske pûn</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName draft="contributed">Santomese dobra (1977–2017)</displayName>
+				<displayName count="one" draft="contributed">Santomese dobra (1977–2017)</displayName>
+				<displayName count="other" draft="contributed">Santomese dobra (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName draft="contributed">Santomese dobra</displayName>
 				<displayName count="one" draft="contributed">Santomese dobra</displayName>
 				<displayName count="other" draft="contributed">Santomese dobra</displayName>
@@ -6260,8 +6275,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast" draft="contributed">{0}+</pattern>
-			<pattern type="range" draft="contributed">{0}-{1}</pattern>
+			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 	</numbers>
 	<units>
@@ -6967,4 +6982,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

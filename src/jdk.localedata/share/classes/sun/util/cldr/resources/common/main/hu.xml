@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13920 $"/>
 		<language type="hu"/>
 	</identity>
 	<localeDisplayNames>
@@ -38,8 +41,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ar">arab</language>
 			<language type="ar_001">modern szabányos arab</language>
 			<language type="arc">arámi</language>
-			<language type="arn">araucani</language>
+			<language type="arn">mapucse</language>
 			<language type="arp">arapaho</language>
+			<language type="ars">nedzsdi arab</language>
 			<language type="arw">aravak</language>
 			<language type="as">asszámi</language>
 			<language type="asa">asu</language>
@@ -55,7 +59,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bas">basza</language>
 			<language type="bax" draft="contributed">bamun</language>
 			<language type="bbj" draft="contributed">gomala</language>
-			<language type="be">belorusz</language>
+			<language type="be">belarusz</language>
 			<language type="bej">bedzsa</language>
 			<language type="bem">bemba</language>
 			<language type="bez">bena</language>
@@ -69,7 +73,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bkm" draft="contributed">kom</language>
 			<language type="bla">siksika</language>
 			<language type="bm">bambara</language>
-			<language type="bn">bengáli</language>
+			<language type="bn">bangla</language>
 			<language type="bo">tibeti</language>
 			<language type="br">breton</language>
 			<language type="bra">braj</language>
@@ -87,7 +91,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="cay" draft="contributed">kajuga</language>
 			<language type="cch">atszam</language>
 			<language type="ce">csecsen</language>
-			<language type="ceb">cebui</language>
+			<language type="ceb">szebuano</language>
 			<language type="cgg">kiga</language>
 			<language type="ch">csamoró</language>
 			<language type="chb">csibcsa</language>
@@ -99,11 +103,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="chp">csipevé</language>
 			<language type="chr">cseroki</language>
 			<language type="chy">csejen</language>
-			<language type="ckb">szoráni kurd</language>
+			<language type="ckb">közép-ázsiai kurd</language>
 			<language type="co">korzikai</language>
 			<language type="cop">kopt</language>
 			<language type="cr">krí</language>
 			<language type="crh">krími tatár</language>
+			<language type="crs">szeszelva kreol francia</language>
 			<language type="cs">cseh</language>
 			<language type="csb">kasub</language>
 			<language type="cu">egyházi szláv</language>
@@ -122,14 +127,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="din">dinka</language>
 			<language type="dje">zarma</language>
 			<language type="doi">dogri</language>
-			<language type="dsb">alsó szorb</language>
+			<language type="dsb">alsó-szorb</language>
 			<language type="dua">duala</language>
 			<language type="dum">közép holland</language>
 			<language type="dv">divehi</language>
 			<language type="dyo">jola-fonyi</language>
 			<language type="dyu">diula</language>
-			<language type="dz">butáni</language>
-			<language type="dzg" draft="contributed">dazaga</language>
+			<language type="dz">dzsonga</language>
+			<language type="dzg">dazaga</language>
 			<language type="ebu">embu</language>
 			<language type="ee">eve</language>
 			<language type="efi">efik</language>
@@ -165,21 +170,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="fr">francia</language>
 			<language type="fr_CA">kanadai francia</language>
 			<language type="fr_CH">svájci francia</language>
+			<language type="frc">cajun francia</language>
 			<language type="frm">közép francia</language>
 			<language type="fro">ófrancia</language>
 			<language type="frr">északi fríz</language>
 			<language type="frs">keleti fríz</language>
 			<language type="fur">friuli</language>
-			<language type="fy">fríz</language>
+			<language type="fy">nyugati fríz</language>
 			<language type="ga">ír</language>
 			<language type="gaa">ga</language>
 			<language type="gag">gagauz</language>
+			<language type="gan" draft="contributed">gan kínai</language>
 			<language type="gay">gajo</language>
 			<language type="gba">gbaja</language>
-			<language type="gd">skót gael</language>
+			<language type="gd">skóciai kelta</language>
 			<language type="gez">geez</language>
 			<language type="gil">ikiribati</language>
-			<language type="gl">galíciai</language>
+			<language type="gl">gallego</language>
 			<language type="gmh">közép felső német</language>
 			<language type="gn">guarani</language>
 			<language type="goh">ófelső német</language>
@@ -189,29 +196,31 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="grb">grebó</language>
 			<language type="grc">ógörög</language>
 			<language type="gsw">svájci német</language>
-			<language type="gu">gudzsarati</language>
+			<language type="gu">gudzsaráti</language>
 			<language type="guz">guszii</language>
 			<language type="gv">man-szigeti</language>
 			<language type="gwi">gvicsin</language>
 			<language type="ha">hausza</language>
 			<language type="hai">haida</language>
+			<language type="hak" draft="contributed">hakka kínai</language>
 			<language type="haw">hawaii</language>
 			<language type="he">héber</language>
 			<language type="hi">hindi</language>
-			<language type="hil">hiligajnon</language>
+			<language type="hil">ilokano</language>
 			<language type="hit">hittite</language>
 			<language type="hmn">hmong</language>
 			<language type="ho">hiri motu</language>
 			<language type="hr">horvát</language>
-			<language type="hsb">felső szorb</language>
-			<language type="ht">haiti</language>
+			<language type="hsb">felső-szorb</language>
+			<language type="hsn" draft="contributed">xiang kínai</language>
+			<language type="ht">haiti kreol</language>
 			<language type="hu">magyar</language>
 			<language type="hup">hupa</language>
 			<language type="hy">örmény</language>
 			<language type="hz">herero</language>
 			<language type="ia">interlingva</language>
 			<language type="iba">iban</language>
-			<language type="ibb" draft="contributed">ibibió</language>
+			<language type="ibb">ibibio</language>
 			<language type="id">indonéz</language>
 			<language type="ie">interlingue</language>
 			<language type="ig">igbó</language>
@@ -250,10 +259,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ki">kikuju</language>
 			<language type="kj">kuanyama</language>
 			<language type="kk">kazah</language>
-			<language type="kkj" draft="contributed">kakó</language>
+			<language type="kkj">kakó</language>
 			<language type="kl">grönlandi</language>
 			<language type="kln">kalendzsin</language>
-			<language type="km">kambodzsai</language>
+			<language type="km">khmer</language>
 			<language type="kmb">kimbundu</language>
 			<language type="kn">kannada</language>
 			<language type="ko">koreai</language>
@@ -265,10 +274,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="krc">karacsáj-balkár</language>
 			<language type="krl">karelai</language>
 			<language type="kru">kuruh</language>
-			<language type="ks">kásmíri</language>
+			<language type="ks">kasmíri</language>
 			<language type="ksb">sambala</language>
 			<language type="ksf">bafia</language>
-			<language type="ksh" draft="contributed">kölsch</language>
+			<language type="ksh">kölsch</language>
 			<language type="ku">kurd</language>
 			<language type="kum">kumük</language>
 			<language type="kut">kutenai</language>
@@ -286,8 +295,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="li">limburgi</language>
 			<language type="lkt">lakota</language>
 			<language type="ln">lingala</language>
-			<language type="lo">laoszi</language>
+			<language type="lo">lao</language>
 			<language type="lol">mongó</language>
+			<language type="lou">louisianai kreol</language>
 			<language type="loz">lozi</language>
 			<language type="lrc">északi luri</language>
 			<language type="lt">litván</language>
@@ -312,7 +322,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="men">mende</language>
 			<language type="mer">meru</language>
 			<language type="mfe">mauritiusi kreol</language>
-			<language type="mg">málgas</language>
+			<language type="mg">malgas</language>
 			<language type="mga">közép ír</language>
 			<language type="mgh">makua-metó</language>
 			<language type="mgo">meta’</language>
@@ -327,22 +337,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mni">manipuri</language>
 			<language type="moh">mohawk</language>
 			<language type="mos">moszi</language>
-			<language type="mr">marathi</language>
+			<language type="mr">maráthi</language>
 			<language type="ms">maláj</language>
 			<language type="mt">máltai</language>
 			<language type="mua">mundang</language>
 			<language type="mul">többszörös nyelvek</language>
 			<language type="mus">krík</language>
 			<language type="mwl">mirandéz</language>
-			<language type="mwr">marvari</language>
+			<language type="mwr">márvári</language>
 			<language type="my">burmai</language>
 			<language type="mye" draft="contributed">myene</language>
 			<language type="myv">erzjány</language>
 			<language type="mzn">mázanderáni</language>
 			<language type="na">naurui</language>
+			<language type="nan" draft="contributed">min nan kínai</language>
 			<language type="nap">nápolyi</language>
 			<language type="naq">nama</language>
-			<language type="nb">norvég bokmal</language>
+			<language type="nb">norvég (bokmål)</language>
 			<language type="nd">északi ndebele</language>
 			<language type="nds">alsónémet</language>
 			<language type="nds_NL">alsószász</language>
@@ -350,30 +361,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="new">nevari</language>
 			<language type="ng">ndonga</language>
 			<language type="nia">nias</language>
-			<language type="niu">niui</language>
+			<language type="niu">niuei</language>
 			<language type="nl">holland</language>
 			<language type="nl_BE">flamand</language>
 			<language type="nmg">ngumba</language>
-			<language type="nn">norvég nynorsk</language>
-			<language type="nnh" draft="contributed">ngiemboon</language>
+			<language type="nn">norvég (nynorsk)</language>
+			<language type="nnh">ngiemboon</language>
 			<language type="no">norvég</language>
 			<language type="nog">nogaj</language>
 			<language type="non">óskandináv</language>
 			<language type="nqo">n’kó</language>
 			<language type="nr">déli ndebele</language>
-			<language type="nso">északi szotó</language>
+			<language type="nso">északi szeszotó</language>
 			<language type="nus">nuer</language>
 			<language type="nv">navahó</language>
 			<language type="nwc">klasszikus newari</language>
-			<language type="ny">nyanja</language>
+			<language type="ny">nyandzsa</language>
 			<language type="nym">nyamvézi</language>
 			<language type="nyn">nyankole</language>
 			<language type="nyo">nyoró</language>
 			<language type="nzi">nzima</language>
 			<language type="oc">okszitán</language>
 			<language type="oj">ojibva</language>
-			<language type="om">oromói</language>
-			<language type="or">orija</language>
+			<language type="om">oromo</language>
+			<language type="or">odia</language>
 			<language type="os">oszét</language>
 			<language type="osa">osage</language>
 			<language type="ota">ottomán török</language>
@@ -381,13 +392,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pag">pangaszinan</language>
 			<language type="pal">pahlavi</language>
 			<language type="pam">pampangan</language>
-			<language type="pap">papiamentó</language>
+			<language type="pap">papiamento</language>
 			<language type="pau">palaui</language>
+			<language type="pcm">nigériai pidgin</language>
 			<language type="peo">óperzsa</language>
 			<language type="phn">főniciai</language>
 			<language type="pi">pali</language>
 			<language type="pl">lengyel</language>
 			<language type="pon">pohnpei</language>
+			<language type="prg">porosz</language>
 			<language type="pro">óprovánszi</language>
 			<language type="ps">pastu</language>
 			<language type="pt">portugál</language>
@@ -398,7 +411,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="raj">radzsasztáni</language>
 			<language type="rap">rapanui</language>
 			<language type="rar">rarotongai</language>
-			<language type="rm">réto-román</language>
+			<language type="rm">rétoromán</language>
 			<language type="rn">kirundi</language>
 			<language type="ro">román</language>
 			<language type="ro_MD">moldvai</language>
@@ -407,16 +420,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="root">ősi</language>
 			<language type="ru">orosz</language>
 			<language type="rup">aromán</language>
-			<language type="rw">kiruanda</language>
+			<language type="rw">kinyarvanda</language>
 			<language type="rwk">rwo</language>
 			<language type="sa">szanszkrit</language>
 			<language type="sad">szandave</language>
-			<language type="sah">jakut</language>
+			<language type="sah">szaha</language>
 			<language type="sam">szamaritánus arámi</language>
 			<language type="saq">szamburu</language>
 			<language type="sas">sasak</language>
 			<language type="sat">szantáli</language>
-			<language type="sba" draft="contributed">ngambay</language>
+			<language type="sba">ngambay</language>
 			<language type="sbp">szangu</language>
 			<language type="sc">szardíniai</language>
 			<language type="scn">szicíliai</language>
@@ -440,20 +453,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sl">szlovén</language>
 			<language type="sm">szamoai</language>
 			<language type="sma">déli számi</language>
-			<language type="smj">lule számi</language>
-			<language type="smn">inar sami</language>
-			<language type="sms">koltta lapp</language>
+			<language type="smj">lulei számi</language>
+			<language type="smn">inari számi</language>
+			<language type="sms">kolta számi</language>
 			<language type="sn">sona</language>
 			<language type="snk">szoninke</language>
-			<language type="so">szomáliai</language>
+			<language type="so">szomáli</language>
 			<language type="sog">sogdien</language>
 			<language type="sq">albán</language>
 			<language type="sr">szerb</language>
 			<language type="srn">szranai tongó</language>
 			<language type="srr">szerer</language>
 			<language type="ss">sziszuati</language>
-			<language type="ssy" draft="contributed">szahó</language>
-			<language type="st">szeszotó</language>
+			<language type="ssy">szahó</language>
+			<language type="st">déli szeszotó</language>
 			<language type="su">szundanéz</language>
 			<language type="suk">szukuma</language>
 			<language type="sus">szuszu</language>
@@ -463,7 +476,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sw_CD">kongói szuahéli</language>
 			<language type="swb">comorei</language>
 			<language type="syc">klasszikus szír</language>
-			<language type="syr">szíriai</language>
+			<language type="syr">szír</language>
 			<language type="ta">tamil</language>
 			<language type="te">telugu</language>
 			<language type="tem">temne</language>
@@ -472,7 +485,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tet">tetum</language>
 			<language type="tg">tadzsik</language>
 			<language type="th">thai</language>
-			<language type="ti">tigrinja</language>
+			<language type="ti">tigrinya</language>
 			<language type="tig">tigré</language>
 			<language type="tiv">tiv</language>
 			<language type="tk">türkmén</language>
@@ -482,11 +495,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tli">tlingit</language>
 			<language type="tmh">tamasek</language>
 			<language type="tn">szecsuáni</language>
-			<language type="to">tonga</language>
-			<language type="tog">nyasa tonga</language>
+			<language type="to">tongai</language>
+			<language type="tog">nyugati nyasza</language>
 			<language type="tpi">tok pisin</language>
 			<language type="tr">török</language>
-			<language type="trv" draft="contributed">tarokó</language>
+			<language type="trv">tarokó</language>
 			<language type="ts">conga</language>
 			<language type="tsi">csimsiáni</language>
 			<language type="tt">tatár</language>
@@ -496,7 +509,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="twq">szavák</language>
 			<language type="ty">tahiti</language>
 			<language type="tyv">tuvai</language>
-			<language type="tzm">közép-marokkói tamazigt</language>
+			<language type="tzm">közép-atlaszi tamazigt</language>
 			<language type="udm">udmurt</language>
 			<language type="ug">ujgur</language>
 			<language type="uga">ugariti</language>
@@ -512,19 +525,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="vot">votják</language>
 			<language type="vun">vunjo</language>
 			<language type="wa">vallon</language>
-			<language type="wae" draft="contributed">walser</language>
+			<language type="wae">walser</language>
 			<language type="wal">valamo</language>
 			<language type="war">varaó</language>
 			<language type="was">vasó</language>
 			<language type="wbp">warlpiri</language>
 			<language type="wo">volof</language>
+			<language type="wuu" draft="contributed">wu kínai</language>
 			<language type="xal">kalmük</language>
-			<language type="xh">hosza</language>
+			<language type="xh">xhosza</language>
 			<language type="xog">szoga</language>
 			<language type="yao">jaó</language>
 			<language type="yap">japi</language>
-			<language type="yav" draft="contributed">jangben</language>
-			<language type="ybb" draft="contributed">jemba</language>
+			<language type="yav">jangben</language>
+			<language type="ybb">jemba</language>
 			<language type="yi">jiddis</language>
 			<language type="yo">joruba</language>
 			<language type="yue">kantoni</language>
@@ -578,6 +592,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">Görög</script>
 			<script type="Gujr">Gudzsaráti</script>
 			<script type="Guru">Gurmuki</script>
+			<script type="Hanb" draft="contributed">Hanb</script>
 			<script type="Hang">Hangul</script>
 			<script type="Hani">Han</script>
 			<script type="Hano">Hanunoo</script>
@@ -592,6 +607,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hung">Ómagyar</script>
 			<script type="Inds">Indus</script>
 			<script type="Ital">Régi olasz</script>
+			<script type="Jamo" draft="contributed">Jamo</script>
 			<script type="Java">Jávai</script>
 			<script type="Jpan">Japán</script>
 			<script type="Kali">Kajah li</script>
@@ -670,6 +686,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii">Ji</script>
 			<script type="Zinh">Származtatott</script>
 			<script type="Zmth">Matematikai jelrendszer</script>
+			<script type="Zsye">Emoji</script>
 			<script type="Zsym">Szimbólum</script>
 			<script type="Zxxx">Íratlan nyelvek kódja</script>
 			<script type="Zyyy">Meghatározatlan</script>
@@ -705,6 +722,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Kelet-Európa</territory>
 			<territory type="154">Észak-Európa</territory>
 			<territory type="155">Nyugat-Európa</territory>
+			<territory type="202" draft="contributed">Szubszaharai Afrika</territory>
 			<territory type="419">Latin-Amerika</territory>
 			<territory type="AC">Ascension-sziget</territory>
 			<territory type="AD">Andorra</territory>
@@ -742,10 +760,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BT">Bhután</territory>
 			<territory type="BV">Bouvet-sziget</territory>
 			<territory type="BW">Botswana</territory>
-			<territory type="BY">Fehéroroszország</territory>
+			<territory type="BY">Belarusz</territory>
 			<territory type="BZ">Belize</territory>
 			<territory type="CA">Kanada</territory>
-			<territory type="CC">Kókusz-szigetek</territory>
+			<territory type="CC">Kókusz (Keeling)-szigetek</territory>
 			<territory type="CD">Kongó - Kinshasa</territory>
 			<territory type="CD" alt="variant">Kongó (KDK)</territory>
 			<territory type="CF">Közép-afrikai Köztársaság</territory>
@@ -753,6 +771,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CG" alt="variant">Kongó (Köztársaság)</territory>
 			<territory type="CH">Svájc</territory>
 			<territory type="CI">Elefántcsontpart</territory>
+			<territory type="CI" alt="variant">CI</territory>
 			<territory type="CK">Cook-szigetek</territory>
 			<territory type="CL">Chile</territory>
 			<territory type="CM">Kamerun</territory>
@@ -766,6 +785,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CX">Karácsony-sziget</territory>
 			<territory type="CY">Ciprus</territory>
 			<territory type="CZ">Csehország</territory>
+			<territory type="CZ" alt="variant">Cseh Köztársaság</territory>
 			<territory type="DE">Németország</territory>
 			<territory type="DG">Diego Garcia</territory>
 			<territory type="DJ">Dzsibuti</territory>
@@ -782,6 +802,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Spanyolország</territory>
 			<territory type="ET">Etiópia</territory>
 			<territory type="EU">Európai Unió</territory>
+			<territory type="EZ" draft="contributed">Eurózóna</territory>
 			<territory type="FI">Finnország</territory>
 			<territory type="FJ">Fidzsi</territory>
 			<territory type="FK">Falkland-szigetek</territory>
@@ -809,7 +830,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Bissau-Guinea</territory>
 			<territory type="GY">Guyana</territory>
-			<territory type="HK">Hongkong SAR Kína</territory>
+			<territory type="HK">Hongkong KKT</territory>
 			<territory type="HK" alt="short">Hongkong</territory>
 			<territory type="HM">Heard-sziget és McDonald-szigetek</territory>
 			<territory type="HN">Honduras</territory>
@@ -844,7 +865,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KZ">Kazahsztán</territory>
 			<territory type="LA">Laosz</territory>
 			<territory type="LB">Libanon</territory>
-			<territory type="LC">Santa Lucia</territory>
+			<territory type="LC">Saint Lucia</territory>
 			<territory type="LI">Liechtenstein</territory>
 			<territory type="LK">Srí Lanka</territory>
 			<territory type="LR">Libéria</territory>
@@ -865,7 +886,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Mianmar (Burma)</territory>
 			<territory type="MN">Mongólia</territory>
-			<territory type="MO">Makaó SAR Kína</territory>
+			<territory type="MO">Makaó KKT</territory>
 			<territory type="MO" alt="short">Makaó</territory>
 			<territory type="MP">Északi Mariana-szigetek</territory>
 			<territory type="MQ">Martinique</territory>
@@ -898,7 +919,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PH">Fülöp-szigetek</territory>
 			<territory type="PK">Pakisztán</territory>
 			<territory type="PL">Lengyelország</territory>
-			<territory type="PM">Saint Pierre és Miquelon</territory>
+			<territory type="PM">Saint-Pierre és Miquelon</territory>
 			<territory type="PN">Pitcairn-szigetek</territory>
 			<territory type="PR">Puerto Rico</territory>
 			<territory type="PS">Palesztin Terület</territory>
@@ -908,7 +929,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PY">Paraguay</territory>
 			<territory type="QA">Katar</territory>
 			<territory type="QO">Külső-Óceánia</territory>
-			<territory type="RE">Reunion</territory>
+			<territory type="RE">Réunion</territory>
 			<territory type="RO">Románia</territory>
 			<territory type="RS">Szerbia</territory>
 			<territory type="RU">Oroszország</territory>
@@ -921,7 +942,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SG">Szingapúr</territory>
 			<territory type="SH">Szent Ilona</territory>
 			<territory type="SI">Szlovénia</territory>
-			<territory type="SJ">Spitzbergák és Jan Mayen-szigetek</territory>
+			<territory type="SJ">Svalbard és Jan Mayen</territory>
 			<territory type="SK">Szlovákia</territory>
 			<territory type="SL">Sierra Leone</territory>
 			<territory type="SM">San Marino</territory>
@@ -929,7 +950,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SO">Szomália</territory>
 			<territory type="SR">Suriname</territory>
 			<territory type="SS">Dél-Szudán</territory>
-			<territory type="ST">Sao Tomé és Príncipe</territory>
+			<territory type="ST">São Tomé és Príncipe</territory>
 			<territory type="SV">Salvador</territory>
 			<territory type="SX">Sint Maarten</territory>
 			<territory type="SY">Szíria</territory>
@@ -943,6 +964,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TJ">Tádzsikisztán</territory>
 			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Kelet-Timor</territory>
+			<territory type="TL" alt="variant">Timor-Leste</territory>
 			<territory type="TM">Türkmenisztán</territory>
 			<territory type="TN">Tunézia</territory>
 			<territory type="TO">Tonga</territory>
@@ -953,7 +975,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TZ">Tanzánia</territory>
 			<territory type="UA">Ukrajna</territory>
 			<territory type="UG">Uganda</territory>
-			<territory type="UM">Amerikai Csendes-óceáni Szigetek</territory>
+			<territory type="UM">Az USA lakatlan külbirtokai</territory>
+			<territory type="UN">Egyesült Nemzetek Szervezete</territory>
+			<territory type="UN" alt="short">ENSZ</territory>
 			<territory type="US">Egyesült Államok</territory>
 			<territory type="US" alt="short">USA</territory>
 			<territory type="UY">Uruguay</territory>
@@ -965,7 +989,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="VI">Amerikai Virgin-szigetek</territory>
 			<territory type="VN">Vietnam</territory>
 			<territory type="VU">Vanuatu</territory>
-			<territory type="WF">Wallis- és Futuna-szigetek</territory>
+			<territory type="WF">Wallis és Futuna</territory>
 			<territory type="WS">Szamoa</territory>
 			<territory type="XK">Koszovó</territory>
 			<territory type="YE">Jemen</territory>
@@ -1035,11 +1059,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">Naptár</key>
+			<key type="cf">Pénznemformátum</key>
 			<key type="colAlternate" draft="contributed">Szimbólumokat figyelmen kívül hagyó rendezés</key>
 			<key type="colBackwards" draft="contributed">Ékezetek fordított rendezése</key>
 			<key type="colCaseFirst" draft="contributed">Rendezés nagy- vagy kisbetűk szerint</key>
 			<key type="colCaseLevel" draft="contributed">Kisbetű-nagybetű érzékeny rendezés</key>
-			<key type="colHiraganaQuaternary" draft="contributed">Kanák szerinti rendezés</key>
 			<key type="collation">Rendezési sorrend</key>
 			<key type="colNormalization" draft="contributed">Normalizált rendezés</key>
 			<key type="colNumeric" draft="contributed">Numerikus rendezés</key>
@@ -1051,7 +1075,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">Számok</key>
 			<key type="timezone" draft="contributed">Időzóna</key>
 			<key type="va" draft="contributed">Földrajzi helyvariáns</key>
-			<key type="variableTop" draft="contributed">Rendezés szimbólumok szerint</key>
 			<key type="x">Privát használatra</key>
 		</keys>
 		<types>
@@ -1066,10 +1089,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="indian">Indiai nemzeti naptár</type>
 			<type key="calendar" type="islamic">Iszlám naptár</type>
 			<type key="calendar" type="islamic-civil">Iszlám civil naptár</type>
+			<type key="calendar" type="islamic-umalqura" draft="contributed">Iszlám Umm al-Qura naptár</type>
 			<type key="calendar" type="iso8601">ISO-8601 naptár</type>
 			<type key="calendar" type="japanese">Japán naptár</type>
 			<type key="calendar" type="persian">Perzsa naptár</type>
 			<type key="calendar" type="roc">Kínai köztársasági naptár</type>
+			<type key="cf" type="account">Könyvelési pénznemformátum</type>
+			<type key="cf" type="standard">Normál pénznemformátum</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">Szimbólumok rendezése</type>
 			<type key="colAlternate" type="shifted" draft="contributed">Rendezés szimbólumok figyelmen kívül hagyásával</type>
 			<type key="colBackwards" type="no" draft="contributed">Ékezetek normál rendezése</type>
@@ -1079,11 +1105,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper" draft="contributed">Nagybetűs szavak rendezése előre</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Kis- és nagybetűket meg nem különböztető rendezés</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Rendezés kisbetű-nagybetű szerint</type>
-			<type key="colHiraganaQuaternary" type="no" draft="contributed">Kanák rendezése külön</type>
-			<type key="colHiraganaQuaternary" type="yes" draft="contributed">Kanák megkülönböztető rendezése</type>
 			<type key="collation" type="big5han">Hagyományos kínai sorrend - Big5</type>
+			<type key="collation" type="compat" draft="contributed">Előző rendezési sorrend a kompatibilitás érdekében</type>
 			<type key="collation" type="dictionary">Szótári rendezési sorrend</type>
 			<type key="collation" type="ducet">Alapértelmezett Unicode rendezési sorrend</type>
+			<type key="collation" type="eor" draft="contributed">Európai rendezési szabályok</type>
 			<type key="collation" type="gb2312han">Egyszerűsített kínai sorrend - GB2312</type>
 			<type key="collation" type="phonebook">Telefonkönyv sorrend</type>
 			<type key="collation" type="phonetic" draft="contributed">Fonetikus rendezési sorrend</type>
@@ -1104,6 +1130,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary" draft="contributed">Ékezetek/kisbetű-nagybetű/szélesség/kanák rendezése</type>
 			<type key="colStrength" type="secondary" draft="contributed">Ékezetek rendezése</type>
 			<type key="colStrength" type="tertiary" draft="contributed">Ékezetek/kisbetű-nagybetű/szélesség rendezése</type>
+			<type key="d0" type="fwidth" draft="contributed">Teljes szélesség</type>
+			<type key="d0" type="hwidth" draft="contributed">Fél szélesség</type>
+			<type key="d0" type="npinyin" draft="contributed">Szám</type>
 			<type key="hc" type="h11">12 órás rendszer (0–11)</type>
 			<type key="hc" type="h12">12 órás rendszer (0–12)</type>
 			<type key="hc" type="h23">24 órás rendszer (0–23)</type>
@@ -1111,6 +1140,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">Tág stílusú sortörés</type>
 			<type key="lb" type="normal">Normál stílusú sortörés</type>
 			<type key="lb" type="strict">Szűk stílusú sortörés</type>
+			<type key="m0" type="bgn" draft="contributed">BGN</type>
+			<type key="m0" type="ungegn" draft="contributed">UNGEGN</type>
 			<type key="ms" type="metric">Méterrendszer</type>
 			<type key="ms" type="uksystem">Angolszász mértékegységrendszer</type>
 			<type key="ms" type="ussystem">Amerikai mértékegységrendszer</type>
@@ -1155,18 +1186,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional" draft="contributed">Hagyományos számok</type>
 			<type key="numbers" type="vaii" draft="contributed">Vai számjegyek</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN" draft="contributed">BGN</transformName>
-			<transformName type="Numeric" draft="contributed">Szám</transformName>
-			<transformName type="Tone" draft="contributed">Hangsúly</transformName>
-			<transformName type="UNGEGN" draft="contributed">UNGEGN</transformName>
-			<transformName type="x-Accents" draft="contributed">Ékezetek</transformName>
-			<transformName type="x-Fullwidth" draft="contributed">Teljes szélesség</transformName>
-			<transformName type="x-Halfwidth" draft="contributed">Fél szélesség</transformName>
-			<transformName type="x-Jamo" draft="contributed">Jamo</transformName>
-			<transformName type="x-Pinyin" draft="contributed">Pinjin</transformName>
-			<transformName type="x-Publishing" draft="contributed">Kiadásra</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrikus</measurementSystemName>
 			<measurementSystemName type="UK">angol</measurementSystemName>
@@ -1178,10 +1197,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<codePattern type="territory">Régió: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
+	<contextTransforms>
+		<contextTransformUsage type="typographicNames">
+			<contextTransform type="stand-alone">titlecase-firstword</contextTransform>
+			<contextTransform type="uiListOrMenu">titlecase-firstword</contextTransform>
+		</contextTransformUsage>
+	</contextTransforms>
 	<characters>
 		<exemplarCharacters>[a á b c {cs} {ccs} d {dz} {ddz} {dzs} {ddzs} e é f g {gy} {ggy} h i í j k l {ly} {lly} m n {ny} {nny} o ó ö ő p r s {sz} {ssz} t {ty} {tty} u ú ü ű v z {zs} {zzs}]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[à ă â å ä ã ā æ ç è ĕ ê ë ē ì ĭ î ï ī ñ ò ŏ ô ø ō œ q ù ŭ û ū w x y ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A Á B C {CS} D {DZ} {DZS} E É F G {GY} H I Í J K L {LY} M N {NY} O Ó Ö Ő P Q R S {SZ} T {TY} U Ú Ü Ű V W X Y Z {ZS}]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- – , ; \: ! ? . … ' ’ &quot; ” „ « » ( ) \[ \] \{ \} ⟨ ⟩ § @ * / \&amp; # ~ ⁒]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1201,9 +1227,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<calendars>
 			<calendar type="buddhist">
 				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">BK</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">BK</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">BK</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="chinese">
@@ -1274,19 +1306,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Tout</month>
-							<month type="2" draft="contributed">Baba</month>
-							<month type="3" draft="contributed">Hator</month>
-							<month type="4" draft="contributed">Kiahk</month>
-							<month type="5" draft="contributed">Toba</month>
-							<month type="6" draft="contributed">Amshir</month>
-							<month type="7" draft="contributed">Baramhat</month>
-							<month type="8" draft="contributed">Baramouda</month>
-							<month type="9" draft="contributed">Bashans</month>
-							<month type="10" draft="contributed">Paona</month>
-							<month type="11" draft="contributed">Epep</month>
-							<month type="12" draft="contributed">Mesra</month>
-							<month type="13" draft="contributed">Nasie</month>
+							<month type="1" draft="contributed">Thot</month>
+							<month type="2" draft="contributed">Paophi</month>
+							<month type="3" draft="contributed">Athür</month>
+							<month type="4" draft="contributed">Koiak</month>
+							<month type="5" draft="contributed">Tübi</month>
+							<month type="6" draft="contributed">Mehir</month>
+							<month type="7" draft="contributed">Phamenóth</month>
+							<month type="8" draft="contributed">Pharmuthi</month>
+							<month type="9" draft="contributed">Pakhónsz</month>
+							<month type="10" draft="contributed">Pauni</month>
+							<month type="11" draft="contributed">Epip</month>
+							<month type="12" draft="contributed">Meszoré</month>
+							<month type="13" draft="contributed">Pi Kogi Enavot</month>
 						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="contributed">1</month>
@@ -1303,40 +1335,69 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="12" draft="contributed">12</month>
 							<month type="13" draft="contributed">13</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Thot</month>
+							<month type="2" draft="contributed">Paophi</month>
+							<month type="3" draft="contributed">Athür</month>
+							<month type="4" draft="contributed">Koiak</month>
+							<month type="5" draft="contributed">Tübi</month>
+							<month type="6" draft="contributed">Mehir</month>
+							<month type="7" draft="contributed">Phamenóth</month>
+							<month type="8" draft="contributed">Pharmuthi</month>
+							<month type="9" draft="contributed">Pakhónsz</month>
+							<month type="10" draft="contributed">Pauni</month>
+							<month type="11" draft="contributed">Epip</month>
+							<month type="12" draft="contributed">Meszoré</month>
+							<month type="13" draft="contributed">Pi Kogi Enavot</month>
+						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Tout</month>
-							<month type="2" draft="contributed">Baba</month>
-							<month type="3" draft="contributed">Hator</month>
-							<month type="4" draft="contributed">Kiahk</month>
-							<month type="5" draft="contributed">Toba</month>
-							<month type="6" draft="contributed">Amshir</month>
-							<month type="7" draft="contributed">Baramhat</month>
-							<month type="8" draft="contributed">Baramouda</month>
-							<month type="9" draft="contributed">Bashans</month>
-							<month type="10" draft="contributed">Paona</month>
-							<month type="11" draft="contributed">Epep</month>
-							<month type="12" draft="contributed">Mesra</month>
-							<month type="13" draft="contributed">Nasie</month>
+							<month type="1" draft="contributed">Thot</month>
+							<month type="2" draft="contributed">Paophi</month>
+							<month type="3" draft="contributed">Athür</month>
+							<month type="4" draft="contributed">Koiak</month>
+							<month type="5" draft="contributed">Tübi</month>
+							<month type="6" draft="contributed">Mehir</month>
+							<month type="7" draft="contributed">Phamenóth</month>
+							<month type="8" draft="contributed">Pharmuthi</month>
+							<month type="9" draft="contributed">Pakhónsz</month>
+							<month type="10" draft="contributed">Pauni</month>
+							<month type="11" draft="contributed">Epip</month>
+							<month type="12" draft="contributed">Meszoré</month>
+							<month type="13" draft="contributed">Pi Kogi Enavot</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Tout</month>
-							<month type="2" draft="contributed">Baba</month>
-							<month type="3" draft="contributed">Hator</month>
-							<month type="4" draft="contributed">Kiahk</month>
-							<month type="5" draft="contributed">Toba</month>
-							<month type="6" draft="contributed">Amshir</month>
-							<month type="7" draft="contributed">Baramhat</month>
-							<month type="8" draft="contributed">Baramouda</month>
-							<month type="9" draft="contributed">Bashans</month>
-							<month type="10" draft="contributed">Paona</month>
-							<month type="11" draft="contributed">Epep</month>
-							<month type="12" draft="contributed">Mesra</month>
-							<month type="13" draft="contributed">Nasie</month>
+							<month type="1" draft="contributed">Thot</month>
+							<month type="2" draft="contributed">Paophi</month>
+							<month type="3" draft="contributed">Athür</month>
+							<month type="4" draft="contributed">Koiak</month>
+							<month type="5" draft="contributed">Tübi</month>
+							<month type="6" draft="contributed">Mehir</month>
+							<month type="7" draft="contributed">Phamenóth</month>
+							<month type="8" draft="contributed">Pharmuthi</month>
+							<month type="9" draft="contributed">Pakhónsz</month>
+							<month type="10" draft="contributed">Pauni</month>
+							<month type="11" draft="contributed">Epip</month>
+							<month type="12" draft="contributed">Meszoré</month>
+							<month type="13" draft="contributed">Pi Kogi Enavot</month>
 						</monthWidth>
 					</monthContext>
 				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNarrow>
+				</eras>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1405,6 +1466,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNarrow>
+				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>
@@ -1451,9 +1526,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d., E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y.</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y. MMM d.</dateFormatItem>
@@ -1753,16 +1837,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1">N1</quarter>
-							<quarter type="2">N2</quarter>
-							<quarter type="3">N3</quarter>
-							<quarter type="4">N4</quarter>
+							<quarter type="1">I. n.év</quarter>
+							<quarter type="2">II. n.év</quarter>
+							<quarter type="3">III. n.év</quarter>
+							<quarter type="4">IV. n.év</quarter>
 						</quarterWidth>
 						<quarterWidth type="narrow">
-							<quarter type="1">1.</quarter>
-							<quarter type="2">2.</quarter>
-							<quarter type="3">3.</quarter>
-							<quarter type="4">4.</quarter>
+							<quarter type="1">I.</quarter>
+							<quarter type="2">II.</quarter>
+							<quarter type="3">III.</quarter>
+							<quarter type="4">IV.</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">I. negyedév</quarter>
@@ -1773,10 +1857,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</quarterContext>
 					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
-							<quarter type="1">N1</quarter>
-							<quarter type="2">N2</quarter>
-							<quarter type="3">N3</quarter>
-							<quarter type="4">N4</quarter>
+							<quarter type="1">1. n.év</quarter>
+							<quarter type="2">2. n.év</quarter>
+							<quarter type="3">3. n.év</quarter>
+							<quarter type="4">4. n.év</quarter>
 						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">1.</quarter>
@@ -1800,11 +1884,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="noon">dél</dayPeriod>
 							<dayPeriod type="pm">du.</dayPeriod>
 							<dayPeriod type="morning1">reggel</dayPeriod>
-							<dayPeriod type="morning2">reggel</dayPeriod>
-							<dayPeriod type="afternoon1">délután</dayPeriod>
+							<dayPeriod type="morning2">de.</dayPeriod>
+							<dayPeriod type="afternoon1">du.</dayPeriod>
 							<dayPeriod type="evening1">este</dayPeriod>
-							<dayPeriod type="night1">éjszaka</dayPeriod>
-							<dayPeriod type="night2">éjszaka</dayPeriod>
+							<dayPeriod type="night1">éjjel</dayPeriod>
+							<dayPeriod type="night2">hajnal</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">éjfél</dayPeriod>
@@ -1812,27 +1896,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="noon">dél</dayPeriod>
 							<dayPeriod type="pm">du.</dayPeriod>
 							<dayPeriod type="morning1">reggel</dayPeriod>
-							<dayPeriod type="morning2">reggel</dayPeriod>
-							<dayPeriod type="afternoon1">délután</dayPeriod>
-							<dayPeriod type="evening1">délután</dayPeriod>
-							<dayPeriod type="night1">éjszaka</dayPeriod>
-							<dayPeriod type="night2">éjszaka</dayPeriod>
+							<dayPeriod type="morning2">de.</dayPeriod>
+							<dayPeriod type="afternoon1">du.</dayPeriod>
+							<dayPeriod type="evening1">este</dayPeriod>
+							<dayPeriod type="night1">éjjel</dayPeriod>
+							<dayPeriod type="night2">hajnal</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">éjfél</dayPeriod>
-							<dayPeriod type="am">de.</dayPeriod>
-							<dayPeriod type="noon">dél</dayPeriod>
-							<dayPeriod type="pm">du.</dayPeriod>
-							<dayPeriod type="morning1">reggel</dayPeriod>
-							<dayPeriod type="morning2">reggel</dayPeriod>
-							<dayPeriod type="afternoon1">délután</dayPeriod>
-							<dayPeriod type="evening1">este</dayPeriod>
-							<dayPeriod type="night1">éjszaka</dayPeriod>
-							<dayPeriod type="night2">éjszaka</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">éjfél</dayPeriod>
 							<dayPeriod type="am">de.</dayPeriod>
 							<dayPeriod type="noon">dél</dayPeriod>
@@ -1844,14 +1914,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">éjjel</dayPeriod>
 							<dayPeriod type="night2">hajnal</dayPeriod>
 						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight">éjfél</dayPeriod>
+							<dayPeriod type="am">de.</dayPeriod>
+							<dayPeriod type="noon">dél</dayPeriod>
+							<dayPeriod type="pm">du.</dayPeriod>
+							<dayPeriod type="morning1">reggel</dayPeriod>
+							<dayPeriod type="morning2">de.</dayPeriod>
+							<dayPeriod type="afternoon1">du.</dayPeriod>
+							<dayPeriod type="evening1">este</dayPeriod>
+							<dayPeriod type="night1">éjjel</dayPeriod>
+							<dayPeriod type="night2">hajnal</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">éjfél</dayPeriod>
 							<dayPeriod type="am">de.</dayPeriod>
 							<dayPeriod type="noon">dél</dayPeriod>
 							<dayPeriod type="pm">du.</dayPeriod>
 							<dayPeriod type="morning1">reggel</dayPeriod>
-							<dayPeriod type="morning2">délelőtt</dayPeriod>
-							<dayPeriod type="afternoon1">délután</dayPeriod>
+							<dayPeriod type="morning2">de.</dayPeriod>
+							<dayPeriod type="afternoon1">du.</dayPeriod>
 							<dayPeriod type="evening1">este</dayPeriod>
 							<dayPeriod type="night1">éjjel</dayPeriod>
 							<dayPeriod type="night2">hajnal</dayPeriod>
@@ -1872,8 +1956,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">időszámításunk előtt</era>
-						<era type="0" alt="variant">i. e.</era>
+						<era type="0">Krisztus előtt</era>
+						<era type="0" alt="variant">időszámításunk előtt</era>
 						<era type="1">időszámításunk szerint</era>
 						<era type="1" alt="variant">i. sz.</era>
 					</eraNames>
@@ -1952,8 +2036,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d., E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1969,9 +2058,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">a h:mm:ss v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">a h:mm v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M. d.</dateFormatItem>
@@ -1980,6 +2069,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">MMM d.</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d., E</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d.</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMM W. 'hete'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMM W. 'hete'</dateFormatItem>
 						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y.</dateFormatItem>
@@ -1992,6 +2083,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">y. MMMM</dateFormatItem>
 						<dateFormatItem id="yQQQ">y. QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y. QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y w. 'hete'</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y w. 'hete'</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -2165,9 +2258,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">TÉ</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">TÉ</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">TÉ</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="indian">
@@ -2298,9 +2397,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">MF</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">MF</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">MF</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="japanese">
@@ -2330,20 +2435,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<calendar type="persian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Farvardin</month>
-							<month type="2" draft="contributed">Ordibehesht</month>
-							<month type="3" draft="contributed">Khordad</month>
-							<month type="4" draft="contributed">Tir</month>
-							<month type="5" draft="contributed">Mordad</month>
-							<month type="6" draft="contributed">Shahrivar</month>
-							<month type="7" draft="contributed">Mehr</month>
-							<month type="8" draft="contributed">Aban</month>
-							<month type="9" draft="contributed">Azar</month>
-							<month type="10" draft="contributed">Dey</month>
-							<month type="11" draft="contributed">Bahman</month>
-							<month type="12" draft="contributed">Esfand</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="contributed">1</month>
 							<month type="2" draft="contributed">2</month>
@@ -2358,49 +2449,78 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="11" draft="contributed">11</month>
 							<month type="12" draft="contributed">12</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">farvardin</month>
+							<month type="2">ordibehesht</month>
+							<month type="3">khordad</month>
+							<month type="4">tir</month>
+							<month type="5">mordad</month>
+							<month type="6">shahrivar</month>
+							<month type="7">mehr</month>
+							<month type="8">aban</month>
+							<month type="9">azar</month>
+							<month type="10">dey</month>
+							<month type="11">bahman</month>
+							<month type="12">esfand</month>
+						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">Farvardin</month>
-							<month type="2" draft="contributed">Ordibehesht</month>
-							<month type="3" draft="contributed">Khordad</month>
-							<month type="4" draft="contributed">Tir</month>
-							<month type="5" draft="contributed">Mordad</month>
-							<month type="6" draft="contributed">Shahrivar</month>
-							<month type="7" draft="contributed">Mehr</month>
-							<month type="8" draft="contributed">Aban</month>
-							<month type="9" draft="contributed">Azar</month>
-							<month type="10" draft="contributed">Dey</month>
-							<month type="11" draft="contributed">Bahman</month>
-							<month type="12" draft="contributed">Esfand</month>
+							<month type="1">farvardin</month>
+							<month type="2">ordibehesht</month>
+							<month type="3">khordad</month>
+							<month type="4">tir</month>
+							<month type="5">mordad</month>
+							<month type="6">shahrivar</month>
+							<month type="7">mehr</month>
+							<month type="8">aban</month>
+							<month type="9">azar</month>
+							<month type="10">dey</month>
+							<month type="11">bahman</month>
+							<month type="12">esfand</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">Farvardin</month>
-							<month type="2" draft="contributed">Ordibehesht</month>
-							<month type="3" draft="contributed">Khordad</month>
-							<month type="4" draft="contributed">Tir</month>
-							<month type="5" draft="contributed">Mordad</month>
-							<month type="6" draft="contributed">Shahrivar</month>
-							<month type="7" draft="contributed">Mehr</month>
-							<month type="8" draft="contributed">Aban</month>
-							<month type="9" draft="contributed">Azar</month>
-							<month type="10" draft="contributed">Dey</month>
-							<month type="11" draft="contributed">Bahman</month>
-							<month type="12" draft="contributed">Esfand</month>
+							<month type="1">farvardin</month>
+							<month type="2">ordibehesht</month>
+							<month type="3">khordad</month>
+							<month type="4">tir</month>
+							<month type="5">mordad</month>
+							<month type="6">shahrivar</month>
+							<month type="7">mehr</month>
+							<month type="8">aban</month>
+							<month type="9">azar</month>
+							<month type="10">dey</month>
+							<month type="11">bahman</month>
+							<month type="12">esfand</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 			</calendar>
 			<calendar type="roc">
 				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">R.O.C. előtt</era>
+						<era type="1" draft="contributed">R.O.C.</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0" draft="contributed">R.O.C. előtt</era>
+						<era type="1" draft="contributed">R.O.C.</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">R.O.C. előtt</era>
+						<era type="1" draft="contributed">R.O.C.</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
+				<displayName>éra</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>éra</displayName>
+			</field>
+			<field type="era-narrow">
 				<displayName>éra</displayName>
 			</field>
 			<field type="year">
@@ -2460,7 +2580,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="quarter-short">
-				<displayName>negyedév</displayName>
+				<displayName>n.év</displayName>
 				<relative type="-1">előző negyedév</relative>
 				<relative type="0">ez a negyedév</relative>
 				<relative type="1">következő negyedév</relative>
@@ -2474,13 +2594,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
-				<displayName>negyedév</displayName>
+				<displayName>n.év</displayName>
 				<relative type="-1">előző negyedév</relative>
 				<relative type="0">ez a negyedév</relative>
 				<relative type="1">következő negyedév</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} negyedév múlva</relativeTimePattern>
-					<relativeTimePattern count="other">{0} negyedév múlva</relativeTimePattern>
+					<relativeTimePattern count="one">{0} n.év múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} n.év múlva</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} negyedévvel ezelőtt</relativeTimePattern>
@@ -2542,6 +2662,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} héttel ezelőtt</relativeTimePattern>
 					<relativeTimePattern count="other">{0} héttel ezelőtt</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} hete</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>hét</displayName>
@@ -2556,6 +2677,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} héttel ezelőtt</relativeTimePattern>
 					<relativeTimePattern count="other">{0} héttel ezelőtt</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} hete</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>hét</displayName>
@@ -2570,6 +2692,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} héttel ezelőtt</relativeTimePattern>
 					<relativeTimePattern count="other">{0} héttel ezelőtt</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} hete</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>hónap hete</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>hónap hete</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>hónap hete</displayName>
 			</field>
 			<field type="day">
 				<displayName>nap</displayName>
@@ -2619,119 +2751,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} napja</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>év napja</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>év napja</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>év napja</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>hét napja</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>hét napja</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>hét napja</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>hónap hétköznapja</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>hónap hétköznapja</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>hónap hétköznapja</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">előző vasárnap</relative>
 				<relative type="0">ez a vasárnap</relative>
 				<relative type="1">következő vasárnap</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} vasárnap múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} vasárnap múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} vasárnappal ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} vasárnappal ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">előző vasárnap</relative>
 				<relative type="0">ez a vasárnap</relative>
 				<relative type="1">következő vasárnap</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} vasárnap múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} vasárnap múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} vasárnappal ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} vasárnappal ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">előző vasárnap</relative>
 				<relative type="0">ez a vasárnap</relative>
 				<relative type="1">következő vasárnap</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} vasárnap múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} vasárnap múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} vasárnappal ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} vasárnappal ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">előző hétfő</relative>
 				<relative type="0">ez a hétfő</relative>
 				<relative type="1">következő hétfő</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} hétfő múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hétfő múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} hétfővel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hétfővel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">előző hétfő</relative>
 				<relative type="0">ez a hétfő</relative>
 				<relative type="1">következő hétfő</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} hétfő múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hétfő múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} hétfővel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hétfővel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">előző hétfő</relative>
 				<relative type="0">ez a hétfő</relative>
 				<relative type="1">következő hétfő</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} hétfő múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hétfő múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} hétfővel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hétfővel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">előző kedd</relative>
 				<relative type="0">ez a kedd</relative>
 				<relative type="1">következő kedd</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} kedd múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kedd múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} keddel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} keddel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">előző kedd</relative>
 				<relative type="0">ez a kedd</relative>
 				<relative type="1">következő kedd</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} kedd múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kedd múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} keddel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} keddel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">előző kedd</relative>
 				<relative type="0">ez a kedd</relative>
 				<relative type="1">következő kedd</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} kedd múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kedd múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} keddel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} keddel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">előző szerda</relative>
 				<relative type="0">ez a szerda</relative>
 				<relative type="1">következő szerda</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} szerda múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szerda múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} szerdával ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szerdával ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">előző szerda</relative>
 				<relative type="0">ez a szerda</relative>
 				<relative type="1">következő szerda</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} szerda múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szerda múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} szerdával ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szerdával ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">előző szerda</relative>
 				<relative type="0">ez a szerda</relative>
 				<relative type="1">következő szerda</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} szerda múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szerda múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} szerdával ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szerdával ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">előző csütörtök</relative>
 				<relative type="0">ez a csütörtök</relative>
 				<relative type="1">következő csütörtök</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} csütörtök múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} csütörtök múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} csütörtökkel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} csütörtökkel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">előző csütörtök</relative>
 				<relative type="0">ez a csütörtök</relative>
 				<relative type="1">következő csütörtök</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} csütörtök múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} csütörtök múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} csütörtökkel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} csütörtökkel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">előző csütörtök</relative>
 				<relative type="0">ez a csütörtök</relative>
 				<relative type="1">következő csütörtök</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} csütörtök múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} csütörtök múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} csütörtökkel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} csütörtökkel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">előző péntek</relative>
 				<relative type="0">ez a péntek</relative>
 				<relative type="1">következő péntek</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} péntek múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} péntek múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} péntekkel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} péntekkel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">előző péntek</relative>
 				<relative type="0">ez a péntek</relative>
 				<relative type="1">következő péntek</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} péntek múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} péntek múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} péntekkel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} péntekkel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">előző péntek</relative>
 				<relative type="0">ez a péntek</relative>
 				<relative type="1">következő péntek</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} péntek múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} péntek múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} péntekkel ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} péntekkel ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">előző szombat</relative>
 				<relative type="0">ez a szombat</relative>
 				<relative type="1">következő szombat</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} szombat múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szombat múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} szombattal ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szombattal ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">előző szombat</relative>
 				<relative type="0">ez a szombat</relative>
 				<relative type="1">következő szombat</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} szombat múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szombat múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} szombattal ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szombattal ezelőtt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">előző szombat</relative>
 				<relative type="0">ez a szombat</relative>
 				<relative type="1">következő szombat</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} szombat múlva</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szombat múlva</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} szombattal ezelőtt</relativeTimePattern>
+					<relativeTimePattern count="other">{0} szombattal ezelőtt</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>napszak</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>napszak</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>napszak</displayName>
+			</field>
 			<field type="hour">
 				<displayName>óra</displayName>
+				<relative type="0">ebben az órában</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} óra múlva</relativeTimePattern>
 					<relativeTimePattern count="other">{0} óra múlva</relativeTimePattern>
@@ -2765,6 +3096,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>perc</displayName>
+				<relative type="0">ebben a percben</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} perc múlva</relativeTimePattern>
 					<relativeTimePattern count="other">{0} perc múlva</relativeTimePattern>
@@ -2833,6 +3165,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>időzóna</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>időzóna</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>időzóna</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
@@ -2842,6 +3180,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} nyári idő</regionFormat>
 			<regionFormat type="standard">{0} zónaidő</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Isabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>egyezményes koordinált világidő</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Ismeretlen város</exemplarCity>
 			</zone>
@@ -2996,7 +3345,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Barbados</exemplarCity>
 			</zone>
 			<zone type="Asia/Dhaka">
-				<exemplarCity>Dháka</exemplarCity>
+				<exemplarCity>Dakka</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity>Brüsszel</exemplarCity>
@@ -3106,6 +3455,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>Vancouver</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Dawson Creek</exemplarCity>
 			</zone>
@@ -3202,6 +3554,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Húsvét-szigetek</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santiago</exemplarCity>
 			</zone>
@@ -3224,16 +3579,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Havanna</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
-				<exemplarCity>Zöld-Foki Szigetek</exemplarCity>
+				<exemplarCity>Zöld-foki szigetek</exemplarCity>
 			</zone>
 			<zone type="America/Curacao">
-				<exemplarCity>Curacao</exemplarCity>
+				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Karácsony-sziget</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nicosia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Prága</exemplarCity>
@@ -3299,7 +3657,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Stanley</exemplarCity>
 			</zone>
 			<zone type="Pacific/Truk">
-				<exemplarCity>Chuuk</exemplarCity>
+				<exemplarCity>Truk</exemplarCity>
 			</zone>
 			<zone type="Pacific/Ponape">
 				<exemplarCity>Ponape-szigetek</exemplarCity>
@@ -3308,7 +3666,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Kosrae-szigetek</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Faeroe">
-				<exemplarCity>Faroe</exemplarCity>
+				<exemplarCity>Feröer</exemplarCity>
 			</zone>
 			<zone type="Europe/Paris">
 				<exemplarCity>Párizs</exemplarCity>
@@ -3493,6 +3851,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atyrau</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aktöbe</exemplarCity>
 			</zone>
@@ -3566,7 +3927,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Bamako</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangoon</exemplarCity>
+				<exemplarCity>Yangon</exemplarCity>
 			</zone>
 			<zone type="Asia/Hovd">
 				<exemplarCity>Hovd</exemplarCity>
@@ -3606,9 +3967,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosillo</exemplarCity>
@@ -3710,7 +4068,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Port Moresby</exemplarCity>
 			</zone>
 			<zone type="Pacific/Bougainville">
-				<exemplarCity draft="contributed">Bougainville</exemplarCity>
+				<exemplarCity>Bougainville</exemplarCity>
 			</zone>
 			<zone type="Asia/Manila">
 				<exemplarCity>Manila</exemplarCity>
@@ -3775,6 +4133,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgográd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Szaratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Asztrahán</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Uljanovszk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Szamara</exemplarCity>
 			</zone>
@@ -3786,6 +4156,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novoszibirszk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomszk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznyeck</exemplarCity>
@@ -3955,9 +4331,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midway-szigetek</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake-sziget</exemplarCity>
 			</zone>
@@ -3967,8 +4340,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -4004,7 +4377,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>New Salem, Észak-Dakota</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
-				<exemplarCity>Középső, Észak-Dakota</exemplarCity>
+				<exemplarCity>Center, Észak-Dakota</exemplarCity>
 			</zone>
 			<zone type="America/Chicago">
 				<exemplarCity>Chicago</exemplarCity>
@@ -4221,7 +4594,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>argentínai idő</generic>
 					<standard>argentínai téli idő</standard>
-					<daylight>Argentínai nyári idő</daylight>
+					<daylight>argentínai nyári idő</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
@@ -4275,7 +4648,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
-					<generic>Azerbajdzsáni idő</generic>
+					<generic>azerbajdzsáni idő</generic>
 					<standard>azerbajdzsáni téli idő</standard>
 					<daylight>azerbajdzsáni nyári idő</daylight>
 				</long>
@@ -4471,7 +4844,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard>francia-guianai idő</standard>
+					<standard>francia-guyanai idő</standard>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
@@ -4540,7 +4913,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>hawaii-aleut időzóna</generic>
+					<generic>hawaii-aleuti időzóna</generic>
 					<standard>hawaii-aleuti téli idő</standard>
 					<daylight>hawaii-aleuti nyári idő</daylight>
 				</long>
@@ -4871,9 +5244,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>Saint Pierre és Miquelon-i idő</generic>
-					<standard>Saint Pierre és Miquelon-i zónaidő</standard>
-					<daylight>Saint Pierre és Miquelon-i nyári idő</daylight>
+					<generic>Saint-Pierre és Miquelon-i idő</generic>
+					<standard>Saint-Pierre és Miquelon-i zónaidő</standard>
+					<daylight>Saint-Pierre és Miquelon-i nyári idő</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -4884,6 +5257,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Ponape">
 				<long>
 					<standard>ponape-szigeti idő</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>phenjani idő</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -5059,14 +5437,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>jakutszki idő</generic>
 					<standard>jakutszki téli idő</standard>
-					<daylight>Jakutszki nyári idő</daylight>
+					<daylight>jakutszki nyári idő</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
-					<generic>Jekatyerinburgi idő</generic>
+					<generic>jekatyerinburgi idő</generic>
 					<standard>jekatyerinburgi téli idő</standard>
-					<daylight>Jekatyerinburgi nyári idő</daylight>
+					<daylight>jekatyerinburgi nyári idő</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -5076,7 +5454,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<otherNumberingSystems>
 			<native draft="contributed">latn</native>
 		</otherNumberingSystems>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits draft="contributed">4</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group> </group>
@@ -5470,12 +5848,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="BYB">
 				<displayName>Fehérorosz új rubel (1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>fehérorosz rubel</displayName>
 				<displayName count="one">fehérorosz rubel</displayName>
 				<displayName count="other">fehérorosz rubel</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>fehérorosz rubel (2000–2016)</displayName>
+				<displayName count="one">fehérorosz rubel (2000–2016)</displayName>
+				<displayName count="other">fehérorosz rubel (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>belize-i dollár</displayName>
@@ -5518,6 +5902,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">chilei peso</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName draft="contributed">kínai jüan (offshore)</displayName>
+				<displayName count="one" draft="contributed">kínai jüan (offshore)</displayName>
+				<displayName count="other" draft="contributed">kínai jüan (offshore)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>kínai jüan</displayName>
@@ -5690,6 +6080,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">grúz lari</displayName>
 				<displayName count="other">grúz lari</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
@@ -6037,10 +6428,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>mauritániai ouguiya (1973–2017)</displayName>
+				<displayName count="one">mauritániai ouguiya (1973–2017)</displayName>
+				<displayName count="other">mauritániai ouguiya (1973–2017)</displayName>
+				<symbol draft="contributed">MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>mauritániai ouguiya</displayName>
 				<displayName count="one">mauritániai ouguiya</displayName>
 				<displayName count="other">mauritániai ouguiya</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Máltai líra</displayName>
@@ -6160,16 +6556,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEI">
-				<displayName>Perui inti</displayName>
+				<displayName>perui inti</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>perui sol nuevo</displayName>
-				<displayName count="one">perui sol nuevo</displayName>
-				<displayName count="other">perui sol nuevo</displayName>
+				<displayName>perui sol</displayName>
+				<displayName count="one">perui sol</displayName>
+				<displayName count="other">perui sol</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
-				<displayName>Perui sol</displayName>
+				<displayName>perui sol (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>pápua új-guineai kina</displayName>
@@ -6232,6 +6628,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">román lej</displayName>
 				<displayName count="other">román lej</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>szerb dínár</displayName>
@@ -6350,10 +6747,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>São Tomé és Príncipe-i dobra (1977–2017)</displayName>
+				<displayName count="one">São Tomé és Príncipe-i dobra (1977–2017)</displayName>
+				<displayName count="other">São Tomé és Príncipe-i dobra (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>São Tomé és Príncipe-i dobra</displayName>
 				<displayName count="one">São Tomé és Príncipe-i dobra</displayName>
 				<displayName count="other">São Tomé és Príncipe-i dobra</displayName>
-				<symbol>STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -6688,6 +7090,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">A kosár tartalma: {0} X. Megveszi?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">A kosár tartalma: {0} X. Megveszi őket?</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Az {0}. lehetőségnél forduljon jobbra.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">A {0}. lehetőségnél forduljon jobbra.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -6733,6 +7141,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>négyzetkilométer</displayName>
 				<unitPattern count="one">{0} négyzetkilométer</unitPattern>
 				<unitPattern count="other">{0} négyzetkilométer</unitPattern>
+				<perUnitPattern draft="contributed">{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektár</displayName>
@@ -6755,6 +7164,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>négyzetmérföld</displayName>
 				<unitPattern count="one">{0} négyzetmérföld</unitPattern>
 				<unitPattern count="other">{0} négyzetmérföld</unitPattern>
+				<perUnitPattern>{0}/négyzetmérföld</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>hold</displayName>
@@ -6782,6 +7192,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} karát</unitPattern>
 				<unitPattern count="other">{0} karát</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>milligramm/deciliter</displayName>
+				<unitPattern count="one">{0} milligramm/deciliter</unitPattern>
+				<unitPattern count="other">{0} milligramm/deciliter</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>millimól/liter</displayName>
+				<unitPattern count="one">{0} millimól/liter</unitPattern>
+				<unitPattern count="other">{0} millimól/liter</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>részecske/millió</displayName>
+				<unitPattern count="one">{0} részecske/millió</unitPattern>
+				<unitPattern count="other">{0} részecske/millió</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liter per kilométer</displayName>
 				<unitPattern count="one">{0} liter per kilométer</unitPattern>
@@ -6796,6 +7221,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mérföld per gallon</displayName>
 				<unitPattern count="one">{0} mérföld per gallon</unitPattern>
 				<unitPattern count="other">{0} mérföld per gallon</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mérföld/birodalmi gallon</displayName>
+				<unitPattern count="one">{0} mérföld/birodalmi gallon</unitPattern>
+				<unitPattern count="other">{0} mérföld/birodalmi gallon</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabájt</displayName>
@@ -7069,6 +7499,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} svéd mérföld</unitPattern>
 				<unitPattern count="other">{0} svéd mérföld</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>pont</displayName>
+				<unitPattern count="one">{0} pont</unitPattern>
+				<unitPattern count="other">{0} pont</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
@@ -7312,6 +7747,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gallon</unitPattern>
 				<perUnitPattern>{0}/gallon</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>birodalmi gallon</displayName>
+				<unitPattern count="one">{0} birodalmi gallon</unitPattern>
+				<unitPattern count="other">{0} birodalmi gallon</unitPattern>
+				<perUnitPattern>{0}/birodalmi gallon</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>quart</displayName>
 				<unitPattern count="one">{0} quart</unitPattern>
@@ -7392,6 +7833,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern draft="contributed">{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
@@ -7411,9 +7853,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>mf²</displayName>
-				<unitPattern count="one">{0} mf²</unitPattern>
-				<unitPattern count="other">{0} mf²</unitPattern>
+				<displayName>mi²</displayName>
+				<unitPattern count="one">{0} mi²</unitPattern>
+				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>kh</displayName>
@@ -7441,6 +7884,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dl</displayName>
+				<unitPattern count="one">{0} mg/dl</unitPattern>
+				<unitPattern count="other">{0} mg/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>millimól/liter</displayName>
+				<unitPattern count="one">{0} mmol/l</unitPattern>
+				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>részecske/millió</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="one">{0} l/km</unitPattern>
@@ -7455,6 +7913,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mpg</displayName>
 				<unitPattern count="one">{0} mpg</unitPattern>
 				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mérföld/bir. gallon</displayName>
+				<unitPattern count="one">{0} mpg bir.</unitPattern>
+				<unitPattern count="other">{0} mpg bir.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -7728,6 +8191,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} mil</unitPattern>
 				<unitPattern count="other">{0} mil</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>pont</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
@@ -7971,6 +8439,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>bir. gal</displayName>
+				<unitPattern count="one">{0} bir. gal</unitPattern>
+				<unitPattern count="other">{0} bir. gal</unitPattern>
+				<perUnitPattern>{0}/bir. gal</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
 				<unitPattern count="one">{0} qt</unitPattern>
@@ -8057,6 +8531,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} l/100 km</unitPattern>
 				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
+			<unit type="duration-century">
+				<displayName draft="contributed">sz.</displayName>
+				<unitPattern count="one" draft="contributed">{0} sz.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} sz.</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>év</displayName>
 				<unitPattern count="one">{0} év</unitPattern>
@@ -8076,21 +8555,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>nap</displayName>
 				<unitPattern count="one">{0} nap</unitPattern>
 				<unitPattern count="other">{0} nap</unitPattern>
+				<perUnitPattern draft="contributed">{0}/nap</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>h</displayName>
 				<unitPattern count="one">{0} h</unitPattern>
 				<unitPattern count="other">{0} h</unitPattern>
+				<perUnitPattern draft="contributed">{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>min</displayName>
 				<unitPattern count="one">{0} min</unitPattern>
 				<unitPattern count="other">{0} min</unitPattern>
+				<perUnitPattern draft="contributed">{0}/min</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>s</displayName>
 				<unitPattern count="one">{0} s</unitPattern>
 				<unitPattern count="other">{0} s</unitPattern>
+				<perUnitPattern draft="contributed">{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
@@ -8101,16 +8584,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
 				<unitPattern count="other">{0} km</unitPattern>
+				<perUnitPattern draft="contributed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
+				<perUnitPattern draft="contributed">{0}/m</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="contributed">dm</displayName>
+				<unitPattern count="one" draft="contributed">{0} dm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>cm</displayName>
 				<unitPattern count="one">{0} cm</unitPattern>
 				<unitPattern count="other">{0} cm</unitPattern>
+				<perUnitPattern draft="contributed">{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
@@ -8122,42 +8613,64 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName draft="contributed">mf</displayName>
 				<unitPattern count="one">{0} mf</unitPattern>
 				<unitPattern count="other">{0} mf</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName draft="contributed">yd</displayName>
 				<unitPattern count="one">{0} yd</unitPattern>
 				<unitPattern count="other">{0} yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName draft="contributed">láb</displayName>
 				<unitPattern count="one">{0} láb</unitPattern>
 				<unitPattern count="other">{0} láb</unitPattern>
+				<perUnitPattern draft="contributed">{0}/láb</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName draft="contributed">hüvelyk</displayName>
 				<unitPattern count="one">{0} hüvelyk</unitPattern>
 				<unitPattern count="other">{0} hüvelyk</unitPattern>
+				<perUnitPattern draft="contributed">{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="one">{0} fényév</unitPattern>
 				<unitPattern count="other">{0} fényév</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="contributed">mil</displayName>
+				<unitPattern count="one" draft="contributed">{0} mil</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mil</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
 				<unitPattern count="one">{0} kg</unitPattern>
 				<unitPattern count="other">{0} kg</unitPattern>
+				<perUnitPattern draft="contributed">{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>g</displayName>
 				<unitPattern count="one">{0} g</unitPattern>
 				<unitPattern count="other">{0} g</unitPattern>
+				<perUnitPattern draft="contributed">{0}/g</perUnitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName draft="contributed">st</displayName>
+				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
+				<displayName draft="contributed">lb</displayName>
 				<unitPattern count="one">{0} font</unitPattern>
 				<unitPattern count="other">{0} font</unitPattern>
+				<perUnitPattern draft="contributed">{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName draft="contributed">oz</displayName>
 				<unitPattern count="one">{0} uncia</unitPattern>
 				<unitPattern count="other">{0} uncia</unitPattern>
+				<perUnitPattern draft="contributed">{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="one">{0} kW</unitPattern>
@@ -8172,14 +8685,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} LE</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName draft="contributed">hPa</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-of-mercury">
+				<displayName draft="contributed">Hgmm</displayName>
+				<unitPattern count="one" draft="contributed">{0} Hgmm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Hgmm</unitPattern>
+			</unit>
+			<unit type="pressure-pound-per-square-inch">
+				<displayName draft="contributed">psi</displayName>
+				<unitPattern count="one" draft="contributed">{0} psi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} psi</unitPattern>
+			</unit>
 			<unit type="pressure-inch-hg">
+				<displayName draft="contributed">inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<displayName draft="contributed">mbar</displayName>
 				<unitPattern count="one">{0} mb</unitPattern>
 				<unitPattern count="other">{0} mb</unitPattern>
 			</unit>
@@ -8189,12 +8715,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName draft="contributed">m/s</displayName>
 				<unitPattern count="one">{0} m/s</unitPattern>
 				<unitPattern count="other">{0} m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<displayName draft="contributed">mph</displayName>
 				<unitPattern count="one">{0} mph</unitPattern>
 				<unitPattern count="other">{0} mph</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName draft="contributed">°</displayName>
+				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
@@ -8202,8 +8735,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} °C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName draft="contributed">°F</displayName>
 				<unitPattern count="one">{0} °F</unitPattern>
 				<unitPattern count="other">{0} °F</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName draft="contributed">K</displayName>
+				<unitPattern count="one" draft="contributed">{0} K</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} K</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="one">{0} km³</unitPattern>
@@ -8242,6 +8781,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} és {1}</listPatternPart>
 			<listPatternPart type="2">{0} és {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} vagy {1}</listPatternPart>
+			<listPatternPart type="2">{0} vagy {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} és {1}</listPatternPart>
+			<listPatternPart type="2">{0} és {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
@@ -8267,5 +8818,166 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>nem:n</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} – összes</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} – kompatibilitás</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} – zárt</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} – kibővített</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} – történelmi</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} – vegyes</characterLabelPattern>
+		<characterLabelPattern type="other">{0} – egyéb</characterLabelPattern>
+		<characterLabelPattern type="scripts">kézírások – {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} vonás</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} vonás</characterLabelPattern>
+		<characterLabel type="activities">tevékenység</characterLabel>
+		<characterLabel type="african_scripts">afrikai írásrendszerek</characterLabel>
+		<characterLabel type="american_scripts">amerikai írásrendszerek</characterLabel>
+		<characterLabel type="animal">állat</characterLabel>
+		<characterLabel type="animals_nature">állatok és természet</characterLabel>
+		<characterLabel type="arrows">nyilak</characterLabel>
+		<characterLabel type="body">test</characterLabel>
+		<characterLabel type="box_drawing">grafikus karakterek</characterLabel>
+		<characterLabel type="braille">braille</characterLabel>
+		<characterLabel type="building">épület</characterLabel>
+		<characterLabel type="bullets_stars">felsorolásjelek és csillagok</characterLabel>
+		<characterLabel type="consonantal_jamo">mássalhangzói jamo</characterLabel>
+		<characterLabel type="currency_symbols">pénznemek szimbólumai</characterLabel>
+		<characterLabel type="dash_connector">gondolatjel/kötőjel</characterLabel>
+		<characterLabel type="digits">számjegyek</characterLabel>
+		<characterLabel type="dingbats">dingbatok</characterLabel>
+		<characterLabel type="divination_symbols">jóslási jelek</characterLabel>
+		<characterLabel type="downwards_arrows">lefelé mutató nyilak</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">felfelé-lefelé mutató nyilak</characterLabel>
+		<characterLabel type="east_asian_scripts">kelet-ázsiai írásrendszerek</characterLabel>
+		<characterLabel type="emoji">emodzsi</characterLabel>
+		<characterLabel type="european_scripts">európai írásrendszerek</characterLabel>
+		<characterLabel type="female">nő</characterLabel>
+		<characterLabel type="flag">zászló</characterLabel>
+		<characterLabel type="flags">zászlók</characterLabel>
+		<characterLabel type="food_drink">étel-ital</characterLabel>
+		<characterLabel type="format">formátum</characterLabel>
+		<characterLabel type="format_whitespace">formátum és térköz</characterLabel>
+		<characterLabel type="full_width_form_variant">teljes szélességű formavariációk</characterLabel>
+		<characterLabel type="geometric_shapes">geometriai alakzatok</characterLabel>
+		<characterLabel type="half_width_form_variant">félszélességű formavariációk</characterLabel>
+		<characterLabel type="han_characters">han karakterek</characterLabel>
+		<characterLabel type="han_radicals">han gyökök</characterLabel>
+		<characterLabel type="hanja">handzsa</characterLabel>
+		<characterLabel type="hanzi_simplified">hanzi (egyszerűsített)</characterLabel>
+		<characterLabel type="hanzi_traditional">hanzi (hagyományos)</characterLabel>
+		<characterLabel type="heart">szív</characterLabel>
+		<characterLabel type="historic_scripts">történelmi írásrendszerek</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ideografikus leíró karakterek</characterLabel>
+		<characterLabel type="japanese_kana">japán kana</characterLabel>
+		<characterLabel type="kanbun">kanbun</characterLabel>
+		<characterLabel type="kanji">kandzsi</characterLabel>
+		<characterLabel type="keycap">gombfej</characterLabel>
+		<characterLabel type="leftwards_arrows">balra mutató nyilak</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">jobbra-balra mutató nyilak</characterLabel>
+		<characterLabel type="letterlike_symbols">betűszerű szimbólumok</characterLabel>
+		<characterLabel type="limited_use">korlátozott használat</characterLabel>
+		<characterLabel type="male">férfi</characterLabel>
+		<characterLabel type="math_symbols">matematikai szimbólumok</characterLabel>
+		<characterLabel type="middle_eastern_scripts">matematikai szimbólumok</characterLabel>
+		<characterLabel type="miscellaneous">egyéb</characterLabel>
+		<characterLabel type="modern_scripts">modern írásrendszerek</characterLabel>
+		<characterLabel type="modifier">módosító</characterLabel>
+		<characterLabel type="musical_symbols">zenei szimbólumok</characterLabel>
+		<characterLabel type="nature">természet</characterLabel>
+		<characterLabel type="nonspacing">szóközt nem alkalmazó</characterLabel>
+		<characterLabel type="numbers">számok</characterLabel>
+		<characterLabel type="objects">tárgyak</characterLabel>
+		<characterLabel type="other">egyéb</characterLabel>
+		<characterLabel type="paired">párosított</characterLabel>
+		<characterLabel type="person">ember</characterLabel>
+		<characterLabel type="phonetic_alphabet">fonetikus ábécé</characterLabel>
+		<characterLabel type="pictographs">piktogramok</characterLabel>
+		<characterLabel type="place">hely</characterLabel>
+		<characterLabel type="plant">növény</characterLabel>
+		<characterLabel type="punctuation">írásjel</characterLabel>
+		<characterLabel type="rightwards_arrows">jobbra mutató nyilak</characterLabel>
+		<characterLabel type="sign_standard_symbols">jelek/normál szimbólumok</characterLabel>
+		<characterLabel type="small_form_variant">kis formavariánsok</characterLabel>
+		<characterLabel type="smiley">hangulatjel</characterLabel>
+		<characterLabel type="smileys_people">hangulatjelek és emberek</characterLabel>
+		<characterLabel type="south_asian_scripts">dél-ázsiai írásrendszerek</characterLabel>
+		<characterLabel type="southeast_asian_scripts">délkelet-ázsiai írásrendszerek</characterLabel>
+		<characterLabel type="spacing">szóközt alkalmazó</characterLabel>
+		<characterLabel type="sport">sport</characterLabel>
+		<characterLabel type="symbols">szimbólumok</characterLabel>
+		<characterLabel type="technical_symbols">műszaki szimbólumok</characterLabel>
+		<characterLabel type="tone_marks">hangsúlyjelek</characterLabel>
+		<characterLabel type="travel">utazás</characterLabel>
+		<characterLabel type="travel_places">utazás és helyek</characterLabel>
+		<characterLabel type="upwards_arrows">felfelé mutató nyilak</characterLabel>
+		<characterLabel type="variant_forms">variánsformák</characterLabel>
+		<characterLabel type="vocalic_jamo">magánhangzói jamo</characterLabel>
+		<characterLabel type="weather">időjárás</characterLabel>
+		<characterLabel type="western_asian_scripts">nyugat-ázsiai írásrendszerek</characterLabel>
+		<characterLabel type="whitespace">térköz</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">dőlt</axisName>
+		<axisName type="opsz">optikai méret</axisName>
+		<axisName type="slnt">dőlés</axisName>
+		<axisName type="wdth">szélesség</axisName>
+		<axisName type="wght">súly</axisName>
+		<styleName type="ital" subtype="1">kurzív</styleName>
+		<styleName type="opsz" subtype="18">címstílus</styleName>
+		<styleName type="opsz" subtype="72">kijelző</styleName>
+		<styleName type="opsz" subtype="144">poszter</styleName>
+		<styleName type="slnt" subtype="-12">hátrafelé döntött</styleName>
+		<styleName type="slnt" subtype="0">függőleges</styleName>
+		<styleName type="slnt" subtype="12">dőlt</styleName>
+		<styleName type="slnt" subtype="24">extra döntött</styleName>
+		<styleName type="wdth" subtype="50">ultra sűrített</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">ultra tömörített</styleName>
+		<styleName type="wdth" subtype="62.5">extra sűrített</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">extra tömörített</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">extra szűk</styleName>
+		<styleName type="wdth" subtype="75">sűrített</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">tömörített</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">szűk</styleName>
+		<styleName type="wdth" subtype="87.5">félig sűrített</styleName>
+		<styleName type="wdth" subtype="100">normál</styleName>
+		<styleName type="wdth" subtype="112.5">félig széthúzott</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">félig kibővített</styleName>
+		<styleName type="wdth" subtype="125">széthúzva</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">kiterjesztett</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">széles</styleName>
+		<styleName type="wdth" subtype="150">extra széthúzott</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">extra kibővített</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">extra széles</styleName>
+		<styleName type="wdth" subtype="200">ultra széthúzott</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">ultra kibővített</styleName>
+		<styleName type="wght" subtype="100">vékony</styleName>
+		<styleName type="wght" subtype="200">extra vékony</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ultra vékony</styleName>
+		<styleName type="wght" subtype="300">vékony</styleName>
+		<styleName type="wght" subtype="350">félig vékony</styleName>
+		<styleName type="wght" subtype="380">könyv</styleName>
+		<styleName type="wght" subtype="400">szabályos</styleName>
+		<styleName type="wght" subtype="500">közepes</styleName>
+		<styleName type="wght" subtype="600">közepesen félkövér</styleName>
+		<styleName type="wght" subtype="700">félkövér</styleName>
+		<styleName type="wght" subtype="800">extra félkövér</styleName>
+		<styleName type="wght" subtype="800" alt="ultra">ultra félkövér</styleName>
+		<styleName type="wght" subtype="900">fekete</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">nehéz</styleName>
+		<styleName type="wght" subtype="950">extra fekete</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ultra vastag</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">ultra fekete</styleName>
+		<featureName type="afrc">függőleges törtek</featureName>
+		<featureName type="cpsp">nagybetűtérköz</featureName>
+		<featureName type="dlig">kiegészítő ligatúrák</featureName>
+		<featureName type="frac">átlós törtek</featureName>
+		<featureName type="lnum">egyenletes számok</featureName>
+		<featureName type="onum">régi stílusú ábrák</featureName>
+		<featureName type="ordn">sorszámok</featureName>
+		<featureName type="pnum">arányos számok</featureName>
+		<featureName type="smcp">kiskapitálisok</featureName>
+		<featureName type="tnum">rögzített szélességű számok</featureName>
+		<featureName type="zero">áthúzott nulla</featureName>
+	</typographicNames>
 </ldml>
-

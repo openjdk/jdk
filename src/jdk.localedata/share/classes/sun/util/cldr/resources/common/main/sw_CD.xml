@@ -1,36 +1,85 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12197 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="sw"/>
 		<territory type="CD"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
 			<language type="ak">Kiakan</language>
-			<language type="bn">Kibangla</language>
-			<language type="cs">Kichecki</language>
-			<language type="en">Kingereza</language>
-			<language type="sw_CD">Kiswahili ya Kongo</language>
+			<language type="ar_001">Kiarabu cha Dunia Kilichosanifishwa</language>
+			<language type="arq">Kiarabu cha Aljeria</language>
+			<language type="az">Kiazabajani</language>
+			<language type="bug">Kibugini</language>
+			<language type="gv">Kimanksi</language>
+			<language type="gwi">Kigwichiin</language>
+			<language type="hup">Kihupa</language>
+			<language type="jbo">Kilojban</language>
+			<language type="kac">Kikachin</language>
+			<language type="khq">Kikoyra Chiini</language>
+			<language type="kkj">Kikako</language>
+			<language type="koi">Kikomipermyak</language>
+			<language type="kru">Kikurukh</language>
+			<language type="kum">Kikumyk</language>
+			<language type="ky">Kikirigizi</language>
+			<language type="lam">Kilamba</language>
+			<language type="li">Kilimburgi</language>
+			<language type="mak">mak</language>
+			<language type="mdf">Kimoksha</language>
+			<language type="mic">Kimikmaki</language>
+			<language type="mk">Kimasedonia</language>
+			<language type="moh">Kimohoki</language>
+			<language type="mos">Kimossi</language>
+			<language type="nnh">Kingiemboon</language>
+			<language type="nqo">Kiinko</language>
+			<language type="pcm">Pijini ya Nijeria</language>
+			<language type="quc">Kikiiche</language>
+			<language type="root">Kiroot</language>
+			<language type="shu">Kiarabu cha Chadi</language>
+			<language type="srn">Kitongo cha Sranan</language>
+			<language type="swb">Kikomoro</language>
+			<language type="syr">Kisiria</language>
+			<language type="udm">Kiudumurti</language>
+			<language type="wae">Kiwalser</language>
+			<language type="yi">Kiyidi</language>
 		</languages>
 		<territories>
+			<territory type="030">Asia Mashariki</territory>
 			<territory type="AF">Afuganistani</territory>
+			<territory type="AZ">Azabajani</territory>
 			<territory type="BJ">Benini</territory>
-			<territory type="CG">Kongo</territory>
 			<territory type="CI">Kodivaa</territory>
-			<territory type="CY">Kuprosi</territory>
-			<territory type="IR">Uajemi</territory>
+			<territory type="CX">Kisiwa cha Christmas</territory>
+			<territory type="CY">Saiprasi</territory>
+			<territory type="DK">Denmaki</territory>
+			<territory type="HR">Kroeshia</territory>
+			<territory type="JO">Yordani</territory>
+			<territory type="LB">Lebanoni</territory>
 			<territory type="LI">Lishenteni</territory>
-			<territory type="MG">Bukini</territory>
+			<territory type="LU">Lasembagi</territory>
+			<territory type="LV">Lativia</territory>
+			<territory type="MA">Moroko</territory>
 			<territory type="MM">Myama</territory>
-			<territory type="NF">Kisiwa cha Norfok</territory>
+			<territory type="MV">Maldivi</territory>
+			<territory type="NE">Nijeri</territory>
 			<territory type="NG">Nijeria</territory>
+			<territory type="NO">Norwe</territory>
+			<territory type="NP">Nepali</territory>
+			<territory type="OM">Omani</territory>
+			<territory type="PR">Puetoriko</territory>
+			<territory type="QA">Katari</territory>
+			<territory type="SD">Sudani</territory>
+			<territory type="ST">Sao Tome na Prinsipe</territory>
+			<territory type="TD">Chadi</territory>
 			<territory type="TL">Timori ya Mashariki</territory>
+			<territory type="VN">Vietnamu</territory>
 		</territories>
 	</localeDisplayNames>
 	<characters>
@@ -40,146 +89,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 	<dates>
 		<calendars>
 			<calendar type="generic">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>EEEE d MMMM y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>d/M/y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Md">d/M</dateFormatItem>
-						<dateFormatItem id="MEd">E d/M</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="ms">m:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
-						<dateFormatItem id="yM">M/y</dateFormatItem>
-						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
-						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
-						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
-						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
-						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="gregorian">
-				<months>
-					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">mkw</month>
-							<month type="2">mpi</month>
-							<month type="3">mtu</month>
-							<month type="4">min</month>
-							<month type="5">mtn</month>
-							<month type="6">mst</month>
-							<month type="7">msb</month>
-							<month type="8">mun</month>
-							<month type="9">mts</month>
-							<month type="10">mku</month>
-							<month type="11">mkm</month>
-							<month type="12">mkb</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">mwezi ya kwanja</month>
-							<month type="2">mwezi ya pili</month>
-							<month type="3">mwezi ya tatu</month>
-							<month type="4">mwezi ya ine</month>
-							<month type="5">mwezi ya tanu</month>
-							<month type="6">mwezi ya sita</month>
-							<month type="7">mwezi ya saba</month>
-							<month type="8">mwezi ya munane</month>
-							<month type="9">mwezi ya tisa</month>
-							<month type="10">mwezi ya kumi</month>
-							<month type="11">mwezi ya kumi na moya</month>
-							<month type="12">mwezi ya kumi ya mbili</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="narrow">
-							<month type="1">k</month>
-							<month type="2">p</month>
-							<month type="3">t</month>
-							<month type="4">i</month>
-							<month type="5">t</month>
-							<month type="6">s</month>
-							<month type="7">s</month>
-							<month type="8">m</month>
-							<month type="9">t</month>
-							<month type="10">k</month>
-							<month type="11">m</month>
-							<month type="12">m</month>
-						</monthWidth>
-					</monthContext>
-				</months>
-				<days>
-					<dayContext type="format">
-						<dayWidth type="abbreviated">
-							<day type="sun">yen</day>
-							<day type="mon">kwa</day>
-							<day type="tue">pil</day>
-							<day type="wed">tat</day>
-							<day type="thu">ine</day>
-							<day type="fri">tan</day>
-							<day type="sat">sit</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">siku ya yenga</day>
-							<day type="mon">siku ya kwanza</day>
-							<day type="tue">siku ya pili</day>
-							<day type="wed">siku ya tatu</day>
-							<day type="thu">siku ya ine</day>
-							<day type="fri">siku ya tanu</day>
-							<day type="sat">siku ya sita</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
-						<dayWidth type="narrow">
-							<day type="sun">y</day>
-							<day type="mon">k</day>
-							<day type="tue">p</day>
-							<day type="wed">t</day>
-							<day type="thu">i</day>
-							<day type="fri">t</day>
-							<day type="sat">s</day>
-						</dayWidth>
-					</dayContext>
-				</days>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ya asubuyi</dayPeriod>
-							<dayPeriod type="pm">ya muchana</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>EEEE d MMMM y</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>d/M/y</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="MEd">E d/M</dateFormatItem>
-						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
-						<dateFormatItem id="ms">m:ss</dateFormatItem>
-						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
-						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -224,6 +137,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Ariary ya Bukini</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ugwiya ya Moritania (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ugwiya ya Moritania</displayName>
 			</currency>
 			<currency type="SCR">
@@ -238,4 +154,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencies>
 	</numbers>
 </ldml>
-

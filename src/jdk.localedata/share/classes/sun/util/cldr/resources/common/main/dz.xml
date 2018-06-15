@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="dz"/>
 	</identity>
 	<localeDisplayNames>
@@ -564,6 +565,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[ཀ ཁ ག ང ཅ ཆ ཇ ཉ ཏ ཐ ད ན པ ཕ བ མ ཙ ཚ ཛ ཝ ཞ ཟ འ ཡ ར ལ ཤ ས ཧ ཨ \u0F72 \u0F74 \u0F7A \u0F7C \u0F90 \u0F91 \u0F92 \u0F94 \u0F97 \u0F99 \u0F9F \u0FA0 \u0FA1 \u0FA3 \u0FA4 \u0FA5 \u0FA6 \u0FA8 \u0FA9 \u0FAA \u0FAB \u0FAD \u0FB1 \u0FB2 \u0FB3 \u0FB5 \u0FB6 \u0FB7]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u0F84 ཊ ཋ ཌ ཎ \u0F7E ཥ \u0F80 \u0F7B \u0F7D \u0F9A \u0F9B \u0F9C \u0F9E \u0FBA \u0FBB \u0FBC]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ཀ ཁ ག ང ཅ ཆ ཇ ཉ ཏ ཐ ད ན པ ཕ བ མ ཙ ཚ ཛ ཝ ཞ ཟ འ ཡ ར ལ ཤ ས ཧ ཨ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0༠ 1༡ 2༢ 3༣ 4༤ 5༥ 6༦ 7༧ 8༨ 9༩]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] ༼ ༽ § @ * / \&amp; # † ‡ ༄ ༅ ༆ ༈ ༉ ༊ ࿐ ࿑ ༒ ࿒ ࿓ ࿔ ༶ ྾ ྿ ༌ ། ༎ ༏ ༐ ༑ ༔ ༴]</exemplarCharacters>
 		<ellipsis type="final">{0}་་་་</ellipsis>
 		<ellipsis type="initial">་་་་{0}</ellipsis>
@@ -1729,11 +1731,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity draft="unconfirmed">མིཌ་ཝེ</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity draft="unconfirmed">ཇཱོནསི་ཊོན</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity draft="unconfirmed">ཝེཀ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Johnston">
+				<exemplarCity draft="unconfirmed">ཇཱོནསི་ཊོན</exemplarCity>
 			</zone>
 			<zone type="America/Yakutat">
 				<exemplarCity>ཡ་ཀུ་ཏཏ</exemplarCity>
@@ -2312,7 +2314,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<symbols numberSystem="tibt">
 			<decimal>.</decimal>
 			<group>,</group>
-			<list>དང་</list>
+			<list>;</list>
 			<percentSign>%</percentSign>
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
@@ -2626,6 +2628,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>སཱའུཐ་ ཨཕ་རི་ཀ་གི་དངུལ་ རཱནད</displayName>
 			</currency>
 		</currencies>
+		<minimalPairs>
+			<pluralMinimalPairs count="other">ཉིནམ་ {0} </pluralMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -2697,4 +2702,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

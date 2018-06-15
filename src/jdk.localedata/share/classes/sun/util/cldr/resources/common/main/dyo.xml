@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11914 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="dyo"/>
 	</identity>
 	<localeDisplayNames>
@@ -172,6 +173,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a á b c d e é f g h i í j k l m n ñ ŋ o ó p q r s t u ú v w x y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N Ñ Ŋ O P Q R S T U V W X Y]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -538,6 +540,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ariari yati Madagaskaar</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>ugiiya yati Mooritanii (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>ugiiya yati Mooritanii</displayName>
 			</currency>
 			<currency type="MWK">
@@ -558,4 +563,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

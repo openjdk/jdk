@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="zgh"/>
 	</identity>
 	<localeDisplayNames>
@@ -301,6 +302,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	<characters>
 		<exemplarCharacters>[ⴰ ⴱ ⴳ {ⴳⵯ} ⴷ ⴹ ⴻ ⴼ ⴽ {ⴽⵯ} ⵀ ⵃ ⵄ ⵅ ⵇ ⵉ ⵊ ⵍ ⵎ ⵏ ⵓ ⵔ ⵕ ⵖ ⵙ ⵚ ⵛ ⵜ ⵟ ⵡ ⵢ ⵣ ⵥ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ⴰ ⴱ ⴳ ⴷ ⴹ ⴻ ⴼ ⴽ ⵀ ⵃ ⵄ ⵅ ⵇ ⵉ ⵊ ⵍ ⵎ ⵏ ⵓ ⵔ ⵕ ⵖ ⵙ ⵚ ⵛ ⵜ ⵟ ⵡ ⵢ ⵣ ⵥ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -361,6 +363,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="11">ⵏⵓⵡ</month>
 							<month type="12">ⴷⵓⵊ</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">ⵉ</month>
+							<month type="2">ⴱ</month>
+							<month type="3">ⵎ</month>
+							<month type="4">ⵉ</month>
+							<month type="5">ⵎ</month>
+							<month type="6">ⵢ</month>
+							<month type="7">ⵢ</month>
+							<month type="8">ⵖ</month>
+							<month type="9">ⵛ</month>
+							<month type="10">ⴽ</month>
+							<month type="11">ⵏ</month>
+							<month type="12">ⴷ</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ⵉⵏⵏⴰⵢⵔ</month>
 							<month type="2">ⴱⵕⴰⵢⵕ</month>
@@ -377,6 +393,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">ⵉⵏⵏ</month>
+							<month type="2">ⴱⵕⴰ</month>
+							<month type="3">ⵎⴰⵕ</month>
+							<month type="4">ⵉⴱⵔ</month>
+							<month type="5">ⵎⴰⵢ</month>
+							<month type="6">ⵢⵓⵏ</month>
+							<month type="7">ⵢⵓⵍ</month>
+							<month type="8">ⵖⵓⵛ</month>
+							<month type="9">ⵛⵓⵜ</month>
+							<month type="10">ⴽⵜⵓ</month>
+							<month type="11">ⵏⵓⵡ</month>
+							<month type="12">ⴷⵓⵊ</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ⵉ</month>
 							<month type="2">ⴱ</month>
@@ -391,11 +421,81 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="11">ⵏ</month>
 							<month type="12">ⴷ</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ⵉⵏⵏⴰⵢⵔ</month>
+							<month type="2">ⴱⵕⴰⵢⵕ</month>
+							<month type="3">ⵎⴰⵕⵚ</month>
+							<month type="4">ⵉⴱⵔⵉⵔ</month>
+							<month type="5">ⵎⴰⵢⵢⵓ</month>
+							<month type="6">ⵢⵓⵏⵢⵓ</month>
+							<month type="7">ⵢⵓⵍⵢⵓⵣ</month>
+							<month type="8">ⵖⵓⵛⵜ</month>
+							<month type="9">ⵛⵓⵜⴰⵏⴱⵉⵔ</month>
+							<month type="10">ⴽⵜⵓⴱⵔ</month>
+							<month type="11">ⵏⵓⵡⴰⵏⴱⵉⵔ</month>
+							<month type="12">ⴷⵓⵊⴰⵏⴱⵉⵔ</month>
+						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
+							<day type="sun">ⴰⵙⴰ</day>
+							<day type="mon">ⴰⵢⵏ</day>
+							<day type="tue">ⴰⵙⵉ</day>
+							<day type="wed">ⴰⴽⵕ</day>
+							<day type="thu">ⴰⴽⵡ</day>
+							<day type="fri">ⴰⵙⵉⵎ</day>
+							<day type="sat">ⴰⵙⵉⴹ</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">S</day>
+							<day type="mon">M</day>
+							<day type="tue">T</day>
+							<day type="wed">W</day>
+							<day type="thu">T</day>
+							<day type="fri">F</day>
+							<day type="sat">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">ⴰⵙⴰ</day>
+							<day type="mon">ⴰⵢⵏ</day>
+							<day type="tue">ⴰⵙⵉ</day>
+							<day type="wed">ⴰⴽⵕ</day>
+							<day type="thu">ⴰⴽⵡ</day>
+							<day type="fri">ⴰⵙⵉⵎ</day>
+							<day type="sat">ⴰⵙⵉⴹ</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">ⴰⵙⴰⵎⴰⵙ</day>
+							<day type="mon">ⴰⵢⵏⴰⵙ</day>
+							<day type="tue">ⴰⵙⵉⵏⴰⵙ</day>
+							<day type="wed">ⴰⴽⵕⴰⵙ</day>
+							<day type="thu">ⴰⴽⵡⴰⵙ</day>
+							<day type="fri">ⴰⵙⵉⵎⵡⴰⵙ</day>
+							<day type="sat">ⴰⵙⵉⴹⵢⴰⵙ</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">ⴰⵙⴰ</day>
+							<day type="mon">ⴰⵢⵏ</day>
+							<day type="tue">ⴰⵙⵉ</day>
+							<day type="wed">ⴰⴽⵕ</day>
+							<day type="thu">ⴰⴽⵡ</day>
+							<day type="fri">ⴰⵙⵉⵎ</day>
+							<day type="sat">ⴰⵙⵉⴹ</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">S</day>
+							<day type="mon">M</day>
+							<day type="tue">T</day>
+							<day type="wed">W</day>
+							<day type="thu">T</day>
+							<day type="fri">F</day>
+							<day type="sat">S</day>
+						</dayWidth>
+						<dayWidth type="short">
 							<day type="sun">ⴰⵙⴰ</day>
 							<day type="mon">ⴰⵢⵏ</day>
 							<day type="tue">ⴰⵙⵉ</day>
@@ -423,6 +523,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<quarter type="3">ⴰⴽ 3</quarter>
 							<quarter type="4">ⴰⴽ 4</quarter>
 						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">ⴰⴽⵕⴰⴹⵢⵓⵔ 1</quarter>
+							<quarter type="2">ⴰⴽⵕⴰⴹⵢⵓⵔ 2</quarter>
+							<quarter type="3">ⴰⴽⵕⴰⴹⵢⵓⵔ 3</quarter>
+							<quarter type="4">ⴰⴽⵕⴰⴹⵢⵓⵔ 4</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">ⴰⴽ 1</quarter>
+							<quarter type="2">ⴰⴽ 2</quarter>
+							<quarter type="3">ⴰⴽ 3</quarter>
+							<quarter type="4">ⴰⴽ 4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">ⴰⴽⵕⴰⴹⵢⵓⵔ 1</quarter>
 							<quarter type="2">ⴰⴽⵕⴰⴹⵢⵓⵔ 2</quarter>
@@ -437,6 +563,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="am">ⵜⵉⴼⴰⵡⵜ</dayPeriod>
 							<dayPeriod type="pm">ⵜⴰⴷⴳⴳⵯⴰⵜ</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">ⵜⵉⴼⴰⵡⵜ</dayPeriod>
+							<dayPeriod type="pm">ⵜⴰⴷⴳⴳⵯⴰⵜ</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">ⵜⵉⴼⴰⵡⵜ</dayPeriod>
+							<dayPeriod type="pm">ⵜⴰⴷⴳⴳⵯⴰⵜ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">ⵜⵉⴼⴰⵡⵜ</dayPeriod>
+							<dayPeriod type="pm">ⵜⴰⴷⴳⴳⵯⴰⵜ</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">ⵜⵉⴼⴰⵡⵜ</dayPeriod>
+							<dayPeriod type="pm">ⵜⴰⴷⴳⴳⵯⴰⵜ</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">ⵜⵉⴼⴰⵡⵜ</dayPeriod>
 							<dayPeriod type="pm">ⵜⴰⴷⴳⴳⵯⴰⵜ</dayPeriod>
@@ -446,11 +590,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<eras>
 					<eraNames>
 						<era type="0">ⴷⴰⵜ ⵏ ⵄⵉⵙⴰ</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">ⴷⴼⴼⵉⵔ ⵏ ⵄⵉⵙⴰ</era>
+						<era type="1" alt="variant">CE</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">ⴷⴰⵄ</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">ⴷⴼⵄ</era>
+						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -475,22 +623,200 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
 				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">M</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">MM-dd, E</dateFormatItem>
 						<dateFormatItem id="MMM">MMM</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'week' W 'of' MMM</dateFormatItem>
 						<dateFormatItem id="ms">m:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMd">y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yMEd">E d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd">y MMM d</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'week' w 'of' Y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day">{0} ({2}: {1})</appendItem>
+						<appendItem request="Day-Of-Week">{0} {1}</appendItem>
+						<appendItem request="Era">{1} {0}</appendItem>
+						<appendItem request="Hour">{0} ({2}: {1})</appendItem>
+						<appendItem request="Minute">{0} ({2}: {1})</appendItem>
+						<appendItem request="Month">{0} ({2}: {1})</appendItem>
+						<appendItem request="Quarter">{0} ({2}: {1})</appendItem>
+						<appendItem request="Second">{0} ({2}: {1})</appendItem>
+						<appendItem request="Timezone">{0} {1}</appendItem>
+						<appendItem request="Week">{0} ({2}: {1})</appendItem>
+						<appendItem request="Year">{1} {0}</appendItem>
+					</appendItems>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH–HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH–HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">MM–MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">LLL–LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMM d–d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">y MMM d–d</greatestDifference>
+							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">y MMMM–MMMM</greatestDifference>
+							<greatestDifference id="y">y MMMM – y MMMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -534,10 +860,33 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</fields>
 	</dates>
 	<numbers>
+		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group> </group>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
 		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -548,6 +897,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -567,6 +919,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="100000000000000" count="other" draft="provisional">000T¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -657,6 +1010,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ⴼⵔⴰⵏⴽ ⵏ ⵎⴰⴷⴰⵖⴰⵛⵇⴰⵔ</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>ⵓⵇⵉⵢⵢⴰ ⵏ ⵎⵓⵕⵉⵟⴰⵏⵢⴰ (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>ⵓⵇⵉⵢⵢⴰ ⵏ ⵎⵓⵕⵉⵟⴰⵏⵢⴰ</displayName>
 			</currency>
 			<currency type="MUR">
@@ -699,6 +1055,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ⴰⵛⵉⵍⵉⵏ ⵏ ⵚⵚⵓⵎⴰⵍ</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>ⴰⴷⵓⴱⵔⴰ ⵏ ⵙⴰⵏⵟⵓⵎⵉ (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>ⴰⴷⵓⴱⵔⴰ ⵏ ⵙⴰⵏⵟⵓⵎⵉ</displayName>
 			</currency>
 			<currency type="SZL">
@@ -741,6 +1100,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ⴰⴷⵓⵍⴰⵔ ⵏ ⵣⵉⵎⴱⴰⴱⵡⵉ (2008)</displayName>
 			</currency>
 		</currencies>
+		<miscPatterns numberSystem="latn">
+			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
 	</numbers>
 	<posix>
 		<messages>
@@ -749,4 +1112,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

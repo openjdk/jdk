@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="sq"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,51 +19,88 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="aa">afarisht</language>
 			<language type="ab">abkazisht</language>
+			<language type="ace">akinezisht</language>
+			<language type="ada">andangmeisht</language>
+			<language type="ady">adigisht</language>
 			<language type="af">afrikanisht</language>
 			<language type="agq">agemisht</language>
+			<language type="ain">ajnuisht</language>
 			<language type="ak">akanisht</language>
-			<language type="am">amarikisht</language>
+			<language type="ale">aleutisht</language>
+			<language type="alt">altaishte jugore</language>
+			<language type="am">amarisht</language>
+			<language type="an">aragonezisht</language>
+			<language type="anp">angikisht</language>
 			<language type="ar">arabisht</language>
 			<language type="ar_001">arabishte standarde moderne</language>
 			<language type="arn">mapuçisht</language>
+			<language type="arp">arapahoisht</language>
 			<language type="as">asamezisht</language>
 			<language type="asa">asuisht</language>
+			<language type="ast">asturisht</language>
+			<language type="av">avarikisht</language>
+			<language type="awa">auadhisht</language>
+			<language type="ay">ajmarisht</language>
 			<language type="az">azerbajxhanisht</language>
 			<language type="az" alt="short">azerisht</language>
 			<language type="ba">bashkirisht</language>
+			<language type="ban">balinezisht</language>
+			<language type="bas">basaisht</language>
 			<language type="be">bjellorusisht</language>
 			<language type="bem">bembaisht</language>
 			<language type="bez">benaisht</language>
 			<language type="bg">bullgarisht</language>
 			<language type="bgn">balokishte perëndimore</language>
+			<language type="bho">boxhpurisht</language>
+			<language type="bi">bislamisht</language>
+			<language type="bin">binisht</language>
+			<language type="bla">siksikaisht</language>
 			<language type="bm">bambarisht</language>
 			<language type="bn">bengalisht</language>
 			<language type="bo">tibetisht</language>
 			<language type="br">bretonisht</language>
 			<language type="brx">bodoisht</language>
 			<language type="bs">boshnjakisht</language>
+			<language type="bug">buginezisht</language>
+			<language type="byn">blinisht</language>
 			<language type="ca">katalonisht</language>
 			<language type="ce">çeçenisht</language>
+			<language type="ceb">sebuanisht</language>
 			<language type="cgg">çigisht</language>
+			<language type="ch">kamoroisht</language>
+			<language type="chk">çukezisht</language>
+			<language type="chm">marisht</language>
+			<language type="cho">çoktauisht</language>
 			<language type="chr">çerokisht</language>
-			<language type="ckb">kurdishte sorani</language>
-			<language type="co">korsikanisht</language>
+			<language type="chy">çejenisht</language>
+			<language type="ckb">kurdishte qendrore</language>
+			<language type="co">korsikisht</language>
+			<language type="crs">frëngjishte kreole seselve</language>
 			<language type="cs">çekisht</language>
+			<language type="cu">sllavishte kishtare</language>
 			<language type="cv">çuvashisht</language>
 			<language type="cy">uellsisht</language>
 			<language type="da">danisht</language>
-			<language type="dav">taitisht</language>
+			<language type="dak">dakotisht</language>
+			<language type="dar">darguaisht</language>
+			<language type="dav">tajtaisht</language>
 			<language type="de">gjermanisht</language>
 			<language type="de_AT">gjermanishte austriake</language>
 			<language type="de_CH">gjermanishte zvicerane (dialekti i Alpeve)</language>
-			<language type="dje">zarmisht</language>
+			<language type="dgr">dogribisht</language>
+			<language type="dje">zarmaisht</language>
 			<language type="dsb">sorbishte e poshtme</language>
 			<language type="dua">dualaisht</language>
+			<language type="dv">divehisht</language>
 			<language type="dyo">xhulafonjisht</language>
 			<language type="dz">xhongaisht</language>
+			<language type="dzg">dazagauisht</language>
 			<language type="ebu">embuisht</language>
-			<language type="ee">juisht</language>
+			<language type="ee">eveisht</language>
+			<language type="efi">efikisht</language>
+			<language type="eka">ekajukisht</language>
 			<language type="el">greqisht</language>
 			<language type="en">anglisht</language>
 			<language type="en_AU">anglishte australiane</language>
@@ -76,190 +116,310 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="es_MX">spanjishte meksikane</language>
 			<language type="et">estonisht</language>
 			<language type="eu">baskisht</language>
+			<language type="ewo">euondoisht</language>
 			<language type="fa">persisht</language>
+			<language type="ff">fulaisht</language>
 			<language type="fi">finlandisht</language>
-			<language type="fil">filipinase</language>
+			<language type="fil">filipinisht</language>
 			<language type="fj">fixhianisht</language>
 			<language type="fo">faroisht</language>
+			<language type="fon">fonisht</language>
 			<language type="fr">frëngjisht</language>
 			<language type="fr_CA">frëngjishte kanadeze</language>
 			<language type="fr_CH">frëngjishte zvicerane</language>
-			<language type="fy">frizianisht</language>
+			<language type="fur">friulianisht</language>
+			<language type="fy">frizianishte perëndimore</language>
 			<language type="ga">irlandisht</language>
+			<language type="gaa">gaisht</language>
 			<language type="gag">gagauzisht</language>
-			<language type="gd" draft="unconfirmed">Galisht</language>
-			<language type="gl">galike</language>
+			<language type="gd">galishte skoceze</language>
+			<language type="gez">gizisht</language>
+			<language type="gil">gilbertazisht</language>
+			<language type="gl">galicisht</language>
 			<language type="gn">guaranisht</language>
+			<language type="gor">gorontaloisht</language>
 			<language type="gsw">gjermanishte zvicerane</language>
 			<language type="gu">guxharatisht</language>
 			<language type="guz">gusisht</language>
 			<language type="gv">manksisht</language>
+			<language type="gwi">guiçinisht</language>
 			<language type="ha">hausisht</language>
-			<language type="haw">huajanisht</language>
+			<language type="haw">havaisht</language>
 			<language type="he">hebraisht</language>
 			<language type="hi">indisht</language>
+			<language type="hil">hiligajnonisht</language>
+			<language type="hmn">hmongisht</language>
 			<language type="hr">kroatisht</language>
-			<language type="hsb">sorbiane e sipërme</language>
-			<language type="ht">haitianisht</language>
+			<language type="hsb">sorbishte e sipërme</language>
+			<language type="ht">haitisht</language>
 			<language type="hu">hungarisht</language>
+			<language type="hup">hupaisht</language>
 			<language type="hy">armenisht</language>
-			<language type="ia" draft="unconfirmed">Interlingua</language>
+			<language type="hz">hereroisht</language>
+			<language type="ia">interlingua</language>
+			<language type="iba">ibanisht</language>
+			<language type="ibb">ibibioisht</language>
 			<language type="id">indonezisht</language>
-			<language type="ie" draft="unconfirmed">Gjuha nderkombtare</language>
+			<language type="ie">gjuha oksidentale</language>
 			<language type="ig">igboisht</language>
 			<language type="ii">sishuanisht</language>
+			<language type="ilo">ilokoisht</language>
+			<language type="inh">ingushisht</language>
+			<language type="io">idoisht</language>
 			<language type="is">islandisht</language>
 			<language type="it">italisht</language>
 			<language type="iu">inuktitutisht</language>
 			<language type="ja">japonisht</language>
+			<language type="jbo">lojbanisht</language>
 			<language type="jgo">ngombisht</language>
 			<language type="jmc">maçamisht</language>
 			<language type="jv">javanisht</language>
 			<language type="ka">gjeorgjisht</language>
 			<language type="kab">kabilisht</language>
+			<language type="kac">kaçinisht</language>
+			<language type="kaj">kajeisht</language>
 			<language type="kam">kambaisht</language>
+			<language type="kbd">kabardianisht</language>
+			<language type="kcg">tjapisht</language>
 			<language type="kde">makondisht</language>
-			<language type="kea">kabuverdianisht</language>
+			<language type="kea">kreolishte e Kepit të Gjelbër</language>
+			<language type="kfo">koroisht</language>
+			<language type="kha">kasisht</language>
 			<language type="khq">kojraçinisht</language>
 			<language type="ki">kikujuisht</language>
+			<language type="kj">kuanjamaisht</language>
 			<language type="kk">kazakisht</language>
+			<language type="kkj">kakoisht</language>
 			<language type="kl">kalalisutisht</language>
-			<language type="kln">kalenjinisht</language>
-			<language type="km">kmere</language>
-			<language type="kn">kanade</language>
+			<language type="kln">kalenxhinisht</language>
+			<language type="km">kmerisht</language>
+			<language type="kmb">kimbunduisht</language>
+			<language type="kn">kanadisht</language>
 			<language type="ko">koreanisht</language>
-			<language type="koi">komishte permiake</language>
+			<language type="koi">komi-parmjakisht</language>
 			<language type="kok">konkanisht</language>
-			<language type="ks">kashmire</language>
+			<language type="kpe">kpeleisht</language>
+			<language type="kr">kanurisht</language>
+			<language type="krc">karaçaj-balkarisht</language>
+			<language type="krl">karelianisht</language>
+			<language type="kru">kurukisht</language>
+			<language type="ks">kashmirisht</language>
 			<language type="ksb">shambalisht</language>
 			<language type="ksf">bafianisht</language>
-			<language type="ku">kurde</language>
-			<language type="kw">kornishisht</language>
+			<language type="ksh">këlnisht</language>
+			<language type="ku">kurdisht</language>
+			<language type="kum">kumikisht</language>
+			<language type="kv">komisht</language>
+			<language type="kw">kornisht</language>
 			<language type="ky">kirgizisht</language>
 			<language type="la">latinisht</language>
+			<language type="lad">ladinoisht</language>
 			<language type="lag">langisht</language>
-			<language type="lb">luksemburgase</language>
-			<language type="lg">gandisht</language>
+			<language type="lb">luksemburgisht</language>
+			<language type="lez">lezgianisht</language>
+			<language type="lg">gandaisht</language>
+			<language type="li">limburgisht</language>
 			<language type="lkt">lakotisht</language>
 			<language type="ln">lingalisht</language>
 			<language type="lo">laosisht</language>
+			<language type="loz">lozisht</language>
 			<language type="lrc">lurishte veriore</language>
 			<language type="lt">lituanisht</language>
-			<language type="lu">lubakatangisht</language>
+			<language type="lu">luba-katangaisht</language>
+			<language type="lua">luba-luluaisht</language>
+			<language type="lun">lundaisht</language>
 			<language type="luo">luoisht</language>
+			<language type="lus">mizoisht</language>
 			<language type="luy">lujaisht</language>
 			<language type="lv">letonisht</language>
+			<language type="mad">madurezisht</language>
+			<language type="mag">magaisht</language>
+			<language type="mai">maitilisht</language>
+			<language type="mak">makasarisht</language>
 			<language type="mas">masaisht</language>
+			<language type="mdf">mokshaisht</language>
+			<language type="men">mendisht</language>
 			<language type="mer">meruisht</language>
-			<language type="mfe">norisjene</language>
-			<language type="mg">malagezisht</language>
-			<language type="mgh">makuamitoisht</language>
+			<language type="mfe">morisjenisht</language>
+			<language type="mg">madagaskarisht</language>
+			<language type="mgh">makua-mitoisht</language>
 			<language type="mgo">metaisht</language>
+			<language type="mh">marshallisht</language>
 			<language type="mi">maorisht</language>
+			<language type="mic">mikmakisht</language>
+			<language type="min">minangkabauisht</language>
 			<language type="mk">maqedonisht</language>
 			<language type="ml">malajalamisht</language>
 			<language type="mn">mongolisht</language>
-			<language type="moh">mohaukisht</language>
+			<language type="mni">manipurisht</language>
+			<language type="moh">mohokisht</language>
+			<language type="mos">mosisht</language>
 			<language type="mr">maratisht</language>
 			<language type="ms">malajisht</language>
 			<language type="mt">maltisht</language>
-			<language type="mua">mundagishte</language>
+			<language type="mua">mundangisht</language>
+			<language type="mul">gjuhë të shumëfishta</language>
+			<language type="mus">krikisht</language>
+			<language type="mwl">mirandisht</language>
 			<language type="my">birmanisht</language>
+			<language type="myv">erzjaisht</language>
 			<language type="mzn">mazanderanisht</language>
-			<language type="naq">namaishte</language>
-			<language type="nb">bokmalishte norvegjeze</language>
+			<language type="na">nauruisht</language>
+			<language type="nap">napoletanisht</language>
+			<language type="naq">namaisht</language>
+			<language type="nb">norvegjishte letrare</language>
 			<language type="nd">ndebelishte veriore</language>
 			<language type="nds">gjermanishte e vendeve të ulëta</language>
 			<language type="nds_NL">gjermanishte saksone e vendeve të ulëta</language>
 			<language type="ne">nepalisht</language>
+			<language type="new">neuarisht</language>
+			<language type="ng">ndongaisht</language>
+			<language type="nia">niasisht</language>
+			<language type="niu">niueanisht</language>
 			<language type="nl">holandisht</language>
 			<language type="nl_BE">flamandisht</language>
 			<language type="nmg">kuasisht</language>
-			<language type="nn">ninorske norvegjeze</language>
-			<language type="no" draft="unconfirmed">Norvegjisht</language>
+			<language type="nn">norvegjishte nynorsk</language>
+			<language type="nnh">ngiembunisht</language>
+			<language type="no">norvegjisht</language>
+			<language type="nog">nogajisht</language>
 			<language type="nqo">nkoisht</language>
+			<language type="nr">ndebelishte jugore</language>
+			<language type="nso">sotoishte veriore</language>
 			<language type="nus">nuerisht</language>
+			<language type="nv">navahoisht</language>
+			<language type="ny">nianjisht</language>
 			<language type="nyn">niankolisht</language>
-			<language type="oc" draft="unconfirmed">Oksitanisht</language>
+			<language type="oc">oksitanisht</language>
 			<language type="om">oromoisht</language>
-			<language type="or">orijaisht</language>
-			<language type="pa">panxhabisht</language>
+			<language type="or">odisht</language>
+			<language type="os">osetisht</language>
+			<language type="pa">punxhabisht</language>
+			<language type="pag">pangasinanisht</language>
+			<language type="pam">pampangaisht</language>
+			<language type="pap">papiamentisht</language>
+			<language type="pau">paluanisht</language>
+			<language type="pcm">pixhinishte nigeriane</language>
 			<language type="pl">polonisht</language>
+			<language type="prg">prusisht</language>
 			<language type="ps">pashtoisht</language>
 			<language type="pt">portugalisht</language>
 			<language type="pt_BR">portugalishte braziliane</language>
 			<language type="pt_PT">portugalishte evropiane</language>
 			<language type="qu">keçuaisht</language>
 			<language type="quc">kiçeisht</language>
-			<language type="rm">rome</language>
+			<language type="rap">rapanuisht</language>
+			<language type="rar">rarontonganisht</language>
+			<language type="rm">retoromanisht</language>
 			<language type="rn">rundisht</language>
 			<language type="ro">rumanisht</language>
-			<language type="ro_MD">moldavishte</language>
-			<language type="rof">romboishte</language>
+			<language type="ro_MD">moldavisht</language>
+			<language type="rof">romboisht</language>
+			<language type="root">rutisht</language>
 			<language type="ru">rusisht</language>
+			<language type="rup">vllahisht</language>
 			<language type="rw">kiniaruandisht</language>
 			<language type="rwk">ruaisht</language>
 			<language type="sa">sanskritisht</language>
+			<language type="sad">sandauisht</language>
+			<language type="sah">sakaisht</language>
 			<language type="saq">samburisht</language>
+			<language type="sat">santalisht</language>
+			<language type="sba">ngambajisht</language>
 			<language type="sbp">sanguisht</language>
+			<language type="sc">sardenjisht</language>
+			<language type="scn">siçilianisht</language>
+			<language type="sco">skotisht</language>
 			<language type="sd">sindisht</language>
 			<language type="sdh">kurdishte jugore</language>
 			<language type="se">samishte veriore</language>
-			<language type="seh">senaishte</language>
+			<language type="seh">senaisht</language>
 			<language type="ses">senishte kojrabore</language>
 			<language type="sg">sangoisht</language>
-			<language type="sh" draft="contributed">Serbo-Kroatisht</language>
+			<language type="sh">serbo-kroatisht</language>
 			<language type="shi">taçelitisht</language>
+			<language type="shn">shanisht</language>
 			<language type="si">sinhalisht</language>
 			<language type="sk">sllovakisht</language>
 			<language type="sl">sllovenisht</language>
+			<language type="sm">samoanisht</language>
 			<language type="sma">samishte jugore</language>
-			<language type="smj">samishte luleje</language>
-			<language type="smn">samishte inarie</language>
-			<language type="sms">samishte skolte</language>
+			<language type="smj">samishte lule</language>
+			<language type="smn">samishte inari</language>
+			<language type="sms">samishte skolti</language>
 			<language type="sn">shonisht</language>
+			<language type="snk">soninkisht</language>
 			<language type="so">somalisht</language>
 			<language type="sq">shqip</language>
 			<language type="sr">serbisht</language>
-			<language type="st" draft="unconfirmed">Sesotho</language>
+			<language type="srn">srananisht (sranantongoisht)</language>
+			<language type="ss">suatisht</language>
+			<language type="ssy">sahoisht</language>
+			<language type="st">sotoishte jugore</language>
 			<language type="su">sundanisht</language>
+			<language type="suk">sukumaisht</language>
 			<language type="sv">suedisht</language>
 			<language type="sw">suahilisht</language>
-			<language type="sw_CD">suahilishte kongoje</language>
-			<language type="ta">tamile</language>
-			<language type="te">teluge</language>
-			<language type="teo">tezoisht</language>
+			<language type="sw_CD">suahilishte kongoleze</language>
+			<language type="swb">kamorianisht</language>
+			<language type="syr">siriakisht</language>
+			<language type="ta">tamilisht</language>
+			<language type="te">teluguisht</language>
+			<language type="tem">timneisht</language>
+			<language type="teo">tesoisht</language>
+			<language type="tet">tetumisht</language>
 			<language type="tg">taxhikisht</language>
 			<language type="th">tajlandisht</language>
-			<language type="ti">tigrinje</language>
+			<language type="ti">tigrinjaisht</language>
+			<language type="tig">tigreisht</language>
 			<language type="tk">turkmenisht</language>
-			<language type="tlh" draft="unconfirmed">Klingon</language>
+			<language type="tlh">klingonisht</language>
+			<language type="tn">cuanaisht</language>
 			<language type="to">tonganisht</language>
+			<language type="tpi">pisinishte toku</language>
 			<language type="tr">turqisht</language>
+			<language type="trv">torokoisht</language>
+			<language type="ts">congaisht</language>
 			<language type="tt">tatarisht</language>
-			<language type="tw" draft="unconfirmed">Twi</language>
-			<language type="twq">tasaukisht</language>
-			<language type="tzm">tamaziatishte atlase qendrore</language>
-			<language type="ug">ujgure</language>
+			<language type="tum">tumbukaisht</language>
+			<language type="tvl">tuvaluisht</language>
+			<language type="tw">tuisht</language>
+			<language type="twq">tasavakisht</language>
+			<language type="ty">tahitisht</language>
+			<language type="tyv">tuvinianisht</language>
+			<language type="tzm">tamazajtisht e Atlasit Qendror</language>
+			<language type="udm">udmurtisht</language>
+			<language type="ug">ujgurisht</language>
 			<language type="uk">ukrainisht</language>
-			<language type="und">e panjohur</language>
-			<language type="ur">urdu</language>
-			<language type="uz">uzbeke</language>
+			<language type="umb">umbunduisht</language>
+			<language type="und">E panjohur</language>
+			<language type="ur">urduisht</language>
+			<language type="uz">uzbekisht</language>
 			<language type="vai">vaisht</language>
+			<language type="ve">vendaisht</language>
 			<language type="vi">vietnamisht</language>
-			<language type="vun">vunjisht</language>
-			<language type="wbp">uarlipirisht</language>
-			<language type="wo">ulufisht</language>
-			<language type="xh">xhozaisht</language>
+			<language type="vo">volapykisht</language>
+			<language type="vun">vunxhoisht</language>
+			<language type="wa">ualunisht</language>
+			<language type="wae">ualserisht</language>
+			<language type="wal">ulajtaisht</language>
+			<language type="war">uarajisht</language>
+			<language type="wbp">uarlpirisht</language>
+			<language type="wo">uolofisht</language>
+			<language type="xal">kalmikisht</language>
+			<language type="xh">xhosaisht</language>
 			<language type="xog">sogisht</language>
-			<language type="yi" draft="unconfirmed">Jiden</language>
-			<language type="yo">jorubisht</language>
-			<language type="zgh">tamazishte standarde marokene</language>
+			<language type="yav">jangbenisht</language>
+			<language type="ybb">jembaisht</language>
+			<language type="yi">jidisht</language>
+			<language type="yo">jorubaisht</language>
+			<language type="yue">kantonezisht</language>
+			<language type="zgh">tamaziatishte standarde marokene</language>
 			<language type="zh">kinezisht</language>
-			<language type="zh_Hans">kinezishte e thjeshtuar</language>
-			<language type="zh_Hant">kinezishte tradicionale</language>
 			<language type="zu">zuluisht</language>
+			<language type="zun">zunisht</language>
 			<language type="zxx">nuk ka përmbajtje gjuhësore</language>
+			<language type="zza">zazaisht</language>
 		</languages>
 		<scripts>
 			<script type="Arab">arabik</script>
@@ -274,6 +434,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">grek</script>
 			<script type="Gujr">guxharat</script>
 			<script type="Guru">gurmuk</script>
+			<script type="Hanb">hanbik</script>
 			<script type="Hang">hangul</script>
 			<script type="Hani">han</script>
 			<script type="Hans">i thjeshtuar</script>
@@ -282,6 +443,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hant" alt="stand-alone">han tradicional</script>
 			<script type="Hebr">hebraik</script>
 			<script type="Hira">hiragan</script>
+			<script type="Hrkt">alfabet rrokjesor japonez</script>
+			<script type="Jamo">jamosisht</script>
 			<script type="Jpan">japonez</script>
 			<script type="Kana">katakan</script>
 			<script type="Khmr">kmer</script>
@@ -299,6 +462,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Thaa">tanisht</script>
 			<script type="Thai">tajlandez</script>
 			<script type="Tibt">tibetisht</script>
+			<script type="Zmth">simbole matematikore</script>
+			<script type="Zsye">emoji</script>
 			<script type="Zsym">me simbole</script>
 			<script type="Zxxx">i pashkruar</script>
 			<script type="Zyyy">i zakonshëm</script>
@@ -334,6 +499,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Europa Lindore</territory>
 			<territory type="154">Europa Veriore</territory>
 			<territory type="155">Europa Perëndimore</territory>
+			<territory type="202">Afrika Subsahariane</territory>
 			<territory type="419">Amerika Latine</territory>
 			<territory type="AC">Ishulli Asenshion</territory>
 			<territory type="AD">Andorrë</territory>
@@ -358,31 +524,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BE">Belgjikë</territory>
 			<territory type="BF">Burkina-Faso</territory>
 			<territory type="BG">Bullgari</territory>
-			<territory type="BH">Bahrein</territory>
-			<territory type="BI">Burund</territory>
+			<territory type="BH">Bahrejn</territory>
+			<territory type="BI">Burundi</territory>
 			<territory type="BJ">Benin</territory>
-			<territory type="BL">Shën-Bartolemeo</territory>
+			<territory type="BL">Shën-Bartolome</territory>
 			<territory type="BM">Bermudë</territory>
-			<territory type="BN">Brunej</territory>
+			<territory type="BN">Brunei</territory>
 			<territory type="BO">Bolivi</territory>
 			<territory type="BQ">Karaibet holandeze</territory>
 			<territory type="BR">Brazil</territory>
 			<territory type="BS">Bahamas</territory>
 			<territory type="BT">Butan</territory>
-			<territory type="BV">Ishujt Bove’</territory>
-			<territory type="BW">Botsuanë</territory>
+			<territory type="BV">Ishulli Bove</territory>
+			<territory type="BW">Botsvanë</territory>
 			<territory type="BY">Bjellorusi</territory>
 			<territory type="BZ">Belizë</territory>
 			<territory type="CA">Kanada</territory>
-			<territory type="CC">Ishujt Kokosë</territory>
+			<territory type="CC">Ishujt Kokos</territory>
 			<territory type="CD">Kongo-Kinshasa</territory>
 			<territory type="CD" alt="variant">Kongo (RDK)</territory>
-			<territory type="CF">Republika Afrikano-Qendrore</territory>
+			<territory type="CF">Republika e Afrikës Qendrore</territory>
 			<territory type="CG">Kongo-Brazavilë</territory>
 			<territory type="CG" alt="variant">Kongo (Republika)</territory>
 			<territory type="CH">Zvicër</territory>
-			<territory type="CI">Bregu i Fildishtë</territory>
-			<territory type="CK">Ishujt Kukë</territory>
+			<territory type="CI">Côte d’Ivoire</territory>
+			<territory type="CI" alt="variant">Bregu i Fildishtë</territory>
+			<territory type="CK">Ishujt Kuk</territory>
 			<territory type="CL">Kili</territory>
 			<territory type="CM">Kamerun</territory>
 			<territory type="CN">Kinë</territory>
@@ -394,10 +561,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">Kuraçao</territory>
 			<territory type="CX">Ishulli i Krishtlindjes</territory>
 			<territory type="CY">Qipro</territory>
-			<territory type="CZ">Republika Çeke</territory>
+			<territory type="CZ">Çeki</territory>
+			<territory type="CZ" alt="variant">Republika Çeke</territory>
 			<territory type="DE">Gjermani</territory>
 			<territory type="DG">Diego-Garsia</territory>
-			<territory type="DJ">Xhibut</territory>
+			<territory type="DJ">Xhibuti</territory>
 			<territory type="DK">Danimarkë</territory>
 			<territory type="DM">Dominikë</territory>
 			<territory type="DO">Republika Dominikane</territory>
@@ -411,10 +579,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Spanjë</territory>
 			<territory type="ET">Etiopi</territory>
 			<territory type="EU">Bashkimi Europian</territory>
+			<territory type="EZ">Eurozonë</territory>
 			<territory type="FI">Finlandë</territory>
 			<territory type="FJ">Fixhi</territory>
-			<territory type="FK">Ishujt Folklandë</territory>
-			<territory type="FK" alt="variant">Ishujt Folklandë (Ishujt Malvine)</territory>
+			<territory type="FK">Ishujt Falkland</territory>
+			<territory type="FK" alt="variant">Ishujt Falkland (Malvine)</territory>
 			<territory type="FM">Mikronezi</territory>
 			<territory type="FO">Ishujt Faroe</territory>
 			<territory type="FR">Francë</territory>
@@ -424,11 +593,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GD">Grenadë</territory>
 			<territory type="GE">Gjeorgji</territory>
 			<territory type="GF">Guajana Franceze</territory>
-			<territory type="GG">Guernsej</territory>
+			<territory type="GG">Gernsej</territory>
 			<territory type="GH">Ganë</territory>
 			<territory type="GI">Gjibraltar</territory>
 			<territory type="GL">Grenlandë</territory>
-			<territory type="GM">Gambi</territory>
+			<territory type="GM">Gambia</territory>
 			<territory type="GN">Guine</territory>
 			<territory type="GP">Guadalupe</territory>
 			<territory type="GQ">Guineja Ekuatoriale</territory>
@@ -438,9 +607,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Guine-Bisau</territory>
 			<territory type="GY">Guajanë</territory>
-			<territory type="HK">RVAK i Hong Kongut</territory>
-			<territory type="HK" alt="short">Hong Kong</territory>
-			<territory type="HM">Ishulli Hërd dhe Ishujt Mekdonaldë</territory>
+			<territory type="HK">RPA i Hong-Kongut</territory>
+			<territory type="HK" alt="short">Hong-Kong</territory>
+			<territory type="HM">Ishujt Hërd e Mekdonald</territory>
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Kroaci</territory>
 			<territory type="HT">Haiti</territory>
@@ -463,18 +632,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KE">Kenia</territory>
 			<territory type="KG">Kirgistan</territory>
 			<territory type="KH">Kamboxhia</territory>
-			<territory type="KI">Qiribati</territory>
+			<territory type="KI">Kiribati</territory>
 			<territory type="KM">Komore</territory>
 			<territory type="KN">Shën-Kits dhe Nevis</territory>
 			<territory type="KP">Koreja e Veriut</territory>
 			<territory type="KR">Koreja e Jugut</territory>
 			<territory type="KW">Kuvajt</territory>
-			<territory type="KY">Ishujt Kajmanë</territory>
+			<territory type="KY">Ishujt Kajman</territory>
 			<territory type="KZ">Kazakistan</territory>
 			<territory type="LA">Laos</territory>
 			<territory type="LB">Liban</territory>
 			<territory type="LC">Shën-Luçia</territory>
-			<territory type="LI">Lihtënshtajn</territory>
+			<territory type="LI">Lihtenshtajn</territory>
 			<territory type="LK">Sri-Lankë</territory>
 			<territory type="LR">Liberi</territory>
 			<territory type="LS">Lesoto</territory>
@@ -485,19 +654,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MA">Marok</territory>
 			<territory type="MC">Monako</territory>
 			<territory type="MD">Moldavi</territory>
-			<territory type="ME">Mali i Zi</territory>
+			<territory type="ME">Mal i Zi</territory>
 			<territory type="MF">Shën-Martin</territory>
 			<territory type="MG">Madagaskar</territory>
-			<territory type="MH">Ishujt Marshallë</territory>
+			<territory type="MH">Ishujt Marshall</territory>
 			<territory type="MK">Maqedoni</territory>
 			<territory type="MK" alt="variant">Maqedoni (IRJM)</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Mianmar (Burma)</territory>
 			<territory type="MN">Mongoli</territory>
-			<territory type="MO">RVAK i Makaos</territory>
+			<territory type="MO">RPA i Makaos</territory>
 			<territory type="MO" alt="short">Makao</territory>
 			<territory type="MP">Ishujt e Marianës Veriore</territory>
-			<territory type="MQ">Martinik</territory>
+			<territory type="MQ">Martinikë</territory>
 			<territory type="MR">Mauritani</territory>
 			<territory type="MS">Montserat</territory>
 			<territory type="MT">Maltë</territory>
@@ -518,17 +687,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="NP">Nepal</territory>
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
-			<territory type="NZ">Zelanda e Re</territory>
+			<territory type="NZ">Zelandë e Re</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
 			<territory type="PF">Polinezia Franceze</territory>
-			<territory type="PG">Papua Guineja e Re</territory>
+			<territory type="PG">Guineja e Re-Papua</territory>
 			<territory type="PH">Filipine</territory>
 			<territory type="PK">Pakistan</territory>
 			<territory type="PL">Poloni</territory>
-			<territory type="PM">Shën-Peir dhe Mikuelon</territory>
-			<territory type="PN">Ishujt Pitkernë</territory>
+			<territory type="PM">Shën-Pier dhe Mikelon</territory>
+			<territory type="PN">Ishujt Pitkern</territory>
 			<territory type="PR">Porto-Riko</territory>
 			<territory type="PS">Territoret Palestineze</territory>
 			<territory type="PS" alt="short">Palestinë</territory>
@@ -543,35 +712,36 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="RU">Rusi</territory>
 			<territory type="RW">Ruandë</territory>
 			<territory type="SA">Arabia Saudite</territory>
-			<territory type="SB">Ishujt Solomonë</territory>
-			<territory type="SC">Sishel</territory>
+			<territory type="SB">Ishujt Solomon</territory>
+			<territory type="SC">Sejshelle</territory>
 			<territory type="SD">Sudan</territory>
 			<territory type="SE">Suedi</territory>
 			<territory type="SG">Singapor</territory>
-			<territory type="SH">Shën-Helena</territory>
+			<territory type="SH">Shën-Helenë</territory>
 			<territory type="SI">Slloveni</territory>
-			<territory type="SJ">Svalbard e Zhan-Majen</territory>
+			<territory type="SJ">Svalbard e Jan-Majen</territory>
 			<territory type="SK">Sllovaki</territory>
 			<territory type="SL">Siera-Leone</territory>
 			<territory type="SM">San-Marino</territory>
-			<territory type="SN">Senegali</territory>
+			<territory type="SN">Senegal</territory>
 			<territory type="SO">Somali</territory>
 			<territory type="SR">Surinami</territory>
 			<territory type="SS">Sudani i Jugut</territory>
-			<territory type="ST">Sao-Tome e Prinsipe</territory>
-			<territory type="SV">El Salvador</territory>
-			<territory type="SX">Shën-Martin (Sint Maarten - pjesa e Mbretërisë së Holandës)</territory>
+			<territory type="ST">Sao-Tome e Principe</territory>
+			<territory type="SV">Salvador</territory>
+			<territory type="SX">Sint-Marten</territory>
 			<territory type="SY">Siri</territory>
-			<territory type="SZ">Suazilandë</territory>
+			<territory type="SZ">Svazilandë</territory>
 			<territory type="TA">Tristan-da-Kuna</territory>
-			<territory type="TC">Ishujt Turke dhe Kaike</territory>
+			<territory type="TC">Ishujt Turks dhe Kaikos</territory>
 			<territory type="TD">Çad</territory>
-			<territory type="TF">Territoret Australiane Franceze</territory>
+			<territory type="TF">Territoret Jugore Franceze</territory>
 			<territory type="TG">Togo</territory>
 			<territory type="TH">Tajlandë</territory>
 			<territory type="TJ">Taxhikistan</territory>
 			<territory type="TK">Tokelau</territory>
-			<territory type="TL">Timori Lindor</territory>
+			<territory type="TL">Timor-Leste</territory>
+			<territory type="TL" alt="variant">Timori Lindor</territory>
 			<territory type="TM">Turkmenistan</territory>
 			<territory type="TN">Tunizi</territory>
 			<territory type="TO">Tonga</territory>
@@ -582,43 +752,46 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TZ">Tanzani</territory>
 			<territory type="UA">Ukrainë</territory>
 			<territory type="UG">Ugandë</territory>
-			<territory type="UM">Ishujt periferikë të SHBA-së</territory>
+			<territory type="UM">Ishujt Periferikë të SHBA-së</territory>
+			<territory type="UN">Kombet e Bashkuara</territory>
+			<territory type="UN" alt="short">Kombet e Bashkuara</territory>
 			<territory type="US">Shtetet e Bashkuara të Amerikës</territory>
 			<territory type="US" alt="short">SHBA</territory>
 			<territory type="UY">Uruguai</territory>
 			<territory type="UZ">Uzbekistan</territory>
 			<territory type="VA">Vatikan</territory>
-			<territory type="VC">Shën-Vinsent dhe Grenadinet</territory>
+			<territory type="VC">Shën-Vincent dhe Grenadine</territory>
 			<territory type="VE">Venezuelë</territory>
 			<territory type="VG">Ishujt e Virgjër Britanikë</territory>
-			<territory type="VI">Ishujt e Virgjër Amerikanë</territory>
+			<territory type="VI">Ishujt e Virgjër të SHBA-së</territory>
 			<territory type="VN">Vietnam</territory>
 			<territory type="VU">Vanuatu</territory>
-			<territory type="WF">Uollis e Futina</territory>
+			<territory type="WF">Uollis e Futuna</territory>
 			<territory type="WS">Samoa</territory>
 			<territory type="XK">Kosovë</territory>
 			<territory type="YE">Jemen</territory>
 			<territory type="YT">Majotë</territory>
 			<territory type="ZA">Afrika e Jugut</territory>
-			<territory type="ZM">Zambi</territory>
+			<territory type="ZM">Zambia</territory>
 			<territory type="ZW">Zimbabve</territory>
 			<territory type="ZZ">I panjohur</territory>
 		</territories>
 		<keys>
 			<key type="calendar">Kalendari</key>
+			<key type="cf">Formati valutor</key>
 			<key type="collation">Radhitja</key>
 			<key type="currency">Valuta</key>
 			<key type="hc">Cikli orar (12 - 24)</key>
 			<key type="lb">Stili i gjerësisë së rreshtave</key>
 			<key type="ms">Sistemi i njësive matëse</key>
-			<key type="numbers">Numrat</key>
+			<key type="numbers">Numrat/shifrat</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">kalendar budist</type>
 			<type key="calendar" type="chinese">kalendar kinez</type>
 			<type key="calendar" type="coptic">Kalendari Koptik</type>
 			<type key="calendar" type="dangi">kalendar dangi</type>
-			<type key="calendar" type="ethiopic">kalendar etiop</type>
+			<type key="calendar" type="ethiopic">kalendar etiopik</type>
 			<type key="calendar" type="ethiopic-amete-alem">Kalendari Etiopas Amete Alem</type>
 			<type key="calendar" type="gregorian">kalendar gregorian</type>
 			<type key="calendar" type="hebrew">kalendar hebraik</type>
@@ -630,7 +803,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="iso8601">kalendar ISO-8601</type>
 			<type key="calendar" type="japanese">kalendar japonez</type>
 			<type key="calendar" type="persian">kalendar persian</type>
-			<type key="calendar" type="roc">kalendar minguo (kinez)</type>
+			<type key="calendar" type="roc">kalendar minguoje (kinez)</type>
+			<type key="cf" type="account">format valutor llogaritës</type>
+			<type key="cf" type="standard">format valutor standard</type>
 			<type key="collation" type="big5han">Radhitje e kinezishtes tradicionale - Big5</type>
 			<type key="collation" type="dictionary">Radhitje fjalori</type>
 			<type key="collation" type="ducet">radhitje unikode e parazgjedhur</type>
@@ -640,16 +815,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="collation" type="reformed">Radhitje e reformuar</type>
 			<type key="collation" type="search">kërkim i përgjithshëm</type>
 			<type key="collation" type="standard">radhitje standarde</type>
-			<type key="hc" type="h11">Sistemi 12-orësh (0 - 11)</type>
-			<type key="hc" type="h12">Sistemi 12-orësh (1 - 12)</type>
-			<type key="hc" type="h23">Sistemi 24-orësh (0 - 23)</type>
-			<type key="hc" type="h24">Sistemi 24-orësh (1 - 24)</type>
-			<type key="lb" type="loose">Stili i gjerësisë së rreshtave - i larguar</type>
-			<type key="lb" type="normal">Stili i gjerësisë së rreshtave - normal</type>
-			<type key="lb" type="strict">Stili i gjerësisë së rreshtave - i ngushtuar</type>
-			<type key="ms" type="metric">Sistemi metrik</type>
-			<type key="ms" type="uksystem">Sistemi imperial (britanik) i njësive matëse</type>
-			<type key="ms" type="ussystem">Sistemi amerikan i njësive matëse</type>
+			<type key="hc" type="h11">sistem 12-orësh (0 - 11)</type>
+			<type key="hc" type="h12">sistem 12-orësh (1 - 12)</type>
+			<type key="hc" type="h23">sistem 24-orësh (0 - 23)</type>
+			<type key="hc" type="h24">sistem 24-orësh (1 - 24)</type>
+			<type key="lb" type="loose">stil i gjerësisë së rreshtave - i larguar</type>
+			<type key="lb" type="normal">stil i gjerësisë së rreshtave - normal</type>
+			<type key="lb" type="strict">stil i gjerësisë së rreshtave - i ngushtuar</type>
+			<type key="ms" type="metric">sistem metrik</type>
+			<type key="ms" type="uksystem">sistem imperial (britanik) i njësive matëse</type>
+			<type key="ms" type="ussystem">sistem amerikan i njësive matëse</type>
 			<type key="numbers" type="arab">shifra indo-arabe</type>
 			<type key="numbers" type="arabext">shifra indo-arabe të zgjatura</type>
 			<type key="numbers" type="armn">numra armenë</type>
@@ -693,7 +868,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Gjuha: {0}</codePattern>
-			<codePattern type="script">Shkrimi: {0}</codePattern>
+			<codePattern type="script">Skripti: {0}</codePattern>
 			<codePattern type="territory">Rajoni: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
@@ -701,10 +876,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a b c ç d {dh} e ë f g {gj} h i j k l {ll} m n {nj} o p q r {rr} s {sh} t {th} u v x {xh} y z {zh}]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[w]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Ç D {DH} E Ë F G {GJ} H I J K L {LL} M N {NJ} O P Q R {RR} S {SH} T {TH} U V X {XH} Y Z {ZH}]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # ′ ″ ~]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
+		<ellipsis type="initial">…{0}</ellipsis>
+		<ellipsis type="medial">{0}…{1}</ellipsis>
 		<ellipsis type="word-final">{0} …</ellipsis>
+		<ellipsis type="word-initial">… {0}</ellipsis>
+		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -759,19 +958,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E, h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E, h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h.a</dateFormatItem>
-						<dateFormatItem id="H">H</dateFormatItem>
-						<dateFormatItem id="hm">h.mm.a</dateFormatItem>
-						<dateFormatItem id="Hm">H.mm</dateFormatItem>
-						<dateFormatItem id="hms">h.mm.ss.a</dateFormatItem>
-						<dateFormatItem id="Hms">H.mm.ss</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M</dateFormatItem>
@@ -781,7 +989,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d MMM</dateFormatItem>
-						<dateFormatItem id="ms" draft="contributed">mm.ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M.y GGGGG</dateFormatItem>
@@ -881,32 +1089,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">Jan</month>
-							<month type="2">Shk</month>
-							<month type="3">Mar</month>
-							<month type="4">Pri</month>
-							<month type="5">Maj</month>
-							<month type="6">Qer</month>
-							<month type="7">Kor</month>
-							<month type="8">Gsh</month>
-							<month type="9">Sht</month>
-							<month type="10">Tet</month>
-							<month type="11">Nën</month>
-							<month type="12">Dhj</month>
+							<month type="1">jan</month>
+							<month type="2">shk</month>
+							<month type="3">mar</month>
+							<month type="4">pri</month>
+							<month type="5">maj</month>
+							<month type="6">qer</month>
+							<month type="7">korr</month>
+							<month type="8">gush</month>
+							<month type="9">sht</month>
+							<month type="10">tet</month>
+							<month type="11">nën</month>
+							<month type="12">dhj</month>
 						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1">J</month>
-							<month type="2">S</month>
-							<month type="3">M</month>
-							<month type="4">P</month>
-							<month type="5">M</month>
-							<month type="6">Q</month>
-							<month type="7">K</month>
-							<month type="8">G</month>
-							<month type="9">S</month>
-							<month type="10">T</month>
-							<month type="11">N</month>
-							<month type="12">D</month>
+							<month type="1">j</month>
+							<month type="2">sh</month>
+							<month type="3">m</month>
+							<month type="4">p</month>
+							<month type="5">m</month>
+							<month type="6">q</month>
+							<month type="7">k</month>
+							<month type="8">g</month>
+							<month type="9">sh</month>
+							<month type="10">t</month>
+							<month type="11">n</month>
+							<month type="12">dh</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">janar</month>
@@ -931,8 +1139,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="4">Pri</month>
 							<month type="5">Maj</month>
 							<month type="6">Qer</month>
-							<month type="7">Kor</month>
-							<month type="8">Gsh</month>
+							<month type="7">Korr</month>
+							<month type="8">Gush</month>
 							<month type="9">Sht</month>
 							<month type="10">Tet</month>
 							<month type="11">Nën</month>
@@ -940,17 +1148,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">J</month>
-							<month type="2">S</month>
+							<month type="2">Sh</month>
 							<month type="3">M</month>
 							<month type="4">P</month>
 							<month type="5">M</month>
 							<month type="6">Q</month>
 							<month type="7">K</month>
 							<month type="8">G</month>
-							<month type="9">S</month>
+							<month type="9">Sh</month>
 							<month type="10">T</month>
 							<month type="11">N</month>
-							<month type="12">D</month>
+							<month type="12">Dh</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Janar</month>
@@ -986,7 +1194,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="wed">M</day>
 							<day type="thu">E</day>
 							<day type="fri">P</day>
-							<day type="sat">S</day>
+							<day type="sat">Sh</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">Die</day>
@@ -1024,7 +1232,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="wed">M</day>
 							<day type="thu">E</day>
 							<day type="fri">P</day>
-							<day type="sat">S</day>
+							<day type="sat">Sh</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">Die</day>
@@ -1091,37 +1299,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">mesnatë</dayPeriod>
+							<dayPeriod type="midnight">e mesnatës</dayPeriod>
 							<dayPeriod type="am">e paradites</dayPeriod>
-							<dayPeriod type="noon">mesditë</dayPeriod>
+							<dayPeriod type="noon">e mesditës</dayPeriod>
 							<dayPeriod type="pm">e pasdites</dayPeriod>
-							<dayPeriod type="morning1">mëngjes</dayPeriod>
+							<dayPeriod type="morning1">e mëngjesit</dayPeriod>
 							<dayPeriod type="morning2">e paradites</dayPeriod>
 							<dayPeriod type="afternoon1">e pasdites</dayPeriod>
-							<dayPeriod type="evening1">mbrëmje</dayPeriod>
-							<dayPeriod type="night1">natë</dayPeriod>
+							<dayPeriod type="evening1">e mbrëmjes</dayPeriod>
+							<dayPeriod type="night1">e natës</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">mesnatë</dayPeriod>
+							<dayPeriod type="midnight">e mesnatës</dayPeriod>
 							<dayPeriod type="am">e paradites</dayPeriod>
-							<dayPeriod type="noon">mesditë</dayPeriod>
+							<dayPeriod type="noon">e mesditës</dayPeriod>
 							<dayPeriod type="pm">e pasdites</dayPeriod>
-							<dayPeriod type="morning1">mëngjes</dayPeriod>
+							<dayPeriod type="morning1">e mëngjesit</dayPeriod>
 							<dayPeriod type="morning2">e paradites</dayPeriod>
 							<dayPeriod type="afternoon1">e pasdites</dayPeriod>
-							<dayPeriod type="evening1">mbrëmje</dayPeriod>
-							<dayPeriod type="night1">natë</dayPeriod>
+							<dayPeriod type="evening1">e mbrëmjes</dayPeriod>
+							<dayPeriod type="night1">e natës</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">mesnatë</dayPeriod>
+							<dayPeriod type="midnight">e mesnatës</dayPeriod>
 							<dayPeriod type="am">e paradites</dayPeriod>
-							<dayPeriod type="noon">mesditë</dayPeriod>
+							<dayPeriod type="noon">e mesditës</dayPeriod>
 							<dayPeriod type="pm">e pasdites</dayPeriod>
-							<dayPeriod type="morning1">mëngjes</dayPeriod>
+							<dayPeriod type="morning1">e mëngjesit</dayPeriod>
 							<dayPeriod type="morning2">e paradites</dayPeriod>
 							<dayPeriod type="afternoon1">e pasdites</dayPeriod>
-							<dayPeriod type="evening1">mbrëmje</dayPeriod>
-							<dayPeriod type="night1">natë</dayPeriod>
+							<dayPeriod type="evening1">e mbrëmjes</dayPeriod>
+							<dayPeriod type="night1">e natës</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
@@ -1162,21 +1370,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">para erës së re</era>
+						<era type="0">para Krishtit</era>
 						<era type="0" alt="variant">para erës sonë</era>
-						<era type="1">erës së re</era>
+						<era type="1">mbas Krishtit</era>
 						<era type="1" alt="variant">erës sonë</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">p.e.r.</era>
+						<era type="0">p.K.</era>
 						<era type="0" alt="variant">p.e.s.</era>
-						<era type="1">e.r.</era>
+						<era type="1">mb.K.</era>
 						<era type="1" alt="variant">e.s.</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0">p.e.r.</era>
+						<era type="0">p.K.</era>
 						<era type="0" alt="variant">p.e.s.</era>
-						<era type="1">e.r.</era>
+						<era type="1">mb.K.</era>
 						<era type="1" alt="variant">e.s.</era>
 					</eraNarrow>
 				</eras>
@@ -1246,8 +1454,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
@@ -1276,6 +1489,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'java' W 'e' MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'java' W 'e' MMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M.y</dateFormatItem>
@@ -1287,9 +1502,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ, y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ, y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'java' w 'e' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'java' w 'e' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
+						<appendItem request="Timezone">{0}, {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
@@ -1393,6 +1610,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>erë</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>erë</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>erë</displayName>
+			</field>
 			<field type="year">
 				<displayName>vit</displayName>
 				<relative type="-1">vitin e kaluar</relative>
@@ -1431,6 +1654,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>tremujor</displayName>
+				<relative type="-1">tremujorin e kaluar</relative>
+				<relative type="0">këtë tremujor</relative>
+				<relative type="1">tremujorin e ardhshëm</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">pas {0} tremujori</relativeTimePattern>
 					<relativeTimePattern count="other">pas {0} tremujorësh</relativeTimePattern>
@@ -1511,6 +1737,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} javë më parë</relativeTimePattern>
 					<relativeTimePattern count="other">{0} javë më parë</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>java e {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>javë</displayName>
@@ -1522,6 +1749,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} javë më parë</relativeTimePattern>
 					<relativeTimePattern count="other">{0} javë më parë</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>java e {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>javë</displayName>
@@ -1533,6 +1761,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} javë më parë</relativeTimePattern>
 					<relativeTimePattern count="other">{0} javë më parë</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>java e {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>javë e muajit</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>javë e muajit</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>javë e muajit</displayName>
 			</field>
 			<field type="day">
 				<displayName>ditë</displayName>
@@ -1570,119 +1808,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} ditë më parë</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>ditë e vitit</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>ditë e vitit</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>ditë e vitit</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>ditë e javës</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>ditë e javës</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>ditë e javës</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>ditë pune e muajit</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>ditë pune e muajit</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>ditë pune e muajit</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">të dielën e kaluar</relative>
 				<relative type="0">këtë të diel</relative>
 				<relative type="1">të dielën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të diele</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të dielash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të dielë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të diela më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">të dielën e kaluar</relative>
 				<relative type="0">këtë të diel</relative>
 				<relative type="1">të dielën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të diele</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të dielash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të dielë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të diela më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">të dielën e kaluar</relative>
 				<relative type="0">këtë të diel</relative>
 				<relative type="1">të dielën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të diele</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të dielash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të dielë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të diela më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">të hënën e kaluar</relative>
 				<relative type="0">këtë të hënë</relative>
 				<relative type="1">të hënën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të hëne</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të hënash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të hënë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të hëna më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">të hënën e kaluar</relative>
 				<relative type="0">këtë të hënë</relative>
 				<relative type="1">të hënën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të hëne</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të hënash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të hënë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të hëna më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">të hënën e kaluar</relative>
 				<relative type="0">këtë të hënë</relative>
 				<relative type="1">të hënën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të hëne</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të hënash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të hënë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të hëna më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">të martën e kaluar</relative>
 				<relative type="0">këtë të martë</relative>
 				<relative type="1">të martën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të marte</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të martash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të martë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të marta më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">të martën e kaluar</relative>
 				<relative type="0">këtë të martë</relative>
 				<relative type="1">të martën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të marte</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të martash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të martë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të marta më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">të martën e kaluar</relative>
 				<relative type="0">këtë të martë</relative>
 				<relative type="1">të martën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të marte</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të martash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të martë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të marta më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">të mërkurën e kaluar</relative>
 				<relative type="0">këtë të mërkurë</relative>
 				<relative type="1">të mërkurën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të mërkure</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të mërkurash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të mërkurë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të mërkura më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">të mërkurën e kaluar</relative>
 				<relative type="0">këtë të mërkurë</relative>
 				<relative type="1">të mërkurën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të mërkure</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të mërkurash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të mërkurë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të mërkura më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">të mërkurën e kaluar</relative>
 				<relative type="0">këtë të mërkurë</relative>
 				<relative type="1">të mërkurën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të mërkure</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të mërkurash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të mërkurë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të mërkura më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">të enjten e kaluar</relative>
 				<relative type="0">këtë të enjte</relative>
 				<relative type="1">të enjten e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të enjte</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të enjtesh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të enjte më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të enjte më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">të enjten e kaluar</relative>
 				<relative type="0">këtë të enjte</relative>
 				<relative type="1">të enjten e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të enjte</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të enjtesh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të enjte më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të enjte më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">të enjten e kaluar</relative>
 				<relative type="0">këtë të enjte</relative>
 				<relative type="1">të enjten e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të enjte</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të enjtesh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të enjte më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të enjte më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">të premten e kaluar</relative>
 				<relative type="0">këtë të premte</relative>
 				<relative type="1">të premten e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të premte</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të premtesh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të premte më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të premte më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">të premten e kaluar</relative>
 				<relative type="0">këtë të premte</relative>
 				<relative type="1">të premten e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të premte</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të premtesh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të premte më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të premte më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">të premten e kaluar</relative>
 				<relative type="0">këtë të premte</relative>
 				<relative type="1">të premten e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të premte</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të premtesh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të premte më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të premte më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">të shtunën e kaluar</relative>
 				<relative type="0">këtë të shtunë</relative>
 				<relative type="1">të shtunën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të shtune</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të shtunash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të shtunë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të shtuna më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">të shtunën e kaluar</relative>
 				<relative type="0">këtë të shtunë</relative>
 				<relative type="1">të shtunën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të shtune</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të shtunash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të shtunë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të shtuna më parë</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">të shtunën e kaluar</relative>
 				<relative type="0">këtë të shtunë</relative>
 				<relative type="1">të shtunën e ardhshme</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">pas {0} të shtune</relativeTimePattern>
+					<relativeTimePattern count="other">pas {0} të shtunash</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} të shtunë më parë</relativeTimePattern>
+					<relativeTimePattern count="other">{0} të shtuna më parë</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>paradite/pasdite</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>paradite/pasdite</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>paradite/pasdite</displayName>
+			</field>
 			<field type="hour">
 				<displayName>orë</displayName>
+				<relative type="0">këtë orë</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">pas {0} ore</relativeTimePattern>
 					<relativeTimePattern count="other">pas {0} orësh</relativeTimePattern>
@@ -1716,6 +2153,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>minutë</displayName>
+				<relative type="0">këtë minutë</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">pas {0} minute</relativeTimePattern>
 					<relativeTimePattern count="other">pas {0} minutash</relativeTimePattern>
@@ -1784,15 +2222,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>brezi orar</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>brezi orar</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>brezi orar</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>Ora e Grenuiçit: {0}</gmtFormat>
-			<gmtZeroFormat>Ora e Grenuiçit</gmtZeroFormat>
+			<gmtFormat>GMT{0}</gmtFormat>
+			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>Ora: {0}</regionFormat>
 			<regionFormat type="daylight">Ora verore: {0}</regionFormat>
 			<regionFormat type="standard">Ora standarde: {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa-Izabela</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Ora universale e koordinuar</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Qytet i panjohur</exemplarCity>
 			</zone>
@@ -1929,10 +2384,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Mekuari</exemplarCity>
 			</zone>
 			<zone type="Australia/Lord_Howe">
-				<exemplarCity>Lord Houi</exemplarCity>
+				<exemplarCity>Lord-Houi</exemplarCity>
 			</zone>
 			<zone type="America/Aruba">
-				<exemplarCity>Aruba</exemplarCity>
+				<exemplarCity>Arubë</exemplarCity>
 			</zone>
 			<zone type="Europe/Mariehamn">
 				<exemplarCity>Mariehamn</exemplarCity>
@@ -2057,6 +2512,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>Vankuver</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort-Nelson</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Gjiri i Dousonit</exemplarCity>
 			</zone>
@@ -2082,7 +2540,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Uinipeg</exemplarCity>
 			</zone>
 			<zone type="America/Resolute">
-				<exemplarCity>Rezolutë</exemplarCity>
+				<exemplarCity>Resolute</exemplarCity>
 			</zone>
 			<zone type="America/Rainy_River">
 				<exemplarCity>Lumi i Shirave</exemplarCity>
@@ -2142,7 +2600,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Brazavillë</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
-				<exemplarCity>Cyrih</exemplarCity>
+				<exemplarCity>Zyrih</exemplarCity>
 			</zone>
 			<zone type="Africa/Abidjan">
 				<exemplarCity>Abixhan</exemplarCity>
@@ -2152,6 +2610,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Pacific/Easter">
 				<exemplarCity>Pashkë</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta-Arenas</exemplarCity>
 			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santiago</exemplarCity>
@@ -2175,7 +2636,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Havanë</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
-				<exemplarCity>Kepi Verde</exemplarCity>
+				<exemplarCity>Kepi i Gjelbër</exemplarCity>
 			</zone>
 			<zone type="America/Curacao">
 				<exemplarCity>Kuraçao</exemplarCity>
@@ -2184,7 +2645,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Krishtlindje</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
-				<exemplarCity>Nikozi</exemplarCity>
+				<exemplarCity>Nikozia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagustë</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Pragë</exemplarCity>
@@ -2310,7 +2774,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Konakri</exemplarCity>
 			</zone>
 			<zone type="America/Guadeloupe">
-				<exemplarCity>Guadelupe</exemplarCity>
+				<exemplarCity>Guadalupe</exemplarCity>
 			</zone>
 			<zone type="Africa/Malabo">
 				<exemplarCity>Malabo</exemplarCity>
@@ -2319,7 +2783,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Athinë</exemplarCity>
 			</zone>
 			<zone type="Atlantic/South_Georgia">
-				<exemplarCity>Gjeorgjia e Jugut</exemplarCity>
+				<exemplarCity>Xhorxha e Jugut</exemplarCity>
 			</zone>
 			<zone type="America/Guatemala">
 				<exemplarCity>Guatemalë</exemplarCity>
@@ -2362,12 +2826,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
-					<daylight>Ora verore e Irlandës</daylight>
+					<daylight>Ora strandarde e Irlandës</daylight>
 				</long>
 				<exemplarCity>Dublin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
-				<exemplarCity>Jeruzalem</exemplarCity>
+				<exemplarCity>Jerusalem</exemplarCity>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
 				<exemplarCity>Ishulli i Manit</exemplarCity>
@@ -2385,7 +2849,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Teheran</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Reykjavik">
-				<exemplarCity>Rejkjavik</exemplarCity>
+				<exemplarCity>Reikjavik</exemplarCity>
 			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity>Romë</exemplarCity>
@@ -2443,6 +2907,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atirau</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aktobe</exemplarCity>
@@ -2541,7 +3008,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Nouakot</exemplarCity>
 			</zone>
 			<zone type="America/Montserrat">
-				<exemplarCity>Monteserat</exemplarCity>
+				<exemplarCity>Montserat</exemplarCity>
 			</zone>
 			<zone type="Europe/Malta">
 				<exemplarCity>Maltë</exemplarCity>
@@ -2557,9 +3024,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Tihuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa-Izabela</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosijo</exemplarCity>
@@ -2664,7 +3128,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Bunganvilë</exemplarCity>
 			</zone>
 			<zone type="Asia/Manila">
-				<exemplarCity>Manila</exemplarCity>
+				<exemplarCity>Manilë</exemplarCity>
 			</zone>
 			<zone type="Asia/Karachi">
 				<exemplarCity>Karaçi</exemplarCity>
@@ -2673,7 +3137,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Varshavë</exemplarCity>
 			</zone>
 			<zone type="America/Miquelon">
-				<exemplarCity>Mikuelon</exemplarCity>
+				<exemplarCity>Mikelon</exemplarCity>
 			</zone>
 			<zone type="Pacific/Pitcairn">
 				<exemplarCity>Pitkern</exemplarCity>
@@ -2726,6 +3190,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrakan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Uljanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -2737,6 +3213,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
@@ -2808,7 +3290,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Long’jëbjen</exemplarCity>
 			</zone>
 			<zone type="Europe/Bratislava">
-				<exemplarCity>Bratisllavë</exemplarCity>
+				<exemplarCity>Bratislavë</exemplarCity>
 			</zone>
 			<zone type="Africa/Freetown">
 				<exemplarCity>Fritaun</exemplarCity>
@@ -2832,7 +3314,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Sao-Tome</exemplarCity>
 			</zone>
 			<zone type="America/El_Salvador">
-				<exemplarCity>El Salvador</exemplarCity>
+				<exemplarCity>Salvador</exemplarCity>
 			</zone>
 			<zone type="America/Lower_Princes">
 				<exemplarCity>Louer-Prinsis-Kuortër</exemplarCity>
@@ -2847,7 +3329,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Turku i Madh</exemplarCity>
 			</zone>
 			<zone type="Africa/Ndjamena">
-				<exemplarCity>Nxhamenë</exemplarCity>
+				<exemplarCity>Ndjamena</exemplarCity>
 			</zone>
 			<zone type="Indian/Kerguelen">
 				<exemplarCity>Kerguelen</exemplarCity>
@@ -2880,7 +3362,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Stamboll</exemplarCity>
 			</zone>
 			<zone type="America/Port_of_Spain">
-				<exemplarCity>Porti i Spanjës</exemplarCity>
+				<exemplarCity>Port of Spain</exemplarCity>
 			</zone>
 			<zone type="Pacific/Funafuti">
 				<exemplarCity>Funafuti</exemplarCity>
@@ -2906,9 +3388,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Miduej</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Xhonson</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Uejk</exemplarCity>
 			</zone>
@@ -2918,8 +3397,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Xhonston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankorejxh</exemplarCity>
@@ -2973,7 +3452,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Tell-Siti, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Knox">
-				<exemplarCity>Noks, Indiana</exemplarCity>
+				<exemplarCity>Knoks, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Winamac">
 				<exemplarCity>Uinamak, Indiana</exemplarCity>
@@ -3121,16 +3600,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Ora amerikane e Brezit Malor</generic>
-					<standard>Ora standarde amerikane e Brezit Malor</standard>
-					<daylight>Ora verore amerikane e Brezit Malor</daylight>
+					<generic>Ora e Territoreve Amerikane të Brezit Malor</generic>
+					<standard>Ora standarde e Territoreve Amerikane të Brezit Malor</standard>
+					<daylight>Ora verore e Territoreve Amerikane të Brezit Malor</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>Ora amerikane e Bregut të Paqësorit</generic>
-					<standard>Ora standarde amerikane e Bregut të Paqësorit</standard>
-					<daylight>Ora verore amerikane e Bregut të Paqësorit</daylight>
+					<generic>Ora e Territoreve Amerikane të Bregut të Paqësorit</generic>
+					<standard>Ora standarde e Territoreve Amerikane të Bregut të Paqësorit</standard>
+					<daylight>Ora verore e Territoreve Amerikane të Bregut të Paqësorit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Anadyr">
@@ -3372,35 +3851,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>Ora e Europës Qendrore</generic>
-					<standard>Ora standarde e Europës Qendrore</standard>
-					<daylight>Ora verore e Europës Qendrore</daylight>
+					<generic>Ora e Evropës Qendrore</generic>
+					<standard>Ora standarde e Evropës Qendrore</standard>
+					<daylight>Ora verore e Evropës Qendrore</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
-					<generic>Ora e Europës Lindore</generic>
-					<standard>Ora standarde e Europës Lindore</standard>
-					<daylight>Ora verore e Europës Lindore</daylight>
+					<generic>Ora e Evropës Lindore</generic>
+					<standard>Ora standarde e Evropës Lindore</standard>
+					<daylight>Ora verore e Evropës Lindore</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard>Ora e Lindjes së Largët Europiane</standard>
+					<standard>Ora e Evropës së Largët Lindore</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
-					<generic>Ora e Europës Perëndimore</generic>
-					<standard>Ora standarde e Europës Perëndimore</standard>
-					<daylight>Ora verore e Europës Perëndimore</daylight>
+					<generic>Ora e Evropës Perëndimore</generic>
+					<standard>Ora standarde e Evropës Perëndimore</standard>
+					<daylight>Ora verore e Evropës Perëndimore</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>Ora e Ishujve Folkland</generic>
-					<standard>Ora standarde e Ishujve Folkland</standard>
-					<daylight>Ora verore e Ishujve Folkland</daylight>
+					<generic>Ora e Ishujve Falkland</generic>
+					<standard>Ora standarde e Ishujve Falkland</standard>
+					<daylight>Ora verore e Ishujve Falkland</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
@@ -3417,7 +3896,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>Ora e Rajoneve Australiane dhe Antraktike Franceze</standard>
+					<standard>Ora e Territoreve Jugore dhe Antarktike Franceze</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
@@ -3444,7 +3923,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Ora e Meridianit të Grinuiçit</standard>
+					<standard>Ora e Grinuiçit</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -3639,7 +4118,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Maldives">
 				<long>
-					<standard>Ora e Maldivit</standard>
+					<standard>Ora e Maldiveve</standard>
 				</long>
 			</metazone>
 			<metazone type="Marquesas">
@@ -3673,9 +4152,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
-					<generic>Ora meksikane e Bregut të Paqësorit</generic>
-					<standard>Ora standarde meksikane e Bregut të Paqësorit</standard>
-					<daylight>Ora verore meksikane e Bregut të Paqësorit</daylight>
+					<generic>Ora e Territoreve Meksikane të Bregut të Paqësorit</generic>
+					<standard>Ora standarde e Territoreve Meksikane të Bregut të Paqësorit</standard>
+					<daylight>Ora verore e Territoreve Meksikane të Bregut të Paqësorit</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -3778,7 +4257,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Papua_New_Guinea">
 				<long>
-					<standard>Ora e Papua-Guinesë së Re</standard>
+					<standard>Ora e Guinesë së Re-Papua</standard>
 				</long>
 			</metazone>
 			<metazone type="Paraguay">
@@ -3809,9 +4288,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>Ora e Shën-Pier dhe Mikuelon</generic>
-					<standard>Ora standarde e Shën-Pier dhe Mikuelon</standard>
-					<daylight>Ora verore e Shën-Pier dhe Mikuelon</daylight>
+					<generic>Ora e Shën-Pier dhe Mikelon</generic>
+					<standard>Ora standarde e Shën-Pier dhe Mikelon</standard>
+					<daylight>Ora verore e Shën-Pier dhe Mikelon</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -3822,6 +4301,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Ponape">
 				<long>
 					<standard>Ora e Ponapeit</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Ora e Penianit</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -3864,7 +4348,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Seychelles">
 				<long>
-					<standard>Ora e Sishelës</standard>
+					<standard>Ora e Sejshelleve</standard>
 				</long>
 			</metazone>
 			<metazone type="Singapore">
@@ -3874,12 +4358,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Solomon">
 				<long>
-					<standard>Ora e Ishujve Solomonë</standard>
+					<standard>Ora e Ishujve Solomon</standard>
 				</long>
 			</metazone>
 			<metazone type="South_Georgia">
 				<long>
-					<standard>Ora e Gjeorgjisë së Jugut</standard>
+					<standard>Ora e Xhorxhas të Jugut</standard>
 				</long>
 			</metazone>
 			<metazone type="Suriname">
@@ -4070,24 +4554,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="10000" count="other">00 mijë</pattern>
 					<pattern type="100000" count="one">000 mijë</pattern>
 					<pattern type="100000" count="other">000 mijë</pattern>
-					<pattern type="1000000" count="one">0 Mln</pattern>
-					<pattern type="1000000" count="other">0 Mln</pattern>
-					<pattern type="10000000" count="one">00 Mln</pattern>
-					<pattern type="10000000" count="other">00 Mln</pattern>
-					<pattern type="100000000" count="one">000 Mln</pattern>
-					<pattern type="100000000" count="other">000 Mln</pattern>
-					<pattern type="1000000000" count="one">0 Mld</pattern>
-					<pattern type="1000000000" count="other">0 Mld</pattern>
-					<pattern type="10000000000" count="one">00 Mld</pattern>
-					<pattern type="10000000000" count="other">00 Mld</pattern>
-					<pattern type="100000000000" count="one">000 Mld</pattern>
-					<pattern type="100000000000" count="other">000 Mld</pattern>
-					<pattern type="1000000000000" count="one">0 Bln</pattern>
-					<pattern type="1000000000000" count="other">0 Bln</pattern>
-					<pattern type="10000000000000" count="one">00 Bln</pattern>
-					<pattern type="10000000000000" count="other">00 Bln</pattern>
-					<pattern type="100000000000000" count="one">000 Bln</pattern>
-					<pattern type="100000000000000" count="other">000 Bln</pattern>
+					<pattern type="1000000" count="one">0 mln</pattern>
+					<pattern type="1000000" count="other">0 mln</pattern>
+					<pattern type="10000000" count="one">00 mln</pattern>
+					<pattern type="10000000" count="other">00 mln</pattern>
+					<pattern type="100000000" count="one">000 mln</pattern>
+					<pattern type="100000000" count="other">000 mln</pattern>
+					<pattern type="1000000000" count="one">0 mld</pattern>
+					<pattern type="1000000000" count="other">0 mld</pattern>
+					<pattern type="10000000000" count="one">00 mld</pattern>
+					<pattern type="10000000000" count="other">00 mld</pattern>
+					<pattern type="100000000000" count="one">000 mld</pattern>
+					<pattern type="100000000000" count="other">000 mld</pattern>
+					<pattern type="1000000000000" count="one">0 bln</pattern>
+					<pattern type="1000000000000" count="other">0 bln</pattern>
+					<pattern type="10000000000000" count="one">00 bln</pattern>
+					<pattern type="10000000000000" count="other">00 bln</pattern>
+					<pattern type="100000000000000" count="one">000 bln</pattern>
+					<pattern type="100000000000000" count="other">000 bln</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -4122,24 +4606,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="10000" count="other">00 mijë ¤</pattern>
 					<pattern type="100000" count="one">000 mijë ¤</pattern>
 					<pattern type="100000" count="other">000 mijë ¤</pattern>
-					<pattern type="1000000" count="one">0 Mln ¤</pattern>
-					<pattern type="1000000" count="other">0 Mln ¤</pattern>
-					<pattern type="10000000" count="one">00 Mln ¤</pattern>
-					<pattern type="10000000" count="other">00 Mln ¤</pattern>
-					<pattern type="100000000" count="one">000 Mln ¤</pattern>
-					<pattern type="100000000" count="other">000 Mln ¤</pattern>
-					<pattern type="1000000000" count="one">0 Mld ¤</pattern>
-					<pattern type="1000000000" count="other">0 Mld ¤</pattern>
-					<pattern type="10000000000" count="one">00 Mld ¤</pattern>
-					<pattern type="10000000000" count="other">00 Mld ¤</pattern>
-					<pattern type="100000000000" count="one">000 Mld ¤</pattern>
-					<pattern type="100000000000" count="other">000 Mld ¤</pattern>
-					<pattern type="1000000000000" count="one">0 Bln ¤</pattern>
-					<pattern type="1000000000000" count="other">0 Bln ¤</pattern>
-					<pattern type="10000000000000" count="one">00 Bln ¤</pattern>
-					<pattern type="10000000000000" count="other">00 Bln ¤</pattern>
-					<pattern type="100000000000000" count="one">000 Bln ¤</pattern>
-					<pattern type="100000000000000" count="other">000 Bln ¤</pattern>
+					<pattern type="1000000" count="one">0 mln ¤</pattern>
+					<pattern type="1000000" count="other">0 mln ¤</pattern>
+					<pattern type="10000000" count="one">00 mln ¤</pattern>
+					<pattern type="10000000" count="other">00 mln ¤</pattern>
+					<pattern type="100000000" count="one">000 mln ¤</pattern>
+					<pattern type="100000000" count="other">000 mln ¤</pattern>
+					<pattern type="1000000000" count="one">0 mld ¤</pattern>
+					<pattern type="1000000000" count="other">0 mld ¤</pattern>
+					<pattern type="10000000000" count="one">00 mld ¤</pattern>
+					<pattern type="10000000000" count="other">00 mld ¤</pattern>
+					<pattern type="100000000000" count="one">000 mld ¤</pattern>
+					<pattern type="100000000000" count="other">000 mld ¤</pattern>
+					<pattern type="1000000000000" count="one">0 bln ¤</pattern>
+					<pattern type="1000000000000" count="other">0 bln ¤</pattern>
+					<pattern type="10000000000000" count="one">00 bln ¤</pattern>
+					<pattern type="10000000000000" count="other">00 bln ¤</pattern>
+					<pattern type="100000000000000" count="one">000 bln ¤</pattern>
+					<pattern type="100000000000000" count="other">000 bln ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -4178,9 +4662,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">kuanza angole</displayName>
 			</currency>
 			<currency type="ARS">
-				<displayName>Pezoja argjentinase</displayName>
-				<displayName count="one">pezo argjentinase</displayName>
-				<displayName count="other">pezo argjentinase</displayName>
+				<displayName>Pesoja argjentinase</displayName>
+				<displayName count="one">peso argjentinase</displayName>
+				<displayName count="other">peso argjentinase</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>Dollari australian</displayName>
@@ -4194,9 +4678,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">florinë aruban</displayName>
 			</currency>
 			<currency type="AZN">
-				<displayName>Manata e Azerbajxhanit</displayName>
-				<displayName count="one">manatë azere</displayName>
-				<displayName count="other">manata azere</displayName>
+				<displayName>Manata azerbajxhanase</displayName>
+				<displayName count="one">manatë azerbajxhanase</displayName>
+				<displayName count="other">manata azerbajxhanase</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName>Marka e Bosnjë-Hercegovinës [e shkëmbyeshme]</displayName>
@@ -4264,10 +4748,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">pulë botsuane</displayName>
 				<displayName count="other">pula botsuane</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Rubla bjelloruse</displayName>
 				<displayName count="one">rubël bjelloruse</displayName>
 				<displayName count="other">rubla bjelloruse</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>Rubla bjelloruse (2000–2016)</displayName>
+				<displayName count="one">rubël bjelloruse (2000–2016)</displayName>
+				<displayName count="other">rubla bjelloruse (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>Dollari i Ishujve Belize</displayName>
@@ -4291,9 +4780,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">franga zvicerane</displayName>
 			</currency>
 			<currency type="CLP">
-				<displayName>Pezoja kiliane</displayName>
-				<displayName count="one">pezo kiliane</displayName>
-				<displayName count="other">pezo kiliane</displayName>
+				<displayName>Pesoja kiliane</displayName>
+				<displayName count="one">peso kiliane</displayName>
+				<displayName count="other">peso kiliane</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName>Juani kinez (për treg të jashtëm)</displayName>
+				<displayName count="one">juan kinez (për treg të jashtëm)</displayName>
+				<displayName count="other">juanë kinez (për treg të jashtëm)</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Juani kinez</displayName>
@@ -4302,9 +4796,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>CN¥</symbol>
 			</currency>
 			<currency type="COP">
-				<displayName>Pezoja kolumbiane</displayName>
-				<displayName count="one">pezo kolumbiane</displayName>
-				<displayName count="other">pezo kolumbiane</displayName>
+				<displayName>Pesoja kolumbiane</displayName>
+				<displayName count="one">peso kolumbiane</displayName>
+				<displayName count="other">peso kolumbiane</displayName>
 			</currency>
 			<currency type="CRC">
 				<displayName>Koloni kostarikan</displayName>
@@ -4312,14 +4806,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">kolonë kostarikan</displayName>
 			</currency>
 			<currency type="CUC">
-				<displayName>Pezoja kubaneze e shkëmbyeshme</displayName>
-				<displayName count="one">pezo kubaneze e shkëmbyeshme</displayName>
-				<displayName count="other">pezo kubaneze të shkëmbyeshme</displayName>
+				<displayName>Pesoja kubaneze e shkëmbyeshme</displayName>
+				<displayName count="one">peso kubaneze e shkëmbyeshme</displayName>
+				<displayName count="other">peso kubaneze e shkëmbyeshme</displayName>
 			</currency>
 			<currency type="CUP">
-				<displayName>Pezoja kubaneze</displayName>
-				<displayName count="one">pezo kubaneze</displayName>
-				<displayName count="other">pezo kubaneze</displayName>
+				<displayName>Pesoja kubaneze</displayName>
+				<displayName count="one">peso kubaneze</displayName>
+				<displayName count="other">peso kubaneze</displayName>
 			</currency>
 			<currency type="CVE">
 				<displayName>Eskudoja e Kepit të Gjelbër</displayName>
@@ -4327,7 +4821,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">eskudo të Kepit të Gjelbër</displayName>
 			</currency>
 			<currency type="CZK">
-				<displayName>Koruna e Republikës Çeke</displayName>
+				<displayName>Koruna e Çekisë</displayName>
 				<displayName count="one">korunë çeke</displayName>
 				<displayName count="other">koruna çeke</displayName>
 			</currency>
@@ -4342,9 +4836,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">korona daneze</displayName>
 			</currency>
 			<currency type="DOP">
-				<displayName>Pezoja dominikane</displayName>
-				<displayName count="one">pezo dominikane</displayName>
-				<displayName count="other">pezo dominikane</displayName>
+				<displayName>Pesoja dominikane</displayName>
+				<displayName count="one">peso dominikane</displayName>
+				<displayName count="other">peso dominikane</displayName>
 			</currency>
 			<currency type="DZD">
 				<displayName>Dinari algjerian</displayName>
@@ -4352,9 +4846,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">dinarë algjerian</displayName>
 			</currency>
 			<currency type="EGP">
-				<displayName>Stërlina egjiptiane</displayName>
-				<displayName count="one">stërlinë egjiptiane</displayName>
-				<displayName count="other">stërlina egjiptiane</displayName>
+				<displayName>Sterlina egjiptiane</displayName>
+				<displayName count="one">sterlinë egjiptiane</displayName>
+				<displayName count="other">sterlina egjiptiane</displayName>
 			</currency>
 			<currency type="ERN">
 				<displayName>Nakfa e Eritresë</displayName>
@@ -4378,9 +4872,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">dollarë fixhi</displayName>
 			</currency>
 			<currency type="FKP">
-				<displayName>Stërlina e Ishujve Folkland</displayName>
-				<displayName count="one">stërlinë e Ishujve Folkland</displayName>
-				<displayName count="other">stërlina të Ishujve Folkland</displayName>
+				<displayName>Stërlina e Ishujve Falkland</displayName>
+				<displayName count="one">stërlinë e Ishujve Falkland</displayName>
+				<displayName count="other">stërlina të Ishujve Falkland</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>Sterlina britanike</displayName>
@@ -4424,9 +4918,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">dollarë guajanez</displayName>
 			</currency>
 			<currency type="HKD">
-				<displayName>Dollari i Hong Kongut</displayName>
-				<displayName count="one">dollar Hong Kongu</displayName>
-				<displayName count="other">dollarë Hong Kongu</displayName>
+				<displayName>Dollari i Hong-Kongut</displayName>
+				<displayName count="one">dollar hong-kongu</displayName>
+				<displayName count="other">dollarë hong-kongu</displayName>
 				<symbol>HK$</symbol>
 			</currency>
 			<currency type="HNL">
@@ -4584,9 +5078,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">dirhamë maroken</displayName>
 			</currency>
 			<currency type="MDL">
-				<displayName>Leu moldav</displayName>
-				<displayName count="one">leu moldav</displayName>
-				<displayName count="other">leu moldav</displayName>
+				<displayName>Leuja moldave</displayName>
+				<displayName count="one">leu moldave</displayName>
+				<displayName count="other">leu moldave</displayName>
 			</currency>
 			<currency type="MGA">
 				<displayName>Arieri malagez</displayName>
@@ -4614,6 +5108,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">pataka të Makaos</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ugija mauritane (1973–2017)</displayName>
+				<displayName count="one">ugijë mauritane (1973–2017)</displayName>
+				<displayName count="other">ugija mauritane (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ugija mauritane</displayName>
 				<displayName count="one">ugijë mauritane</displayName>
 				<displayName count="other">ugija mauritane</displayName>
@@ -4634,9 +5133,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">kuaça malaviane</displayName>
 			</currency>
 			<currency type="MXN">
-				<displayName>Pezoja meksikane</displayName>
-				<displayName count="one">pezo meksikane</displayName>
-				<displayName count="other">pezo meksikane</displayName>
+				<displayName>Pesoja meksikane</displayName>
+				<displayName count="one">peso meksikane</displayName>
+				<displayName count="other">peso meksikane</displayName>
 				<symbol>MX$</symbol>
 			</currency>
 			<currency type="MYR">
@@ -4691,19 +5190,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">balboa panameze</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>Sola nuevo-peruane</displayName>
-				<displayName count="one">solë nuevo-peruane</displayName>
-				<displayName count="other">sola nuevo-peruane</displayName>
+				<displayName>Sola peruane</displayName>
+				<displayName count="one">solë peruane</displayName>
+				<displayName count="other">sola peruane</displayName>
 			</currency>
 			<currency type="PGK">
-				<displayName>Kina e Papua-Guineas së Re</displayName>
-				<displayName count="one">kinë e Papua-Guineas së Re</displayName>
-				<displayName count="other">kina të Papua-Guineas së Re</displayName>
+				<displayName>Kina e Guinesë së Re-Papua</displayName>
+				<displayName count="one">kinë e Guinesë së Re-Papua</displayName>
+				<displayName count="other">kina të Guinesë së Re-Papua</displayName>
 			</currency>
 			<currency type="PHP">
-				<displayName>Pezoja filipinase</displayName>
-				<displayName count="one">pezo filipinase</displayName>
-				<displayName count="other">pezo filipinase</displayName>
+				<displayName>Pesoja filipinase</displayName>
+				<displayName count="one">peso filipinase</displayName>
+				<displayName count="other">peso filipinase</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName>Rupia pakistaneze</displayName>
@@ -4726,9 +5225,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">rialë katari</displayName>
 			</currency>
 			<currency type="RON">
-				<displayName>Leu rumun</displayName>
-				<displayName count="one">leu rumun</displayName>
-				<displayName count="other">leu rumun</displayName>
+				<displayName>Leuja rumune</displayName>
+				<displayName count="one">leu rumune</displayName>
+				<displayName count="other">leu rumune</displayName>
 			</currency>
 			<currency type="RSD">
 				<displayName>Dinari serb</displayName>
@@ -4761,9 +5260,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">rupi të Ishujve Sishelë</displayName>
 			</currency>
 			<currency type="SDG">
-				<displayName>Stërlina sudaneze</displayName>
-				<displayName count="one">stërlinë sudaneze</displayName>
-				<displayName count="other">stërlina sudaneze</displayName>
+				<displayName>Sterlina sudaneze</displayName>
+				<displayName count="one">sterlinë sudaneze</displayName>
+				<displayName count="other">sterlina sudaneze</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>Korona suedeze</displayName>
@@ -4776,9 +5275,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">dollarë singapori</displayName>
 			</currency>
 			<currency type="SHP">
-				<displayName>Stërlina e Ishullit të Shën-Helenës</displayName>
-				<displayName count="one">stërlinë e Ishullit të Shën-Helenës</displayName>
-				<displayName count="other">stërlina të Ishullit të Shën-Helenës</displayName>
+				<displayName>Sterlina e Ishullit të Shën-Helenës</displayName>
+				<displayName count="one">sterlinë e Ishullit të Shën-Helenës</displayName>
+				<displayName count="other">sterlina e Ishullit të Shën-Helenës</displayName>
 			</currency>
 			<currency type="SLL">
 				<displayName>Leoni i Sierra-Leones</displayName>
@@ -4796,11 +5295,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">dollarë surinamez</displayName>
 			</currency>
 			<currency type="SSP">
-				<displayName>Stërlina e Sudanit të Jugut</displayName>
-				<displayName count="one">stërlinë e Sudanit të Jugut</displayName>
-				<displayName count="other">stërlina të Sudanit të Jugut</displayName>
+				<displayName>Sterlina sudanezo-jugore</displayName>
+				<displayName count="one">sterlinë sudanezo-jugore</displayName>
+				<displayName count="other">sterlina sudanezo-jugore</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobra e Sao-Tomes dhe Prinsipes (1977–2017)</displayName>
+				<displayName count="one">dobër e Sao-Tomes dhe Prinsipes (1977–2017)</displayName>
+				<displayName count="other">dobra të Sao-Tomes dhe Prinsipes (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobra e Sao-Tomes dhe Prinsipes</displayName>
 				<displayName count="one">dobër e Sao-Tomes dhe Prinsipes</displayName>
 				<displayName count="other">dobra të Sao-Tomes dhe Prinsipes</displayName>
@@ -4879,9 +5383,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>US$</symbol>
 			</currency>
 			<currency type="UYU">
-				<displayName>Pezoja uruguaiane</displayName>
-				<displayName count="one">pezo uruguaiane</displayName>
-				<displayName count="other">pezo uruguaiane</displayName>
+				<displayName>Pesoja uruguaiane</displayName>
+				<displayName count="one">peso uruguaiane</displayName>
+				<displayName count="other">peso uruguaiane</displayName>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>Soma uzbeke</displayName>
@@ -4892,6 +5397,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Bolivari venezuelian</displayName>
 				<displayName count="one">bolivar venezuelian</displayName>
 				<displayName count="other">bolivarë venezuelian</displayName>
+				<symbol draft="contributed">VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Donga vietnameze</displayName>
@@ -4944,9 +5451,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">rialë jemeni</displayName>
 			</currency>
 			<currency type="ZAR">
-				<displayName>Randa afrikano-jugore</displayName>
-				<displayName count="one">randë afrikano-jugore</displayName>
-				<displayName count="other">randa afrikano-jugore</displayName>
+				<displayName>Randi afrikano-jugor</displayName>
+				<displayName count="one">rand afrikano-jugor</displayName>
+				<displayName count="other">randë afrikano-jugor</displayName>
 			</currency>
 			<currency type="ZMW">
 				<displayName>Kuaça e Zambikut</displayName>
@@ -4958,6 +5465,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">&gt;{0}</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} libër</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} libra</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="many">Merrni kthesën e {0}-t në të djathtë.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Merrni kthesën e {0}-rë në të djathtë.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Merrni kthesën e {0}-të në të djathtë.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -4975,9 +5489,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} metra për sekondë në katror</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName>revolucion</displayName>
-				<unitPattern count="one">{0} revolucion</unitPattern>
-				<unitPattern count="other">{0} revolucione</unitPattern>
+				<displayName>rrotullim</displayName>
+				<unitPattern count="one">{0} rrotullim</unitPattern>
+				<unitPattern count="other">{0} rrotullime</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>radianë</displayName>
@@ -5003,6 +5517,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kilometra katrore</displayName>
 				<unitPattern count="one">{0} kilometër katror</unitPattern>
 				<unitPattern count="other">{0} kilometra katrore</unitPattern>
+				<perUnitPattern>{0} për kilometër katror</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektarë</displayName>
@@ -5025,6 +5540,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>milje katrore</displayName>
 				<unitPattern count="one">{0} milje katror</unitPattern>
 				<unitPattern count="other">{0} milje katrore</unitPattern>
+				<perUnitPattern>{0} për milje katrore</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akra</displayName>
@@ -5052,6 +5568,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} karat</unitPattern>
 				<unitPattern count="other">{0} karatë</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>miligramë për decilitër</displayName>
+				<unitPattern count="one">{0} miligram për decilitër</unitPattern>
+				<unitPattern count="other">{0} miligramë për decilitër</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>milimolë për litër</displayName>
+				<unitPattern count="one">{0} milimol për litër</unitPattern>
+				<unitPattern count="other">{0} milimolë për litër</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>pjesë për milion</displayName>
+				<unitPattern count="one">{0} pjesë për milion</unitPattern>
+				<unitPattern count="other">{0} pjesë për milion</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litra për kilometër</displayName>
 				<unitPattern count="one">{0} litër për kilometër</unitPattern>
@@ -5066,6 +5597,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>milje për gallon</displayName>
 				<unitPattern count="one">{0} milje për gallon</unitPattern>
 				<unitPattern count="other">{0} milje për gallon</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>milje për gallon imperial</displayName>
+				<unitPattern count="one">{0} milje për gallon imperial</unitPattern>
+				<unitPattern count="other">{0} milje për gallon imperial</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabajt</displayName>
@@ -5339,6 +5875,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} milje skandinave</unitPattern>
 				<unitPattern count="other">{0} milje skandinave</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>shkallë</displayName>
+				<unitPattern count="one">{0} shkallë</unitPattern>
+				<unitPattern count="other">{0} shkallë</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>luks</displayName>
 				<unitPattern count="one">{0} luks</unitPattern>
@@ -5350,7 +5891,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} tonë metrik</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>kilogram</displayName>
+				<displayName>kilogramë</displayName>
 				<unitPattern count="one">{0} kilogram</unitPattern>
 				<unitPattern count="other">{0} kilogramë</unitPattern>
 				<perUnitPattern>{0}/kilogram</perUnitPattern>
@@ -5424,9 +5965,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} milivat</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
-				<displayName>kuaj fuqi</displayName>
-				<unitPattern count="one">{0} kalë fuqi</unitPattern>
-				<unitPattern count="other">{0} kuaj fuqi</unitPattern>
+				<displayName>kuaj-fuqi</displayName>
+				<unitPattern count="one">{0} kalë-fuqi</unitPattern>
+				<unitPattern count="other">{0} kuaj-fuqi</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hektopaskal</displayName>
@@ -5572,9 +6113,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} kupa metrike</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
-				<displayName>akra-këmbë</displayName>
-				<unitPattern count="one">{0} akër-këmbë</unitPattern>
-				<unitPattern count="other">{0} akra-këmbë</unitPattern>
+				<displayName>këmbë-akër</displayName>
+				<unitPattern count="one">{0} këmbë-akër</unitPattern>
+				<unitPattern count="other">{0} këmbë-akër</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gallonë</displayName>
@@ -5582,10 +6123,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gallonë</unitPattern>
 				<perUnitPattern>{0}/gallon</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>gallonë imperial</displayName>
+				<unitPattern count="one">{0} gallon imperial</unitPattern>
+				<unitPattern count="other">{0} gallonë imperial</unitPattern>
+				<perUnitPattern>{0} për gallon imperial</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
-				<displayName>çerekje</displayName>
+				<displayName>çerekë</displayName>
 				<unitPattern count="one">{0} çerek</unitPattern>
-				<unitPattern count="other">{0} çerekje</unitPattern>
+				<unitPattern count="other">{0} çerekë</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>pinta</displayName>
@@ -5598,9 +6145,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} kupa</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
-				<displayName>onsë fluidë</displayName>
-				<unitPattern count="one">{0} ons fluidë</unitPattern>
-				<unitPattern count="other">{0} onsë fluidë</unitPattern>
+				<displayName>onsë të lëngshëm</displayName>
+				<unitPattern count="one">{0} ons i lëngshëm</unitPattern>
+				<unitPattern count="other">{0} onsë të lëngshëm</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>lugë gjelle</displayName>
@@ -5608,15 +6155,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} lugë gjelle</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
-				<displayName>lugë çaji</displayName>
-				<unitPattern count="one">{0} lugë çaji</unitPattern>
-				<unitPattern count="other">{0} lugë çaji</unitPattern>
+				<displayName>lugë kafeje</displayName>
+				<unitPattern count="one">{0} lugë kafeje</unitPattern>
+				<unitPattern count="other">{0} lugë kafeje</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}Lindje</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}Veri</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}Jug</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}Perëndim</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} Lindje</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} Veri</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} Jug</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} Perëndim</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -5634,9 +6181,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName>rev</displayName>
-				<unitPattern count="one">{0} rev</unitPattern>
-				<unitPattern count="other">{0} rev</unitPattern>
+				<displayName>rrot.</displayName>
+				<unitPattern count="one">{0} rrot.</unitPattern>
+				<unitPattern count="other">{0} rrot.</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>rad</displayName>
@@ -5662,6 +6209,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
@@ -5684,6 +6232,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mi²</displayName>
 				<unitPattern count="one">{0} mi²</unitPattern>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ac</displayName>
@@ -5711,6 +6260,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
 				<unitPattern count="one">{0} L/km</unitPattern>
@@ -5722,9 +6286,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} L/100km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>mi/gallon</displayName>
-				<unitPattern count="one">{0} mi/gallon</unitPattern>
-				<unitPattern count="other">{0} mi/gallon</unitPattern>
+				<displayName>mi/gal</displayName>
+				<unitPattern count="one">{0} mi/gal</unitPattern>
+				<unitPattern count="other">{0} mi/gal</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mi/gal Imp.</displayName>
+				<unitPattern count="one">{0} mi/gal Imp.</unitPattern>
+				<unitPattern count="other">{0} mi/gal Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TBajt</displayName>
@@ -5998,6 +6567,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>shkallë</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
@@ -6241,6 +6815,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>gal Imp.</displayName>
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
 				<unitPattern count="one">{0} qt</unitPattern>
@@ -6272,10 +6852,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}L</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}V</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}J</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}P</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} L</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} V</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} J</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} P</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -6517,10 +7097,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} L</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}L</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}V</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}J</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}P</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} L</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} V</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} J</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} P</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -6535,6 +7115,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</units>
 	<listPatterns>
 		<listPattern>
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} dhe {1}</listPatternPart>
+			<listPatternPart type="2">{0} dhe {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ose {1}</listPatternPart>
+			<listPatternPart type="2">{0} ose {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} dhe {1}</listPatternPart>
@@ -6565,5 +7157,103 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>jo:j</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — Të gjitha</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — Të përputhshme</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — Të mbyllura</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — Të shtuara</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — Historike</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — Të ndryshme</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — Tjetër</characterLabelPattern>
+		<characterLabelPattern type="scripts">Shkrimet — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} vijëzim drejtshkrimor</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} vijëzime drejtshkrimore</characterLabelPattern>
+		<characterLabel type="activities">aktivitete</characterLabel>
+		<characterLabel type="african_scripts">shkrime afrikane</characterLabel>
+		<characterLabel type="american_scripts">shkrime amerikane</characterLabel>
+		<characterLabel type="animal">kafshë</characterLabel>
+		<characterLabel type="animals_nature">kafshë dhe natyrë</characterLabel>
+		<characterLabel type="arrows">shigjeta</characterLabel>
+		<characterLabel type="body">trup</characterLabel>
+		<characterLabel type="box_drawing">vizatim kutie</characterLabel>
+		<characterLabel type="braille">brailisht</characterLabel>
+		<characterLabel type="building">ndërtesë</characterLabel>
+		<characterLabel type="bullets_stars">pika/yje</characterLabel>
+		<characterLabel type="consonantal_jamo">jamo bashkëtingëllore</characterLabel>
+		<characterLabel type="currency_symbols">simbole monedhash/valutash</characterLabel>
+		<characterLabel type="dash_connector">vizë lidhëse</characterLabel>
+		<characterLabel type="digits">shifra</characterLabel>
+		<characterLabel type="dingbats">dingbat (shndërrues germash në yje ose figura)</characterLabel>
+		<characterLabel type="divination_symbols">simbole parashikimi</characterLabel>
+		<characterLabel type="downwards_arrows">shigjeta për së poshti</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">shigjeta lart-poshtë</characterLabel>
+		<characterLabel type="east_asian_scripts">shkrime të Azisë Lindore</characterLabel>
+		<characterLabel type="emoji">emoji</characterLabel>
+		<characterLabel type="european_scripts">shkrime evropiane</characterLabel>
+		<characterLabel type="female">femër</characterLabel>
+		<characterLabel type="flag">flamur</characterLabel>
+		<characterLabel type="flags">flamuj</characterLabel>
+		<characterLabel type="food_drink">ushqim dhe pije</characterLabel>
+		<characterLabel type="format">format</characterLabel>
+		<characterLabel type="format_whitespace">format dhe hapësirë e bardhë</characterLabel>
+		<characterLabel type="full_width_form_variant">variant i formës me gjerësi të plotë</characterLabel>
+		<characterLabel type="geometric_shapes">forma gjeometrike</characterLabel>
+		<characterLabel type="half_width_form_variant">variante formash gjerësish</characterLabel>
+		<characterLabel type="han_characters">karaktere të shkrimit han</characterLabel>
+		<characterLabel type="han_radicals">radikale të shkrimit han</characterLabel>
+		<characterLabel type="hanja">shkrim korean hanja (me karaktere kineze)</characterLabel>
+		<characterLabel type="hanzi_simplified">shkrim hanzi (i thjeshtuar)</characterLabel>
+		<characterLabel type="hanzi_traditional">shkrim hanzi (tradicional)</characterLabel>
+		<characterLabel type="heart">zemër</characterLabel>
+		<characterLabel type="historic_scripts">shkrime historike</characterLabel>
+		<characterLabel type="ideographic_desc_characters">karaktere ideografike përshkruese</characterLabel>
+		<characterLabel type="japanese_kana">shkrim japonez kana</characterLabel>
+		<characterLabel type="kanbun">shkrim kinez kanbun</characterLabel>
+		<characterLabel type="kanji">shkrim japonez kanxhi</characterLabel>
+		<characterLabel type="keycap">tast</characterLabel>
+		<characterLabel type="leftwards_arrows">shigjeta për së majti</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">shigjeta majtas-djathtas</characterLabel>
+		<characterLabel type="letterlike_symbols">simbole të ngjashme me germat</characterLabel>
+		<characterLabel type="limited_use">përdorim i kufizuar</characterLabel>
+		<characterLabel type="male">mashkull</characterLabel>
+		<characterLabel type="math_symbols">simbole matematikore</characterLabel>
+		<characterLabel type="middle_eastern_scripts">shkrime të Lindjes së Mesme</characterLabel>
+		<characterLabel type="miscellaneous">të llojllojshme</characterLabel>
+		<characterLabel type="modern_scripts">shkrime moderne</characterLabel>
+		<characterLabel type="modifier">modifikuesi</characterLabel>
+		<characterLabel type="musical_symbols">simbole muzikore</characterLabel>
+		<characterLabel type="nature">natyrë</characterLabel>
+		<characterLabel type="nonspacing">hapësirë e pathyeshme</characterLabel>
+		<characterLabel type="numbers">numra</characterLabel>
+		<characterLabel type="objects">objekte</characterLabel>
+		<characterLabel type="other">tjetër</characterLabel>
+		<characterLabel type="paired">i çiftuar</characterLabel>
+		<characterLabel type="person">person</characterLabel>
+		<characterLabel type="phonetic_alphabet">alfabet fonetik</characterLabel>
+		<characterLabel type="pictographs">piktografi</characterLabel>
+		<characterLabel type="place">vend</characterLabel>
+		<characterLabel type="plant">bimë</characterLabel>
+		<characterLabel type="punctuation">shenjë pikësimi</characterLabel>
+		<characterLabel type="rightwards_arrows">shigjeta për së djathti</characterLabel>
+		<characterLabel type="sign_standard_symbols">shenja/simbole standarde</characterLabel>
+		<characterLabel type="small_form_variant">variante formash të vogla</characterLabel>
+		<characterLabel type="smiley">buzëqeshje</characterLabel>
+		<characterLabel type="smileys_people">buzëqeshje dhe njerëz</characterLabel>
+		<characterLabel type="south_asian_scripts">shkrime të Azisë Jugore</characterLabel>
+		<characterLabel type="southeast_asian_scripts">shkrime të Azisë Juglindore</characterLabel>
+		<characterLabel type="spacing">hapësirë</characterLabel>
+		<characterLabel type="sport">sport</characterLabel>
+		<characterLabel type="symbols">simbole</characterLabel>
+		<characterLabel type="technical_symbols">simbole teknike</characterLabel>
+		<characterLabel type="tone_marks">tregues tonaliteti</characterLabel>
+		<characterLabel type="travel">udhëtim</characterLabel>
+		<characterLabel type="travel_places">udhëtime dhe vende</characterLabel>
+		<characterLabel type="upwards_arrows">shigjeta për së larti</characterLabel>
+		<characterLabel type="variant_forms">forma variantesh</characterLabel>
+		<characterLabel type="vocalic_jamo">jamo zanore</characterLabel>
+		<characterLabel type="weather">mot</characterLabel>
+		<characterLabel type="western_asian_scripts">shkrime të Azisë Perëndimore</characterLabel>
+		<characterLabel type="whitespace">hapësirë e bardhë</characterLabel>
+	</characterLabels>
 </ldml>
-

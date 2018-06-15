@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12128 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="ks"/>
 	</identity>
 	<localeDisplayNames>
@@ -913,6 +914,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	<characters>
 		<exemplarCharacters>[\u06EA\u06ED \u064E \u064F \u0650 \u0654 \u0655 \u0656 \u0657 \u065A \u065B ء آ أ ٲ ؤ ا ٮ ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ھ ہ و ۄ ی ۍ ے]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200E\u200F]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\u200E \- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -1241,6 +1243,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT{0}</gmtFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ہونولو لو</exemplarCity>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>غٲر زان</exemplarCity>
 			</zone>
@@ -2231,9 +2236,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>مِڈویے</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>جانسٹَن</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>ویک</exemplarCity>
 			</zone>
@@ -2243,8 +2245,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>نوم</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ہونولو لو</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>جانسٹَن</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>اَنکوراج</exemplarCity>
@@ -3293,7 +3295,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<minusSign>‎-</minusSign> <!-- includes LRM before sign (002D) -->
 			<exponential>E</exponential>
 			<perMille>‰</perMille>
-			<infinity>?</infinity>
+			<infinity>∞</infinity>
 			<nan>NaN</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
@@ -3467,8 +3469,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="BYB">
 				<displayName>بِلیروشِیَن نِو رِبٕل</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>بِلیروشِیَن رِبٕل</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>بِلیروشِیَن رِبٕل (۲۰۰۰–۲۰۱۶)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>بِلِزی ڈالر</displayName>
@@ -3762,6 +3767,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>مٮ۪کانیٖز پَٹاکا</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>مورِٹینِیَن عوگیوٗیا (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>مورِٹینِیَن عوگیوٗیا</displayName>
 			</currency>
 			<currency type="MTL">
@@ -3831,10 +3839,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>پٔریوٗوِیَن اِنٛٹی</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>پٔریوٗوِیَن نیوٗاوز سولٕز</displayName>
+				<displayName>پٔریوٗوِیَن سولٕز</displayName>
 			</currency>
 			<currency type="PES">
-				<displayName>پٔریوٗوِیَن سول</displayName>
+				<displayName>پٔریوٗوِیَن سول (۱۸۶۳–۱۹۶۵)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>نیوٗ پیپُعا گِنِیَن کیٖنا</displayName>
@@ -4177,4 +4185,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-
