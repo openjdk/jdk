@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12128 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="vai"/>
 	</identity>
 	<localeDisplayNames>
@@ -58,6 +59,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zu">ꖮꖨ</language>
 		</languages>
 		<territories>
+			<territory type="AC">ꗻꗡ ꕒꕡꕌ ꗏ ꔳꘋꗣ</territory>
 			<territory type="AD">ꕉꖆꕟ</territory>
 			<territory type="AE">ꖳꕯꔤꗳ ꕉꕟꔬ ꗡꕆꔓꔻ</territory>
 			<territory type="AF">ꕉꔱꕭꔕꔻꕚꘋ</territory>
@@ -66,11 +68,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="AL">ꕉꔷꕑꕇꕩ</territory>
 			<territory type="AM">ꕉꕆꕯ</territory>
 			<territory type="AO">ꕉꖐꕞ</territory>
+			<territory type="AQ">ꕉꘋꕚꔳꕪ</territory>
 			<territory type="AR">ꕉꘀꘋꔳꕯ</territory>
 			<territory type="AS">ꕶꕱ ꕢꕹꕎ</territory>
 			<territory type="AT">ꖺꔻꖤꕎ</territory>
 			<territory type="AU">ꖺꖬꖤꔃꔷꕩ</territory>
 			<territory type="AW">ꕉꖩꕑ</territory>
+			<territory type="AX">ꕉꕞꔺ</territory>
 			<territory type="AZ">ꕉꕤꕑꔤꕧꘋ</territory>
 			<territory type="BA">ꕷꔻꕇꕰ ꗪ ꗥꕤꖑꔲꕯ</territory>
 			<territory type="BB">ꕑꔆꖁꔻ</territory>
@@ -81,16 +85,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BH">ꕑꗸꘋ</territory>
 			<territory type="BI">ꖜꖩꔺ</territory>
 			<territory type="BJ">ꗩꕇꘋ</territory>
+			<territory type="BL">ꕪꘋꕓ ꗞꗢ ꕒꕚꕞꕆ</territory>
 			<territory type="BM">ꗩꖷꕜ</territory>
 			<territory type="BN">ꖜꖩꘉꔧ</territory>
 			<territory type="BO">ꕷꔷꔲꕩ</territory>
+			<territory type="BQ">ꕪꔓꔬꘂꘋ ꖨꕮ ꗨꗳꗣ</territory>
 			<territory type="BR">ꖜꕟꔘꔀ</territory>
 			<territory type="BS">ꕑꕌꕮꔻ</territory>
 			<territory type="BT">ꖜꕚꘋ</territory>
+			<territory type="BV">ꖜꔍꔳ ꔳꘋꗣ</territory>
 			<territory type="BW">ꕷꖬꕎꕯ</territory>
 			<territory type="BY">ꗩꕞꖩꔻ</territory>
 			<territory type="BZ">ꔆꔷꔘ</territory>
 			<territory type="CA">ꕪꕯꕜ</territory>
+			<territory type="CC">ꖏꖏꔻ (ꔞꔀꔷꘋ) ꔳꘋꗣ</territory>
 			<territory type="CD">ꖏꖐ ꗵꗞꖴꕟꔎ ꕸꖃꔀ</territory>
 			<territory type="CF">ꕉꔱꔸꕪ ꗳ ꗳ ꕸꖃꔀ</territory>
 			<territory type="CG">ꖏꖐ</territory>
@@ -101,20 +109,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CM">ꕪꔈꖩꘋ</territory>
 			<territory type="CN">ꕦꔤꕯ</territory>
 			<territory type="CO">ꗛꗏꔭꕩ</territory>
+			<territory type="CP">ꕃꔒꕐꗋꘋ ꔳꘋꗣ</territory>
 			<territory type="CR">ꖏꔻꕚ ꔸꕪ</territory>
 			<territory type="CU">ꕃꖳꕑ</territory>
 			<territory type="CV">ꔞꔪ ꗲꔵ ꔳꘋꗣ</territory>
+			<territory type="CW">ꖴꕟꖇꕱ</territory>
+			<territory type="CX">ꔞꔻꕮꔻ ꔳꘋꗣ</territory>
 			<territory type="CY">ꕢꗡꖛꗐꔻ</territory>
 			<territory type="CZ">ꗿꕃ ꕸꖃꔀ</territory>
 			<territory type="DE">ꕧꕮꔧ</territory>
+			<territory type="DG">ꔵꔀꖑ ꔳꘋꗣ</territory>
 			<territory type="DJ">ꕀꖜꔳ</territory>
 			<territory type="DK">ꕜꕇꕮꕃ</territory>
 			<territory type="DM">ꖁꕆꕇꕪ</territory>
 			<territory type="DO">ꖁꕆꕇꕪꘋ ꕸꕱꔀ</territory>
 			<territory type="DZ">ꕉꔷꔠꔸꕩ</territory>
+			<territory type="EA">ꗻꕚ ꗪ ꔡꔷꕞ</territory>
 			<territory type="EC">ꗡꖴꔃꗍ</territory>
 			<territory type="EE">ꗡꔻꕿꕇꕰ</territory>
 			<territory type="EG">ꕆꔖꕞ</territory>
+			<territory type="EH">ꕢꕌꕟ ꔎꔒ ꕀꔤ</territory>
 			<territory type="ER">ꔀꔸꔳꕟ</territory>
 			<territory type="ES">ꕐꘊꔧ</territory>
 			<territory type="ET">ꔤꔳꖎꔪꕩ</territory>
@@ -122,12 +136,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="FJ">ꔱꔤꕀ</territory>
 			<territory type="FK">ꕘꔷꕃ ꖨꕮ ꔳꘋꗣ</territory>
 			<territory type="FM">ꕆꖏꕇꔻꕩ</territory>
+			<territory type="FO">ꕘꖄ ꔳꘋꗣ</territory>
 			<territory type="FR">ꖢꕟꘋꔻ</territory>
 			<territory type="GA">ꕭꕷꘋ</territory>
 			<territory type="GB">ꖕꕯꔤꗳ</territory>
 			<territory type="GD">ꖶꕟꕯꕜ</territory>
 			<territory type="GE">ꗘꖺꕀꕩ</territory>
 			<territory type="GF">ꗱꘋꔻ ꖶꕎꕯ</territory>
+			<territory type="GG">ꖶꗦꘋꔻ</territory>
 			<territory type="GH">ꕭꕌꕯ</territory>
 			<territory type="GI">ꕀꖜꕟꕚ</territory>
 			<territory type="GL">ꕧꕓ ꖴꕎ ꖨꕮꕊ</territory>
@@ -136,23 +152,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GP">ꖶꕎꔐꖨꔅ</territory>
 			<territory type="GQ">ꖦꕰꕊ ꗳ ꕅꔤꕇ</territory>
 			<territory type="GR">ꗥꗷꘋ</territory>
+			<territory type="GS">ꗘꖺꕀꕩ ꗛꔤ ꔒꘋꗣ ꗏ ꗪ ꗇꖢ ꔳꘋꗣ ꗛꔤ ꔒꘋꗣ ꗏ</territory>
 			<territory type="GT">ꖶꕎꔎꕮꕞ</territory>
 			<territory type="GU">ꖶꕎꕆ</territory>
 			<territory type="GW">ꕅꔤꕇ ꔫꕢꕴ</territory>
 			<territory type="GY">ꖶꕩꕯ</territory>
+			<territory type="HM">ꗥꗡꔵ ꗪ ꕮꖁꕯ</territory>
 			<territory type="HN">ꖽꖫꕟ</territory>
 			<territory type="HR">ꖏꔓꔻꕩ</territory>
 			<territory type="HT">ꕌꔤꔳ</territory>
 			<territory type="HU">ꖽꘋꕭꔓ</territory>
+			<territory type="IC">ꗛꖺꔻꕩ ꔳꘋꗣ</territory>
 			<territory type="ID">ꔤꖆꕇꔻꕩ</territory>
 			<territory type="IE">ꕉꔓ ꖨꕮꕊ</territory>
 			<territory type="IL">ꕑꕇꔻꕞꔤꕞ</territory>
+			<territory type="IM">ꕮꘋ ꔳꘋꗣ</territory>
 			<territory type="IN">ꔤꔺꕩ</territory>
 			<territory type="IO">ꔛꔟꔻ ꔤꔺꕩ ꗛꔤꘂ ꕗꕴꔀ ꕮ</territory>
 			<territory type="IQ">ꔤꕟꕃ</territory>
 			<territory type="IR">ꔤꕟꘋ</territory>
 			<territory type="IS">ꕉꔤꔻ ꖨꕮꕊ</territory>
 			<territory type="IT">ꔤꕚꔷ</territory>
+			<territory type="JE">ꘀꗡꔘ</territory>
 			<territory type="JM">ꕧꕮꔧꕪ</territory>
 			<territory type="JO">ꗘꖺꗵꘋ</territory>
 			<territory type="JP">ꔛꗨꗢ</territory>
@@ -181,12 +202,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MA">ꗞꕟꖏ</territory>
 			<territory type="MC">ꗞꕯꖏ</territory>
 			<territory type="MD">ꖒꔷꖁꕙ</territory>
+			<territory type="ME">ꗞꔳꕇꖶꖄ</territory>
+			<territory type="MF">ꕪꘋꕓ ꗞꗢ ꕮꕊꔳꘋ</territory>
 			<territory type="MG">ꕮꕜꕭꔻꕪ</territory>
 			<territory type="MH">ꕮꕊꕣ ꔳꘋꗣ</territory>
 			<territory type="MK">ꕮꔖꖁꕇꕰ</territory>
 			<territory type="ML">ꕮꔷ</territory>
 			<territory type="MM">ꕆꕩꘋꕮ</territory>
 			<territory type="MN">ꗞꖐꔷꕩ</territory>
+			<territory type="MO" alt="short">ꕮꗛꖺ</territory>
 			<territory type="MP">ꗛꔤ ꕪꘋꗒ ꕮꔸꕩꕯ ꔳꘋꗣ</territory>
 			<territory type="MQ">ꕮꔳꕇꕃ</territory>
 			<territory type="MR">ꗞꔓꔎꕇꕰ</territory>
@@ -228,6 +252,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="QA">ꕪꕚꕌ</territory>
 			<territory type="RE">ꔓꗠꖻ</territory>
 			<territory type="RO">ꖄꕆꕇꕰ</territory>
+			<territory type="RS">ꗻꗡꔬꕩ</territory>
 			<territory type="RU">ꗐꖺꔻꕩ</territory>
 			<territory type="RW">ꕟꖙꕡ</territory>
 			<territory type="SA">ꕞꕌꖝ ꕸꖃꔀ</territory>
@@ -238,18 +263,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SG">ꔻꕬꕶꕱ</territory>
 			<territory type="SH">ꔻꘋ ꗥꔷꕯ</territory>
 			<territory type="SI">ꔻꖃꔍꕇꕰ</territory>
+			<territory type="SJ">ꔻꕙꕒꔵ ꗪ ꕧꘋ ꕮꘂꘋ</territory>
 			<territory type="SK">ꔻꖃꕙꕃꕩ</territory>
 			<territory type="SL">ꔋꕩ ꕒꕌꖺ ꕸꖃꔀ</territory>
 			<territory type="SM">ꕮꔸꖆ ꕢꘋ</territory>
 			<territory type="SN">ꔻꕇꕭꕌ</territory>
 			<territory type="SO">ꖇꕮꔷꕩ</territory>
 			<territory type="SR">ꖬꔸꕯꔈ</territory>
+			<territory type="SS">ꖬꕜꘋ ꗛꔤ ꔒꘋꗣ ꗏ</territory>
 			<territory type="ST">ꕢꕴ ꕿꔈ ꗪ ꕉ ꕮꔧ ꕗꕴꔀ</territory>
 			<territory type="SV">ꗡꗷ ꕢꔍꗍꖺ</territory>
+			<territory type="SX">ꔻꘋꔳ ꕮꕊꗳꘋ</territory>
 			<territory type="SY">ꔻꕩꘋ</territory>
 			<territory type="SZ">ꖬꕎꔽ ꖨꕮꕊ</territory>
+			<territory type="TA">ꔳꔻꕚꘋ ꕜ ꖴꕯ</territory>
 			<territory type="TC">ꗋꖺꕃꔻ ꗪ ꕪꔤꖏꔻ ꔳꘋꗣ</territory>
 			<territory type="TD">ꕦꔵ</territory>
+			<territory type="TF">ꔱꗷꘋꔻ ꗛꔤ ꔒꘋꗣ ꗏ ꕸꖃꔀ ꖸ</territory>
 			<territory type="TG">ꕿꖑ</territory>
 			<territory type="TH">ꕚꔤ ꖨꕮꕊ</territory>
 			<territory type="TJ">ꕚꕀꕃꔻꕚꘋ</territory>
@@ -265,9 +295,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TZ">ꕚꘋꕤꕇꕰ</territory>
 			<territory type="UA">ꖳꖴꔓꘋ</territory>
 			<territory type="UG">ꖳꕭꕡ</territory>
+			<territory type="UM">ꕶꕱ ꕪꘋ ꗅꘋ ꔳꘋꗣ ꖸ</territory>
 			<territory type="US">ꕶꕱ</territory>
 			<territory type="UY">ꖳꔓꗝꔀ</territory>
 			<territory type="UZ">ꖳꗩꕃꔻꕚꘋ</territory>
+			<territory type="VA">ꕙꔳꕪꘋ ꕢꕨꕌ</territory>
 			<territory type="VC">ꔻꘋ ꔲꘋꔻꘋ ꗪ ꖶꔓꕯꔵꘋ ꖸ</territory>
 			<territory type="VE">ꕙꔳꕪꘋ ꕸꖃꔀ</territory>
 			<territory type="VG">ꔛꔟꔻ ꗩꗡ ꗏ ꖷꖬ ꔳꘋꗣ</territory>
@@ -276,6 +308,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="VU">ꕙꖸꕎꖤ</territory>
 			<territory type="WF">ꕎꔷꔻ ꗪ ꖢꖤꕯ</territory>
 			<territory type="WS">ꕢꕹꖙꕉ</territory>
+			<territory type="XK">ꖏꖇꕾ</territory>
 			<territory type="YE">ꔝꘈꘋ</territory>
 			<territory type="YT">ꕮꗚꔎ</territory>
 			<territory type="ZA">ꕉꔱꔸꕪ ꗛꔤ ꔒꘋꗣ ꗏ ꕸꖃꔀ</territory>
@@ -286,6 +319,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	<characters>
 		<exemplarCharacters>[ꔀ ꔁ ꔂ ꔃ ꔄ ꔅ ꔆ ꔇ ꔈ ꔉ ꔊ ꔋ ꔌ ꔍ ꔎ ꔏ ꔐ ꔑ ꔒ ꔓ ꔔ ꔕ ꔖ ꔗ ꔘ ꔙ ꔚ ꔛ ꔜ ꔝ ꔞ ꔟ ꔠ ꔡ ꔢ ꔣ ꔤ ꔥ ꔦ ꔧ ꔨ ꔩ ꔪ ꔫ ꔬ ꔭ ꔮ ꔯ ꔰ ꔱ ꔲ ꔳ ꔴ ꔵ ꔶ ꔷ ꔸ ꔹ ꔺ ꔻ ꔼ ꔽ ꔾ ꔿ ꕀ ꕁ ꕂ ꕃ ꕄ ꕅ ꕆ ꕇ ꕈ ꕉ ꕊ ꕋ ꕌ ꕍ ꕎ ꕏ ꕐ ꕑ ꕒ ꕓ ꕔ ꕕ ꕖ ꕗ ꕘ ꘐ ꕙ ꕚ ꕛ ꕜ ꕝ ꕞ ꕟ ꕠ ꕡ ꕢ ꕣ ꕤ ꕥ ꕦ ꕧ ꕨ ꕩ ꕪ ꘑ ꕫ ꕬ ꕭ ꕮ ꘪ ꕯ ꕰ ꕱ ꕲ ꕳ ꕴ ꕵ ꕶ ꕷ ꕸ ꕹ ꕺ ꕻ ꕼ ꕽ ꕾ ꕿ ꖀ ꖁ ꖂ ꖃ ꖄ ꖅ ꖆ ꖇ ꘒ ꖈ ꖉ ꖊ ꖋ ꖌ ꖍ ꖎ ꖏ ꖐ ꖑ ꖒ ꖓ ꖔ ꖕ ꖖ ꖗ ꖘ ꖙ ꖚ ꖛ ꖜ ꖝ ꖞ ꖟ ꖠ ꖡ ꖢ ꖣ ꖤ ꖥ ꖦ ꖧ ꖨ ꖩ ꖪ ꖫ ꖬ ꖭ ꖮ ꖯ ꖰ ꖱ ꖲ ꖳ ꖴ ꖵ ꖶ ꖷ ꖸ ꖹ ꖺ ꖻ ꖼ ꖽ ꖾ ꖿ ꗀ ꗁ ꗂ ꗃ ꗄ ꗅ ꗆ ꗇ ꗈ ꗉ ꗊ ꗋ ꗌ ꗍ ꗎ ꗏ ꗐ ꗑ ꘫ ꗒ ꗓ ꗔ ꗕ ꗖ ꗗ ꗘ ꗙ ꗚ ꗛ ꗜ ꗝ ꗞ ꗟ ꗠ ꗡ ꗢ ꗣ ꗤ ꗥ ꗦ ꗧ ꗨ ꗩ ꗪ ꗫ ꗬ ꗭ ꗮ ꗯ ꗰ ꗱ ꗲ ꗳ ꗴ ꗵ ꗶ ꗷ ꗸ ꗹ ꗺ ꗻ ꗼ ꗽ ꗾ ꗿ ꘀ ꘁ ꘂ ꘃ ꘄ ꘅ ꘆ ꘇ ꘈ ꘉ ꘊ ꘋ ꘌ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ꘓ ꘔ ꘕ ꘖ ꘗ ꘘ ꘙ ꘚ ꘛ ꘜ ꘝ ꘞ ꘟ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -347,19 +381,63 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">ꖨꖕꔞ</month>
+							<month type="2">ꕒꕡ</month>
+							<month type="3">ꕾꖺ</month>
+							<month type="4">ꖢꖕ</month>
+							<month type="5">ꖑꕱ</month>
+							<month type="6">ꖱꘋ</month>
+							<month type="7">ꖱꕞ</month>
+							<month type="8">ꗛꔕ</month>
+							<month type="9">ꕢꕌ</month>
+							<month type="10">ꕭꖃ</month>
+							<month type="11">ꔞꘋ</month>
+							<month type="12">ꖨꖕꗏ</month>
+						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">ꖨꕪꖃ ꔞꕮ</month>
+							<month type="1">ꖨꖕ ꕪꕴ ꔞꔀꕮꕊ</month>
 							<month type="2">ꕒꕡꖝꖕ</month>
 							<month type="3">ꕾꖺ</month>
 							<month type="4">ꖢꖕ</month>
 							<month type="5">ꖑꕱ</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
+							<month type="6">ꖱꘋ</month>
+							<month type="7">ꖱꕞꔤ</month>
 							<month type="8">ꗛꔕ</month>
 							<month type="9">ꕢꕌ</month>
 							<month type="10">ꕭꖃ</month>
 							<month type="11">ꔞꘋꕔꕿ ꕸꖃꗏ</month>
-							<month type="12">ꖨꕪꕱ ꗏꕮ</month>
+							<month type="12">ꖨꖕ ꕪꕴ ꗏꖺꕮꕊ</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">ꖨꖕꔞ</month>
+							<month type="2">ꕒꕡ</month>
+							<month type="3">ꕾꖺ</month>
+							<month type="4">ꖢꖕ</month>
+							<month type="5">ꖑꕱ</month>
+							<month type="6">ꖱꘋ</month>
+							<month type="7">ꖱꕞ</month>
+							<month type="8">ꗛꔕ</month>
+							<month type="9">ꕢꕌ</month>
+							<month type="10">ꕭꖃ</month>
+							<month type="11">ꔞꘋ</month>
+							<month type="12">ꖨꖕꗏ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ꖨꖕ ꕪꕴ ꔞꔀꕮꕊ</month>
+							<month type="2">ꕒꕡꖝꖕ</month>
+							<month type="3">ꕾꖺ</month>
+							<month type="4">ꖢꖕ</month>
+							<month type="5">ꖑꕱ</month>
+							<month type="6">ꖱꘋ</month>
+							<month type="7">ꖱꕞꔤ</month>
+							<month type="8">ꗛꔕ</month>
+							<month type="9">ꕢꕌ</month>
+							<month type="10">ꕭꖃ</month>
+							<month type="11">ꔞꘋꕔꕿ ꕸꖃꗏ</month>
+							<month type="12">ꖨꖕ ꕪꕴ ꗏꖺꕮꕊ</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -612,6 +690,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ꕮꕞꕭꕌꔻ ꕉꔸꕩꔸ</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>ꗞꔸꕚꕇꕰ ꖳꕅꕩ (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>ꗞꔸꕚꕇꕰ ꖳꕅꕩ</displayName>
 			</currency>
 			<currency type="MUR">
@@ -637,6 +718,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currency>
 			<currency type="SCR">
 				<displayName>ꔖꗼꔷ ꖩꔪ</displayName>
+				<displayName count="other">ꔖꗼꔷ ꖩꔪ</displayName>
 			</currency>
 			<currency type="SDG">
 				<displayName>ꖬꗵꘋ ꗁꖻꘋ</displayName>
@@ -651,6 +733,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ꖇꕮꔷ ꔻꔝꘋ</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>ꕢꕴ ꕿꔈ ꗪ ꕉ ꕗꕴ ꖁꖜꕟ (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>ꕢꕴ ꕿꔈ ꗪ ꕉ ꕗꕴ ꖁꖜꕟ</displayName>
 			</currency>
 			<currency type="SZL">
@@ -689,4 +774,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

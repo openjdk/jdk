@@ -1,26 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11914 $"/>
+		<version number="$Revision: 13885 $"/>
 		<language type="fr"/>
 		<territory type="CH"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="gu" draft="contributed">goudjrati</language>
+			<language type="pdc" draft="contributed">allemand de Pennsylvanie</language>
 			<language type="sdh" draft="contributed">kurde méridional</language>
 		</languages>
-		<territories>
-			<territory type="057" draft="unconfirmed">Région micronésienne</territory>
-			<territory type="MK" alt="variant" draft="unconfirmed">A.R. yougoslave de Macédoine</territory>
-			<territory type="QO" draft="unconfirmed">Régions éloignées de l’Océanie</territory>
-			<territory type="SX" draft="unconfirmed">Sint Maarten</territory>
-			<territory type="ZZ" draft="unconfirmed">Région indéterminée</territory>
-		</territories>
 	</localeDisplayNames>
 	<delimiters>
 		<alternateQuotationStart>‹</alternateQuotationStart>
@@ -37,17 +33,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>dd.MM.yy GGGGG</pattern>
+							<pattern>dd.MM.y GGGGG</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="MMdd" draft="unconfirmed">dd.MM</dateFormatItem>
-						<dateFormatItem id="yMM" draft="unconfirmed">MM.y</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM.</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM.</dateFormatItem>
+						<dateFormatItem id="MMdd" draft="contributed">dd.MM</dateFormatItem>
+						<dateFormatItem id="yM">MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yMd">dd.MM.y GGGGG</dateFormatItem>
+						<dateFormatItem id="yMEd">E, dd.MM.y GGGGG</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">du {0} au {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">du {0} au {1}</intervalFormatFallback>
 						<intervalFormatItem id="h">
 							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
 						</intervalFormatItem>
@@ -75,53 +75,81 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="unconfirmed">M–M</greatestDifference>
+							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">dd.MM – dd.MM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">dd.MM – dd.MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM – dd.MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM – dd.MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, dd.MM – E, dd.MM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, dd.MM – E, dd.MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="M" draft="unconfirmed">d MMM 'au' d MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d MMM 'au' d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, d 'au' E, d MMM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, d MMM 'au' E, d MMM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, d 'au' E, d MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d MMM 'au' E, d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">MM.y – MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MM.y – MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">MM.y – MM.y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MM.y – MM.y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, dd.MM.y – E, dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, dd.MM.y – E, dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, dd.MM.y – E, dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, dd.MM.y – E, dd.MM.y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="y" draft="unconfirmed">MMM y 'a'` MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y 'a'` MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="M" draft="unconfirmed">d MMM 'au' d MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d MMM y 'au' d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d MMM 'au' d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d MMM y 'au' d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, d 'au' E, d MMM y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, d MMM 'au' E, d MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, d MMM y 'au' E, d MMM y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, d 'au' E, d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d MMM 'au' E, d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d MMM y 'au' E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight" draft="contributed">min.</dayPeriod>
+							<dayPeriod type="noon" draft="contributed">midi</dayPeriod>
+							<dayPeriod type="morning1" draft="contributed">du mat.</dayPeriod>
+							<dayPeriod type="afternoon1" draft="contributed">de l’ap.m.</dayPeriod>
+							<dayPeriod type="evening1" draft="contributed">du soir</dayPeriod>
+							<dayPeriod type="night1" draft="contributed">du mat.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight" draft="contributed">min.</dayPeriod>
+							<dayPeriod type="noon" draft="contributed">midi</dayPeriod>
+							<dayPeriod type="morning1" draft="contributed">du mat.</dayPeriod>
+							<dayPeriod type="afternoon1" draft="contributed">de l’ap.m.</dayPeriod>
+							<dayPeriod type="evening1" draft="contributed">du soir</dayPeriod>
+							<dayPeriod type="night1" draft="contributed">du mat.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight" draft="contributed">min.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight" draft="contributed">min.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -143,77 +171,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</timeFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="MMdd" draft="unconfirmed">dd.MM</dateFormatItem>
-						<dateFormatItem id="yMM" draft="unconfirmed">MM.y</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM.</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM.</dateFormatItem>
+						<dateFormatItem id="MMdd" draft="contributed">dd.MM</dateFormatItem>
+						<dateFormatItem id="yM">MM.y</dateFormatItem>
+						<dateFormatItem id="yMd">dd.MM.y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, dd.MM.y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">du {0} au {1}</intervalFormatFallback>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">dd.MM – dd.MM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">dd.MM – dd.MM</greatestDifference>
+							<greatestDifference id="d">dd.MM – dd.MM</greatestDifference>
+							<greatestDifference id="M">dd.MM – dd.MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, dd.MM – E, dd.MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMd">
-							<greatestDifference id="M" draft="unconfirmed">d MMM 'au' d MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, d 'au' E, d MMM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, d MMM 'au' E, d MMM</greatestDifference>
+							<greatestDifference id="d">E, dd.MM – E, dd.MM</greatestDifference>
+							<greatestDifference id="M">E, dd.MM – E, dd.MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">MM.y – MM.y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MM.y – MM.y</greatestDifference>
+							<greatestDifference id="M">MM.y – MM.y</greatestDifference>
+							<greatestDifference id="y">MM.y – MM.y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">dd.MM.y – dd.MM.y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">dd.MM.y – dd.MM.y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="d">dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="M">dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="y">dd.MM.y – dd.MM.y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, dd.MM.y – E, dd.MM.y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, dd.MM.y – E, dd.MM.y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, dd.MM.y – E, dd.MM.y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMM">
-							<greatestDifference id="y" draft="unconfirmed">MMM y 'a'` MMM y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="M" draft="unconfirmed">d MMM 'au' d MMM y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d MMM y 'au' d MMM y</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, d 'au' E, d MMM y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, d MMM 'au' E, d MMM y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, d MMM y 'au' E, d MMM y</greatestDifference>
+							<greatestDifference id="d">E, dd.MM.y – E, dd.MM.y</greatestDifference>
+							<greatestDifference id="M">E, dd.MM.y – E, dd.MM.y</greatestDifference>
+							<greatestDifference id="y">E, dd.MM.y – E, dd.MM.y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -222,7 +208,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
-			<decimal>.</decimal>
+			<currencyDecimal>.</currencyDecimal>
 		</symbols>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
@@ -234,10 +220,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00;¤-#,##0.00</pattern>
+					<pattern draft="contributed">#,##0.00 ¤;-#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
 	</numbers>
 </ldml>
-

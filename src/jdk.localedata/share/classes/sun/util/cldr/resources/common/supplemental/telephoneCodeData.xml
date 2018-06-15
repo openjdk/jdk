@@ -6,7 +6,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 For terms of use, see http://www.unicode.org/copyright.html
 -->
 <supplementalData>
-    <version number="$Revision: 11914 $"/>
+    <version number="$Revision: 13274 $"/>
 	<telephoneCodeData>
 		<!--
 		References:
@@ -484,7 +484,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<codesByTerritory territory="LV">	<!-- Latvia -->
 			<telephoneCountryCode code="371"/>
 		</codesByTerritory>
-		<codesByTerritory territory="LY">	<!-- Libya (Soc. People’s Libyan Arab Jamahiriya) -->
+		<codesByTerritory territory="LY">	<!-- Libya -->
 			<telephoneCountryCode code="218"/>
 		</codesByTerritory>
 		<codesByTerritory territory="MA">	<!-- Morocco -->
@@ -815,9 +815,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<telephoneCountryCode code="685"/>
 		</codesByTerritory>
         <codesByTerritory territory="XK">   <!-- Kosovo -->
-            <telephoneCountryCode code="377"/> <!-- mobile phone networks -->
-            <telephoneCountryCode code="381"/> <!--  official (Serbia), used for landlines -->
-            <telephoneCountryCode code="386"/> <!--  mobile phone networks, partial (Slovenia) -->
+            <telephoneCountryCode code="377"/> <!-- Monaco, used for some mobile phone networks -->
+            <telephoneCountryCode code="381"/> <!-- Serbia, used for some landlines -->
+            <telephoneCountryCode code="383"/> <!-- Kosovo, used for some landlines and mobile phone networks -->
+            <telephoneCountryCode code="386"/> <!-- Slovenia, used for some mobile phone networks -->
         </codesByTerritory>
 		<codesByTerritory territory="YE">	<!-- Yemen -->
 			<telephoneCountryCode code="967"/>	<!-- (originally just for Yemen Arab Republic, before merge) -->

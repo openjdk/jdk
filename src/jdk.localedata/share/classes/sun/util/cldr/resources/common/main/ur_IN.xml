@@ -1,48 +1,50 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12217 $"/>
+		<version number="$Revision: 13839 $"/>
 		<language type="ur"/>
 		<territory type="IN"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="af">افریقی</language>
 			<language type="ar_001">جدید معیاری عربی</language>
-			<language type="co">کارسیکائی</language>
+			<language type="awa">اودھی</language>
+			<language type="ckb">سورانی کردی</language>
 			<language type="dje">زرمہ</language>
-			<language type="en_GB" alt="short">برطانوی انگریزی</language>
-			<language type="en_US" alt="short">امریکی انگریزی</language>
+			<language type="hr">کروشین</language>
+			<language type="jv">جاوانیز</language>
+			<language type="ka">جارجيائى</language>
+			<language type="kl">کلالیسٹ</language>
 			<language type="kn">کنڑ</language>
 			<language type="ku">کرد</language>
-			<language type="lv">لٹويای</language>
-			<language type="zgh" draft="contributed">معیاری مراقشی تمازیقی</language>
+			<language type="mag">مگہی</language>
+			<language type="zgh">معیاری مراقشی تمازیقی</language>
 			<language type="zh_Hans">آسان چینی</language>
 		</languages>
 		<territories>
 			<territory type="AC">جزیرہ اسینشن</territory>
-			<territory type="AX" draft="contributed">جزائر آلینڈ</territory>
-			<territory type="BV" draft="contributed">جزیرہ بوویت</territory>
+			<territory type="AX">جزائر آلینڈ</territory>
+			<territory type="BV">جزیرہ بوویت</territory>
 			<territory type="CC">جزائر (کیلنگ) کوکوس</territory>
-			<territory type="CI">کوت داوواغ</territory>
 			<territory type="CK">جزائر کک</territory>
 			<territory type="CP">جزیرہ کلپرٹن</territory>
 			<territory type="DG">ڈیگو گارشیا</territory>
 			<territory type="FK">جزائر فاکلینڈ</territory>
 			<territory type="FK" alt="variant">جزائر فاکلینڈ (اسلاس مالویناس)</territory>
-			<territory type="FO" draft="contributed">جزائر فیرو</territory>
+			<territory type="FO">جزائر فیرو</territory>
 			<territory type="GF">فرانسیسی گیانا</territory>
 			<territory type="HM">جزائر ہرڈ و مکڈونلڈ</territory>
 			<territory type="IC">جزائر کناری</territory>
 			<territory type="IO">برطانوی بحرہند خطہ</territory>
 			<territory type="MH">جزائر مارشل</territory>
 			<territory type="MP">جزائر شمالی ماریانا</territory>
-			<territory type="NF" draft="contributed">جزیرہ نارفوک</territory>
+			<territory type="NF">جزیرہ نارفوک</territory>
 			<territory type="PN">جزائر پٹکیرن</territory>
 			<territory type="SB">جزائر سلیمان</territory>
 			<territory type="TA">ترسٹان دا کونیا</territory>
@@ -58,17 +60,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</types>
 	</localeDisplayNames>
 	<dates>
-		<calendars>
-			<calendar type="generic">
-				<dateFormats>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>d/M/yy GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-			</calendar>
-		</calendars>
 		<fields>
 			<field type="era">
 				<displayName>دور</displayName>
@@ -227,9 +218,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<gmtFormat>GMT{0}</gmtFormat>
 			<regionFormat type="daylight">{0} دن کا وقت</regionFormat>
 			<regionFormat type="standard">{0} معیاری وقت</regionFormat>
-			<zone type="Asia/Dubai">
-				<exemplarCity>دبئی</exemplarCity>
-			</zone>
 			<zone type="America/Cambridge_Bay">
 				<exemplarCity>کیمبرج بے</exemplarCity>
 			</zone>
@@ -524,6 +512,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>arabext</defaultNumberingSystem>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
 			<currency type="CRC">
 				<displayName>کوسٹا ریکا کولون</displayName>
@@ -571,6 +566,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">ساموآئی ٹالا</displayName>
 			</currency>
 		</currencies>
+		<miscPatterns numberSystem="latn">
+			<pattern type="atLeast">{0}+</pattern>
+		</miscPatterns>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -603,4 +601,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

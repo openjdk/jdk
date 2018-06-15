@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="xog"/>
 	</identity>
 	<localeDisplayNames>
@@ -702,6 +703,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Faranga ey’eMalagase</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Wugwiya ey’eMawritenya (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Wugwiya ey’eMawritenya</displayName>
 			</currency>
 			<currency type="MUR">
@@ -741,6 +745,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Silingi ey’eSomaliya</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobura ey’eSantome ne Purincipe (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobura ey’eSantome ne Purincipe</displayName>
 			</currency>
 			<currency type="SZL">
@@ -786,4 +793,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

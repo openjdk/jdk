@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
  /*
  * @test
- * @bug 8145136
+ * @bug 8145136 8202537
  * @modules jdk.localedata
  * @summary Tests CLDR 28/29 newly added feature LikelySubtags is correctly reflected in JDK.
  * @run main/othervm -Djava.locale.providers=CLDR Bug8145136
@@ -133,7 +133,7 @@ public class Bug8145136 {
                 "vai-Latn-LR", "vai-Latn", "vai-Vaii-LR", "vai-Vaii", "vai", "vi-VN",
                 "vi", "vo-001", "vo", "vun-TZ", "vun", "wae-CH", "wae", "xog-UG",
                 "xog", "yav-CM", "yav", "ji-001", "ji", "yo-BJ", "yo-NG", "yo",
-                "yue-HK", "yue", "zgh-MA", "zgh", "zh-Hans-CN", "zh-Hans-HK",
+                "yue", "zgh-MA", "zgh", "zh-Hans-CN", "zh-Hans-HK",
                 "zh-Hans-MO", "zh-Hans-SG", "zh-Hans", "zh-Hant-HK", "zh-Hant-MO",
                 "zh-Hant-TW", "zh-Hant", "zh", "zu", "zu-ZA");
         List<Locale> availableLocales = Arrays.asList(Locale.getAvailableLocales());

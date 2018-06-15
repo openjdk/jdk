@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12312 $"/>
+		<version number="$Revision: 13920 $"/>
 		<language type="vi"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,554 +19,562 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="aa" draft="contributed">Tiếng Afar</language>
+			<language type="aa">Tiếng Afar</language>
 			<language type="ab">Tiếng Abkhazia</language>
-			<language type="ace" draft="contributed">Tiếng Achinese</language>
+			<language type="ace">Tiếng Achinese</language>
 			<language type="ach">Tiếng Acoli</language>
-			<language type="ada" draft="contributed">Tiếng Adangme</language>
-			<language type="ady" draft="contributed">Tiếng Adyghe</language>
-			<language type="ae" draft="contributed">Tiếng Avestan</language>
-			<language type="af">Tiếng Nam Phi</language>
-			<language type="afh" draft="contributed">Tiếng Afrihili</language>
+			<language type="ada">Tiếng Adangme</language>
+			<language type="ady">Tiếng Adyghe</language>
+			<language type="ae">Tiếng Avestan</language>
+			<language type="af">Tiếng Afrikaans</language>
+			<language type="afh">Tiếng Afrihili</language>
 			<language type="agq">Tiếng Aghem</language>
-			<language type="ain" draft="contributed">Tiếng Ainu</language>
+			<language type="ain">Tiếng Ainu</language>
 			<language type="ak">Tiếng Akan</language>
-			<language type="akk" draft="contributed">Tiếng Akkadia</language>
-			<language type="akz" draft="contributed">Tiếng Alabama</language>
-			<language type="ale" draft="contributed">Tiếng Aleut</language>
-			<language type="aln" draft="contributed">Tiếng Gheg Albani</language>
-			<language type="alt" draft="contributed">Tiếng Altai Miền Nam</language>
+			<language type="akk">Tiếng Akkadia</language>
+			<language type="akz">Tiếng Alabama</language>
+			<language type="ale">Tiếng Aleut</language>
+			<language type="aln">Tiếng Gheg Albani</language>
+			<language type="alt">Tiếng Altai Miền Nam</language>
 			<language type="am">Tiếng Amharic</language>
-			<language type="an" draft="contributed">Tiếng Aragon</language>
-			<language type="ang" draft="contributed">Tiếng Anh cổ</language>
-			<language type="anp" draft="contributed">Tiếng Angika</language>
+			<language type="an">Tiếng Aragon</language>
+			<language type="ang">Tiếng Anh cổ</language>
+			<language type="anp">Tiếng Angika</language>
 			<language type="ar">Tiếng Ả Rập</language>
 			<language type="ar_001">Tiếng Ả Rập Hiện đại</language>
-			<language type="arc" draft="contributed">Tiếng Aramaic</language>
-			<language type="arn" draft="contributed">Tiếng Araucanian</language>
-			<language type="aro" draft="contributed">Tiếng Araona</language>
-			<language type="arp" draft="contributed">Tiếng Arapaho</language>
-			<language type="arq" draft="contributed">Tiếng Ả Rập Algeria</language>
-			<language type="arw" draft="contributed">Tiếng Arawak</language>
-			<language type="arz" draft="contributed">Tiếng Ả Rập Ai Cập</language>
+			<language type="arc">Tiếng Aramaic</language>
+			<language type="arn">Tiếng Mapuche</language>
+			<language type="aro">Tiếng Araona</language>
+			<language type="arp">Tiếng Arapaho</language>
+			<language type="arq">Tiếng Ả Rập Algeria</language>
+			<language type="ars">Tiếng Ả Rập Najdi</language>
+			<language type="arw">Tiếng Arawak</language>
+			<language type="arz">Tiếng Ả Rập Ai Cập</language>
 			<language type="as">Tiếng Assam</language>
 			<language type="asa">Tiếng Asu</language>
-			<language type="ase" draft="contributed">Ngôn ngữ Ký hiệu Mỹ</language>
-			<language type="ast" draft="contributed">Tiếng Asturias</language>
-			<language type="av" draft="contributed">Tiếng Avaric</language>
-			<language type="awa" draft="contributed">Tiếng Awadhi</language>
+			<language type="ase">Ngôn ngữ Ký hiệu Mỹ</language>
+			<language type="ast">Tiếng Asturias</language>
+			<language type="av">Tiếng Avaric</language>
+			<language type="awa">Tiếng Awadhi</language>
 			<language type="ay">Tiếng Aymara</language>
 			<language type="az">Tiếng Azerbaijan</language>
 			<language type="az" alt="short">Tiếng Azeri</language>
 			<language type="ba">Tiếng Bashkir</language>
-			<language type="bal" draft="contributed">Tiếng Baluchi</language>
-			<language type="ban" draft="contributed">Tiếng Bali</language>
-			<language type="bar" draft="contributed">Tiếng Bavaria</language>
-			<language type="bas" draft="contributed">Tiếng Basaa</language>
-			<language type="bax" draft="contributed">Tiếng Bamun</language>
-			<language type="bbc" draft="contributed">Tiếng Batak Toba</language>
-			<language type="bbj" draft="contributed">Tiếng Ghomala</language>
+			<language type="bal">Tiếng Baluchi</language>
+			<language type="ban">Tiếng Bali</language>
+			<language type="bar">Tiếng Bavaria</language>
+			<language type="bas">Tiếng Basaa</language>
+			<language type="bax">Tiếng Bamun</language>
+			<language type="bbc">Tiếng Batak Toba</language>
+			<language type="bbj">Tiếng Ghomala</language>
 			<language type="be">Tiếng Belarus</language>
-			<language type="bej" draft="contributed">Tiếng Beja</language>
+			<language type="bej">Tiếng Beja</language>
 			<language type="bem">Tiếng Bemba</language>
-			<language type="bew" draft="contributed">Tiếng Betawi</language>
+			<language type="bew">Tiếng Betawi</language>
 			<language type="bez">Tiếng Bena</language>
-			<language type="bfd" draft="contributed">Tiếng Bafut</language>
-			<language type="bfq" draft="contributed">Tiếng Badaga</language>
+			<language type="bfd">Tiếng Bafut</language>
+			<language type="bfq">Tiếng Badaga</language>
 			<language type="bg">Tiếng Bulgaria</language>
 			<language type="bgn">Tiếng Tây Balochi</language>
-			<language type="bho" draft="contributed">Tiếng Bhojpuri</language>
-			<language type="bi" draft="contributed">Tiếng Bislama</language>
-			<language type="bik" draft="contributed">Tiếng Bikol</language>
-			<language type="bin" draft="contributed">Tiếng Bini</language>
-			<language type="bjn" draft="contributed">Tiếng Banjar</language>
-			<language type="bkm" draft="contributed">Tiếng Kom</language>
-			<language type="bla" draft="contributed">Tiếng Siksika</language>
+			<language type="bho">Tiếng Bhojpuri</language>
+			<language type="bi">Tiếng Bislama</language>
+			<language type="bik">Tiếng Bikol</language>
+			<language type="bin">Tiếng Bini</language>
+			<language type="bjn">Tiếng Banjar</language>
+			<language type="bkm">Tiếng Kom</language>
+			<language type="bla">Tiếng Siksika</language>
 			<language type="bm">Tiếng Bambara</language>
-			<language type="bn">Tiếng Bengali</language>
+			<language type="bn">Tiếng Bangla</language>
 			<language type="bo">Tiếng Tây Tạng</language>
-			<language type="bpy" draft="contributed">Tiếng Bishnupriya</language>
-			<language type="bqi" draft="contributed">Tiếng Bakhtiari</language>
+			<language type="bpy">Tiếng Bishnupriya</language>
+			<language type="bqi">Tiếng Bakhtiari</language>
 			<language type="br">Tiếng Breton</language>
-			<language type="bra" draft="contributed">Tiếng Braj</language>
-			<language type="brh" draft="contributed">Tiếng Brahui</language>
+			<language type="bra">Tiếng Braj</language>
+			<language type="brh">Tiếng Brahui</language>
 			<language type="brx">Tiếng Bodo</language>
-			<language type="bs">Tiếng Nam Tư</language>
-			<language type="bss" draft="contributed">Tiếng Akoose</language>
-			<language type="bua" draft="contributed">Tiếng Buriat</language>
-			<language type="bug" draft="contributed">Tiếng Bugin</language>
-			<language type="bum" draft="contributed">Tiếng Bulu</language>
-			<language type="byn" draft="contributed">Tiếng Blin</language>
-			<language type="byv" draft="contributed">Tiếng Medumba</language>
+			<language type="bs">Tiếng Bosnia</language>
+			<language type="bss">Tiếng Akoose</language>
+			<language type="bua">Tiếng Buriat</language>
+			<language type="bug">Tiếng Bugin</language>
+			<language type="bum">Tiếng Bulu</language>
+			<language type="byn">Tiếng Blin</language>
+			<language type="byv">Tiếng Medumba</language>
 			<language type="ca">Tiếng Catalan</language>
-			<language type="cad" draft="contributed">Tiếng Caddo</language>
-			<language type="car" draft="contributed">Tiếng Carib</language>
-			<language type="cay" draft="contributed">Tiếng Cayuga</language>
-			<language type="cch" draft="contributed">Tiếng Atsam</language>
+			<language type="cad">Tiếng Caddo</language>
+			<language type="car">Tiếng Carib</language>
+			<language type="cay">Tiếng Cayuga</language>
+			<language type="cch">Tiếng Atsam</language>
 			<language type="ce">Tiếng Chechen</language>
-			<language type="ceb" draft="contributed">Tiếng Cebuano</language>
+			<language type="ceb">Tiếng Cebuano</language>
 			<language type="cgg">Tiếng Chiga</language>
-			<language type="ch" draft="contributed">Tiếng Chamorro</language>
-			<language type="chb" draft="contributed">Tiếng Chibcha</language>
-			<language type="chg" draft="contributed">Tiếng Chagatai</language>
-			<language type="chk" draft="contributed">Tiếng Chuuk</language>
-			<language type="chm" draft="contributed">Tiếng Mari</language>
-			<language type="chn" draft="contributed">Biệt ngữ Chinook</language>
-			<language type="cho" draft="contributed">Tiếng Choctaw</language>
-			<language type="chp" draft="contributed">Tiếng Chipewyan</language>
+			<language type="ch">Tiếng Chamorro</language>
+			<language type="chb">Tiếng Chibcha</language>
+			<language type="chg">Tiếng Chagatai</language>
+			<language type="chk">Tiếng Chuuk</language>
+			<language type="chm">Tiếng Mari</language>
+			<language type="chn">Biệt ngữ Chinook</language>
+			<language type="cho">Tiếng Choctaw</language>
+			<language type="chp">Tiếng Chipewyan</language>
 			<language type="chr">Tiếng Cherokee</language>
-			<language type="chy" draft="contributed">Tiếng Cheyenne</language>
+			<language type="chy">Tiếng Cheyenne</language>
 			<language type="ckb">Tiếng Kurd Miền Trung</language>
 			<language type="co">Tiếng Corsica</language>
-			<language type="cop" draft="contributed">Tiếng Coptic</language>
-			<language type="cps" draft="contributed">Tiếng Capiznon</language>
-			<language type="cr" draft="contributed">Tiếng Cree</language>
-			<language type="crh" draft="contributed">Tiếng Thổ Nhĩ Kỳ Crimean</language>
+			<language type="cop">Tiếng Coptic</language>
+			<language type="cps">Tiếng Capiznon</language>
+			<language type="cr">Tiếng Cree</language>
+			<language type="crh">Tiếng Thổ Nhĩ Kỳ Crimean</language>
+			<language type="crs">Tiếng Pháp Seselwa Creole</language>
 			<language type="cs">Tiếng Séc</language>
-			<language type="csb" draft="contributed">Tiếng Kashubia</language>
-			<language type="cu" draft="contributed">Tiếng Slavơ Nhà thờ</language>
-			<language type="cv" draft="contributed">Tiếng Chuvash</language>
+			<language type="csb">Tiếng Kashubia</language>
+			<language type="cu">Tiếng Slavơ Nhà thờ</language>
+			<language type="cv">Tiếng Chuvash</language>
 			<language type="cy">Tiếng Wales</language>
 			<language type="da">Tiếng Đan Mạch</language>
-			<language type="dak" draft="contributed">Tiếng Dakota</language>
-			<language type="dar" draft="contributed">Tiếng Dargwa</language>
+			<language type="dak">Tiếng Dakota</language>
+			<language type="dar">Tiếng Dargwa</language>
 			<language type="dav">Tiếng Taita</language>
 			<language type="de">Tiếng Đức</language>
 			<language type="de_CH">Tiếng Thượng Giéc-man (Thụy Sĩ)</language>
-			<language type="del" draft="contributed">Tiếng Delaware</language>
-			<language type="den" draft="contributed">Tiếng Slave</language>
-			<language type="dgr" draft="contributed">Tiếng Dogrib</language>
-			<language type="din" draft="contributed">Tiếng Dinka</language>
+			<language type="del">Tiếng Delaware</language>
+			<language type="den">Tiếng Slave</language>
+			<language type="dgr">Tiếng Dogrib</language>
+			<language type="din">Tiếng Dinka</language>
 			<language type="dje">Tiếng Zarma</language>
-			<language type="doi" draft="contributed">Tiếng Dogri</language>
+			<language type="doi">Tiếng Dogri</language>
 			<language type="dsb">Tiếng Hạ Sorbia</language>
-			<language type="dtp" draft="contributed">Tiếng Dusun Miền Trung</language>
+			<language type="dtp">Tiếng Dusun Miền Trung</language>
 			<language type="dua">Tiếng Duala</language>
-			<language type="dum" draft="contributed">Tiếng Hà Lan Trung cổ</language>
+			<language type="dum">Tiếng Hà Lan Trung cổ</language>
 			<language type="dv">Tiếng Divehi</language>
 			<language type="dyo">Tiếng Jola-Fonyi</language>
-			<language type="dyu" draft="contributed">Tiếng Dyula</language>
+			<language type="dyu">Tiếng Dyula</language>
 			<language type="dz">Tiếng Dzongkha</language>
-			<language type="dzg" draft="contributed">Tiếng Dazaga</language>
+			<language type="dzg">Tiếng Dazaga</language>
 			<language type="ebu">Tiếng Embu</language>
 			<language type="ee">Tiếng Ewe</language>
 			<language type="efi">Tiếng Efik</language>
-			<language type="egl" draft="contributed">Tiếng Emilia</language>
-			<language type="egy" draft="contributed">Tiếng Ai Cập cổ</language>
-			<language type="eka" draft="contributed">Tiếng Ekajuk</language>
+			<language type="egl">Tiếng Emilia</language>
+			<language type="egy">Tiếng Ai Cập cổ</language>
+			<language type="eka">Tiếng Ekajuk</language>
 			<language type="el">Tiếng Hy Lạp</language>
-			<language type="elx" draft="contributed">Tiếng Elamite</language>
+			<language type="elx">Tiếng Elamite</language>
 			<language type="en">Tiếng Anh</language>
 			<language type="en_GB">Tiếng Anh (Anh)</language>
 			<language type="en_GB" alt="short">Tiếng Anh (Anh)</language>
 			<language type="en_US">Tiếng Anh (Mỹ)</language>
 			<language type="en_US" alt="short">Tiếng Anh (Mỹ)</language>
-			<language type="enm" draft="contributed">Tiếng Anh Trung cổ</language>
+			<language type="enm">Tiếng Anh Trung cổ</language>
 			<language type="eo">Tiếng Quốc Tế Ngữ</language>
 			<language type="es">Tiếng Tây Ban Nha</language>
 			<language type="es_419">Tiếng Tây Ban Nha (Mỹ La tinh)</language>
 			<language type="es_ES">Tiếng Tây Ban Nha (Châu Âu)</language>
-			<language type="esu" draft="contributed">Tiếng Yupik Miền Trung</language>
+			<language type="esu">Tiếng Yupik Miền Trung</language>
 			<language type="et">Tiếng Estonia</language>
 			<language type="eu">Tiếng Basque</language>
-			<language type="ewo" draft="contributed">Tiếng Ewondo</language>
-			<language type="ext" draft="contributed">Tiếng Extremadura</language>
+			<language type="ewo">Tiếng Ewondo</language>
+			<language type="ext">Tiếng Extremadura</language>
 			<language type="fa">Tiếng Ba Tư</language>
-			<language type="fan" draft="contributed">Tiếng Fang</language>
-			<language type="fat" draft="contributed">Tiếng Fanti</language>
-			<language type="ff" draft="contributed">Tiếng Fulah</language>
+			<language type="fan">Tiếng Fang</language>
+			<language type="fat">Tiếng Fanti</language>
+			<language type="ff">Tiếng Fulah</language>
 			<language type="fi">Tiếng Phần Lan</language>
-			<language type="fil">Tiếng Philipin</language>
+			<language type="fil">Tiếng Philippines</language>
 			<language type="fj">Tiếng Fiji</language>
-			<language type="fo">Tiếng Faore</language>
-			<language type="fon" draft="contributed">Tiếng Fon</language>
+			<language type="fo">Tiếng Faroe</language>
+			<language type="fon">Tiếng Fon</language>
 			<language type="fr">Tiếng Pháp</language>
-			<language type="frc" draft="contributed">Tiếng Pháp Cajun</language>
-			<language type="frm" draft="contributed">Tiếng Pháp Trung cổ</language>
-			<language type="fro" draft="contributed">Tiếng Pháp cổ</language>
-			<language type="frp" draft="contributed">Tiếng Arpitan</language>
-			<language type="frr" draft="contributed">Tiếng Frisian Miền Bắc</language>
-			<language type="frs" draft="contributed">Tiếng Frisian Miền Đông</language>
-			<language type="fur" draft="contributed">Tiếng Friulian</language>
+			<language type="frc">Tiếng Pháp Cajun</language>
+			<language type="frm">Tiếng Pháp Trung cổ</language>
+			<language type="fro">Tiếng Pháp cổ</language>
+			<language type="frp">Tiếng Arpitan</language>
+			<language type="frr">Tiếng Frisia Miền Bắc</language>
+			<language type="frs">Tiếng Frisian Miền Đông</language>
+			<language type="fur">Tiếng Friulian</language>
 			<language type="fy">Tiếng Frisia</language>
-			<language type="ga">Tiếng Ai-len</language>
-			<language type="gaa" draft="contributed">Tiếng Ga</language>
+			<language type="ga">Tiếng Ireland</language>
+			<language type="gaa">Tiếng Ga</language>
 			<language type="gag">Tiếng Gagauz</language>
-			<language type="gay" draft="contributed">Tiếng Gayo</language>
-			<language type="gba" draft="contributed">Tiếng Gbaya</language>
-			<language type="gd">Tiếng Xentơ (Xcốt len)</language>
-			<language type="gez" draft="contributed">Tiếng Geez</language>
-			<language type="gil" draft="contributed">Tiếng Gilbert</language>
+			<language type="gan">Tiếng Cám</language>
+			<language type="gay">Tiếng Gayo</language>
+			<language type="gba">Tiếng Gbaya</language>
+			<language type="gd">Tiếng Gael Scotland</language>
+			<language type="gez">Tiếng Geez</language>
+			<language type="gil">Tiếng Gilbert</language>
 			<language type="gl">Tiếng Galician</language>
-			<language type="glk" draft="contributed">Tiếng Gilaki</language>
-			<language type="gmh" draft="contributed">Tiếng Thượng Giéc-man Trung cổ</language>
+			<language type="glk">Tiếng Gilaki</language>
+			<language type="gmh">Tiếng Thượng Giéc-man Trung cổ</language>
 			<language type="gn">Tiếng Guarani</language>
-			<language type="goh" draft="contributed">Tiếng Thượng Giéc-man cổ</language>
-			<language type="gom" draft="contributed">Tiếng Goan Konkani</language>
-			<language type="gon" draft="contributed">Tiếng Gondi</language>
-			<language type="gor" draft="contributed">Tiếng Gorontalo</language>
-			<language type="got" draft="contributed">Tiếng Gô-tích</language>
-			<language type="grb" draft="contributed">Tiếng Grebo</language>
-			<language type="grc" draft="contributed">Tiếng Hy Lạp cổ</language>
+			<language type="goh">Tiếng Thượng Giéc-man cổ</language>
+			<language type="gom">Tiếng Goan Konkani</language>
+			<language type="gon">Tiếng Gondi</language>
+			<language type="gor">Tiếng Gorontalo</language>
+			<language type="got">Tiếng Gô-tích</language>
+			<language type="grb">Tiếng Grebo</language>
+			<language type="grc">Tiếng Hy Lạp cổ</language>
 			<language type="gsw">Tiếng Đức (Thụy Sĩ)</language>
 			<language type="gu">Tiếng Gujarati</language>
-			<language type="gur" draft="contributed">Tiếng Frafra</language>
+			<language type="gur">Tiếng Frafra</language>
 			<language type="guz">Tiếng Gusii</language>
 			<language type="gv">Tiếng Manx</language>
-			<language type="gwi" draft="contributed">Tiếng Gwichʼin</language>
+			<language type="gwi">Tiếng Gwichʼin</language>
 			<language type="ha">Tiếng Hausa</language>
-			<language type="hai" draft="contributed">Tiếng Haida</language>
-			<language type="hak" draft="contributed">Tiếng Trung Hakka</language>
+			<language type="hai">Tiếng Haida</language>
+			<language type="hak">Tiếng Khách Gia</language>
 			<language type="haw">Tiếng Hawaii</language>
 			<language type="he">Tiếng Do Thái</language>
 			<language type="hi">Tiếng Hindi</language>
-			<language type="hif" draft="contributed">Tiếng Fiji Hindi</language>
-			<language type="hil" draft="contributed">Tiếng Hiligaynon</language>
-			<language type="hit" draft="contributed">Tiếng Hittite</language>
-			<language type="hmn" draft="contributed">Tiếng Hmông</language>
-			<language type="ho" draft="contributed">Tiếng Hiri Motu</language>
+			<language type="hif">Tiếng Fiji Hindi</language>
+			<language type="hil">Tiếng Hiligaynon</language>
+			<language type="hit">Tiếng Hittite</language>
+			<language type="hmn">Tiếng Hmông</language>
+			<language type="ho">Tiếng Hiri Motu</language>
 			<language type="hr">Tiếng Croatia</language>
 			<language type="hsb">Tiếng Thượng Sorbia</language>
+			<language type="hsn">Tiếng Tương</language>
 			<language type="ht">Tiếng Haiti</language>
 			<language type="hu">Tiếng Hungary</language>
-			<language type="hup" draft="contributed">Tiếng Hupa</language>
+			<language type="hup">Tiếng Hupa</language>
 			<language type="hy">Tiếng Armenia</language>
-			<language type="hz" draft="contributed">Tiếng Herero</language>
+			<language type="hz">Tiếng Herero</language>
 			<language type="ia">Tiếng Khoa Học Quốc Tế</language>
-			<language type="iba" draft="contributed">Tiếng Iban</language>
-			<language type="ibb" draft="contributed">Tiếng Ibibio</language>
+			<language type="iba">Tiếng Iban</language>
+			<language type="ibb">Tiếng Ibibio</language>
 			<language type="id">Tiếng Indonesia</language>
-			<language type="ie" draft="contributed">Tiếng Interlingue</language>
+			<language type="ie">Tiếng Interlingue</language>
 			<language type="ig">Tiếng Igbo</language>
 			<language type="ii">Tiếng Di Tứ Xuyên</language>
-			<language type="ik" draft="contributed">Tiếng Inupiaq</language>
-			<language type="ilo" draft="contributed">Tiếng Iloko</language>
-			<language type="inh" draft="contributed">Tiếng Ingush</language>
-			<language type="io" draft="contributed">Tiếng Ido</language>
+			<language type="ik">Tiếng Inupiaq</language>
+			<language type="ilo">Tiếng Iloko</language>
+			<language type="inh">Tiếng Ingush</language>
+			<language type="io">Tiếng Ido</language>
 			<language type="is">Tiếng Iceland</language>
-			<language type="it">Tiếng Ý</language>
+			<language type="it">Tiếng Italy</language>
 			<language type="iu">Tiếng Inuktitut</language>
-			<language type="izh" draft="contributed">Tiếng Ingria</language>
+			<language type="izh">Tiếng Ingria</language>
 			<language type="ja">Tiếng Nhật</language>
-			<language type="jam" draft="contributed">Tiếng Anh Jamaica Creole</language>
-			<language type="jbo" draft="contributed">Tiếng Lojban</language>
+			<language type="jam">Tiếng Anh Jamaica Creole</language>
+			<language type="jbo">Tiếng Lojban</language>
 			<language type="jgo">Tiếng Ngomba</language>
 			<language type="jmc">Tiếng Machame</language>
-			<language type="jpr" draft="contributed">Tiếng Judeo-Ba Tư</language>
-			<language type="jrb" draft="contributed">Tiếng Judeo-Ả Rập</language>
-			<language type="jut" draft="contributed">Tiếng Jutish</language>
+			<language type="jpr">Tiếng Judeo-Ba Tư</language>
+			<language type="jrb">Tiếng Judeo-Ả Rập</language>
+			<language type="jut">Tiếng Jutish</language>
 			<language type="jv">Tiếng Java</language>
-			<language type="ka">Tiếng Gruzia</language>
-			<language type="kaa" draft="contributed">Tiếng Kara-Kalpak</language>
+			<language type="ka">Tiếng Georgia</language>
+			<language type="kaa">Tiếng Kara-Kalpak</language>
 			<language type="kab">Tiếng Kabyle</language>
-			<language type="kac" draft="contributed">Tiếng Kachin</language>
-			<language type="kaj" draft="contributed">Tiếng Jju</language>
+			<language type="kac">Tiếng Kachin</language>
+			<language type="kaj">Tiếng Jju</language>
 			<language type="kam">Tiếng Kamba</language>
-			<language type="kaw" draft="contributed">Tiếng Kawi</language>
-			<language type="kbd" draft="contributed">Tiếng Kabardian</language>
-			<language type="kbl" draft="contributed">Tiếng Kanembu</language>
-			<language type="kcg" draft="contributed">Tiếng Tyap</language>
+			<language type="kaw">Tiếng Kawi</language>
+			<language type="kbd">Tiếng Kabardian</language>
+			<language type="kbl">Tiếng Kanembu</language>
+			<language type="kcg">Tiếng Tyap</language>
 			<language type="kde">Tiếng Makonde</language>
 			<language type="kea">Tiếng Kabuverdianu</language>
-			<language type="kfo" draft="contributed">Tiếng Koro</language>
-			<language type="kg" draft="contributed">Tiếng Kongo</language>
-			<language type="kha" draft="contributed">Tiếng Khasi</language>
-			<language type="kho" draft="contributed">Tiếng Khotan</language>
+			<language type="kfo">Tiếng Koro</language>
+			<language type="kg">Tiếng Kongo</language>
+			<language type="kha">Tiếng Khasi</language>
+			<language type="kho">Tiếng Khotan</language>
 			<language type="khq">Tiếng Koyra Chiini</language>
 			<language type="ki">Tiếng Kikuyu</language>
-			<language type="kj" draft="contributed">Tiếng Kuanyama</language>
+			<language type="kj">Tiếng Kuanyama</language>
 			<language type="kk">Tiếng Kazakh</language>
-			<language type="kkj" draft="contributed">Tiếng Kako</language>
+			<language type="kkj">Tiếng Kako</language>
 			<language type="kl">Tiếng Kalaallisut</language>
 			<language type="kln">Tiếng Kalenjin</language>
-			<language type="km">Tiếng Khơ-me</language>
-			<language type="kmb" draft="contributed">Tiếng Kimbundu</language>
+			<language type="km">Tiếng Khmer</language>
+			<language type="kmb">Tiếng Kimbundu</language>
 			<language type="kn">Tiếng Kannada</language>
 			<language type="ko">Tiếng Hàn</language>
 			<language type="koi">Tiếng Komi-Permyak</language>
 			<language type="kok">Tiếng Konkani</language>
-			<language type="kos" draft="contributed">Tiếng Kosrae</language>
-			<language type="kpe" draft="contributed">Tiếng Kpelle</language>
-			<language type="kr" draft="contributed">Tiếng Kanuri</language>
-			<language type="krc" draft="contributed">Tiếng Karachay-Balkar</language>
-			<language type="krl" draft="contributed">Tiếng Karelian</language>
-			<language type="kru" draft="contributed">Tiếng Kurukh</language>
-			<language type="ks">Tiếng Kashmiri</language>
+			<language type="kos">Tiếng Kosrae</language>
+			<language type="kpe">Tiếng Kpelle</language>
+			<language type="kr">Tiếng Kanuri</language>
+			<language type="krc">Tiếng Karachay-Balkar</language>
+			<language type="krl">Tiếng Karelian</language>
+			<language type="kru">Tiếng Kurukh</language>
+			<language type="ks">Tiếng Kashmir</language>
 			<language type="ksb">Tiếng Shambala</language>
 			<language type="ksf">Tiếng Bafia</language>
-			<language type="ksh" draft="contributed">Tiếng Cologne</language>
+			<language type="ksh">Tiếng Cologne</language>
 			<language type="ku">Tiếng Kurd</language>
-			<language type="kum" draft="contributed">Tiếng Kumyk</language>
-			<language type="kut" draft="contributed">Tiếng Kutenai</language>
-			<language type="kv" draft="contributed">Tiếng Komi</language>
+			<language type="kum">Tiếng Kumyk</language>
+			<language type="kut">Tiếng Kutenai</language>
+			<language type="kv">Tiếng Komi</language>
 			<language type="kw">Tiếng Cornwall</language>
 			<language type="ky">Tiếng Kyrgyz</language>
 			<language type="la">Tiếng La-tinh</language>
-			<language type="lad" draft="contributed">Tiếng Ladino</language>
+			<language type="lad">Tiếng Ladino</language>
 			<language type="lag">Tiếng Langi</language>
-			<language type="lah" draft="contributed">Tiếng Lahnda</language>
-			<language type="lam" draft="contributed">Tiếng Lamba</language>
+			<language type="lah">Tiếng Lahnda</language>
+			<language type="lam">Tiếng Lamba</language>
 			<language type="lb">Tiếng Luxembourg</language>
-			<language type="lez" draft="contributed">Tiếng Lezghian</language>
+			<language type="lez">Tiếng Lezghian</language>
 			<language type="lg">Tiếng Ganda</language>
-			<language type="li" draft="contributed">Tiếng Limburg</language>
+			<language type="li">Tiếng Limburg</language>
 			<language type="lkt">Tiếng Lakota</language>
 			<language type="ln">Tiếng Lingala</language>
 			<language type="lo">Tiếng Lào</language>
-			<language type="lol" draft="contributed">Tiếng Mongo</language>
+			<language type="lol">Tiếng Mongo</language>
+			<language type="lou">Tiếng Creole Louisiana</language>
 			<language type="loz">Tiếng Lozi</language>
 			<language type="lrc">Tiếng Bắc Luri</language>
-			<language type="lt">Tiếng Lít-va</language>
+			<language type="lt">Tiếng Litva</language>
 			<language type="lu">Tiếng Luba-Katanga</language>
 			<language type="lua">Tiếng Luba-Lulua</language>
-			<language type="lui" draft="contributed">Tiếng Luiseno</language>
-			<language type="lun" draft="contributed">Tiếng Lunda</language>
+			<language type="lui">Tiếng Luiseno</language>
+			<language type="lun">Tiếng Lunda</language>
 			<language type="luo">Tiếng Luo</language>
-			<language type="lus" draft="contributed">Tiếng Lushai</language>
+			<language type="lus">Tiếng Lushai</language>
 			<language type="luy">Tiếng Luyia</language>
 			<language type="lv">Tiếng Latvia</language>
-			<language type="mad" draft="contributed">Tiếng Madura</language>
-			<language type="maf" draft="contributed">Tiếng Mafa</language>
-			<language type="mag" draft="contributed">Tiếng Magahi</language>
-			<language type="mai" draft="contributed">Tiếng Maithili</language>
-			<language type="mak" draft="contributed">Tiếng Makasar</language>
-			<language type="man" draft="contributed">Tiếng Mandingo</language>
+			<language type="mad">Tiếng Madura</language>
+			<language type="maf">Tiếng Mafa</language>
+			<language type="mag">Tiếng Magahi</language>
+			<language type="mai">Tiếng Maithili</language>
+			<language type="mak">Tiếng Makasar</language>
+			<language type="man">Tiếng Mandingo</language>
 			<language type="mas">Tiếng Masai</language>
-			<language type="mde" draft="contributed">Tiếng Maba</language>
-			<language type="mdf" draft="contributed">Tiếng Moksha</language>
-			<language type="mdr" draft="contributed">Tiếng Mandar</language>
-			<language type="men" draft="contributed">Tiếng Mende</language>
+			<language type="mde">Tiếng Maba</language>
+			<language type="mdf">Tiếng Moksha</language>
+			<language type="mdr">Tiếng Mandar</language>
+			<language type="men">Tiếng Mende</language>
 			<language type="mer">Tiếng Meru</language>
 			<language type="mfe">Tiếng Morisyen</language>
 			<language type="mg">Tiếng Malagasy</language>
-			<language type="mga" draft="contributed">Tiếng Ai-len Trung cổ</language>
+			<language type="mga">Tiếng Ai-len Trung cổ</language>
 			<language type="mgh">Tiếng Makhuwa-Meetto</language>
 			<language type="mgo">Tiếng Meta’</language>
-			<language type="mh" draft="contributed">Tiếng Marshall</language>
+			<language type="mh">Tiếng Marshall</language>
 			<language type="mi">Tiếng Maori</language>
-			<language type="mic" draft="contributed">Tiếng Micmac</language>
-			<language type="min" draft="contributed">Tiếng Minangkabau</language>
+			<language type="mic">Tiếng Micmac</language>
+			<language type="min">Tiếng Minangkabau</language>
 			<language type="mk">Tiếng Macedonia</language>
 			<language type="ml">Tiếng Malayalam</language>
 			<language type="mn">Tiếng Mông Cổ</language>
-			<language type="mnc" draft="contributed">Tiếng Manchu</language>
-			<language type="mni" draft="contributed">Tiếng Manipuri</language>
+			<language type="mnc">Tiếng Mãn Châu</language>
+			<language type="mni">Tiếng Manipuri</language>
 			<language type="moh">Tiếng Mohawk</language>
-			<language type="mos" draft="contributed">Tiếng Mossi</language>
+			<language type="mos">Tiếng Mossi</language>
 			<language type="mr">Tiếng Marathi</language>
-			<language type="ms">Tiếng Malaysia</language>
-			<language type="mt">Tiếng Malt</language>
+			<language type="ms">Tiếng Mã Lai</language>
+			<language type="mt">Tiếng Malta</language>
 			<language type="mua">Tiếng Mundang</language>
-			<language type="mul" draft="contributed">Nhiều Ngôn ngữ</language>
-			<language type="mus" draft="contributed">Tiếng Creek</language>
-			<language type="mwl" draft="contributed">Tiếng Miranda</language>
-			<language type="mwr" draft="contributed">Tiếng Marwari</language>
+			<language type="mul">Nhiều Ngôn ngữ</language>
+			<language type="mus">Tiếng Creek</language>
+			<language type="mwl">Tiếng Miranda</language>
+			<language type="mwr">Tiếng Marwari</language>
 			<language type="my">Tiếng Miến Điện</language>
-			<language type="mye" draft="contributed">Tiếng Myene</language>
-			<language type="myv" draft="contributed">Tiếng Erzya</language>
+			<language type="mye">Tiếng Myene</language>
+			<language type="myv">Tiếng Erzya</language>
 			<language type="mzn">Tiếng Mazanderani</language>
-			<language type="na" draft="contributed">Tiếng Nauru</language>
-			<language type="nap" draft="contributed">Tiếng Napoli</language>
+			<language type="na">Tiếng Nauru</language>
+			<language type="nan" draft="contributed">Tiếng Mân Nam</language>
+			<language type="nap">Tiếng Napoli</language>
 			<language type="naq">Tiếng Nama</language>
 			<language type="nb">Tiếng Na Uy (Bokmål)</language>
 			<language type="nd">Tiếng Ndebele Miền Bắc</language>
-			<language type="nds" draft="contributed">Tiếng Hạ Giéc-man</language>
+			<language type="nds">Tiếng Hạ Giéc-man</language>
 			<language type="nds_NL">Tiếng Hạ Saxon</language>
 			<language type="ne">Tiếng Nepal</language>
-			<language type="new" draft="contributed">Tiếng Newari</language>
-			<language type="ng" draft="contributed">Tiếng Ndonga</language>
-			<language type="nia" draft="contributed">Tiếng Nias</language>
-			<language type="niu" draft="contributed">Tiếng Niuean</language>
-			<language type="njo" draft="contributed">Tiếng Ao Naga</language>
+			<language type="new">Tiếng Newari</language>
+			<language type="ng">Tiếng Ndonga</language>
+			<language type="nia">Tiếng Nias</language>
+			<language type="niu">Tiếng Niuean</language>
+			<language type="njo">Tiếng Ao Naga</language>
 			<language type="nl">Tiếng Hà Lan</language>
 			<language type="nl_BE">Tiếng Flemish</language>
 			<language type="nmg">Tiếng Kwasio</language>
 			<language type="nn">Tiếng Na Uy (Nynorsk)</language>
-			<language type="nnh" draft="contributed">Tiếng Ngiemboon</language>
+			<language type="nnh">Tiếng Ngiemboon</language>
 			<language type="no">Tiếng Na Uy</language>
-			<language type="nog" draft="contributed">Tiếng Nogai</language>
-			<language type="non" draft="contributed">Tiếng Na Uy cổ</language>
+			<language type="nog">Tiếng Nogai</language>
+			<language type="non">Tiếng Na Uy cổ</language>
 			<language type="nqo">Tiếng N’Ko</language>
-			<language type="nr" draft="contributed">Tiếng Ndebele Miền Nam</language>
-			<language type="nso" draft="contributed">Bắc Sotho</language>
+			<language type="nr">Tiếng Ndebele Miền Nam</language>
+			<language type="nso">Tiếng Sotho Miền Bắc</language>
 			<language type="nus">Tiếng Nuer</language>
-			<language type="nv" draft="contributed">Tiếng Navajo</language>
-			<language type="nwc" draft="contributed">Tiếng Newari Cổ điển</language>
-			<language type="ny" draft="contributed">Tiếng Nyanja</language>
-			<language type="nym" draft="contributed">Tiếng Nyamwezi</language>
+			<language type="nv">Tiếng Navajo</language>
+			<language type="nwc">Tiếng Newari cổ</language>
+			<language type="ny">Tiếng Nyanja</language>
+			<language type="nym">Tiếng Nyamwezi</language>
 			<language type="nyn">Tiếng Nyankole</language>
-			<language type="nyo" draft="contributed">Tiếng Nyoro</language>
-			<language type="nzi" draft="contributed">Tiếng Nzima</language>
-			<language type="oc" draft="contributed">Tiếng Occitan</language>
-			<language type="oj" draft="contributed">Tiếng Ojibwa</language>
+			<language type="nyo">Tiếng Nyoro</language>
+			<language type="nzi">Tiếng Nzima</language>
+			<language type="oc">Tiếng Occitan</language>
+			<language type="oj">Tiếng Ojibwa</language>
 			<language type="om">Tiếng Oromo</language>
-			<language type="or">Tiếng Oriya</language>
-			<language type="os" draft="contributed">Tiếng Ossetic</language>
-			<language type="osa" draft="contributed">Tiếng Osage</language>
-			<language type="ota" draft="contributed">Tiếng Thổ Nhĩ Kỳ Ottoman</language>
+			<language type="or">Tiếng Odia</language>
+			<language type="os">Tiếng Ossetic</language>
+			<language type="osa">Tiếng Osage</language>
+			<language type="ota">Tiếng Thổ Nhĩ Kỳ Ottoman</language>
 			<language type="pa">Tiếng Punjab</language>
-			<language type="pag" draft="contributed">Tiếng Pangasinan</language>
-			<language type="pal" draft="contributed">Tiếng Pahlavi</language>
-			<language type="pam" draft="contributed">Tiếng Pampanga</language>
-			<language type="pap" draft="contributed">Tiếng Papiamento</language>
-			<language type="pau" draft="contributed">Tiếng Palauan</language>
-			<language type="peo" draft="contributed">Tiếng Ba Tư cổ</language>
-			<language type="phn" draft="contributed">Tiếng Phoenicia</language>
-			<language type="pi" draft="contributed">Tiếng Pali</language>
+			<language type="pag">Tiếng Pangasinan</language>
+			<language type="pal">Tiếng Pahlavi</language>
+			<language type="pam">Tiếng Pampanga</language>
+			<language type="pap">Tiếng Papiamento</language>
+			<language type="pau">Tiếng Palauan</language>
+			<language type="pcm">Tiếng Nigeria Pidgin</language>
+			<language type="peo">Tiếng Ba Tư cổ</language>
+			<language type="phn">Tiếng Phoenicia</language>
+			<language type="pi">Tiếng Pali</language>
 			<language type="pl">Tiếng Ba Lan</language>
-			<language type="pon" draft="contributed">Tiếng Pohnpeian</language>
-			<language type="pro" draft="contributed">Tiếng Provençal cổ</language>
+			<language type="pon">Tiếng Pohnpeian</language>
+			<language type="prg">Tiếng Prussia</language>
+			<language type="pro">Tiếng Provençal cổ</language>
 			<language type="ps">Tiếng Pashto</language>
 			<language type="ps" alt="variant">Tiếng Pushto</language>
 			<language type="pt">Tiếng Bồ Đào Nha</language>
-			<language type="pt_BR">Tiếng Bồ Đào Nha (Braxin)</language>
 			<language type="pt_PT">Tiếng Bồ Đào Nha (Châu Âu)</language>
 			<language type="qu">Tiếng Quechua</language>
 			<language type="quc">Tiếng Kʼicheʼ</language>
-			<language type="qug" draft="contributed">Tiếng Quechua ở Cao nguyên Chimborazo</language>
+			<language type="qug">Tiếng Quechua ở Cao nguyên Chimborazo</language>
 			<language type="raj" draft="contributed">Tiếng Rajasthani</language>
-			<language type="rap" draft="contributed">Tiếng Rapanui</language>
-			<language type="rar" draft="contributed">Tiếng Rarotongan</language>
+			<language type="rap">Tiếng Rapanui</language>
+			<language type="rar">Tiếng Rarotongan</language>
 			<language type="rm">Tiếng Romansh</language>
 			<language type="rn">Tiếng Rundi</language>
-			<language type="ro">Tiếng Rumani</language>
+			<language type="ro">Tiếng Romania</language>
 			<language type="ro_MD">Tiếng Moldova</language>
 			<language type="rof">Tiếng Rombo</language>
 			<language type="rom">Tiếng Romany</language>
-			<language type="root" draft="contributed">Tiếng Root</language>
+			<language type="root">Tiếng Root</language>
 			<language type="ru">Tiếng Nga</language>
-			<language type="rup" draft="contributed">Tiếng Aromania</language>
+			<language type="rup">Tiếng Aromania</language>
 			<language type="rw">Tiếng Kinyarwanda</language>
 			<language type="rwk">Tiếng Rwa</language>
 			<language type="sa">Tiếng Phạn</language>
-			<language type="sad" draft="contributed">Tiếng Sandawe</language>
-			<language type="sah" draft="contributed">Tiếng Sakha</language>
+			<language type="sad">Tiếng Sandawe</language>
+			<language type="sah">Tiếng Sakha</language>
 			<language type="sam" draft="contributed">Tiếng Samaritan Aramaic</language>
 			<language type="saq">Tiếng Samburu</language>
-			<language type="sas" draft="contributed">Tiếng Sasak</language>
-			<language type="sat" draft="contributed">Tiếng Santali</language>
-			<language type="sba" draft="contributed">Tiếng Ngambay</language>
+			<language type="sas">Tiếng Sasak</language>
+			<language type="sat">Tiếng Santali</language>
+			<language type="sba">Tiếng Ngambay</language>
 			<language type="sbp">Tiếng Sangu</language>
-			<language type="sc" draft="contributed">Tiếng Sardinia</language>
-			<language type="scn" draft="contributed">Tiếng Sicilia</language>
-			<language type="sco" draft="contributed">Tiếng Scots</language>
+			<language type="sc">Tiếng Sardinia</language>
+			<language type="scn">Tiếng Sicilia</language>
+			<language type="sco">Tiếng Scots</language>
 			<language type="sd">Tiếng Sindhi</language>
 			<language type="sdh">Tiếng Kurd Miền Nam</language>
 			<language type="se">Tiếng Sami Miền Bắc</language>
-			<language type="see" draft="contributed">Tiếng Seneca</language>
+			<language type="see">Tiếng Seneca</language>
 			<language type="seh">Tiếng Sena</language>
-			<language type="sel" draft="contributed">Tiếng Selkup</language>
+			<language type="sel">Tiếng Selkup</language>
 			<language type="ses">Tiếng Koyraboro Senni</language>
 			<language type="sg">Tiếng Sango</language>
-			<language type="sga" draft="contributed">Tiếng Ai-len cổ</language>
-			<language type="sh" draft="contributed">Tiếng Xéc bi - Croatia</language>
+			<language type="sga">Tiếng Ai-len cổ</language>
+			<language type="sh">Tiếng Serbo-Croatia</language>
 			<language type="shi">Tiếng Tachelhit</language>
-			<language type="shn" draft="contributed">Tiếng Shan</language>
-			<language type="shu" draft="contributed">Tiếng Ả-Rập Chad</language>
+			<language type="shn">Tiếng Shan</language>
+			<language type="shu">Tiếng Ả-Rập Chad</language>
 			<language type="si">Tiếng Sinhala</language>
-			<language type="sid" draft="contributed">Tiếng Sidamo</language>
+			<language type="sid">Tiếng Sidamo</language>
 			<language type="sk">Tiếng Slovak</language>
 			<language type="sl">Tiếng Slovenia</language>
-			<language type="sm" draft="contributed">Tiếng Samoa</language>
-			<language type="sma">TIếng Sami Miền Nam</language>
+			<language type="sm">Tiếng Samoa</language>
+			<language type="sma">Tiếng Sami Miền Nam</language>
 			<language type="smj">Tiếng Lule Sami</language>
 			<language type="smn">Tiếng Inari Sami</language>
 			<language type="sms">Tiếng Skolt Sami</language>
 			<language type="sn">Tiếng Shona</language>
-			<language type="snk" draft="contributed">Tiếng Soninke</language>
+			<language type="snk">Tiếng Soninke</language>
 			<language type="so">Tiếng Somali</language>
-			<language type="sog" draft="contributed">Tiếng Sogdien</language>
-			<language type="sq">Tiếng An-ba-ni</language>
+			<language type="sog">Tiếng Sogdien</language>
+			<language type="sq">Tiếng Albania</language>
 			<language type="sr">Tiếng Serbia</language>
-			<language type="srn" draft="contributed">Tiếng Sranan Tongo</language>
-			<language type="srr" draft="contributed">Tiếng Serer</language>
-			<language type="ss" draft="contributed">Tiếng Swati</language>
-			<language type="ssy" draft="contributed">Tiếng Saho</language>
-			<language type="st">Tiếng Sesotho</language>
+			<language type="srn">Tiếng Sranan Tongo</language>
+			<language type="srr">Tiếng Serer</language>
+			<language type="ss">Tiếng Swati</language>
+			<language type="ssy">Tiếng Saho</language>
+			<language type="st">Tiếng Sotho Miền Nam</language>
 			<language type="su">Tiếng Sunda</language>
-			<language type="suk" draft="contributed">Tiếng Sukuma</language>
-			<language type="sus" draft="contributed">Tiếng Susu</language>
-			<language type="sux" draft="contributed">Tiếng Sumeria</language>
+			<language type="suk">Tiếng Sukuma</language>
+			<language type="sus">Tiếng Susu</language>
+			<language type="sux">Tiếng Sumeria</language>
 			<language type="sv">Tiếng Thụy Điển</language>
 			<language type="sw">Tiếng Swahili</language>
 			<language type="sw_CD">Tiếng Swahili Congo</language>
-			<language type="swb" draft="contributed">Tiếng Cômo</language>
-			<language type="syc" draft="contributed">Tiếng Syria Cổ điển</language>
-			<language type="syr" draft="contributed">Tiếng Syriac</language>
+			<language type="swb">Tiếng Cômo</language>
+			<language type="syc">Tiếng Syriac cổ</language>
+			<language type="syr">Tiếng Syriac</language>
 			<language type="ta">Tiếng Tamil</language>
 			<language type="te">Tiếng Telugu</language>
-			<language type="tem" draft="contributed">Tiếng Timne</language>
+			<language type="tem">Tiếng Timne</language>
 			<language type="teo">Tiếng Teso</language>
-			<language type="ter" draft="contributed">Tiếng Tereno</language>
-			<language type="tet" draft="contributed">Tetum</language>
+			<language type="ter">Tiếng Tereno</language>
+			<language type="tet">Tiếng Tetum</language>
 			<language type="tg">Tiếng Tajik</language>
 			<language type="th">Tiếng Thái</language>
-			<language type="ti">Tiếng Tigrigya</language>
-			<language type="tig" draft="contributed">Tiếng Tigre</language>
-			<language type="tiv" draft="contributed">Tiếng Tiv</language>
-			<language type="tk">Tiếng Turk</language>
-			<language type="tkl" draft="contributed">Tiếng Tokelau</language>
-			<language type="tl" draft="contributed">Tiếng Tagalog</language>
-			<language type="tlh" draft="contributed">Tiếng Klingon</language>
-			<language type="tli" draft="contributed">Tiếng Tlingit</language>
-			<language type="tmh" draft="contributed">Tiếng Tamashek</language>
-			<language type="tn" draft="contributed">Tiếng Tswana</language>
+			<language type="ti">Tiếng Tigrinya</language>
+			<language type="tig">Tiếng Tigre</language>
+			<language type="tiv">Tiếng Tiv</language>
+			<language type="tk">Tiếng Turkmen</language>
+			<language type="tkl">Tiếng Tokelau</language>
+			<language type="tl">Tiếng Tagalog</language>
+			<language type="tlh">Tiếng Klingon</language>
+			<language type="tli">Tiếng Tlingit</language>
+			<language type="tmh">Tiếng Tamashek</language>
+			<language type="tn">Tiếng Tswana</language>
 			<language type="to">Tiếng Tonga</language>
-			<language type="tog" draft="contributed">Tiếng Nyasa Tonga</language>
-			<language type="tpi" draft="contributed">Tiếng Tok Pisin</language>
+			<language type="tog">Tiếng Nyasa Tonga</language>
+			<language type="tpi">Tiếng Tok Pisin</language>
 			<language type="tr">Tiếng Thổ Nhĩ Kỳ</language>
-			<language type="trv" draft="contributed">Tiếng Taroko</language>
-			<language type="ts" draft="contributed">Tiếng Tsonga</language>
-			<language type="tsi" draft="contributed">Tiếng Tsimshian</language>
+			<language type="trv">Tiếng Taroko</language>
+			<language type="ts">Tiếng Tsonga</language>
+			<language type="tsi">Tiếng Tsimshian</language>
 			<language type="tt">Tiếng Tatar</language>
 			<language type="tum">Tiếng Tumbuka</language>
-			<language type="tvl" draft="contributed">Tiếng Tuvalu</language>
-			<language type="tw" draft="contributed">Tiếng Twi</language>
+			<language type="tvl">Tiếng Tuvalu</language>
+			<language type="tw">Tiếng Twi</language>
 			<language type="twq">Tiếng Tasawaq</language>
-			<language type="ty" draft="contributed">Tiếng Tahiti</language>
-			<language type="tyv" draft="contributed">Tiếng Tuvinian</language>
+			<language type="ty">Tiếng Tahiti</language>
+			<language type="tyv">Tiếng Tuvinian</language>
 			<language type="tzm">Tiếng Tamazight Miền Trung Ma-rốc</language>
-			<language type="udm" draft="contributed">Tiếng Udmurt</language>
+			<language type="udm">Tiếng Udmurt</language>
 			<language type="ug">Tiếng Uyghur</language>
-			<language type="uga" draft="contributed">Tiếng Ugaritic</language>
+			<language type="uga">Tiếng Ugaritic</language>
 			<language type="uk">Tiếng Ucraina</language>
-			<language type="umb" draft="contributed">Tiếng Umbundu</language>
+			<language type="umb">Tiếng Umbundu</language>
 			<language type="und">Ngôn ngữ không xác định</language>
-			<language type="ur">Tiếng Uđu</language>
+			<language type="ur">Tiếng Urdu</language>
 			<language type="uz">Tiếng Uzbek</language>
 			<language type="vai">Tiếng Vai</language>
-			<language type="ve" draft="contributed">Tiếng Venda</language>
+			<language type="ve">Tiếng Venda</language>
 			<language type="vi">Tiếng Việt</language>
-			<language type="vo" draft="contributed">Tiếng Volapük</language>
-			<language type="vot" draft="contributed">Tiếng Votic</language>
+			<language type="vo">Tiếng Volapük</language>
+			<language type="vot">Tiếng Votic</language>
 			<language type="vun">Tiếng Vunjo</language>
-			<language type="wa" draft="contributed">Tiếng Walloon</language>
-			<language type="wae" draft="contributed">Tiếng Walser</language>
-			<language type="wal" draft="contributed">Tiếng Walamo</language>
-			<language type="war" draft="contributed">Tiếng Waray</language>
-			<language type="was" draft="contributed">Tiếng Washo</language>
+			<language type="wa">Tiếng Walloon</language>
+			<language type="wae">Tiếng Walser</language>
+			<language type="wal">Tiếng Walamo</language>
+			<language type="war">Tiếng Waray</language>
+			<language type="was">Tiếng Washo</language>
 			<language type="wbp">Tiếng Warlpiri</language>
 			<language type="wo">Tiếng Wolof</language>
-			<language type="xal" draft="contributed">Tiếng Kalmyk</language>
+			<language type="wuu">Tiếng Ngô</language>
+			<language type="xal">Tiếng Kalmyk</language>
 			<language type="xh">Tiếng Xhosa</language>
 			<language type="xog">Tiếng Soga</language>
-			<language type="yao" draft="contributed">Tiếng Yao</language>
-			<language type="yap" draft="contributed">Tiếng Yap</language>
-			<language type="yav" draft="contributed">Tiếng Yangben</language>
-			<language type="ybb" draft="contributed">Tiếng Yemba</language>
-			<language type="yi">Tiếng Y-đit</language>
+			<language type="yao">Tiếng Yao</language>
+			<language type="yap">Tiếng Yap</language>
+			<language type="yav">Tiếng Yangben</language>
+			<language type="ybb">Tiếng Yemba</language>
+			<language type="yi">Tiếng Yiddish</language>
 			<language type="yo">Tiếng Yoruba</language>
-			<language type="yue" draft="contributed">Tiếng Quảng Đông</language>
-			<language type="za" draft="contributed">Tiếng Zhuang</language>
-			<language type="zap" draft="contributed">Tiếng Zapotec</language>
-			<language type="zbl" draft="contributed">Ký hiệu Blissymbols</language>
-			<language type="zen" draft="contributed">Tiếng Zenaga</language>
+			<language type="yue">Tiếng Quảng Đông</language>
+			<language type="za">Tiếng Choang</language>
+			<language type="zap">Tiếng Zapotec</language>
+			<language type="zbl">Ký hiệu Blissymbols</language>
+			<language type="zen">Tiếng Zenaga</language>
 			<language type="zgh">Tiếng Tamazight Chuẩn của Ma-rốc</language>
 			<language type="zh">Tiếng Trung</language>
 			<language type="zu">Tiếng Zulu</language>
-			<language type="zun" draft="contributed">Tiếng Zuni</language>
+			<language type="zun">Tiếng Zuni</language>
 			<language type="zxx">Không có nội dung ngôn ngữ</language>
-			<language type="zza" draft="contributed">Tiếng Zaza</language>
+			<language type="zza">Tiếng Zaza</language>
 		</languages>
 		<scripts>
 			<script type="Afak" draft="contributed">Chữ Afaka</script>
@@ -576,7 +587,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Bamu" draft="contributed">Chữ Bamum</script>
 			<script type="Bass" draft="contributed">Chữ Bassa Vah</script>
 			<script type="Batk" draft="contributed">Chữ Batak</script>
-			<script type="Beng">Chữ Bengali</script>
+			<script type="Beng">Chữ Bangladesh</script>
 			<script type="Blis" draft="contributed">Chữ Blissymbols</script>
 			<script type="Bopo">Chữ Bopomofo</script>
 			<script type="Brah" draft="contributed">Chữ Brahmi</script>
@@ -608,6 +619,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">Chữ Hy Lạp</script>
 			<script type="Gujr">Chữ Gujarati</script>
 			<script type="Guru">Chữ Gurmukhi</script>
+			<script type="Hanb">Chữ Hanb</script>
 			<script type="Hang">Chữ Hangul</script>
 			<script type="Hani">Chữ Hán</script>
 			<script type="Hano" draft="contributed">Chữ Hanunoo</script>
@@ -623,6 +635,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hung" draft="contributed">Chữ Hungary cổ</script>
 			<script type="Inds" draft="contributed">Chữ Indus</script>
 			<script type="Ital" draft="contributed">Chữ Italic cổ</script>
+			<script type="Jamo">Chữ Jamo</script>
 			<script type="Java" draft="contributed">Chữ Java</script>
 			<script type="Jpan">Chữ Nhật Bản</script>
 			<script type="Jurc" draft="contributed">Chữ Jurchen</script>
@@ -659,7 +672,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Moon" draft="contributed">Chữ nổi Moon</script>
 			<script type="Mroo" draft="contributed">Chữ Mro</script>
 			<script type="Mtei" draft="contributed">Chữ Meitei Mayek</script>
-			<script type="Mymr">Myanma</script>
+			<script type="Mymr">Chữ Myanmar</script>
 			<script type="Narb" draft="contributed">Chữ Bắc Ả Rập cổ</script>
 			<script type="Nbat" draft="contributed">Chữ Nabataean</script>
 			<script type="Nkgb" draft="contributed">Chữ Naxi Geba</script>
@@ -668,7 +681,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Ogam" draft="contributed">Chữ Ogham</script>
 			<script type="Olck" draft="contributed">Chữ Ol Chiki</script>
 			<script type="Orkh" draft="contributed">Chữ Orkhon</script>
-			<script type="Orya">Chữ Oriya</script>
+			<script type="Orya">Chữ Odia</script>
 			<script type="Osma" draft="contributed">Chữ Osmanya</script>
 			<script type="Palm" draft="contributed">Chữ Palmyrene</script>
 			<script type="Perm" draft="contributed">Chữ Permic cổ</script>
@@ -723,6 +736,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii" draft="contributed">Chữ Di</script>
 			<script type="Zinh" draft="contributed">Chữ Kế thừa</script>
 			<script type="Zmth" draft="contributed">Ký hiệu Toán học</script>
+			<script type="Zsye">Biểu tượng</script>
 			<script type="Zsym">Ký hiệu</script>
 			<script type="Zxxx">Chưa có chữ viết</script>
 			<script type="Zyyy">Chung</script>
@@ -758,21 +772,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Đông Âu</territory>
 			<territory type="154">Bắc Âu</territory>
 			<territory type="155">Tây Âu</territory>
+			<territory type="202" draft="contributed">Châu Phi hạ Sahara</territory>
 			<territory type="419">Châu Mỹ La-tinh</territory>
 			<territory type="AC">Đảo Ascension</territory>
 			<territory type="AD">Andorra</territory>
-			<territory type="AE">Các Tiểu V.quốc Ả Rập T.nhất</territory>
+			<territory type="AE">Các Tiểu Vương quốc Ả Rập Thống nhất</territory>
 			<territory type="AF">Afghanistan</territory>
 			<territory type="AG">Antigua và Barbuda</territory>
 			<territory type="AI">Anguilla</territory>
-			<territory type="AL">Albani</territory>
+			<territory type="AL">Albania</territory>
 			<territory type="AM">Armenia</territory>
 			<territory type="AO">Angola</territory>
 			<territory type="AQ">Nam Cực</territory>
 			<territory type="AR">Argentina</territory>
-			<territory type="AS">Đảo Somoa thuộc Mỹ</territory>
+			<territory type="AS">Samoa thuộc Mỹ</territory>
 			<territory type="AT">Áo</territory>
-			<territory type="AU">Úc</territory>
+			<territory type="AU">Australia</territory>
 			<territory type="AW">Aruba</territory>
 			<territory type="AX">Quần đảo Åland</territory>
 			<territory type="AZ">Azerbaijan</territory>
@@ -781,7 +796,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BD">Bangladesh</territory>
 			<territory type="BE">Bỉ</territory>
 			<territory type="BF">Burkina Faso</territory>
-			<territory type="BG">Bungari</territory>
+			<territory type="BG">Bulgaria</territory>
 			<territory type="BH">Bahrain</territory>
 			<territory type="BI">Burundi</territory>
 			<territory type="BJ">Benin</territory>
@@ -805,7 +820,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CG">Congo - Brazzaville</territory>
 			<territory type="CG" alt="variant">Cộng hòa Congo</territory>
 			<territory type="CH">Thụy Sĩ</territory>
-			<territory type="CI">Bờ Biển Ngà</territory>
+			<territory type="CI">Côte d’Ivoire</territory>
+			<territory type="CI" alt="variant">Bờ Biển Ngà</territory>
 			<territory type="CK">Quần đảo Cook</territory>
 			<territory type="CL">Chile</territory>
 			<territory type="CM">Cameroon</territory>
@@ -818,7 +834,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">Curaçao</territory>
 			<territory type="CX">Đảo Giáng Sinh</territory>
 			<territory type="CY">Síp</territory>
-			<territory type="CZ">Cộng hòa Séc</territory>
+			<territory type="CZ">Séc</territory>
+			<territory type="CZ" alt="variant">Cộng hòa Séc</territory>
 			<territory type="DE">Đức</territory>
 			<territory type="DG">Diego Garcia</territory>
 			<territory type="DJ">Djibouti</territory>
@@ -835,6 +852,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Tây Ban Nha</territory>
 			<territory type="ET">Ethiopia</territory>
 			<territory type="EU">Liên Minh Châu Âu</territory>
+			<territory type="EZ" draft="contributed">Khu vực đồng Euro</territory>
 			<territory type="FI">Phần Lan</territory>
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Quần đảo Falkland</territory>
@@ -846,7 +864,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GB">Vương quốc Anh</territory>
 			<territory type="GB" alt="short">Vương quốc Anh</territory>
 			<territory type="GD">Grenada</territory>
-			<territory type="GE">Georgia</territory>
+			<territory type="GE">Gruzia</territory>
 			<territory type="GF">Guiana thuộc Pháp</territory>
 			<territory type="GG">Guernsey</territory>
 			<territory type="GH">Ghana</territory>
@@ -857,7 +875,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GP">Guadeloupe</territory>
 			<territory type="GQ">Guinea Xích Đạo</territory>
 			<territory type="GR">Hy Lạp</territory>
-			<territory type="GS">Quần đảo Nam Georgia và Nam Sandwich</territory>
+			<territory type="GS">Nam Georgia &amp; Quần đảo Nam Sandwich</territory>
 			<territory type="GT">Guatemala</territory>
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Guinea-Bissau</territory>
@@ -868,18 +886,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Croatia</territory>
 			<territory type="HT">Haiti</territory>
-			<territory type="HU">Hungari</territory>
+			<territory type="HU">Hungary</territory>
 			<territory type="IC">Quần đảo Canary</territory>
 			<territory type="ID">Indonesia</territory>
-			<territory type="IE">Ai-len</territory>
+			<territory type="IE">Ireland</territory>
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Đảo Man</territory>
 			<territory type="IN">Ấn Độ</territory>
-			<territory type="IO">Thuộc địa Anh tại Ấn Độ Dương</territory>
-			<territory type="IQ">I-rắc</territory>
+			<territory type="IO">Lãnh thổ Ấn độ dương thuộc Anh</territory>
+			<territory type="IQ">Iraq</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Iceland</territory>
-			<territory type="IT">Ý</territory>
+			<territory type="IT">Italy</territory>
 			<territory type="JE">Jersey</territory>
 			<territory type="JM">Jamaica</territory>
 			<territory type="JO">Jordan</territory>
@@ -892,7 +910,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KN">St. Kitts và Nevis</territory>
 			<territory type="KP">Triều Tiên</territory>
 			<territory type="KR">Hàn Quốc</territory>
-			<territory type="KW">Cô-oét</territory>
+			<territory type="KW">Kuwait</territory>
 			<territory type="KY">Quần đảo Cayman</territory>
 			<territory type="KZ">Kazakhstan</territory>
 			<territory type="LA">Lào</territory>
@@ -902,10 +920,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="LK">Sri Lanka</territory>
 			<territory type="LR">Liberia</territory>
 			<territory type="LS">Lesotho</territory>
-			<territory type="LT">Lít-va</territory>
+			<territory type="LT">Litva</territory>
 			<territory type="LU">Luxembourg</territory>
 			<territory type="LV">Latvia</territory>
-			<territory type="LY">Li-bi</territory>
+			<territory type="LY">Libya</territory>
 			<territory type="MA">Ma-rốc</territory>
 			<territory type="MC">Monaco</territory>
 			<territory type="MD">Moldova</territory>
@@ -948,7 +966,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PE">Peru</territory>
 			<territory type="PF">Polynesia thuộc Pháp</territory>
 			<territory type="PG">Papua New Guinea</territory>
-			<territory type="PH">Philippin</territory>
+			<territory type="PH">Philippines</territory>
 			<territory type="PK">Pakistan</territory>
 			<territory type="PL">Ba Lan</territory>
 			<territory type="PM">Saint Pierre và Miquelon</territory>
@@ -979,7 +997,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SL">Sierra Leone</territory>
 			<territory type="SM">San Marino</territory>
 			<territory type="SN">Senegal</territory>
-			<territory type="SO">Somali</territory>
+			<territory type="SO">Somalia</territory>
 			<territory type="SR">Suriname</territory>
 			<territory type="SS">Nam Sudan</territory>
 			<territory type="ST">São Tomé và Príncipe</territory>
@@ -988,14 +1006,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SY">Syria</territory>
 			<territory type="SZ">Swaziland</territory>
 			<territory type="TA">Tristan da Cunha</territory>
-			<territory type="TC">Quần đảo Turk và Caicos</territory>
+			<territory type="TC">Quần đảo Turks và Caicos</territory>
 			<territory type="TD">Chad</territory>
-			<territory type="TF">Lãnh thổ miền nam nước Pháp</territory>
+			<territory type="TF">Lãnh thổ phía Nam Thuộc Pháp</territory>
 			<territory type="TG">Togo</territory>
 			<territory type="TH">Thái Lan</territory>
 			<territory type="TJ">Tajikistan</territory>
 			<territory type="TK">Tokelau</territory>
-			<territory type="TL">Đông Timor</territory>
+			<territory type="TL">Timor-Leste</territory>
+			<territory type="TL" alt="variant">Đông Timor</territory>
 			<territory type="TM">Turkmenistan</territory>
 			<territory type="TN">Tunisia</territory>
 			<territory type="TO">Tonga</territory>
@@ -1006,7 +1025,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TZ">Tanzania</territory>
 			<territory type="UA">Ukraina</territory>
 			<territory type="UG">Uganda</territory>
-			<territory type="UM">Các đảo nhỏ xa t.tâm thuộc Mỹ</territory>
+			<territory type="UM">Các tiểu đảo xa của Hoa Kỳ</territory>
+			<territory type="UN">Liên hiệp quốc</territory>
+			<territory type="UN" alt="short">Liên hiệp quốc</territory>
 			<territory type="US">Hoa Kỳ</territory>
 			<territory type="US" alt="short">Hoa Kỳ</territory>
 			<territory type="UY">Uruguay</territory>
@@ -1095,11 +1116,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">Lịch</key>
+			<key type="cf">Định dạng tiền tệ</key>
 			<key type="colAlternate" draft="contributed">Bỏ qua sắp xếp biểu tượng</key>
 			<key type="colBackwards" draft="contributed">Sắp xếp dấu trọng âm đảo ngược</key>
 			<key type="colCaseFirst" draft="contributed">Sắp xếp chữ hoa/chữ thường</key>
 			<key type="colCaseLevel" draft="contributed">Sắp xếp phân biệt chữ hoa/chữ thường</key>
-			<key type="colHiraganaQuaternary" draft="contributed">Sắp xếp chữ Kana</key>
 			<key type="collation">Thứ tự sắp xếp</key>
 			<key type="colNormalization" draft="contributed">Sắp xếp theo chuẩn hóa</key>
 			<key type="colNumeric" draft="contributed">Sắp xếp theo số</key>
@@ -1111,7 +1132,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">Số</key>
 			<key type="timezone" draft="contributed">Múi giờ</key>
 			<key type="va" draft="contributed">Biến thể ngôn ngữ</key>
-			<key type="variableTop" draft="contributed">Sắp xếp dưới dạng biểu tượng</key>
 			<key type="x">Sử dụng cá nhân</key>
 		</keys>
 		<types>
@@ -1133,6 +1153,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">Lịch Nhật Bản</type>
 			<type key="calendar" type="persian">Lịch Ba Tư</type>
 			<type key="calendar" type="roc">Lịch Trung Hoa Dân Quốc</type>
+			<type key="cf" type="account">Định dạng tiền tệ kế toán</type>
+			<type key="cf" type="standard">Định dạng tiền tệ chuẩn</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">Sắp xếp biểu tượng</type>
 			<type key="colAlternate" type="shifted" draft="contributed">Sắp xếp biểu tượng bỏ qua</type>
 			<type key="colBackwards" type="no" draft="contributed">Sắp xếp dấu trọng âm bình thường</type>
@@ -1142,11 +1164,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper" draft="contributed">Sắp xếp chữ hoa đầu tiên</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Sắp xếp không phân biệt chữ hoa/chữ thường</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Sắp xếp phân biệt chữ hoa/chữ thường</type>
-			<type key="colHiraganaQuaternary" type="no" draft="contributed">Sắp xếp chữ Kana riêng biệt</type>
-			<type key="colHiraganaQuaternary" type="yes" draft="contributed">Sắp xếp chữ Kana khác nhau</type>
 			<type key="collation" type="big5han">Thứ tự sắp xếp theo tiếng Trung phồn thể - Big5</type>
+			<type key="collation" type="compat" draft="contributed">Thứ tự sắp xếp trước đây, để tương thích</type>
 			<type key="collation" type="dictionary">Thứ tự sắp xếp theo từ điển</type>
 			<type key="collation" type="ducet">Thứ tự sắp xếp unicode mặc định</type>
+			<type key="collation" type="eor" draft="contributed">Quy tắc sắp xếp Châu Âu</type>
 			<type key="collation" type="gb2312han">Thứ tự sắp xếp theo tiếng Trung giản thể - GB2312</type>
 			<type key="collation" type="phonebook">Thứ tự sắp xếp theo danh bạ điện thoại</type>
 			<type key="collation" type="phonetic" draft="contributed">Thứ tự sắp xếp theo ngữ âm</type>
@@ -1168,6 +1190,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary" draft="contributed">Sắp xếp dấu trọng âm/chữ cái/độ rộng/chữ Kana</type>
 			<type key="colStrength" type="secondary" draft="contributed">Sắp xếp dấu trọng âm</type>
 			<type key="colStrength" type="tertiary" draft="contributed">Sắp xếp dấu trọng âm/chữ cái/độ rộng</type>
+			<type key="d0" type="fwidth" draft="contributed">Độ rộng tối đa</type>
+			<type key="d0" type="hwidth" draft="contributed">Nửa độ rộng</type>
+			<type key="d0" type="npinyin" draft="contributed">Số</type>
 			<type key="hc" type="h11">Hệ thống 12 giờ (0–11)</type>
 			<type key="hc" type="h12">Hệ thống 12 giờ (1–12)</type>
 			<type key="hc" type="h23">Hệ thống 24 giờ (0–23)</type>
@@ -1175,6 +1200,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">Kiểu xuống dòng thoáng</type>
 			<type key="lb" type="normal">Kiểu xuống dòng thường</type>
 			<type key="lb" type="strict">Kiểu xuống dòng hẹp</type>
+			<type key="m0" type="bgn" draft="contributed">BGN</type>
+			<type key="m0" type="ungegn" draft="contributed">UNGEGN</type>
 			<type key="ms" type="metric">Hệ mét</type>
 			<type key="ms" type="uksystem">Hệ đo lường Anh</type>
 			<type key="ms" type="ussystem">Hệ đo lường Mỹ</type>
@@ -1222,7 +1249,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="native" draft="contributed">Chữ số tự nhiên</type>
 			<type key="numbers" type="nkoo" draft="contributed">Chữ số N’Ko</type>
 			<type key="numbers" type="olck" draft="contributed">Chữ số Ol Chiki</type>
-			<type key="numbers" type="orya">Chữ số Oriya</type>
+			<type key="numbers" type="orya">Chữ số Odia</type>
 			<type key="numbers" type="osma" draft="contributed">Chữ số Osmanya</type>
 			<type key="numbers" type="roman">Chữ số La mã</type>
 			<type key="numbers" type="romanlow">Chữ số La Mã viết thường</type>
@@ -1240,18 +1267,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional" draft="contributed">Số truyền thống</type>
 			<type key="numbers" type="vaii">Chữ số Vai</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN" draft="contributed">BGN</transformName>
-			<transformName type="Numeric" draft="contributed">Số</transformName>
-			<transformName type="Tone" draft="contributed">Âm</transformName>
-			<transformName type="UNGEGN" draft="contributed">UNGEGN</transformName>
-			<transformName type="x-Accents" draft="contributed">Dấu</transformName>
-			<transformName type="x-Fullwidth" draft="contributed">Độ rộng tối đa</transformName>
-			<transformName type="x-Halfwidth" draft="contributed">Nửa độ rộng</transformName>
-			<transformName type="x-Jamo" draft="contributed">Jamo</transformName>
-			<transformName type="x-Pinyin" draft="contributed">Bính âm</transformName>
-			<transformName type="x-Publishing" draft="contributed">Xuất bản</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Hệ mét</measurementSystemName>
 			<measurementSystemName type="UK">Hệ Anh</measurementSystemName>
@@ -1263,10 +1278,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<codePattern type="territory">Vùng: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
+	<contextTransforms>
+		<contextTransformUsage type="typographicNames">
+			<contextTransform type="stand-alone">titlecase-firstword</contextTransform>
+			<contextTransform type="uiListOrMenu">titlecase-firstword</contextTransform>
+		</contextTransformUsage>
+	</contextTransforms>
 	<characters>
 		<exemplarCharacters>[a à ả ã á ạ ă ằ ẳ ẵ ắ ặ â ầ ẩ ẫ ấ ậ b c d đ e è ẻ ẽ é ẹ ê ề ể ễ ế ệ f g h i ì ỉ ĩ í ị j k l m n o ò ỏ õ ó ọ ô ồ ổ ỗ ố ộ ơ ờ ở ỡ ớ ợ p q r s t u ù ủ ũ ú ụ ư ừ ử ữ ứ ự v w x y ỳ ỷ ỹ ý ỵ z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A Ă Â B C D Đ E Ê F G H I J K L M N O Ô Ơ P Q R S T U Ư V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1275,6 +1297,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1533,18 +1574,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<cyclicNameSet type="zodiacs">
 						<cyclicNameContext type="format">
 							<cyclicNameWidth type="abbreviated">
-								<cyclicName type="1">Chuột</cyclicName>
-								<cyclicName type="2">Trâu</cyclicName>
-								<cyclicName type="3">Hổ</cyclicName>
-								<cyclicName type="4">Mèo</cyclicName>
-								<cyclicName type="5">Rồng</cyclicName>
-								<cyclicName type="6">Rắn</cyclicName>
-								<cyclicName type="7">Ngựa</cyclicName>
-								<cyclicName type="8">Dê</cyclicName>
-								<cyclicName type="9">Khỉ</cyclicName>
-								<cyclicName type="10">Gà</cyclicName>
-								<cyclicName type="11">Chó</cyclicName>
-								<cyclicName type="12">Lợn</cyclicName>
+								<cyclicName type="1">Tý</cyclicName>
+								<cyclicName type="2">Sửu</cyclicName>
+								<cyclicName type="3">Dần</cyclicName>
+								<cyclicName type="4">Mão</cyclicName>
+								<cyclicName type="5">Thìn</cyclicName>
+								<cyclicName type="6">Tỵ</cyclicName>
+								<cyclicName type="7">Ngọ</cyclicName>
+								<cyclicName type="8">Mùi</cyclicName>
+								<cyclicName type="9">Thân</cyclicName>
+								<cyclicName type="10">Dậu</cyclicName>
+								<cyclicName type="11">Tuất</cyclicName>
+								<cyclicName type="12">Hợi</cyclicName>
 							</cyclicNameWidth>
 						</cyclicNameContext>
 					</cyclicNameSet>
@@ -1571,6 +1612,52 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Bh" draft="contributed">h B</dateFormatItem>
+						<dateFormatItem id="Bhm" draft="contributed">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms" draft="contributed">h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
+						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm" draft="contributed">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms" draft="contributed">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Ed" draft="contributed">d, E</dateFormatItem>
+						<dateFormatItem id="Gy" draft="contributed">r U</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="contributed">r(U) MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">r MMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="contributed">r(U) MMM d, E</dateFormatItem>
+						<dateFormatItem id="h" draft="contributed">h a</dateFormatItem>
+						<dateFormatItem id="H" draft="contributed">HH</dateFormatItem>
+						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
+						<dateFormatItem id="Md" draft="contributed">MM-dd</dateFormatItem>
+						<dateFormatItem id="MEd" draft="contributed">MM-dd, E</dateFormatItem>
+						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="contributed">MMM d</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="contributed">MMM d, E</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="contributed">MMMM d</dateFormatItem>
+						<dateFormatItem id="ms" draft="contributed">mm:ss</dateFormatItem>
+						<dateFormatItem id="UM" draft="contributed">U MM</dateFormatItem>
+						<dateFormatItem id="UMd" draft="contributed">U MM-d</dateFormatItem>
+						<dateFormatItem id="UMMM" draft="contributed">U MMM</dateFormatItem>
+						<dateFormatItem id="UMMMd" draft="contributed">U MMM d</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">r(U)</dateFormatItem>
+						<dateFormatItem id="yMd" draft="contributed">r-MM-dd</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">r(U)</dateFormatItem>
+						<dateFormatItem id="yyyyM" draft="contributed">r-MM</dateFormatItem>
+						<dateFormatItem id="yyyyMd" draft="contributed">r-MM-dd</dateFormatItem>
+						<dateFormatItem id="yyyyMEd" draft="contributed">r-MM-dd, E</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="contributed">r(U) MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="contributed">r MMM d</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="contributed">r(U) MMM d, E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="contributed">r(U) MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ" draft="contributed">r(U) QQQ</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ" draft="contributed">r(U) QQQQ</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
 			</calendar>
 			<calendar type="coptic">
 				<months>
@@ -1753,9 +1840,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh" draft="contributed">h B</dateFormatItem>
+						<dateFormatItem id="Bhm" draft="contributed">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms" draft="contributed">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">'Ngày' dd</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm" draft="contributed">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms" draft="contributed">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, dd</dateFormatItem>
+						<dateFormatItem id="Ehm" draft="contributed">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm" draft="contributed">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms" draft="contributed">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms" draft="contributed">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
@@ -1767,8 +1863,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">dd-M</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd-M</dateFormatItem>
+						<dateFormatItem id="Md">dd/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd/M</dateFormatItem>
 						<dateFormatItem id="MMdd" draft="contributed">dd-MM</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
@@ -1780,7 +1876,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd-M-y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMM">MM-y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM, y G</dateFormatItem>
@@ -2153,9 +2249,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">nửa đêm</dayPeriod>
-							<dayPeriod type="am" draft="contributed">SA</dayPeriod>
+							<dayPeriod type="am">SA</dayPeriod>
 							<dayPeriod type="noon">trưa</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">CH</dayPeriod>
+							<dayPeriod type="pm">CH</dayPeriod>
 							<dayPeriod type="morning1">sáng</dayPeriod>
 							<dayPeriod type="afternoon1">chiều</dayPeriod>
 							<dayPeriod type="evening1">tối</dayPeriod>
@@ -2165,16 +2261,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">tr. CN</era>
-						<era type="0" alt="variant">BCE</era>
+						<era type="0">Trước CN</era>
+						<era type="0" alt="variant" draft="contributed">trước CN</era>
 						<era type="1">sau CN</era>
-						<era type="1" alt="variant">CE</era>
+						<era type="1" alt="variant">CN</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">tr. CN</era>
-						<era type="0" alt="variant">BCE</era>
+						<era type="0">Trước CN</era>
+						<era type="0" alt="variant" draft="contributed">trước CN</era>
 						<era type="1">sau CN</era>
-						<era type="1" alt="variant">CE</era>
+						<era type="1" alt="variant">CN</era>
 					</eraAbbr>
 					<eraNarrow>
 						<era type="0">tr. CN</era>
@@ -2184,12 +2280,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, 'ngày' dd MMMM 'năm' y</pattern>
+							<pattern>EEEE, d MMMM, y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>'Ngày' dd 'tháng' MM 'năm' y</pattern>
+							<pattern>d MMMM, y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -2247,8 +2343,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh" draft="contributed">h B</dateFormatItem>
+						<dateFormatItem id="Bhm" draft="contributed">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms" draft="contributed">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm" draft="contributed">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms" draft="contributed">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, 'ngày' d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2257,7 +2358,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">dd MMM, y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, dd/MM/y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -2277,6 +2378,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'tuần' W 'của' 'tháng' M</dateFormatItem>
 						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
@@ -2290,6 +2392,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">MMMM 'năm' y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ 'năm' y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'tuần' w 'của' 'năm' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -2633,7 +2736,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>Thời đại</displayName>
+				<displayName>thời đại</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>thời đại</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>thời đại</displayName>
 			</field>
 			<field type="year">
 				<displayName>Năm</displayName>
@@ -2673,9 +2782,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>Quý</displayName>
-				<relative type="-1" draft="contributed">quý trước</relative>
-				<relative type="0" draft="contributed">quý này</relative>
-				<relative type="1" draft="contributed">quý sau</relative>
+				<relative type="-1">quý trước</relative>
+				<relative type="0">quý này</relative>
+				<relative type="1">quý sau</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">sau {0} quý nữa</relativeTimePattern>
 				</relativeTime>
@@ -2754,6 +2863,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} tuần trước</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>tuần {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>Tuần</displayName>
@@ -2766,6 +2876,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} tuần trước</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>tuần {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>Tuần</displayName>
@@ -2778,6 +2889,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} tuần trước</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>tuần {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>tuần trong tháng</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>tuần trong tháng</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>tuần trong tháng</displayName>
 			</field>
 			<field type="day">
 				<displayName>Ngày</displayName>
@@ -2794,7 +2915,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="day-short">
-				<displayName draft="contributed">Ngày</displayName>
+				<displayName>Ngày</displayName>
+				<relative type="-2" draft="contributed">Hôm kia</relative>
+				<relative type="2" draft="contributed">Ngày kia</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">sau {0} ngày nữa</relativeTimePattern>
 				</relativeTime>
@@ -2804,6 +2927,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="day-narrow">
 				<displayName>Ngày</displayName>
+				<relative type="-2" draft="contributed">Hôm kia</relative>
+				<relative type="2" draft="contributed">Ngày kia</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">sau {0} ngày nữa</relativeTimePattern>
 				</relativeTime>
@@ -2811,119 +2936,276 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} ngày trước</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>ngày trong năm</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>ngày trong năm</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>ngày trong năm</displayName>
+			</field>
 			<field type="weekday">
-				<displayName>Ngày trong tuần</displayName>
+				<displayName>ngày trong tuần</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>ngày trong tuần</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName draft="contributed">ngày trong tuần</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>ngày thường trong tháng</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>ngày thường trong tháng</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>ngày thường trong tháng</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">Chủ Nhật tuần trước</relative>
 				<relative type="0">Chủ Nhật tuần này</relative>
 				<relative type="1">Chủ Nhật tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Chủ Nhật nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Chủ Nhật trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">Chủ Nhật tuần trước</relative>
 				<relative type="0">Chủ Nhật tuần này</relative>
 				<relative type="1">Chủ Nhật tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Chủ Nhật nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Chủ Nhật trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">Chủ Nhật tuần trước</relative>
 				<relative type="0">Chủ Nhật tuần này</relative>
 				<relative type="1">Chủ Nhật tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Chủ Nhật nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Chủ Nhật trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">Thứ Hai tuần trước</relative>
 				<relative type="0">Thứ Hai tuần này</relative>
 				<relative type="1">Thứ Hai tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Hai nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Hai trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">Thứ Hai tuần trước</relative>
 				<relative type="0">Thứ Hai tuần này</relative>
 				<relative type="1">Thứ Hai tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Hai nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Hai trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">Thứ Hai tuần trước</relative>
 				<relative type="0">Thứ Hai tuần này</relative>
 				<relative type="1">Thứ Hai tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Hai nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Hai trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">Thứ Ba tuần trước</relative>
 				<relative type="0">Thứ Ba tuần này</relative>
 				<relative type="1">Thứ Ba tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Ba nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Ba trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">Thứ Ba tuần trước</relative>
 				<relative type="0">Thứ Ba tuần này</relative>
 				<relative type="1">Thứ Ba tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Ba nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Ba trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">Thứ Ba tuần trước</relative>
 				<relative type="0">Thứ Ba tuần này</relative>
 				<relative type="1">Thứ Ba tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Ba nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Ba trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">Thứ Tư tuần trước</relative>
 				<relative type="0">Thứ Tư tuần này</relative>
 				<relative type="1">Thứ Tư tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Tư nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Tư trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">Thứ Tư tuần trước</relative>
 				<relative type="0">Thứ Tư tuần này</relative>
 				<relative type="1">Thứ Tư tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Tư nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Tư trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">Thứ Tư tuần trước</relative>
 				<relative type="0">Thứ Tư tuần này</relative>
 				<relative type="1">Thứ Tư tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Tư nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Tư trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">Thứ Năm tuần trước</relative>
 				<relative type="0">Thứ Năm tuần này</relative>
 				<relative type="1">Thứ Năm tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Năm nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Năm trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">Thứ Năm tuần trước</relative>
 				<relative type="0">Thứ Năm tuần này</relative>
 				<relative type="1">Thứ Năm tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Năm nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Năm trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">Thứ Năm tuần trước</relative>
 				<relative type="0">Thứ Năm tuần này</relative>
 				<relative type="1">Thứ Năm tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Năm nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Năm trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">Thứ Sáu tuần trước</relative>
 				<relative type="0">Thứ Sáu tuần này</relative>
 				<relative type="1">Thứ Sáu tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Sáu nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Sáu trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">Thứ Sáu tuần trước</relative>
 				<relative type="0">Thứ Sáu tuần này</relative>
 				<relative type="1">Thứ Sáu tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Sáu nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Sáu trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">Thứ Sáu tuần trước</relative>
 				<relative type="0">Thứ Sáu tuần này</relative>
 				<relative type="1">Thứ Sáu tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Sáu nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Sáu trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">Thứ Bảy tuần trước</relative>
 				<relative type="0">Thứ Bảy tuần này</relative>
 				<relative type="1">Thứ Bảy tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Bảy nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Bảy trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">Thứ Bảy tuần trước</relative>
 				<relative type="0">Thứ Bảy tuần này</relative>
 				<relative type="1">Thứ Bảy tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Bảy nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Bảy trước</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">Thứ Bảy tuần trước</relative>
 				<relative type="0">Thứ Bảy tuần này</relative>
 				<relative type="1">Thứ Bảy tuần sau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">sau {0} Thứ Bảy nữa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Thứ Bảy trước</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>SA/CH</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>SA/CH</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>SA/CH</displayName>
+			</field>
 			<field type="hour">
 				<displayName>Giờ</displayName>
+				<relative type="0">giờ này</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">sau {0} giờ nữa</relativeTimePattern>
 				</relativeTime>
@@ -2951,6 +3233,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>Phút</displayName>
+				<relative type="0">phút này</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">sau {0} phút nữa</relativeTimePattern>
 				</relativeTime>
@@ -3007,15 +3290,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>Múi giờ</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>Múi giờ</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>Múi giờ</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>Giờ {0}</regionFormat>
-			<regionFormat type="daylight">Giờ ban ngày {0}</regionFormat>
+			<regionFormat type="daylight">Giờ mùa hè {0}</regionFormat>
 			<regionFormat type="standard">Giờ chuẩn {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Isabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Giờ Phối hợp Quốc tế</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Thành phố Không xác định</exemplarCity>
 			</zone>
@@ -3113,7 +3413,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Pago Pago</exemplarCity>
 			</zone>
 			<zone type="Europe/Vienna">
-				<exemplarCity>Viên</exemplarCity>
+				<exemplarCity>Vienna</exemplarCity>
 			</zone>
 			<zone type="Australia/Perth">
 				<exemplarCity>Perth</exemplarCity>
@@ -3191,7 +3491,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Porto-Novo</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>Saint Barthélemy</exemplarCity>
+				<exemplarCity>St. Barthélemy</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity>Bermuda</exemplarCity>
@@ -3279,6 +3579,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Vancouver">
 				<exemplarCity>Vancouver</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Dawson Creek</exemplarCity>
@@ -3376,6 +3679,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Easter</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santiago</exemplarCity>
 			</zone>
@@ -3408,6 +3714,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nicosia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Praha</exemplarCity>
@@ -3667,6 +3976,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atyrau</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtobe</exemplarCity>
 			</zone>
@@ -3780,9 +4092,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosillo</exemplarCity>
@@ -3929,7 +4238,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Qatar</exemplarCity>
 			</zone>
 			<zone type="Indian/Reunion">
-				<exemplarCity>Reunion</exemplarCity>
+				<exemplarCity>Réunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bucharest</exemplarCity>
@@ -3949,6 +4258,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrakhan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -3960,6 +4281,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
@@ -4115,7 +4442,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Dar es Salaam</exemplarCity>
 			</zone>
 			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod</exemplarCity>
+				<exemplarCity>Uzhhorod</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
@@ -4129,9 +4456,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midway</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake</exemplarCity>
 			</zone>
@@ -4141,8 +4465,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -4330,30 +4654,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>Giờ miền trung</generic>
-					<standard>Giờ chuẩn miền trung</standard>
-					<daylight>Giờ ban ngày miền trung</daylight>
+					<generic>Giờ miền Trung</generic>
+					<standard>Giờ chuẩn miền Trung</standard>
+					<daylight>Giờ mùa hè miền Trung</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>Giờ miền đông</generic>
-					<standard>Giờ chuẩn miền đông</standard>
-					<daylight>Giờ ban ngày miền đông</daylight>
+					<generic>Giờ miền Đông</generic>
+					<standard>Giờ chuẩn miền Đông</standard>
+					<daylight>Giờ mùa hè miền Đông</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
 					<generic>Giờ miền núi</generic>
 					<standard>Giờ chuẩn miền núi</standard>
-					<daylight>Giờ ban ngày miền núi</daylight>
+					<daylight>Giờ mùa hè miền núi</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
 					<generic>Giờ Thái Bình Dương</generic>
 					<standard>Giờ chuẩn Thái Bình Dương</standard>
-					<daylight>Giờ ban ngày Thái Bình Dương</daylight>
+					<daylight>Giờ mùa hè Thái Bình Dương</daylight>
 				</long>
 			</metazone>
 			<metazone type="Anadyr">
@@ -4365,9 +4689,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic draft="contributed">Giờ Apia</generic>
-					<standard draft="contributed">Giờ Chuẩn Apia</standard>
-					<daylight draft="contributed">Giờ Ban ngày Apia</daylight>
+					<generic>Giờ Apia</generic>
+					<standard>Giờ Chuẩn Apia</standard>
+					<daylight>Giờ Mùa Hè Apia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtau">
@@ -4401,7 +4725,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Argentina_Western">
 				<long>
 					<generic>Giờ miền tây Argentina</generic>
-					<standard>Giờ chuẩn miền mây Argentina</standard>
+					<standard>Giờ chuẩn miền tây Argentina</standard>
 					<daylight>Giờ mùa hè miền tây Argentina</daylight>
 				</long>
 			</metazone>
@@ -4416,35 +4740,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Giờ Đại Tây Dương</generic>
 					<standard>Giờ Chuẩn Đại Tây Dương</standard>
-					<daylight>Giờ Mùa hè Đại Tây Dương</daylight>
+					<daylight>Giờ mùa hè Đại Tây Dương</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>Giờ Miền Trung Nước Úc</generic>
-					<standard>Giờ Chuẩn Miền Trung Nước Úc</standard>
-					<daylight>Giờ Mùa Hè Miền Trung Nước Úc</daylight>
+					<generic>Giờ Miền Trung Australia</generic>
+					<standard>Giờ Chuẩn Miền Trung Australia</standard>
+					<daylight>Giờ Mùa Hè Miền Trung Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
-					<generic>Giờ Miền Trung Tây Nước Úc</generic>
-					<standard>Giờ Chuẩn Miền Trung Tây Nước Úc</standard>
-					<daylight>Giờ Mùa Hè Miền Trung Tây Nước Úc</daylight>
+					<generic>Giờ Miền Trung Tây Australia</generic>
+					<standard>Giờ Chuẩn Miền Trung Tây Australia</standard>
+					<daylight>Giờ Mùa Hè Miền Trung Tây Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
-					<generic>Giờ Miền Đông Nước Úc</generic>
-					<standard>Giờ Chuẩn Miền Đông Nước Úc</standard>
-					<daylight>Giờ Mùa Hè Miền Đông Nước Úc</daylight>
+					<generic>Giờ Miền Đông Australia</generic>
+					<standard>Giờ Chuẩn Miền Đông Australia</standard>
+					<daylight>Giờ Mùa Hè Miền Đông Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
-					<generic>Giờ Miền Tây Nước Úc</generic>
-					<standard>Giờ Chuẩn Miền Tây Nước Úc</standard>
-					<daylight>Giờ Mùa Hè Miền Tây Nước Úc</daylight>
+					<generic>Giờ Miền Tây Australia</generic>
+					<standard>Giờ Chuẩn Miền Tây Australia</standard>
+					<daylight>Giờ Mùa Hè Miền Tây Australia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
@@ -4591,15 +4915,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Europe_Central">
 				<long>
 					<generic>Giờ Trung Âu</generic>
-					<standard>Giờ Chuẩn Trung Âu</standard>
-					<daylight>Giờ Mùa Hè Trung Âu</daylight>
+					<standard>Giờ chuẩn Trung Âu</standard>
+					<daylight>Giờ mùa hè Trung Âu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
 					<generic>Giờ Đông Âu</generic>
-					<standard>Giờ Chuẩn Đông Âu</standard>
-					<daylight>Giờ Mùa Hè Đông Âu</daylight>
+					<standard>Giờ chuẩn Đông Âu</standard>
+					<daylight>Giờ mùa hè Đông Âu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
@@ -4611,7 +4935,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Giờ Tây Âu</generic>
 					<standard>Giờ Chuẩn Tây Âu</standard>
-					<daylight>Giờ Mùa hè Tây Âu</daylight>
+					<daylight>Giờ mùa hè Tây Âu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
@@ -4650,9 +4974,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Georgia">
 				<long>
-					<generic>Giờ Georgia</generic>
-					<standard>Giờ Chuẩn Georgia</standard>
-					<daylight>Giờ Mùa Hè Georgia</daylight>
+					<generic>Giờ Gruzia</generic>
+					<standard>Giờ Chuẩn Gruzia</standard>
+					<daylight>Giờ Mùa Hè Gruzia</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gilbert_Islands">
@@ -4696,9 +5020,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>Giờ Hawaii-Aleutian</generic>
-					<standard>Giờ Chuẩn Hawaii-Aleutian</standard>
-					<daylight>Giờ Mùa Hè Hawaii-Aleutian</daylight>
+					<generic>Giờ Hawaii-Aleut</generic>
+					<standard>Giờ Chuẩn Hawaii-Aleut</standard>
+					<daylight>Giờ Mùa Hè Hawaii-Aleut</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -5042,6 +5366,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>Giờ Ponape</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Giờ Bình Nhưỡng</standard>
+				</long>
+			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
 					<generic draft="contributed">Giờ Qyzylorda</generic>
@@ -5303,7 +5632,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
+					<pattern>#,##0.00 ¤</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
@@ -5311,18 +5640,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="other" draft="contributed">0 N ¤</pattern>
-					<pattern type="10000" count="other" draft="contributed">00 N ¤</pattern>
-					<pattern type="100000" count="other" draft="contributed">000 N ¤</pattern>
-					<pattern type="1000000" count="other" draft="contributed">0 Tr ¤</pattern>
-					<pattern type="10000000" count="other" draft="contributed">00 Tr ¤</pattern>
-					<pattern type="100000000" count="other" draft="contributed">000 Tr ¤</pattern>
-					<pattern type="1000000000" count="other" draft="contributed">0 T ¤</pattern>
-					<pattern type="10000000000" count="other" draft="contributed">00 T ¤</pattern>
-					<pattern type="100000000000" count="other" draft="contributed">000 T ¤</pattern>
-					<pattern type="1000000000000" count="other" draft="contributed">0 NT ¤</pattern>
-					<pattern type="10000000000000" count="other" draft="contributed">00 NT ¤</pattern>
-					<pattern type="100000000000000" count="other" draft="contributed">000 NT ¤</pattern>
+					<pattern type="1000" count="other">0 N ¤</pattern>
+					<pattern type="10000" count="other">00 N ¤</pattern>
+					<pattern type="100000" count="other">000 N ¤</pattern>
+					<pattern type="1000000" count="other">0 Tr ¤</pattern>
+					<pattern type="10000000" count="other">00 Tr ¤</pattern>
+					<pattern type="100000000" count="other">000 Tr ¤</pattern>
+					<pattern type="1000000000" count="other">0 T ¤</pattern>
+					<pattern type="10000000000" count="other">00 T ¤</pattern>
+					<pattern type="100000000000" count="other">000 T ¤</pattern>
+					<pattern type="1000000000000" count="other">0 NT ¤</pattern>
+					<pattern type="10000000000000" count="other">00 NT ¤</pattern>
+					<pattern type="100000000000000" count="other">000 NT ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{0} {1}</unitPattern>
@@ -5357,8 +5686,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
-				<displayName>Guilder Tây Ấn Hà Lan</displayName>
-				<displayName count="other">Guilder Tây Ấn Hà Lan</displayName>
+				<displayName>Guilder Antille Hà Lan</displayName>
+				<displayName count="other">Guilder Antille Hà Lan</displayName>
 				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
@@ -5575,11 +5904,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName draft="contributed">Đồng Rúp Mới của Belarus (1994–1999)</displayName>
 				<symbol draft="contributed">BYB</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Rúp Belarus</displayName>
 				<displayName count="other">Rúp Belarus</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Rúp Belarus (2000–2016)</displayName>
+				<displayName count="other">Rúp Belarus (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Đô la Belize</displayName>
@@ -5624,6 +5958,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Peso Chile</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>Nhân dân tệ (hải ngoại)</displayName>
+				<displayName count="other">Nhân dân tệ (hải ngoại)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>Nhân dân tệ</displayName>
@@ -5792,6 +6131,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Lari Gruzia</displayName>
 				<displayName count="other">Lari Gruzia</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
@@ -6133,9 +6473,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ouguiya Mauritania (1973–2017)</displayName>
+				<displayName count="other">Ouguiya Mauritania (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ouguiya Mauritania</displayName>
 				<displayName count="other">Ouguiya Mauritania</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName draft="contributed">Lia xứ Man-tơ</displayName>
@@ -6253,8 +6597,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">PEI</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>Nuevo Sol Peru</displayName>
-				<displayName count="other">Nuevo Sol Peru</displayName>
+				<displayName>Sol Peru</displayName>
+				<displayName count="other">Sol Peru</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
@@ -6315,6 +6659,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Leu Romania</displayName>
 				<displayName count="other">Leu Romania</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Dinar Serbia</displayName>
@@ -6419,9 +6764,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobra São Tomé và Príncipe (1977–2017)</displayName>
+				<displayName count="other">Dobra São Tomé và Príncipe (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobra São Tomé và Príncipe</displayName>
 				<displayName count="other">Dobra São Tomé và Príncipe</displayName>
-				<symbol>STD</symbol>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -6745,6 +7095,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">Rẽ vào lối rẽ thứ nhất bên phải.</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">Rẽ vào lối rẽ thứ {0} bên phải.</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Rẽ vào lối rẽ thứ nhất bên phải.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Rẽ vào lối rẽ thứ {0} bên phải.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -6782,6 +7138,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-kilometer">
 				<displayName>kilômét vuông</displayName>
 				<unitPattern count="other">{0} kilômét vuông</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>héc-ta</displayName>
@@ -6800,6 +7157,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-mile">
 				<displayName>dặm vuông</displayName>
 				<unitPattern count="other">{0} dặm vuông</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>mẫu</displayName>
@@ -6822,6 +7180,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>karat</displayName>
 				<unitPattern count="other">{0} karat</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>lít/km</displayName>
 				<unitPattern count="other">{0} lít/km</unitPattern>
@@ -6833,6 +7203,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="consumption-mile-per-gallon">
 				<displayName>dặm/gallon</displayName>
 				<unitPattern count="other">{0} dặm/gallon</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg Imp.</displayName>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabyte</displayName>
@@ -7054,6 +7428,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>dặm scandinavia</displayName>
 				<unitPattern count="other">{0} dặm scandinavia</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>đ</displayName>
+				<unitPattern count="other">{0} đ</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="other">{0} lux</unitPattern>
@@ -7090,8 +7468,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
-				<displayName>ao-xơ</displayName>
-				<unitPattern count="other">{0} ao-xơ</unitPattern>
+				<displayName>oz</displayName>
+				<unitPattern count="other">{0} oz</unitPattern>
 				<perUnitPattern>{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
@@ -7250,6 +7628,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gallon</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>gallon Anh</displayName>
+				<unitPattern count="other">{0} gallon Anh</unitPattern>
+				<perUnitPattern>{0}/gal Anh</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>quart</displayName>
 				<unitPattern count="other">{0} quart</unitPattern>
@@ -7275,10 +7658,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} muỗng cà phê</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0}Đ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}B</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}T</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -7316,6 +7699,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-kilometer">
 				<displayName>km²</displayName>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
@@ -7334,6 +7718,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-mile">
 				<displayName>mi²</displayName>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>mẫu</displayName>
@@ -7356,6 +7741,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kt</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="other">{0} l/km</unitPattern>
@@ -7367,6 +7764,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mpg</displayName>
 				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg Imp.</displayName>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -7409,8 +7810,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} bit</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName>c</displayName>
-				<unitPattern count="other">{0} c</unitPattern>
+				<displayName>thế kỷ</displayName>
+				<unitPattern count="other">{0} thế kỷ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>năm</displayName>
@@ -7448,16 +7849,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>{0}/giây</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName>ms</displayName>
-				<unitPattern count="other">{0} ms</unitPattern>
+				<displayName>mili giây</displayName>
+				<unitPattern count="other">{0} mili giây</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μs</displayName>
 				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName>ns</displayName>
-				<unitPattern count="other">{0} ns</unitPattern>
+				<displayName>nano giây</displayName>
+				<unitPattern count="other">{0} nano giây</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>A</displayName>
@@ -7587,6 +7988,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-mile-scandinavian">
 				<displayName>smi</displayName>
 				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>đ</displayName>
+				<unitPattern count="other">{0} đ</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
@@ -7784,6 +8189,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>gal Anh</displayName>
+				<unitPattern count="other">{0} gal Anh</unitPattern>
+				<perUnitPattern>{0}/gal Anh</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
 				<unitPattern count="other">{0} qt</unitPattern>
@@ -7809,10 +8219,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0}Đ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}B</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}T</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -7882,8 +8292,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} giây</unitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName>ms</displayName>
-				<unitPattern count="other">{0}ms</unitPattern>
+				<displayName>mili giây</displayName>
+				<unitPattern count="other">{0}miligiây</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -7979,10 +8389,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}L</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0}Đ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}B</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}T</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -8002,6 +8412,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} và {1}</listPatternPart>
 			<listPatternPart type="2">{0} và {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start" draft="contributed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="contributed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="contributed">{0} hoặc {1}</listPatternPart>
+			<listPatternPart type="2" draft="contributed">{0} hoặc {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} và {1}</listPatternPart>
+			<listPatternPart type="2">{0} và {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
@@ -8009,10 +8431,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
-			<listPatternPart type="start" draft="contributed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="contributed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="contributed">{0}, {1}</listPatternPart>
-			<listPatternPart type="2" draft="contributed">{0}, {1}</listPatternPart>
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
+			<listPatternPart type="end">{0} {1}</listPatternPart>
+			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -8023,9 +8445,165 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</listPatterns>
 	<posix>
 		<messages>
-			<yesstr>yes:c</yesstr>
-			<nostr>no:k</nostr>
+			<yesstr>có:c</yesstr>
+			<nostr>không:k</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — tất cả</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — tương thích</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — kín</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — mở rộng</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — lịch sử</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — hỗn hợp</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — khác</characterLabelPattern>
+		<characterLabelPattern type="scripts">chữ viết — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} nét</characterLabelPattern>
+		<characterLabel type="activities">hoạt động</characterLabel>
+		<characterLabel type="african_scripts">chữ viết Châu Phi</characterLabel>
+		<characterLabel type="american_scripts">chữ viết Châu Mỹ</characterLabel>
+		<characterLabel type="animal">động vật</characterLabel>
+		<characterLabel type="animals_nature">động vật hoặc tự nhiên</characterLabel>
+		<characterLabel type="arrows">mũi tên</characterLabel>
+		<characterLabel type="body">cơ thể</characterLabel>
+		<characterLabel type="box_drawing">vẽ hộp</characterLabel>
+		<characterLabel type="braille">chữ nổi Braille</characterLabel>
+		<characterLabel type="building">tòa nhà</characterLabel>
+		<characterLabel type="bullets_stars">dấu đầu dòng hoặc sao</characterLabel>
+		<characterLabel type="consonantal_jamo">jamo phụ âm</characterLabel>
+		<characterLabel type="currency_symbols">ký hiệu tiền tệ</characterLabel>
+		<characterLabel type="dash_connector">dấu gạch ngang hoặc gạch nối</characterLabel>
+		<characterLabel type="digits">chữ số</characterLabel>
+		<characterLabel type="dingbats">dingbat</characterLabel>
+		<characterLabel type="divination_symbols">ký hiệu tiên tri</characterLabel>
+		<characterLabel type="downwards_arrows">mũi tên hướng xuống</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">mũi tên lên xuống</characterLabel>
+		<characterLabel type="east_asian_scripts">chữ viết Đông Á</characterLabel>
+		<characterLabel type="emoji">biểu tượng</characterLabel>
+		<characterLabel type="european_scripts">chữ viết Châu Âu</characterLabel>
+		<characterLabel type="female">nữ</characterLabel>
+		<characterLabel type="flag">cờ</characterLabel>
+		<characterLabel type="flags">cờ</characterLabel>
+		<characterLabel type="food_drink">đồ ăn &amp; đồ uống</characterLabel>
+		<characterLabel type="format">định dạng</characterLabel>
+		<characterLabel type="format_whitespace">định dạng &amp; dấu cách</characterLabel>
+		<characterLabel type="full_width_form_variant">biến thể mẫu rộng đầy đủ</characterLabel>
+		<characterLabel type="geometric_shapes">hình dạng hình học</characterLabel>
+		<characterLabel type="half_width_form_variant">biến thể nửa chiều rộng</characterLabel>
+		<characterLabel type="han_characters">ký tự chữ Hán</characterLabel>
+		<characterLabel type="han_radicals">gốc chữ Hán</characterLabel>
+		<characterLabel type="hanja">hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">Hán tự (giản thể)</characterLabel>
+		<characterLabel type="hanzi_traditional">Hán tự (phồn thể)</characterLabel>
+		<characterLabel type="heart">trái tim</characterLabel>
+		<characterLabel type="historic_scripts">chữ viết lịch sử</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ký tự mô tả tượng hình</characterLabel>
+		<characterLabel type="japanese_kana">kana tiếng Nhật</characterLabel>
+		<characterLabel type="kanbun">kanbun</characterLabel>
+		<characterLabel type="kanji">kanji</characterLabel>
+		<characterLabel type="keycap">mũ phím</characterLabel>
+		<characterLabel type="leftwards_arrows">mũi tên hướng sang trái</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">mũi tên hai chiều</characterLabel>
+		<characterLabel type="letterlike_symbols">ký hiệu giống chữ cái</characterLabel>
+		<characterLabel type="limited_use">sử dụng hạn chế</characterLabel>
+		<characterLabel type="male">nam</characterLabel>
+		<characterLabel type="math_symbols">ký hiệu toán học</characterLabel>
+		<characterLabel type="middle_eastern_scripts">chữ viết Trung Đông</characterLabel>
+		<characterLabel type="miscellaneous">khác</characterLabel>
+		<characterLabel type="modern_scripts">chữ viết hiện đại</characterLabel>
+		<characterLabel type="modifier">ký tự bổ trợ</characterLabel>
+		<characterLabel type="musical_symbols">ký hiệu âm nhạc</characterLabel>
+		<characterLabel type="nature">tự nhiên</characterLabel>
+		<characterLabel type="nonspacing">không giãn cách</characterLabel>
+		<characterLabel type="numbers">số</characterLabel>
+		<characterLabel type="objects">đồ vật</characterLabel>
+		<characterLabel type="other">khác</characterLabel>
+		<characterLabel type="paired">được ghép đôi</characterLabel>
+		<characterLabel type="person">người</characterLabel>
+		<characterLabel type="phonetic_alphabet">bảng chữ cái phiên âm</characterLabel>
+		<characterLabel type="pictographs">chữ tượng hình</characterLabel>
+		<characterLabel type="place">địa điểm</characterLabel>
+		<characterLabel type="plant">thực vật</characterLabel>
+		<characterLabel type="punctuation">dấu câu</characterLabel>
+		<characterLabel type="rightwards_arrows">mũi tên hướng sang phải</characterLabel>
+		<characterLabel type="sign_standard_symbols">ký hiệu hoặc biểu tượng</characterLabel>
+		<characterLabel type="small_form_variant">biến thể mẫu nhỏ</characterLabel>
+		<characterLabel type="smiley">mặt cười</characterLabel>
+		<characterLabel type="smileys_people">mặt cười hoặc người</characterLabel>
+		<characterLabel type="south_asian_scripts">chữ viết Nam Á</characterLabel>
+		<characterLabel type="southeast_asian_scripts">chữ viết Đông Nam Á</characterLabel>
+		<characterLabel type="spacing">giãn cách</characterLabel>
+		<characterLabel type="sport">thể thao</characterLabel>
+		<characterLabel type="symbols">ký hiệu</characterLabel>
+		<characterLabel type="technical_symbols">ký hiệu kỹ thuật</characterLabel>
+		<characterLabel type="tone_marks">dấu thanh</characterLabel>
+		<characterLabel type="travel">du lịch</characterLabel>
+		<characterLabel type="travel_places">du lịch hoặc địa điểm</characterLabel>
+		<characterLabel type="upwards_arrows">mũi tên hướng lên</characterLabel>
+		<characterLabel type="variant_forms">mẫu biến thể</characterLabel>
+		<characterLabel type="vocalic_jamo">jamo nguyên âm</characterLabel>
+		<characterLabel type="weather">thời tiết</characterLabel>
+		<characterLabel type="western_asian_scripts">chữ viết Tây Á</characterLabel>
+		<characterLabel type="whitespace">dấu cách</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<styleName type="ital" subtype="1">chữ thảo</styleName>
+		<styleName type="opsz" subtype="18">văn tự</styleName>
+		<styleName type="opsz" subtype="72">hiển thị</styleName>
+		<styleName type="opsz" subtype="144">áp phích</styleName>
+		<styleName type="slnt" subtype="-12">bị nghiêng sau</styleName>
+		<styleName type="slnt" subtype="0">thẳng đứng</styleName>
+		<styleName type="slnt" subtype="12">bị nghiêng</styleName>
+		<styleName type="slnt" subtype="24">rất xiên</styleName>
+		<styleName type="wdth" subtype="50">co lại rất nhiều</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">được nén rất nhiều</styleName>
+		<styleName type="wdth" subtype="62.5">co lại nhiều</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">được nén nhiều</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">rất hẹp</styleName>
+		<styleName type="wdth" subtype="75">được co lại</styleName>
+		<styleName type="wdth" subtype="75" alt="short">co lại</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">được nén</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">hẹp</styleName>
+		<styleName type="wdth" subtype="87.5">co một nửa</styleName>
+		<styleName type="wdth" subtype="100">bình thường</styleName>
+		<styleName type="wdth" subtype="112.5">mở rộng một nửa</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">kéo giãn một nửa</styleName>
+		<styleName type="wdth" subtype="125">được mở rộng</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">được kéo giãn</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">rộng</styleName>
+		<styleName type="wdth" subtype="150">mở rộng nhiều</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">kéo giãn nhiều</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">rất rộng</styleName>
+		<styleName type="wdth" subtype="200">mở rộng rất nhiều</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">kéo giãn rất nhiều</styleName>
+		<styleName type="wght" subtype="100">mỏng</styleName>
+		<styleName type="wght" subtype="200">rất nhạt</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">siêu nhạt</styleName>
+		<styleName type="wght" subtype="300">nhạt</styleName>
+		<styleName type="wght" subtype="350">nửa nhạt</styleName>
+		<styleName type="wght" subtype="380">sách</styleName>
+		<styleName type="wght" subtype="400">thường</styleName>
+		<styleName type="wght" subtype="500">trung bình</styleName>
+		<styleName type="wght" subtype="600">nửa đậm</styleName>
+		<styleName type="wght" subtype="700">đậm</styleName>
+		<styleName type="wght" subtype="800">rất đậm</styleName>
+		<styleName type="wght" subtype="800" alt="ultra">siêu đậm</styleName>
+		<styleName type="wght" subtype="900">đen</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">mập</styleName>
+		<styleName type="wght" subtype="950">rất đen</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">siêu mập</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">siêu đen</styleName>
+		<featureName type="afrc">phân số dọc</featureName>
+		<featureName type="cpsp">giãn cách chữ hoa</featureName>
+		<featureName type="dlig">chữ ghép tùy chọn</featureName>
+		<featureName type="frac">phân số chéo</featureName>
+		<featureName type="lnum">sắp dòng số</featureName>
+		<featureName type="onum">số kiểu cũ</featureName>
+		<featureName type="ordn">số thứ tự</featureName>
+		<featureName type="pnum">số tỷ lệ</featureName>
+		<featureName type="smcp">chữ hoa nhỏ</featureName>
+		<featureName type="tnum">số trong bảng</featureName>
+		<featureName type="zero">số 0 có gạch</featureName>
+	</typographicNames>
 </ldml>
-

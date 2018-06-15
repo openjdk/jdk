@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13839 $"/>
 		<language type="zh"/>
 		<script type="Hans"/>
 		<territory type="SG"/>
@@ -226,15 +227,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="ANG">
 				<displayName count="other" draft="contributed">荷兰安的列斯盾</displayName>
 			</currency>
-			<currency type="AWG">
-				<displayName draft="contributed">阿鲁巴弗罗林</displayName>
-				<displayName count="other" draft="contributed">阿鲁巴弗罗林</displayName>
-			</currency>
 			<currency type="CNY">
 				<symbol draft="contributed">CN¥</symbol>
 			</currency>
 			<currency type="NIO">
-				<displayName draft="contributed">尼加拉瓜科多巴</displayName>
 				<displayName count="other" draft="contributed">尼加拉瓜科多巴</displayName>
 			</currency>
 			<currency type="SGD">
@@ -270,12 +266,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName draft="unconfirmed">开</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0}开</unitPattern>
 			</unit>
-			<unit type="length-picometer">
-				<unitPattern count="other" draft="unconfirmed">{0}皮米</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<unitPattern count="other" draft="unconfirmed">{0}码</unitPattern>
-			</unit>
 			<unit type="temperature-kelvin">
 				<displayName draft="unconfirmed">开氏度</displayName>
 				<unitPattern count="other" draft="contributed">{0}°K</unitPattern>
@@ -300,10 +290,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-light-year">
 				<unitPattern count="other" draft="unconfirmed">{0}光年</unitPattern>
 			</unit>
-			<unit type="temperature-celsius">
-				<unitPattern count="other" draft="contributed">{0}°C</unitPattern>
-			</unit>
 		</unitLength>
 	</units>
 </ldml>
-

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldmlBCP47 SYSTEM "../../common/dtd/ldmlBCP47.dtd">
 <!--
-Copyright © 1991-2013 Unicode, Inc.
+Copyright © 1991-2017 Unicode, Inc.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 For terms of use, see http://www.unicode.org/copyright.html
 -->
 
 <ldmlBCP47>
-    <version number="$Revision: 12146 $"/>
+    <version number="$Revision: 13421 $"/>
     <keyword>
         <key name="tz" description="Time zone key" alias="timezone">
             <type name="adalv" description="Andorra" alias="Europe/Andorra"/>
@@ -131,6 +131,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="ciabj" description="Abidjan, Côte d'Ivoire" alias="Africa/Abidjan"/>
             <type name="ckrar" description="Rarotonga, Cook Islands" alias="Pacific/Rarotonga"/>
             <type name="clipc" description="Easter Island, Chile" alias="Pacific/Easter Chile/EasterIsland"/>
+            <type name="clpuq" description="Punta Arenas, Chile" alias="America/Punta_Arenas" since="31"/>
             <type name="clscl" description="Santiago, Chile" alias="America/Santiago Chile/Continental"/>
             <type name="cmdla" description="Douala, Cameroon" alias="Africa/Douala"/>
             <type name="cnckg" description="Chongqing, China" deprecated="true" preferred="cnsha"/>
@@ -144,6 +145,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="cuhav" description="Havana, Cuba" alias="America/Havana Cuba"/>
             <type name="cvrai" description="Cape Verde" alias="Atlantic/Cape_Verde"/>
             <type name="cxxch" description="Christmas Island" alias="Indian/Christmas"/>
+            <type name="cyfmg" description="Famagusta, Cyprus" alias="Asia/Famagusta" since="31"/>
             <type name="cynic" description="Nicosia, Cyprus" alias="Asia/Nicosia Europe/Nicosia"/>
             <type name="czprg" description="Prague, Czech Republic" alias="Europe/Prague"/>
             <type name="deber" description="Berlin, Germany" alias="Europe/Berlin"/>
@@ -187,6 +189,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="globy" description="Ittoqqortoormiit (Scoresbysund), Greenland" alias="America/Scoresbysund"/>
             <type name="glthu" description="Qaanaaq (Thule), Greenland" alias="America/Thule"/>
             <type name="gmbjl" description="Banjul, Gambia" alias="Africa/Banjul"/>
+            <type name="gmt" description="Greenwich Mean Time" alias="Etc/GMT Etc/GMT+0 Etc/GMT-0 Etc/GMT0 Etc/Greenwich GMT GMT+0 GMT-0 GMT0 Greenwich"/>
             <type name="gncky" description="Conakry, Guinea" alias="Africa/Conakry"/>
             <type name="gpbbr" description="Guadeloupe" alias="America/Guadeloupe"/>
             <type name="gpmsb" description="Marigot, Saint Martin" alias="America/Marigot"/>
@@ -236,6 +239,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="kzaau" description="Aqtau, Kazakhstan" alias="Asia/Aqtau"/>
             <type name="kzakx" description="Aqtobe, Kazakhstan" alias="Asia/Aqtobe"/>
             <type name="kzala" description="Almaty, Kazakhstan" alias="Asia/Almaty"/>
+            <type name="kzguw" description="Atyrau (Guryev), Kazakhstan" alias="Asia/Atyrau" since="31"/>
             <type name="kzkzo" description="Kyzylorda, Kazakhstan" alias="Asia/Qyzylorda"/>
             <type name="kzura" description="Oral, Kazakhstan" alias="Asia/Oral"/>
             <type name="lavte" description="Vientiane, Laos" alias="Asia/Vientiane"/>
@@ -258,7 +262,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="mhmaj" description="Majuro, Marshall Islands" alias="Pacific/Majuro"/>
             <type name="mkskp" description="Skopje, Macedonia" alias="Europe/Skopje"/>
             <type name="mlbko" description="Bamako, Mali" alias="Africa/Bamako Africa/Timbuktu"/>
-            <type name="mmrgn" description="Yangon (Rangoon), Burma" alias="Asia/Rangoon"/>
+            <type name="mmrgn" description="Yangon (Rangoon), Burma" alias="Asia/Rangoon Asia/Yangon"/>
             <type name="mncoq" description="Choibalsan, Mongolia" alias="Asia/Choibalsan"/>
             <type name="mnhvd" description="Khovd (Hovd), Mongolia" alias="Asia/Hovd"/>
             <type name="mnuln" description="Ulaanbaatar (Ulan Bator), Mongolia" alias="Asia/Ulaanbaatar Asia/Ulan_Bator"/>
@@ -324,6 +328,8 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="rereu" description="Réunion" alias="Indian/Reunion"/>
             <type name="robuh" description="Bucharest, Romania" alias="Europe/Bucharest"/>
             <type name="rsbeg" description="Belgrade, Serbia" alias="Europe/Belgrade"/>
+            <type name="ruasf" description="Astrakhan, Russia" alias="Europe/Astrakhan" since="30"/>
+            <type name="rubax" description="Barnaul, Russia" alias="Asia/Barnaul" since="30"/>
             <type name="ruchita" description="Chita Zabaykalsky, Russia" alias="Asia/Chita" since="26"/>
             <type name="rudyr" description="Anadyr, Russia" alias="Asia/Anadyr"/>
             <type name="rugdx" description="Magadan, Russia" alias="Asia/Magadan"/>
@@ -332,12 +338,16 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="rukhndg" description="Khandyga Tomponsky, Russia" alias="Asia/Khandyga" since="23"/>
             <type name="rukra" description="Krasnoyarsk, Russia" alias="Asia/Krasnoyarsk"/>
             <type name="rukuf" description="Samara, Russia" alias="Europe/Samara"/>
+            <type name="rukvx" description="Kirov, Russia" alias="Europe/Kirov" since="30"/>
             <type name="rumow" description="Moscow, Russia" alias="Europe/Moscow W-SU"/>
             <type name="runoz" description="Novokuznetsk, Russia" alias="Asia/Novokuznetsk"/>
             <type name="ruoms" description="Omsk, Russia" alias="Asia/Omsk"/>
             <type name="ruovb" description="Novosibirsk, Russia" alias="Asia/Novosibirsk"/>
             <type name="rupkc" description="Kamchatka Peninsula, Russia" alias="Asia/Kamchatka"/>
+            <type name="rurtw" description="Saratov, Russia" alias="Europe/Saratov" since="31"/>
             <type name="rusred" description="Srednekolymsk, Russia" alias="Asia/Srednekolymsk" since="26"/>
+            <type name="rutof" description="Tomsk, Russia" alias="Asia/Tomsk" since="30"/>
+            <type name="ruuly" description="Ulyanovsk, Russia" alias="Europe/Ulyanovsk" since="30"/>
             <type name="ruunera" description="Ust-Nera Oymyakonsky, Russia" alias="Asia/Ust-Nera" since="23"/>
             <type name="ruuus" description="Sakhalin, Russia" alias="Asia/Sakhalin"/>
             <type name="ruvog" description="Volgograd, Russia" alias="Europe/Volgograd"/>
@@ -421,7 +431,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="uswsq" description="Petersburg (Indiana), United States" alias="America/Indiana/Petersburg"/>
             <type name="usxul" description="Beulah (North Dakota), United States" alias="America/North_Dakota/Beulah" since="1.9.1"/>
             <type name="usyak" description="Yakutat (Alaska), United States" alias="America/Yakutat"/>
-            <type name="utc" description="UTC (Coordinated Universal Time)" alias="Etc/GMT Etc/GMT+0 Etc/GMT-0 Etc/GMT0 Etc/Greenwich Etc/UCT Etc/UTC Etc/Universal Etc/Zulu GMT GMT+0 GMT-0 GMT0 Greenwich UCT UTC Universal Zulu"/>
+            <type name="utc" description="UTC (Coordinated Universal Time)" alias="Etc/UTC Etc/UCT Etc/Universal Etc/Zulu UCT UTC Universal Zulu"/>
             <type name="utce01" description="1 hour ahead of UTC" alias="Etc/GMT-1"/>
             <type name="utce02" description="2 hours ahead of UTC" alias="Etc/GMT-2"/>
             <type name="utce03" description="3 hours ahead of UTC" alias="Etc/GMT-3"/>

@@ -1,15 +1,15 @@
 <!--
-Copyright © 2003-2015 Unicode, Inc. and others. All rights reserved. Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+Copyright © 2003-2017 Unicode, Inc. and others. All rights reserved. Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that (a) the above copyright notice(s) and this permission notice appear with all copies of the Data Files or Software, (b) both the above copyright notice(s) and this permission notice appear in associated documentation, and (c) there is clear notice in each modified Data File or in the Software as well as in the documentation associated with the Data File(s) or Software that the data or software has been modified.
 
 THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
 
 Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
-$Revision: 12436 $
+$Revision: 13905 $
 -->
 
-<!ELEMENT ldml ( identity, ( alias | ( fallback*, localeDisplayNames?, layout?, contextTransforms?, characters?, delimiters?, measurement?, dates?, numbers?, units?, listPatterns?, collations?, posix?, segmentations?, rbnf?, annotations?, metadata?, references?, special* ) ) ) >
+<!ELEMENT ldml ( identity, ( alias | ( fallback*, localeDisplayNames?, layout?, contextTransforms?, characters?, delimiters?, measurement?, dates?, numbers?, units?, listPatterns?, collations?, posix?, characterLabels?, segmentations?, rbnf?, typographicNames?, annotations?, metadata?, references?, special* ) ) ) >
 <!ATTLIST ldml version CDATA #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -42,8 +42,8 @@ $Revision: 12436 $
 <!ELEMENT version EMPTY >
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "29" >
-    <!--@METADATA-->
+<!ATTLIST version cldrVersion CDATA #FIXED "33" >
+    <!--@VALUE-->
 <!ATTLIST version draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
@@ -264,19 +264,26 @@ $Revision: 12436 $
     <!--@METADATA-->
 
 <!ELEMENT transformNames ( alias | ( transformName | special )* ) >
+    <!--@DEPRECATED-->
 <!ATTLIST transformNames draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
 <!ATTLIST transformNames references CDATA #IMPLIED >
     <!--@METADATA-->
+    <!--@DEPRECATED-->
 
 <!ELEMENT transformName ( #PCDATA ) >
+    <!--@DEPRECATED-->
 <!ATTLIST transformName type NMTOKEN #REQUIRED >
+    <!--@DEPRECATED-->
 <!ATTLIST transformName alt NMTOKENS #IMPLIED >
+    <!--@DEPRECATED-->
 <!ATTLIST transformName draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
+    <!--@DEPRECATED-->
 <!ATTLIST transformName references CDATA #IMPLIED >
     <!--@METADATA-->
+    <!--@DEPRECATED-->
 
 <!-- # Either 1 alias OR any specials, any order, zero or more measurementSystemName -->
 
@@ -408,13 +415,13 @@ $Revision: 12436 $
 
 <!-- ######################################################### -->
 
-<!ELEMENT characters ( alias | ( exemplarCharacters*, ellipsis*, moreInformation*, stopwords*, indexLabels*, mapping*, special* ) ) >
+<!ELEMENT characters ( alias | ( exemplarCharacters*, ellipsis*, moreInformation*, stopwords*, indexLabels*, mapping*, parseLenients*, special* ) ) >
 <!ATTLIST characters draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
     <!--@DEPRECATED-->
 
 <!ELEMENT exemplarCharacters ( #PCDATA | cp )* >
-<!ATTLIST exemplarCharacters type (auxiliary | standard | punctuation | currencySymbol | index) #IMPLIED >
+<!ATTLIST exemplarCharacters type (auxiliary | standard | punctuation | currencySymbol | index | numbers) #IMPLIED >
     <!--@DEPRECATED:currencySymbol-->
 <!ATTLIST exemplarCharacters alt NMTOKENS #IMPLIED >
 <!ATTLIST exemplarCharacters draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -566,6 +573,16 @@ $Revision: 12436 $
 <!ATTLIST mapping validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
     <!--@DEPRECATED-->
+
+<!ELEMENT parseLenients ( alias | ( parseLenient*, special* ) ) >
+<!ATTLIST parseLenients scope (general | number | date) #REQUIRED >
+<!ATTLIST parseLenients level (lenient | stricter) #REQUIRED >
+
+<!ELEMENT parseLenient ( #PCDATA ) >
+<!ATTLIST parseLenient sample CDATA #REQUIRED >
+<!ATTLIST parseLenient alt NMTOKENS #IMPLIED >
+<!ATTLIST parseLenient draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
 
 <!-- ######################################################### -->
 
@@ -1411,6 +1428,7 @@ $Revision: 12436 $
 
 <!ELEMENT dateFormatItem ( #PCDATA ) >
 <!ATTLIST dateFormatItem id CDATA #REQUIRED >
+<!ATTLIST dateFormatItem count (zero | one | two | few | many | other) #IMPLIED >
 <!ATTLIST dateFormatItem alt NMTOKENS #IMPLIED >
 <!ATTLIST dateFormatItem draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
@@ -1496,8 +1514,8 @@ $Revision: 12436 $
     <!--@VALUE-->
     <!--@DEPRECATED-->
 
-<!ELEMENT field ( alias | ( displayName*, relative*, relativeTime*, special* ) ) >
-<!ATTLIST field type (era | year | year-short | year-narrow | quarter | quarter-short | quarter-narrow | month | month-short | month-narrow | week | week-short | week-narrow | day | day-short | day-narrow | weekday | sun | sun-short | sun-narrow | mon | mon-short | mon-narrow | tue | tue-short | tue-narrow | wed | wed-short | wed-narrow | thu | thu-short | thu-narrow | fri | fri-short | fri-narrow | sat | sat-short | sat-narrow | dayperiod | hour | hour-short | hour-narrow | minute | minute-short | minute-narrow | second | second-short | second-narrow | zone) #IMPLIED >
+<!ELEMENT field ( alias | ( displayName*, relative*, relativeTime*, relativePeriod*, special* ) ) >
+<!ATTLIST field type (era | era-short | era-narrow | year | year-short | year-narrow | quarter | quarter-short | quarter-narrow | month | month-short | month-narrow | week | week-short | week-narrow | weekOfMonth | weekOfMonth-short | weekOfMonth-narrow | day | day-short | day-narrow | dayOfYear | dayOfYear-short | dayOfYear-narrow | weekday | weekday-short | weekday-narrow | weekdayOfMonth | weekdayOfMonth-short | weekdayOfMonth-narrow | sun | sun-short | sun-narrow | mon | mon-short | mon-narrow | tue | tue-short | tue-narrow | wed | wed-short | wed-narrow | thu | thu-short | thu-narrow | fri | fri-short | fri-narrow | sat | sat-short | sat-narrow | dayperiod | dayperiod-short | dayperiod-narrow | hour | hour-short | hour-narrow | minute | minute-short | minute-narrow | second | second-short | second-narrow | zone | zone-short | zone-narrow) #IMPLIED >
 <!ATTLIST field alt NMTOKENS #IMPLIED >
 <!ATTLIST field draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
@@ -1545,6 +1563,11 @@ $Revision: 12436 $
 <!ATTLIST relativeTimePattern validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
     <!--@DEPRECATED-->
+
+<!ELEMENT relativePeriod ( #PCDATA ) >
+<!ATTLIST relativePeriod alt NMTOKENS #IMPLIED >
+<!ATTLIST relativePeriod draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
 
 <!ELEMENT timeZoneNames ( alias | ( hourFormat*, hoursFormat*, gmtFormat*, gmtZeroFormat*, regionFormat*, fallbackFormat*, fallbackRegionFormat*, abbreviationFallback*, preferenceOrdering*, singleCountries*, default*, zone*, metazone*, special* ) ) >
 <!ATTLIST timeZoneNames draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -1770,7 +1793,7 @@ $Revision: 12436 $
 
 <!-- ######################################################### -->
 
-<!ELEMENT numbers ( alias | ( defaultNumberingSystem*, otherNumberingSystems*, minimumGroupingDigits*, symbols*, decimalFormats*, scientificFormats*, percentFormats*, currencyFormats*, currencies?, miscPatterns*, special* ) ) >
+<!ELEMENT numbers ( alias | ( defaultNumberingSystem*, otherNumberingSystems*, minimumGroupingDigits*, symbols*, decimalFormats*, scientificFormats*, percentFormats*, currencyFormats*, currencies?, miscPatterns*, minimalPairs*, special* ) ) >
 <!ATTLIST numbers alt NMTOKENS #IMPLIED >
 <!ATTLIST numbers draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
@@ -1982,15 +2005,12 @@ $Revision: 12436 $
     <!--@DEPRECATED-->
 
 <!ELEMENT currencyGroup ( #PCDATA ) >
-    <!--@DEPRECATED-->
 <!ATTLIST currencyGroup alt NMTOKENS #IMPLIED >
-    <!--@DEPRECATED-->
 <!ATTLIST currencyGroup draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
-    <!--@DEPRECATED-->
+    <!--@DEPRECATED:true, false-->
 <!ATTLIST currencyGroup references CDATA #IMPLIED >
     <!--@METADATA-->
-    <!--@DEPRECATED-->
 <!ATTLIST currencyGroup numberSystem CDATA #IMPLIED >
     <!--@DEPRECATED-->
 
@@ -2238,6 +2258,24 @@ $Revision: 12436 $
     <!--@DEPRECATED-->
 <!ATTLIST miscPatterns numberSystem CDATA #IMPLIED >
 
+<!ELEMENT minimalPairs ( alias | ( pluralMinimalPairs*, ordinalMinimalPairs*, special* ) ) >
+<!ATTLIST minimalPairs alt NMTOKENS #IMPLIED >
+<!ATTLIST minimalPairs draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT pluralMinimalPairs ( #PCDATA ) >
+<!ATTLIST pluralMinimalPairs count NMTOKEN #IMPLIED >
+<!ATTLIST pluralMinimalPairs alt NMTOKENS #IMPLIED >
+<!ATTLIST pluralMinimalPairs draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT ordinalMinimalPairs ( #PCDATA ) >
+<!ATTLIST ordinalMinimalPairs ordinal NMTOKEN #IMPLIED >
+<!ATTLIST ordinalMinimalPairs alt NMTOKENS #IMPLIED >
+<!ATTLIST ordinalMinimalPairs draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
 <!-- ######################################################### -->
 
 <!ELEMENT units ( alias | ( unit*, unitLength*, durationUnit*, special* ) ) >
@@ -2375,8 +2413,9 @@ $Revision: 12436 $
 <!ATTLIST collations version NMTOKEN #IMPLIED >
     <!--@METADATA-->
 <!ATTLIST collations draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
-    <!--@METADATA-->
     <!-- should be DEPRECATED, but needs some cleanup first -->
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
 <!ATTLIST collations validSubLocales CDATA #IMPLIED >
     <!--@VALUE-->
     <!--@DEPRECATED-->
@@ -2388,9 +2427,9 @@ $Revision: 12436 $
 
 <!ELEMENT collation ( alias | ( base?, import*, settings?, suppress_contractions?, optimize?, ( cr* | rules? ), special* ) ) >
 <!ATTLIST collation type NMTOKEN "standard" >
-<!ATTLIST collation visibility (internal | external) "external" >
+<!ATTLIST collation visibility (internal | external) #IMPLIED >
     <!--@VALUE-->
-    <!--@DEPRECATED:internal-->
+    <!--@DEPRECATED-->
 <!ATTLIST collation alt NMTOKENS #IMPLIED >
 <!ATTLIST collation draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
     <!--@METADATA-->
@@ -2646,6 +2685,22 @@ $Revision: 12436 $
     <!--@METADATA-->
     <!--@DEPRECATED-->
 
+<!ELEMENT characterLabels ( alias | ( characterLabelPattern*, characterLabel*, special* ) ) >
+
+<!ELEMENT characterLabelPattern ( #PCDATA ) >
+<!ATTLIST characterLabelPattern type NMTOKEN #REQUIRED >
+<!ATTLIST characterLabelPattern count (0 | 1 | zero | one | two | few | many | other) #IMPLIED >
+    <!-- count only used for certain patterns" -->
+<!ATTLIST characterLabelPattern alt NMTOKENS #IMPLIED >
+<!ATTLIST characterLabelPattern draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT characterLabel ( #PCDATA ) >
+<!ATTLIST characterLabel type NMTOKEN #REQUIRED >
+<!ATTLIST characterLabel alt NMTOKENS #IMPLIED >
+<!ATTLIST characterLabel draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
 <!ELEMENT segmentations ( alias | ( segmentation*, special* ) ) >
 <!ATTLIST segmentations alt NMTOKENS #IMPLIED >
 <!ATTLIST segmentations draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
@@ -2747,12 +2802,35 @@ $Revision: 12436 $
     <!--@METADATA-->
     <!--@DEPRECATED:true, false-->
 
+<!ELEMENT typographicNames ( alias | ( axisName*, styleName*, featureName*, special* ) ) >
+
+<!ELEMENT axisName ( #PCDATA ) >
+<!ATTLIST axisName type (ital | opsz | slnt | wdth | wght) #REQUIRED >
+<!ATTLIST axisName alt NMTOKENS #IMPLIED >
+<!ATTLIST axisName draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT styleName ( #PCDATA ) >
+<!ATTLIST styleName type (ital | opsz | slnt | wdth | wght) #REQUIRED >
+<!ATTLIST styleName subtype NMTOKEN #REQUIRED >
+<!ATTLIST styleName alt NMTOKENS #IMPLIED >
+<!ATTLIST styleName draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT featureName ( #PCDATA ) >
+<!ATTLIST featureName type (afrc | cpsp | dlig | frac | lnum | onum | ordn | pnum | smcp | tnum | zero) #REQUIRED >
+<!ATTLIST featureName alt NMTOKENS #IMPLIED >
+<!ATTLIST featureName draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
 <!ELEMENT annotations ( alias | ( annotation*, special* ) ) >
 
 <!ELEMENT annotation ( #PCDATA ) >
 <!ATTLIST annotation cp CDATA #REQUIRED >
 <!ATTLIST annotation tts CDATA #IMPLIED >
     <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST annotation type (tts) #IMPLIED >
 <!ATTLIST annotation alt NMTOKENS #IMPLIED >
 <!ATTLIST annotation draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->

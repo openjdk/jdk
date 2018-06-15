@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11914 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="se"/>
 	</identity>
 	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
+			<localeSeparator draft="unconfirmed">{0}, {1}</localeSeparator>
+			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
 		<languages>
 			<language type="ace" draft="contributed">acehgiella</language>
 			<language type="af" draft="contributed">afrikánsagiella</language>
@@ -195,6 +201,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BM" draft="contributed">Bermuda</territory>
 			<territory type="BN" draft="contributed">Brunei</territory>
 			<territory type="BO" draft="contributed">Bolivia</territory>
+			<territory type="BQ" draft="unconfirmed">Vuolleeatnamat Karibe</territory>
 			<territory type="BR" draft="contributed">Brasil</territory>
 			<territory type="BS" draft="contributed">Bahamas</territory>
 			<territory type="BT" draft="contributed">Bhutan</territory>
@@ -463,6 +470,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a á b c č d đ e f g h i j k l m n ŋ o p r s š t ŧ u v z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[à ç é è í ń ñ ó ò q ú w x y ü ø æ å ä ã ö]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A Á B C Č D Đ E É F G H I J K L M N Ŋ O P Q R S Š T Ŧ U V W X Y Z Ž Ø Æ Å Ä Ö]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
+		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
+		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
+		<ellipsis type="word-final" draft="unconfirmed">{0} …</ellipsis>
+		<ellipsis type="word-initial" draft="unconfirmed">… {0}</ellipsis>
+		<ellipsis type="word-medial" draft="unconfirmed">{0} … {1}</ellipsis>
+		<moreInformation draft="unconfirmed">?</moreInformation>
 	</characters>
 	<delimiters>
 		<quotationStart draft="contributed">”</quotationStart>
@@ -476,112 +491,472 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">ođđj</month>
-							<month type="2" draft="contributed">guov</month>
-							<month type="3" draft="contributed">njuk</month>
-							<month type="4" draft="contributed">cuo</month>
-							<month type="5" draft="contributed">mies</month>
-							<month type="6" draft="contributed">geas</month>
-							<month type="7" draft="contributed">suoi</month>
-							<month type="8" draft="contributed">borg</month>
-							<month type="9" draft="contributed">čakč</month>
-							<month type="10" draft="contributed">golg</month>
-							<month type="11" draft="contributed">skáb</month>
-							<month type="12" draft="contributed">juov</month>
+							<month type="1">ođđj</month>
+							<month type="2">guov</month>
+							<month type="3">njuk</month>
+							<month type="4">cuo</month>
+							<month type="5">mies</month>
+							<month type="6">geas</month>
+							<month type="7">suoi</month>
+							<month type="8">borg</month>
+							<month type="9">čakč</month>
+							<month type="10">golg</month>
+							<month type="11">skáb</month>
+							<month type="12">juov</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">O</month>
+							<month type="2">G</month>
+							<month type="3">N</month>
+							<month type="4">C</month>
+							<month type="5">M</month>
+							<month type="6">G</month>
+							<month type="7">S</month>
+							<month type="8">B</month>
+							<month type="9">Č</month>
+							<month type="10">G</month>
+							<month type="11">S</month>
+							<month type="12">J</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">ođđajagemánnu</month>
-							<month type="2" draft="contributed">guovvamánnu</month>
-							<month type="3" draft="contributed">njukčamánnu</month>
-							<month type="4" draft="contributed">cuoŋománnu</month>
-							<month type="5" draft="contributed">miessemánnu</month>
-							<month type="6" draft="contributed">geassemánnu</month>
-							<month type="7" draft="contributed">suoidnemánnu</month>
-							<month type="8" draft="contributed">borgemánnu</month>
-							<month type="9" draft="contributed">čakčamánnu</month>
-							<month type="10" draft="contributed">golggotmánnu</month>
-							<month type="11" draft="contributed">skábmamánnu</month>
-							<month type="12" draft="contributed">juovlamánnu</month>
+							<month type="1">ođđajagemánnu</month>
+							<month type="2">guovvamánnu</month>
+							<month type="3">njukčamánnu</month>
+							<month type="4">cuoŋománnu</month>
+							<month type="5">miessemánnu</month>
+							<month type="6">geassemánnu</month>
+							<month type="7">suoidnemánnu</month>
+							<month type="8">borgemánnu</month>
+							<month type="9">čakčamánnu</month>
+							<month type="10">golggotmánnu</month>
+							<month type="11">skábmamánnu</month>
+							<month type="12">juovlamánnu</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">ođđj</month>
+							<month type="2">guov</month>
+							<month type="3">njuk</month>
+							<month type="4">cuo</month>
+							<month type="5">mies</month>
+							<month type="6">geas</month>
+							<month type="7">suoi</month>
+							<month type="8">borg</month>
+							<month type="9">čakč</month>
+							<month type="10">golg</month>
+							<month type="11">skáb</month>
+							<month type="12">juov</month>
+						</monthWidth>
 						<monthWidth type="narrow">
-							<month type="1" draft="contributed">O</month>
-							<month type="2" draft="contributed">G</month>
-							<month type="3" draft="contributed">N</month>
-							<month type="4" draft="contributed">C</month>
-							<month type="5" draft="contributed">M</month>
-							<month type="6" draft="contributed">G</month>
-							<month type="7" draft="contributed">S</month>
-							<month type="8" draft="contributed">B</month>
-							<month type="9" draft="contributed">Č</month>
-							<month type="10" draft="contributed">G</month>
-							<month type="11" draft="contributed">S</month>
-							<month type="12" draft="contributed">J</month>
+							<month type="1">O</month>
+							<month type="2">G</month>
+							<month type="3">N</month>
+							<month type="4">C</month>
+							<month type="5">M</month>
+							<month type="6">G</month>
+							<month type="7">S</month>
+							<month type="8">B</month>
+							<month type="9">Č</month>
+							<month type="10">G</month>
+							<month type="11">S</month>
+							<month type="12">J</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">ođđajagemánnu</month>
+							<month type="2">guovvamánnu</month>
+							<month type="3">njukčamánnu</month>
+							<month type="4">cuoŋománnu</month>
+							<month type="5">miessemánnu</month>
+							<month type="6">geassemánnu</month>
+							<month type="7">suoidnemánnu</month>
+							<month type="8">borgemánnu</month>
+							<month type="9">čakčamánnu</month>
+							<month type="10">golggotmánnu</month>
+							<month type="11">skábmamánnu</month>
+							<month type="12">juovlamánnu</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">sotn</day>
-							<day type="mon" draft="contributed">vuos</day>
-							<day type="tue" draft="contributed">maŋ</day>
-							<day type="wed" draft="contributed">gask</day>
-							<day type="thu" draft="contributed">duor</day>
-							<day type="fri" draft="contributed">bear</day>
-							<day type="sat" draft="contributed">láv</day>
+							<day type="sun">sotn</day>
+							<day type="mon">vuos</day>
+							<day type="tue">maŋ</day>
+							<day type="wed">gask</day>
+							<day type="thu">duor</day>
+							<day type="fri">bear</day>
+							<day type="sat">láv</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">S</day>
+							<day type="mon">V</day>
+							<day type="tue">M</day>
+							<day type="wed">G</day>
+							<day type="thu">D</day>
+							<day type="fri">B</day>
+							<day type="sat">L</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">sotn</day>
+							<day type="mon">vuos</day>
+							<day type="tue">maŋ</day>
+							<day type="wed">gask</day>
+							<day type="thu">duor</day>
+							<day type="fri">bear</day>
+							<day type="sat">láv</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="contributed">sotnabeaivi</day>
-							<day type="mon" draft="contributed">vuossárga</day>
-							<day type="tue" draft="contributed">maŋŋebárga</day>
-							<day type="wed" draft="contributed">gaskavahkku</day>
-							<day type="thu" draft="contributed">duorasdat</day>
-							<day type="fri" draft="contributed">bearjadat</day>
-							<day type="sat" draft="contributed">lávvardat</day>
+							<day type="sun">sotnabeaivi</day>
+							<day type="mon">vuossárga</day>
+							<day type="tue">maŋŋebárga</day>
+							<day type="wed">gaskavahkku</day>
+							<day type="thu">duorasdat</day>
+							<day type="fri">bearjadat</day>
+							<day type="sat">lávvardat</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">sotn</day>
+							<day type="mon">vuos</day>
+							<day type="tue">maŋ</day>
+							<day type="wed">gask</day>
+							<day type="thu">duor</day>
+							<day type="fri">bear</day>
+							<day type="sat">láv</day>
+						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun" draft="contributed">S</day>
-							<day type="mon" draft="contributed">V</day>
-							<day type="tue" draft="contributed">M</day>
-							<day type="wed" draft="contributed">G</day>
-							<day type="thu" draft="contributed">D</day>
-							<day type="fri" draft="contributed">B</day>
-							<day type="sat" draft="contributed">L</day>
+							<day type="sun">S</day>
+							<day type="mon">V</day>
+							<day type="tue">M</day>
+							<day type="wed">G</day>
+							<day type="thu">D</day>
+							<day type="fri">B</day>
+							<day type="sat">L</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">sotn</day>
+							<day type="mon">vuos</day>
+							<day type="tue">maŋ</day>
+							<day type="wed">gask</day>
+							<day type="thu">duor</day>
+							<day type="fri">bear</day>
+							<day type="sat">láv</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">sotnabeaivi</day>
+							<day type="mon">vuossárga</day>
+							<day type="tue">maŋŋebárga</day>
+							<day type="wed">gaskavahkku</day>
+							<day type="thu">duorasdat</day>
+							<day type="fri">bearjadat</day>
+							<day type="sat">lávvardat</day>
 						</dayWidth>
 					</dayContext>
 				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">i.b.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">e.b.</dayPeriod>
+							<dayPeriod type="am">i.b.</dayPeriod>
+							<dayPeriod type="pm">e.b.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">i.b.</dayPeriod>
+							<dayPeriod type="pm">e.b.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="contributed">iđitbeaivet</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">eahketbeaivet</dayPeriod>
+							<dayPeriod type="am">iđitbeaivet</dayPeriod>
+							<dayPeriod type="pm">eahketbeaivet</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">i.b.</dayPeriod>
+							<dayPeriod type="pm">e.b.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">i.b.</dayPeriod>
+							<dayPeriod type="pm">e.b.</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="contributed">iđitbeaivi</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">eahketbeaivi</dayPeriod>
+							<dayPeriod type="am">iđitbeaivi</dayPeriod>
+							<dayPeriod type="pm">eahketbeaivi</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">ovdal Kristtusa</era>
-						<era type="1" draft="contributed">maŋŋel Kristtusa</era>
+						<era type="0">ovdal Kristtusa</era>
+						<era type="0" alt="variant">BCE</era>
+						<era type="1">maŋŋel Kristtusa</era>
+						<era type="1" alt="variant">CE</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="contributed">o.Kr.</era>
-						<era type="1" draft="contributed">m.Kr.</era>
+						<era type="0">o.Kr.</era>
+						<era type="0" alt="variant">BCE</era>
+						<era type="1">m.Kr.</era>
+						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" alt="variant" draft="unconfirmed">ooá</era>
+						<era type="1" alt="variant" draft="unconfirmed">oá</era>
+					</eraNarrow>
 				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>y MMMM d, EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>y-MM-dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">MM-dd</dateFormatItem>
+						<dateFormatItem id="MEd">MM-dd, E</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'week' W 'of' MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="two">'week' W 'of' MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'week' W 'of' MMM</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">y-MM</dateFormatItem>
+						<dateFormatItem id="yMd">y-MM-dd</dateFormatItem>
+						<dateFormatItem id="yMEd">y-MM-dd, E</dateFormatItem>
+						<dateFormatItem id="yMMM">y MMM</dateFormatItem>
+						<dateFormatItem id="yMMMd">y MMM d</dateFormatItem>
+						<dateFormatItem id="yMMMEd">y MMM d, E</dateFormatItem>
+						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
+						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
+						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'week' w 'of' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="two">'week' w 'of' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'week' w 'of' Y</dateFormatItem>
+					</availableFormats>
+					<appendItems>
+						<appendItem request="Timezone">{0} {1}</appendItem>
+					</appendItems>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH–HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH–HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">MM–MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">LLL–LLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">MMM d–d</greatestDifference>
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">y MMM–MMM</greatestDifference>
+							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">y MMM d–d</greatestDifference>
+							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">y MMMM–MMMM</greatestDifference>
+							<greatestDifference id="y">y MMMM – y MMMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
@@ -679,6 +1054,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="second">
 				<displayName draft="contributed">sekunda</displayName>
+				<relative type="0" draft="unconfirmed">na</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} sekunda maŋŋilit</relativeTimePattern>
 					<relativeTimePattern count="two">{0} sekundda maŋŋilit</relativeTimePattern>
@@ -699,6 +1075,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<gmtFormat draft="contributed">UTC{0}</gmtFormat>
 			<gmtZeroFormat draft="contributed">UTC</gmtZeroFormat>
 			<regionFormat draft="contributed">{0} áigi</regionFormat>
+			<regionFormat type="daylight" draft="unconfirmed">{0} geassiáigi</regionFormat>
+			<regionFormat type="standard" draft="unconfirmed">{0} dábálašáigi</regionFormat>
 			<fallbackFormat draft="contributed">{0} ({1})</fallbackFormat>
 			<zone type="Etc/Unknown">
 				<exemplarCity draft="contributed">dovdameahttun áigeavádat</exemplarCity>
@@ -772,23 +1150,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<defaultNumberingSystem draft="unconfirmed">latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native draft="unconfirmed">latn</native>
+		</otherNumberingSystems>
+		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
-			<decimal draft="contributed">,</decimal>
-			<group draft="contributed"> </group>
+			<decimal>,</decimal>
+			<group> </group>
 			<list draft="contributed">;</list>
-			<percentSign draft="contributed">%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">−</minusSign>
-			<exponential draft="contributed">×10^</exponential>
-			<superscriptingExponent draft="contributed">·</superscriptingExponent>
-			<perMille draft="contributed">‰</perMille>
-			<infinity draft="contributed">∞</infinity>
-			<nan draft="contributed">¤¤¤</nan>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>−</minusSign>
+			<exponential>·10^</exponential>
+			<superscriptingExponent>·</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>¤¤¤</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -875,21 +1259,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
+					<pattern>#E0</pattern>
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
-					<pattern draft="contributed">#,##0 %</pattern>
+					<pattern>#,##0 %</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern draft="contributed">#,##0.00 ¤</pattern>
+					<pattern>#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -932,13 +1319,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="100000000000000" count="other" draft="provisional">000 bn ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one" draft="contributed">{0} {1}</unitPattern>
-			<unitPattern count="two" draft="contributed">{0} {1}</unitPattern>
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="two">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="DKK">
 				<symbol draft="contributed">Dkr</symbol>
+				<symbol alt="narrow" draft="unconfirmed">kr</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName draft="contributed">euro</displayName>
@@ -946,15 +1334,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="two" draft="contributed">euro</displayName>
 				<displayName count="other" draft="contributed">euro</displayName>
 				<symbol draft="contributed">€</symbol>
+				<symbol alt="narrow" draft="unconfirmed">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>suoma márkki</displayName>
+			</currency>
+			<currency type="GBP">
+				<symbol draft="unconfirmed">GB£</symbol>
+				<symbol alt="narrow" draft="unconfirmed">£</symbol>
 			</currency>
 			<currency type="HKD">
 				<symbol draft="contributed">HK$</symbol>
 			</currency>
 			<currency type="INR">
 				<symbol draft="contributed">₹</symbol>
+			</currency>
+			<currency type="ISK">
+				<symbol draft="unconfirmed">Ikr</symbol>
+				<symbol alt="narrow" draft="unconfirmed">kr</symbol>
 			</currency>
 			<currency type="JPY">
 				<symbol draft="contributed">JP¥</symbol>
@@ -968,6 +1365,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="two">norgga kruvdno</displayName>
 				<displayName count="other">norgga kruvdno</displayName>
 				<symbol>kr</symbol>
+				<symbol alt="narrow" draft="unconfirmed">kr</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>ruoŧŧa kruvdno</displayName>
@@ -975,6 +1373,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="two">ruoŧŧa kruvdno</displayName>
 				<displayName count="other">ruoŧŧa kruvdno</displayName>
 				<symbol draft="contributed">Skr</symbol>
+				<symbol alt="narrow" draft="unconfirmed">kr</symbol>
 			</currency>
 			<currency type="THB">
 				<symbol draft="contributed">฿</symbol>
@@ -986,6 +1385,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName draft="contributed">uns golli</displayName>
 			</currency>
 		</currencies>
+		<miscPatterns numberSystem="latn">
+			<pattern type="atLeast">⩾{0}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
+		</miscPatterns>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -1057,42 +1460,49 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0} jahki</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} jahkki</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} jahkki</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke jahki</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName draft="contributed">mánotbadji</displayName>
 				<unitPattern count="one" draft="contributed">{0} mánotbadji</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} mánotbaji</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mánotbadji</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke mánotbadji</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName draft="contributed">váhkku</displayName>
 				<unitPattern count="one" draft="contributed">{0} váhku</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} váhkku</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} váhkku</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke váhku</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName draft="contributed">jándora</displayName>
 				<unitPattern count="one" draft="contributed">{0} jándor</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} jándora</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} jándora</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke jándor</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName draft="contributed">diibmur</displayName>
 				<unitPattern count="one" draft="contributed">{0} diibmu</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} diimmur</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} diibmur</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke diibmu</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="contributed">minuhtta</displayName>
 				<unitPattern count="one" draft="contributed">{0} minuhta</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} minuhtta</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} minuhtta</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke minuhta</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName draft="contributed">sekundda</displayName>
 				<unitPattern count="one" draft="contributed">{0} sekunda</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} sekundda</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} sekundda</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke sekunda</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName draft="contributed">millisekundda</displayName>
@@ -1100,29 +1510,62 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two" draft="contributed">{0} millisekundda</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} millisekundda</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">mikrosekundda</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} mikrosekunda</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} mikrosekundda</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} mikrosekundda</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">nanosekundda</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} nanosekunda</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} nanosekundda</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} nanosekundda</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName draft="contributed">kilomehtera</displayName>
 				<unitPattern count="one" draft="contributed">{0} kilomehter</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} kilomehtera</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} kilomehtera</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke kilomehter</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName draft="contributed">mehtera</displayName>
 				<unitPattern count="one" draft="contributed">{0} mehter</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} mehtera</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mehtera</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke mehter</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="unconfirmed">desimehtera</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} desimehter</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} desimehtera</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} desimehtera</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName draft="contributed">sentimehtera</displayName>
 				<unitPattern count="one" draft="contributed">{0} sentimehter</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} sentimehtera</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} sentimehtera</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke sentimehter</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName draft="contributed">millimehtera</displayName>
 				<unitPattern count="one" draft="contributed">{0} millimehter</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} millimehtera</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} millimehtera</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="unconfirmed">mikromehtera</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} mikromehter</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} mikromehtera</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} mikromehtera</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="unconfirmed">nanomehtera</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} nanomehter</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} nanomehtera</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} nanomehtera</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName draft="contributed">pikomehtera</displayName>
@@ -1147,12 +1590,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0} juolgi</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} juolgi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} juolgi</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke juolgi</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName draft="contributed">bealgi</displayName>
 				<unitPattern count="one" draft="contributed">{0} bealgi</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} bealgi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} bealgi</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke bealgi</perUnitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName draft="contributed">chuovgat jagi</displayName>
@@ -1160,17 +1605,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two" draft="contributed">{0} chuovgat jagi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} chuovgat jagi</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">miila</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} miil</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} miila</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} miila</unitPattern>
+			</unit>
+			<unit type="mass-metric-ton">
+				<displayName draft="unconfirmed">tonna</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} tonna</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} tonna</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} tonna</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<displayName draft="contributed">kilogram</displayName>
 				<unitPattern count="one" draft="contributed">{0} kilogram</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} kilogram</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} kilogram</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke kilogram</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName draft="contributed">gram</displayName>
 				<unitPattern count="one" draft="contributed">{0} gram</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} gram</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} gram</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke gram</perUnitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName draft="unconfirmed">eangas tonna à 907kg</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} eangas tonna à 907kg</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} eangas tonna à 907kg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} eangas tonna à 907kg</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName draft="contributed">pauna</displayName>
@@ -1267,6 +1732,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0} lihtar</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} lihtara</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} lihtara</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} juohke lithar</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0} nuorti</coordinateUnitPattern>
@@ -1284,6 +1750,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0} G</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} G</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} G</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-second-squared">
+				<unitPattern count="one" draft="unconfirmed">{0} m/s²</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} m/s²</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} m/s²</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName draft="contributed">grádat</displayName>
@@ -1308,6 +1779,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0} km²</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} km²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} km²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName draft="contributed">hehtaaria</displayName>
@@ -1320,6 +1792,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0} m²</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} m²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} m²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName draft="unconfirmed">cm²</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} cm²</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} cm²</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} cm²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName draft="contributed">eangas neliömiila</displayName>
@@ -1344,42 +1824,49 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0} jah</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} jah</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} jah</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/jah</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName draft="contributed">mánotbadji</displayName>
 				<unitPattern count="one" draft="contributed">{0} mán</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} mán</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mán</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/mán</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName draft="contributed">váhkku</displayName>
 				<unitPattern count="one" draft="contributed">{0} v</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} v</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} v</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/v</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName draft="contributed">jándora</displayName>
 				<unitPattern count="one" draft="contributed">{0} d</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} d</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} d</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/d</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName draft="contributed">diibmur</displayName>
 				<unitPattern count="one" draft="contributed">{0} h</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} h</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} h</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="contributed">minuhtta</displayName>
 				<unitPattern count="one" draft="contributed">{0} min</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} min</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} min</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/min</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName draft="contributed">sekundda</displayName>
 				<unitPattern count="one" draft="contributed">{0} s</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} s</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} s</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName draft="contributed">millisekundda</displayName>
@@ -1387,29 +1874,62 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two" draft="contributed">{0} ms</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ms</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">μs</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} μs</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} μs</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">ns</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ns</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} ns</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ns</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName draft="contributed">kilomehtera</displayName>
 				<unitPattern count="one" draft="contributed">{0} km</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} km</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} km</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName draft="contributed">mehtera</displayName>
 				<unitPattern count="one" draft="contributed">{0} m</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} m</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} m</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="unconfirmed">dm</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} dm</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} dm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName draft="contributed">sentimehtera</displayName>
 				<unitPattern count="one" draft="contributed">{0} cm</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} cm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} cm</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName draft="contributed">millimehtera</displayName>
 				<unitPattern count="one" draft="contributed">{0} mm</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} mm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mm</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="unconfirmed">µm</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} µm</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} µm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} µm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="unconfirmed">nm</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} nm</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} nm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName draft="contributed">pikomehtera</displayName>
@@ -1434,12 +1954,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0} juolgi</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} juolgi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} juolgi</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/juolgi</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName draft="contributed">bealgi</displayName>
 				<unitPattern count="one" draft="contributed">{0} bealgi</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} bealgi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} bealgi</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/bealgi</perUnitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName draft="contributed">chuovgat jagi</displayName>
@@ -1447,17 +1969,47 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} ly</unitPattern>
 				<unitPattern count="other">{0} ly</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">miila</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} miil</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} miila</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} miila</unitPattern>
+			</unit>
+			<unit type="mass-metric-ton">
+				<displayName draft="unconfirmed">tonna</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} t</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} t</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} t</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<displayName draft="contributed">kilogram</displayName>
 				<unitPattern count="one" draft="contributed">{0} kg</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} kg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} kg</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName draft="contributed">gram</displayName>
 				<unitPattern count="one" draft="contributed">{0} g</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} g</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} g</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/g</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="one" draft="unconfirmed">{0} mg</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} mg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<unitPattern count="one" draft="unconfirmed">{0} µg</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} µg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} µg</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName draft="unconfirmed">eangas tonna à 907kg</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} eang.ton. à 907kg</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} eang.ton. à 907kg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} eang.ton. à 907kg</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName draft="contributed">pauna</displayName>
@@ -1543,17 +2095,61 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two" draft="contributed">{0} km³</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} km³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<unitPattern count="one" draft="unconfirmed">{0} m³</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} m³</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} m³</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName draft="unconfirmed">cm³</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} cm³</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} cm³</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} cm³</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/cm³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName draft="contributed">eangas kubikkmiila</displayName>
 				<unitPattern count="one">{0} mi³</unitPattern>
 				<unitPattern count="two">{0} mi³</unitPattern>
 				<unitPattern count="other">{0} mi³</unitPattern>
 			</unit>
+			<unit type="volume-megaliter">
+				<displayName draft="unconfirmed">ML</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ML</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} ML</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName draft="unconfirmed">hL</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} hL</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} hL</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} hL</unitPattern>
+			</unit>
 			<unit type="volume-liter">
 				<displayName draft="contributed">lihtara</displayName>
 				<unitPattern count="one" draft="contributed">{0} l</unitPattern>
 				<unitPattern count="two" draft="contributed">{0} l</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} l</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/L</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName draft="unconfirmed">dL</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} dL</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} dL</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} dL</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName draft="unconfirmed">cL</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} cL</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} cL</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName draft="unconfirmed">mL</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} mL</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} mL</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} mL</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0} N</coordinateUnitPattern>
@@ -1570,6 +2166,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0}G</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}G</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}G</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-second-squared">
+				<unitPattern count="one" draft="unconfirmed">{0}m/s²</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}m/s²</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}m/s²</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
@@ -1590,6 +2191,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0}km²</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}km²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}km²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<unitPattern count="one" draft="contributed">{0}ha</unitPattern>
@@ -1600,6 +2202,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0}m²</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}m²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}m²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName draft="unconfirmed">cm²</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}cm²</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}cm²</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}cm²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<unitPattern count="one">{0} mi²</unitPattern>
@@ -1620,61 +2230,101 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one" draft="contributed">{0}j</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}j</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}j</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/jah</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<unitPattern count="one" draft="contributed">{0}m</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}m</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}m</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/mán</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<unitPattern count="one" draft="contributed">{0}v</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}v</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}v</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/v</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<unitPattern count="one" draft="contributed">{0}d</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}d</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}d</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/d</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<unitPattern count="one" draft="contributed">{0}h</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}h</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}h</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<unitPattern count="one" draft="contributed">{0}m</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}m</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}m</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/min</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<unitPattern count="one" draft="contributed">{0}s</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}s</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}s</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<unitPattern count="one" draft="contributed">{0}ms</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}ms</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}ms</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">μs</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}μs</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}μs</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">ns</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}ns</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}ns</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}ns</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<unitPattern count="one" draft="contributed">{0}km</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}km</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}km</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<unitPattern count="one" draft="contributed">{0}m</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}m</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}m</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="unconfirmed">dm</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}dm</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}dm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<unitPattern count="one" draft="contributed">{0}cm</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}cm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}cm</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<unitPattern count="one" draft="contributed">{0}mm</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}mm</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}mm</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="unconfirmed">µm</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}µm</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}µm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}µm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="unconfirmed">nm</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}nm</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} nm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<unitPattern count="one" draft="contributed">{0}pm</unitPattern>
@@ -1706,15 +2356,39 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} ly</unitPattern>
 				<unitPattern count="other">{0} ly</unitPattern>
 			</unit>
+			<unit type="mass-metric-ton">
+				<displayName draft="unconfirmed">tonna</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}t</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}t</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}t</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<unitPattern count="one" draft="contributed">{0}kg</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}kg</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}kg</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<unitPattern count="one" draft="contributed">{0}g</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}g</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}g</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/g</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="one" draft="unconfirmed">{0}mg</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}mg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<unitPattern count="one" draft="unconfirmed">{0}µg</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}µg</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}µg</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName draft="unconfirmed">eangas tonna</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} e.ton.</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0} e.ton.</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} e.ton.</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<unitPattern count="one" draft="contributed">{0} pauna</unitPattern>
@@ -1786,15 +2460,53 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two" draft="contributed">{0}km³</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}km³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName draft="unconfirmed">cm³</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}cm³</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}cm³</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}cm³</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/cm³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
 				<unitPattern count="one">{0} mi³</unitPattern>
 				<unitPattern count="two">{0} mi³</unitPattern>
 				<unitPattern count="other">{0} mi³</unitPattern>
 			</unit>
+			<unit type="volume-megaliter">
+				<displayName draft="unconfirmed">ML</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}ML</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}ML</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName draft="unconfirmed">hL</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}hL</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}hL</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}hL</unitPattern>
+			</unit>
 			<unit type="volume-liter">
 				<unitPattern count="one" draft="contributed">{0}L</unitPattern>
 				<unitPattern count="two" draft="contributed">{0}L</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}L</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/L</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName draft="unconfirmed">dL</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}dL</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}dL</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}dL</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName draft="unconfirmed">cL</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}cL</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}cL</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName draft="unconfirmed">mL</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}mL</unitPattern>
+				<unitPattern count="two" draft="unconfirmed">{0}mL</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}mL</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east" draft="unconfirmed">{0}N</coordinateUnitPattern>
@@ -1846,4 +2558,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

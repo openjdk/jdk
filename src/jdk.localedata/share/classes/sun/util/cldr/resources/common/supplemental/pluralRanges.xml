@@ -3,21 +3,22 @@
 <!-- Copyright © 1991-2013 Unicode, Inc. CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/) 
 	For terms of use, see http://www.unicode.org/copyright.html -->
 <supplementalData>
-	<version number="$Revision: 11914 $" />
+	<version number="$Revision: 13819 $" />
 	<plurals> <!-- Format with GeneratePluralRanges.java -->
 
+
 <!-- other -->
-		<pluralRanges locales="id ja km ko lo ms my th vi zh">
+		<pluralRanges locales="id ja km ko lo ms my th vi yue zh">
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
 
 <!-- one, other -->
-		<pluralRanges locales="am bn fr gu hi hy kn mr pa zu">
+		<pluralRanges locales="am as bn fr gu hi hy kn mr ps pt zu">
 			<pluralRange start="one"   end="one"   result="one"/>
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="fa">
+		<pluralRanges locales="ak fa or sd">
 			<pluralRange start="one"   end="one"   result="other"/>
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
@@ -27,17 +28,17 @@
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="az de el gl hu it kk ky ml mn ne nl pt sq sw ta te tr ug uz">
+		<pluralRanges locales="az de el gl gsw hu it kk ky ml mn ne nl scn sq sw ta te tk tr ug uz">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="af bg ca en es et eu fi nb sv ur">
+		<pluralRanges locales="af bg ca en es et eu fi io nb sv ur">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="da fil is">
+		<pluralRanges locales="da fil is pa">
 			<pluralRange start="one"   end="one"   result="one"/>
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
@@ -143,7 +144,7 @@
 			<pluralRange start="other" end="many"  result="many"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="lt ru uk">
+		<pluralRanges locales="be lt ru uk">
 			<pluralRange start="one"   end="one"   result="one"/>
 			<pluralRange start="one"   end="few"   result="few"/>
 			<pluralRange start="one"   end="many"  result="many"/>
@@ -157,6 +158,27 @@
 			<pluralRange start="many"  end="many"  result="many"/>
 			<pluralRange start="many"  end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
+			<pluralRange start="other" end="few"   result="few"/>
+			<pluralRange start="other" end="many"  result="many"/>
+			<pluralRange start="other" end="other" result="other"/>
+		</pluralRanges>
+
+<!-- one, two, few, many, other -->
+		<pluralRanges locales="ga">
+			<pluralRange start="one"   end="two"   result="two"/>
+			<pluralRange start="one"   end="few"   result="few"/>
+			<pluralRange start="one"   end="many"  result="many"/>
+			<pluralRange start="one"   end="other" result="other"/>
+			<pluralRange start="two"   end="few"   result="few"/>
+			<pluralRange start="two"   end="many"  result="many"/>
+			<pluralRange start="two"   end="other" result="other"/>
+			<pluralRange start="few"   end="few"   result="few"/>
+			<pluralRange start="few"   end="many"  result="many"/>
+			<pluralRange start="few"   end="other" result="other"/>
+			<pluralRange start="many"  end="many"  result="many"/>
+			<pluralRange start="many"  end="other" result="other"/>
+			<pluralRange start="other" end="one"   result="one"/>
+			<pluralRange start="other" end="two"   result="two"/>
 			<pluralRange start="other" end="few"   result="few"/>
 			<pluralRange start="other" end="many"  result="many"/>
 			<pluralRange start="other" end="other" result="other"/>
@@ -210,5 +232,6 @@
 			<pluralRange start="other" end="many"  result="many"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
+
 	</plurals>
 </supplementalData>

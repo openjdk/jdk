@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="brx"/>
 	</identity>
 	<localeDisplayNames>
@@ -911,6 +912,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[\u093C \u0901 \u0902 अ आ इ ई उ ऊ ऍ ए ऐ ऑ ओ औ क ख ग घ च छ ज झ ञ ट ठ ड {ड\u093C} ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह ा ि ी \u0941 \u0942 \u0943 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
 		<exemplarCharacters type="index">[अ आ इ ई उ ऊ ऍ ए ऐ ऑ ओ औ क ख ग घ च छ ज झ ञ ट ठ ड {ड\u093C} ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1203,6 +1205,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>होनोलुलु</exemplarCity>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>अज्ञात</exemplarCity>
 			</zone>
@@ -2199,9 +2204,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>मीडवे</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>जौन्स्टन</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>वाके</exemplarCity>
 			</zone>
@@ -2211,8 +2213,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>नोम</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>होनोलुलु</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>जौन्स्टन</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ऐन्करेज</exemplarCity>
@@ -3462,8 +3464,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="BYB">
 				<displayName>बेलारुसी नया रूबल (194–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>बेलारुसी रूबल</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>बेलारुसी रूबल (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>बेलीज़ डॉलर</displayName>
@@ -3775,6 +3780,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>माकाव पाताचा</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>मौरिटानी ऊगुया (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>मौरिटानी ऊगुया</displayName>
 			</currency>
 			<currency type="MTL">
@@ -3847,10 +3855,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>पेरूवाई ईंटी</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>पेरुवाई नया सोल</displayName>
+				<displayName>पेरुवाई सोल</displayName>
 			</currency>
 			<currency type="PES">
-				<displayName>पेरुवाई सोल</displayName>
+				<displayName>पेरुवाई सोल (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>पापुआ न्यु गीनी का कीना</displayName>
@@ -3937,6 +3945,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>सुरीनाम गील्डर</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>साँव तोमे एवं प्रीन्सीपे का डोब्रा (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>साँव तोमे एवं प्रीन्सीपे का डोब्रा</displayName>
 			</currency>
 			<currency type="SUR">
@@ -4196,4 +4207,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

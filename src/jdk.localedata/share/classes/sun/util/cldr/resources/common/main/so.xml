@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="so"/>
 	</identity>
 	<localeDisplayNames>
@@ -265,7 +266,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MH">Marshall Islands</territory>
 			<territory type="MK">Makadooniya</territory>
 			<territory type="ML">Maali</territory>
-			<territory type="MM">Myanmar</territory>
+			<territory type="MM">Miyanmar</territory>
 			<territory type="MN">Mongooliya</territory>
 			<territory type="MP">Northern Mariana Islands</territory>
 			<territory type="MQ">Martinique</territory>
@@ -378,6 +379,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	<characters>
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -530,6 +532,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="11">KIT</month>
 							<month type="12">LIT</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">K</month>
+							<month type="2">L</month>
+							<month type="3">S</month>
+							<month type="4">A</month>
+							<month type="5">S</month>
+							<month type="6">L</month>
+							<month type="7">T</month>
+							<month type="8">S</month>
+							<month type="9">S</month>
+							<month type="10">T</month>
+							<month type="11">K</month>
+							<month type="12">L</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Bisha Koobaad</month>
 							<month type="2">Bisha Labaad</month>
@@ -573,6 +589,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="fri">Jim</day>
 							<day type="sat">Sab</day>
 						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">A</day>
+							<day type="mon">I</day>
+							<day type="tue">T</day>
+							<day type="wed">A</day>
+							<day type="thu">Kh</day>
+							<day type="fri">J</day>
+							<day type="sat">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Axd</day>
+							<day type="mon">Isn</day>
+							<day type="tue">Tal</day>
+							<day type="wed">Arb</day>
+							<day type="thu">Kha</day>
+							<day type="fri">Jim</day>
+							<day type="sat">Sab</day>
+						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Axad</day>
 							<day type="mon">Isniin</day>
@@ -589,9 +623,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="mon">I</day>
 							<day type="tue">T</day>
 							<day type="wed">A</day>
-							<day type="thu">K</day>
+							<day type="thu">Kh</day>
 							<day type="fri">J</day>
 							<day type="sat">S</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Axd</day>
+							<day type="mon">Isn</day>
+							<day type="tue">Tal</day>
+							<day type="wed">Arb</day>
+							<day type="thu">Kha</day>
+							<day type="fri">Jim</day>
+							<day type="sat">Sab</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Axad</day>
+							<day type="mon">Isniin</day>
+							<day type="tue">Talaado</day>
+							<day type="wed">Arbaco</day>
+							<day type="thu">Khamiis</day>
+							<day type="fri">Jimco</day>
+							<day type="sat">Sabti</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -603,6 +655,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<quarter type="3">R3</quarter>
 							<quarter type="4">R4</quarter>
 						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Rubaca 1aad</quarter>
+							<quarter type="2">Rubaca 2aad</quarter>
+							<quarter type="3">Rubaca 3aad</quarter>
+							<quarter type="4">Rubaca 4aad</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
 						<quarterWidth type="wide">
 							<quarter type="1">Rubaca 1aad</quarter>
 							<quarter type="2">Rubaca 2aad</quarter>
@@ -617,6 +683,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="am">sn.</dayPeriod>
 							<dayPeriod type="pm">gn.</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">sn.</dayPeriod>
+							<dayPeriod type="pm">gn.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">sn.</dayPeriod>
+							<dayPeriod type="pm">gn.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">sn.</dayPeriod>
+							<dayPeriod type="pm">gn.</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">sn.</dayPeriod>
 							<dayPeriod type="pm">gn.</dayPeriod>
@@ -625,8 +705,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">Ciise ka hor (CS)</era>
-						<era type="1">Ciise ka dib (CS)</era>
+						<era type="0">CK</era>
+						<era type="1">CD</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">CK</era>
@@ -691,6 +771,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'usbuuc' W 'ee' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'usbuuc' W 'ee' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -783,48 +865,321 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>Qarni</displayName>
+				<displayName>Era</displayName>
 			</field>
 			<field type="year">
-				<displayName>Sanad</displayName>
+				<displayName>Year</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} y</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} y</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} y</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} y</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} y</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} y</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} y</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} y</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} y</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} y</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} y</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} y</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<displayName>Quarter</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Q</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Q</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Q</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Q</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Q</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Q</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Q</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Q</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Q</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Q</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Q</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Q</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month">
-				<displayName>Bil</displayName>
+				<displayName>Month</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} m</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} m</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} m</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} m</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} m</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} m</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} m</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} m</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} m</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} m</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} m</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} m</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="week">
-				<displayName>Toddobaad</displayName>
+				<displayName>Week</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} w</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} w</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>the week of {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} w</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} w</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>the week of {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} w</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} w</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>the week of {0}</relativePeriod>
 			</field>
 			<field type="day">
-				<displayName>Maalin</displayName>
+				<displayName>Day</displayName>
 				<relative type="-1">Shalay</relative>
 				<relative type="0">Maanta</relative>
 				<relative type="1">Berri</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} d</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} d</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} d</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} d</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<displayName>Day</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} d</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} d</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} d</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} d</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} d</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} d</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} d</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} d</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="weekday">
-				<displayName>Maalinta toddobaadka</displayName>
+				<displayName>Day of the Week</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">last Sunday</relative>
+				<relative type="0">this Sunday</relative>
+				<relative type="1">next Sunday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Sundays</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Sundays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Sundays</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Sundays</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="dayperiod">
-				<displayName>sn./gn.</displayName>
+				<displayName>Dayperiod</displayName>
 			</field>
 			<field type="hour">
-				<displayName>Saacad</displayName>
+				<displayName>Hour</displayName>
+				<relative type="0">this hour</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} h</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} h</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} h</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} h</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} h</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} h</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} h</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} h</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} h</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
-				<displayName>Daqiiqad</displayName>
+				<displayName>Minute</displayName>
+				<relative type="0">this minute</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} min</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} min</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} min</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} min</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} min</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} min</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} min</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} min</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} min</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} min</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} min</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} min</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second">
-				<displayName>Il biriqsi</displayName>
+				<displayName>Second</displayName>
+				<relative type="0">now</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} s</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} s</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} s</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} s</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} s</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} s</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} s</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} s</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} s</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} s</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} s</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} s</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="zone">
-				<displayName>Xadka waqtiga</displayName>
+				<displayName>Zone</displayName>
 			</field>
 		</fields>
+		<timeZoneNames>
+			<metazone type="Colombia">
+				<long>
+					<generic>Waqtiga Kolambiya</generic>
+					<standard>Waqtiyada Caadiga ah ee kolambiya</standard>
+					<daylight>Waqtiyada Xagaaga Kolambiya</daylight>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Waqtiga Galabagos</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
 		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="one">0K</pattern>
+					<pattern type="1000" count="other">0K</pattern>
+					<pattern type="10000" count="one">00K</pattern>
+					<pattern type="10000" count="other">00K</pattern>
+					<pattern type="100000" count="one">000K</pattern>
+					<pattern type="100000" count="other">000K</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -884,7 +1239,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Doollar maraykan</displayName>
 			</currency>
 			<currency type="XXX">
-				<displayName draft="unconfirmed">Lacag aan la qoon ama aan saxnayn</displayName>
+				<displayName>Lacag aan la qoon ama aan saxnayn</displayName>
 			</currency>
 		</currencies>
 	</numbers>
@@ -895,4 +1250,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

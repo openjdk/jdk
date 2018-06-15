@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<!-- This is a special purpose locale so that a user can request the C or POSIX
@@ -14,11 +15,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 		 being used, and multi-level UCA collation was expected.
 	-->
 	<identity>
-		<version number="$Revision: 11914 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="en"/>
 		<territory type="US"/>
 		<variant type="POSIX"/>
 	</identity>
+	<characters>
+		<exemplarCharacters type="numbers">[\- , . / % + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+	</characters>
 	<numbers>
 		<symbols numberSystem="latn">
 			<perMille>0/00</perMille>
@@ -27,7 +31,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern>#0.######</pattern>
+					<pattern>0.######</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -41,17 +45,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
-					<pattern>#0%</pattern>
+					<pattern>0%</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #0.00</pattern>
+					<pattern>¤ 0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
 	</numbers>
 </ldml>
-

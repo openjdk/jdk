@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12415 $"/>
+		<version number="$Revision: 13839 $"/>
 		<language type="it"/>
 		<territory type="CH"/>
 	</identity>
+	<characters>
+		<exemplarCharacters type="numbers">[\- . ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+	</characters>
 	<delimiters>
 		<alternateQuotationStart draft="unconfirmed">‹</alternateQuotationStart>
 		<alternateQuotationEnd draft="unconfirmed">›</alternateQuotationEnd>
@@ -93,33 +97,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
-				<months>
-					<monthContext type="stand-alone">
-						<monthWidth type="wide">
-							<month type="1" draft="contributed">gennaio</month>
-							<month type="2" draft="contributed">febbraio</month>
-							<month type="3" draft="contributed">marzo</month>
-							<month type="4" draft="contributed">aprile</month>
-							<month type="5" draft="contributed">maggio</month>
-							<month type="6" draft="contributed">giugno</month>
-							<month type="7" draft="contributed">luglio</month>
-							<month type="8" draft="contributed">agosto</month>
-							<month type="9" draft="contributed">settembre</month>
-							<month type="10" draft="contributed">ottobre</month>
-							<month type="11" draft="contributed">novembre</month>
-							<month type="12" draft="contributed">dicembre</month>
-						</monthWidth>
-					</monthContext>
-				</months>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="medium">
-						<dateFormat>
-							<pattern>d MMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -186,7 +167,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	<numbers>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
-			<group>'</group>
+			<group>’</group>
 		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
@@ -197,4 +178,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencyFormats>
 	</numbers>
 </ldml>
-

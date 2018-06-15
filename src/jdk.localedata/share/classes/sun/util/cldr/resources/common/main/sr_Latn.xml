@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2016 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12417 $"/>
+		<version number="$Revision: 13937 $"/>
 		<language type="sr"/>
 		<script type="Latn"/>
 	</identity>
@@ -17,496 +18,514 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="aa">Afarski</language>
+			<language type="aa">afarski</language>
 			<language type="ab">abhaski</language>
-			<language type="ace">Ačineski</language>
-			<language type="ach">Akoli</language>
-			<language type="ada">Adangmejski</language>
-			<language type="ady">Adigejski</language>
-			<language type="ae">Avestanski</language>
+			<language type="ace">aceški</language>
+			<language type="ach">akoli</language>
+			<language type="ada">adangme</language>
+			<language type="ady">adigejski</language>
+			<language type="ae">avestanski</language>
 			<language type="af">afrikans</language>
-			<language type="afh">Afrihili</language>
+			<language type="afh">afrihili</language>
 			<language type="agq">agem</language>
-			<language type="ain">Ainu</language>
-			<language type="ak">akan</language>
-			<language type="akk">Akadijski</language>
-			<language type="ale">Aljut</language>
-			<language type="alt">Južni altai</language>
+			<language type="ain">ainu</language>
+			<language type="ak">akanski</language>
+			<language type="akk">akadijski</language>
+			<language type="ale">aleutski</language>
+			<language type="alt">južnoaltajski</language>
 			<language type="am">amharski</language>
-			<language type="an">Aragonežanski</language>
-			<language type="ang">Staroengleski</language>
-			<language type="anp">Angika</language>
+			<language type="an">aragonski</language>
+			<language type="ang">staroengleski</language>
+			<language type="anp">angika</language>
 			<language type="ar">arapski</language>
-			<language type="ar_001" draft="contributed">moderan standardni arapski</language>
-			<language type="arc">Armajski</language>
+			<language type="ar_001">savremeni standardni arapski</language>
+			<language type="arc">aramejski</language>
 			<language type="arn">mapuče</language>
-			<language type="arp">Arapaho</language>
-			<language type="arw">Aravak</language>
+			<language type="arp">arapaho</language>
+			<language type="arw">aravački</language>
 			<language type="as">asamski</language>
 			<language type="asa">asu</language>
-			<language type="ast">Asturijski</language>
-			<language type="av">Avarski</language>
-			<language type="awa">Avadhi</language>
-			<language type="ay">Ajmara</language>
+			<language type="ast">asturijski</language>
+			<language type="av">avarski</language>
+			<language type="awa">avadi</language>
+			<language type="ay">ajmara</language>
 			<language type="az">azerbejdžanski</language>
 			<language type="az" alt="short">azerski</language>
 			<language type="ba">baškirski</language>
-			<language type="bal">Baluči</language>
-			<language type="ban">Balinezijski</language>
-			<language type="bas">Basa</language>
+			<language type="bal">belučki</language>
+			<language type="ban">balijski</language>
+			<language type="bas">basa</language>
 			<language type="be">beloruski</language>
-			<language type="bej">Beja</language>
+			<language type="bej">bedža</language>
 			<language type="bem">bemba</language>
 			<language type="bez">bena</language>
 			<language type="bg">bugarski</language>
-			<language type="bgn" draft="contributed">zapadni belučki</language>
-			<language type="bho">Bojpuri</language>
-			<language type="bi">Bislama</language>
-			<language type="bik">Bikol</language>
-			<language type="bin">Bini</language>
-			<language type="bla">Sisika</language>
+			<language type="bgn">zapadni belučki</language>
+			<language type="bho">bodžpuri</language>
+			<language type="bi">bislama</language>
+			<language type="bik">bikol</language>
+			<language type="bin">bini</language>
+			<language type="bla">sisika</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengalski</language>
 			<language type="bo">tibetanski</language>
 			<language type="br">bretonski</language>
-			<language type="bra">Braj</language>
+			<language type="bra">braj</language>
 			<language type="brx">bodo</language>
 			<language type="bs">bosanski</language>
-			<language type="bua">Buriat</language>
-			<language type="bug">Buginežanski</language>
-			<language type="byn">Blin</language>
+			<language type="bua">burjatski</language>
+			<language type="bug">bugijski</language>
+			<language type="byn">blinski</language>
 			<language type="ca">katalonski</language>
-			<language type="cad">Kado</language>
-			<language type="car">Karipski</language>
-			<language type="cch">Atsamski</language>
-			<language type="ce">Čečenski</language>
-			<language type="ceb">Cebuano</language>
+			<language type="cad">kado</language>
+			<language type="car">karipski</language>
+			<language type="cch">atsam</language>
+			<language type="ce">čečenski</language>
+			<language type="ceb">sebuanski</language>
 			<language type="cgg">čiga</language>
-			<language type="ch">Čamoro</language>
-			<language type="chb">Čibča</language>
-			<language type="chg">Čagatai</language>
-			<language type="chk">Čukeski</language>
-			<language type="chm">Mari</language>
-			<language type="chn">Činukski</language>
-			<language type="cho">Čoktavski</language>
-			<language type="chp">Čipvijanski</language>
+			<language type="ch">čamoro</language>
+			<language type="chb">čipča</language>
+			<language type="chg">čagataj</language>
+			<language type="chk">čučki</language>
+			<language type="chm">mari</language>
+			<language type="chn">činučki</language>
+			<language type="cho">čoktavski</language>
+			<language type="chp">čipevjanski</language>
 			<language type="chr">čeroki</language>
-			<language type="chy">Čejenski</language>
-			<language type="ckb">sorani kurdski</language>
+			<language type="chy">čejenski</language>
+			<language type="ckb">centralni kurdski</language>
 			<language type="co">korzikanski</language>
-			<language type="cop">Koptski</language>
-			<language type="cr">Kri</language>
-			<language type="crh">Krimeanski turski</language>
+			<language type="cop">koptski</language>
+			<language type="cr">kri</language>
+			<language type="crh">krimskotatarski</language>
+			<language type="crs">sejšelski kreolski francuski</language>
 			<language type="cs">češki</language>
-			<language type="csb">Kašubijanski</language>
-			<language type="cu">Staroslovenski</language>
-			<language type="cv">Čuvaški</language>
+			<language type="csb">kašupski</language>
+			<language type="cu">crkvenoslovenski</language>
+			<language type="cv">čuvaški</language>
 			<language type="cy">velški</language>
 			<language type="da">danski</language>
-			<language type="dak">Dakota</language>
-			<language type="dar">Dargva</language>
+			<language type="dak">dakota</language>
+			<language type="dar">darginski</language>
 			<language type="dav">taita</language>
 			<language type="de">nemački</language>
 			<language type="de_CH">švajcarski visoki nemački</language>
-			<language type="del">Delaver</language>
-			<language type="den">Slavski</language>
-			<language type="dgr">Dogrib</language>
-			<language type="din">Dinka</language>
+			<language type="del">delaverski</language>
+			<language type="den">slejvi</language>
+			<language type="dgr">dogripski</language>
+			<language type="din">dinka</language>
 			<language type="dje">zarma</language>
-			<language type="doi">Dogri</language>
+			<language type="doi">dogri</language>
 			<language type="dsb">donji lužičkosrpski</language>
 			<language type="dua">duala</language>
-			<language type="dum">Srednji holandski</language>
-			<language type="dv">Divehijski</language>
+			<language type="dum">srednjeholandski</language>
+			<language type="dv">maldivski</language>
 			<language type="dyo">džola fonji</language>
-			<language type="dyu">Đula</language>
+			<language type="dyu">đula</language>
 			<language type="dz">džonga</language>
+			<language type="dzg">dazaga</language>
 			<language type="ebu">embu</language>
 			<language type="ee">eve</language>
-			<language type="efi">Efikski</language>
-			<language type="egy">Staroegipatski</language>
-			<language type="eka">Ekajuk</language>
+			<language type="efi">efički</language>
+			<language type="egy">staroegipatski</language>
+			<language type="eka">ekadžuk</language>
 			<language type="el">grčki</language>
-			<language type="elx">Elamitski</language>
+			<language type="elx">elamitski</language>
 			<language type="en">engleski</language>
+			<language type="en_GB">engleski (Velika Britanija)</language>
 			<language type="en_GB" alt="short">engleski (UK)</language>
-			<language type="en_US" draft="provisional">američki engleski</language>
+			<language type="en_US">engleski (Sjedinjene Američke Države)</language>
 			<language type="en_US" alt="short">engleski (SAD)</language>
-			<language type="enm">Srednji engleski</language>
+			<language type="enm">srednjeengleski</language>
 			<language type="eo">esperanto</language>
 			<language type="es">španski</language>
 			<language type="et">estonski</language>
 			<language type="eu">baskijski</language>
-			<language type="ewo">Evondo</language>
+			<language type="ewo">evondo</language>
 			<language type="fa">persijski</language>
-			<language type="fan">Fang</language>
-			<language type="fat">Fanti</language>
-			<language type="ff">Fulah</language>
+			<language type="fan">fang</language>
+			<language type="fat">fanti</language>
+			<language type="ff">fula</language>
 			<language type="fi">finski</language>
 			<language type="fil">filipinski</language>
 			<language type="fj">fidžijski</language>
 			<language type="fo">farski</language>
-			<language type="fon">Fon</language>
+			<language type="fon">fon</language>
 			<language type="fr">francuski</language>
-			<language type="frm">Srednji francuski</language>
-			<language type="fro">Starofrancuski</language>
-			<language type="frr">Severno-frizijski</language>
-			<language type="frs">Istočni frizijski</language>
-			<language type="fur">Friulijski</language>
+			<language type="frc" draft="contributed">kajunski francuski</language>
+			<language type="frm">srednjefrancuski</language>
+			<language type="fro">starofrancuski</language>
+			<language type="frr">severnofrizijski</language>
+			<language type="frs">istočnofrizijski</language>
+			<language type="fur">friulski</language>
 			<language type="fy">zapadni frizijski</language>
 			<language type="ga">irski</language>
-			<language type="gaa">Ga</language>
+			<language type="gaa">ga</language>
 			<language type="gag">gagauz</language>
-			<language type="gay">Gajo</language>
-			<language type="gba">Gbaja</language>
-			<language type="gd">Škotski Galski</language>
-			<language type="gez">Džiz</language>
-			<language type="gil">Gilbertški</language>
+			<language type="gay">gajo</language>
+			<language type="gba">gbaja</language>
+			<language type="gd">škotski gelski</language>
+			<language type="gez">geez</language>
+			<language type="gil">gilbertski</language>
 			<language type="gl">galicijski</language>
-			<language type="gmh">Srednji visoki nemački</language>
+			<language type="gmh">srednji visokonemački</language>
 			<language type="gn">gvarani</language>
-			<language type="goh">Staronemački</language>
-			<language type="gon">Gondi</language>
-			<language type="gor">Gorontalo</language>
-			<language type="got">Gotski</language>
-			<language type="grb">Grebo</language>
-			<language type="grc">Starogrčki</language>
-			<language type="gsw">Švajcarski nemački</language>
+			<language type="goh">staronemački</language>
+			<language type="gon">gondi</language>
+			<language type="gor">gorontalo</language>
+			<language type="got">gotski</language>
+			<language type="grb">grebo</language>
+			<language type="grc">starogrčki</language>
+			<language type="gsw">nemački (Švajcarska)</language>
 			<language type="gu">gudžarati</language>
 			<language type="guz">gusi</language>
-			<language type="gv">manski</language>
-			<language type="gwi">Gvič’in</language>
+			<language type="gv">manks</language>
+			<language type="gwi">gvičinski</language>
 			<language type="ha">hausa</language>
-			<language type="hai">Haida</language>
+			<language type="hai">haida</language>
 			<language type="haw">havajski</language>
 			<language type="he">hebrejski</language>
 			<language type="hi">hindi</language>
-			<language type="hil">Hiligajnon</language>
-			<language type="hit">Hitite</language>
-			<language type="hmn">Hmong</language>
-			<language type="ho">Hiri Motu</language>
+			<language type="hil">hiligajnonski</language>
+			<language type="hit">hetitski</language>
+			<language type="hmn">hmonški</language>
+			<language type="ho">hiri motu</language>
 			<language type="hr">hrvatski</language>
 			<language type="hsb">gornji lužičkosrpski</language>
 			<language type="ht">haićanski</language>
 			<language type="hu">mađarski</language>
-			<language type="hup">Hupa</language>
+			<language type="hup">hupa</language>
 			<language type="hy">jermenski</language>
-			<language type="hz">Herero</language>
-			<language type="ia">Interlingva</language>
-			<language type="iba">Iban</language>
+			<language type="hz">herero</language>
+			<language type="ia">interlingva</language>
+			<language type="iba">ibanski</language>
+			<language type="ibb">ibibio</language>
 			<language type="id">indonežanski</language>
-			<language type="ie">Međujezički</language>
+			<language type="ie">interlingve</language>
 			<language type="ig">igbo</language>
-			<language type="ii">sečuan ji</language>
-			<language type="ik">Unupiak</language>
-			<language type="ilo">Iloko</language>
-			<language type="inh">Ingviški</language>
-			<language type="io">Ido</language>
+			<language type="ii">sečuanski ji</language>
+			<language type="ik">inupik</language>
+			<language type="ilo">iloko</language>
+			<language type="inh">inguški</language>
+			<language type="io">ido</language>
 			<language type="is">islandski</language>
 			<language type="it">italijanski</language>
-			<language type="iu">inuktitut</language>
+			<language type="iu">inuktitutski</language>
 			<language type="ja">japanski</language>
-			<language type="jbo">Lojban</language>
+			<language type="jbo">ložban</language>
 			<language type="jgo">ngomba</language>
 			<language type="jmc">mačame</language>
-			<language type="jpr">Judeo-persijski</language>
-			<language type="jrb">Judeo-arapski</language>
+			<language type="jpr">judeo-persijski</language>
+			<language type="jrb">judeo-arapski</language>
 			<language type="jv">javanski</language>
 			<language type="ka">gruzijski</language>
-			<language type="kaa">Kara-kalpaški</language>
+			<language type="kaa">kara-kalpaški</language>
 			<language type="kab">kabile</language>
-			<language type="kac">Kačin</language>
-			<language type="kaj">Đu</language>
+			<language type="kac">kačinski</language>
+			<language type="kaj">džu</language>
 			<language type="kam">kamba</language>
-			<language type="kaw">Kavi</language>
-			<language type="kbd">Kabardijski</language>
-			<language type="kcg">Tjap</language>
+			<language type="kaw">kavi</language>
+			<language type="kbd">kabardijski</language>
+			<language type="kcg">tjap</language>
 			<language type="kde">makonde</language>
-			<language type="kea">zelenortski kreolski</language>
-			<language type="kfo">Koro</language>
-			<language type="kg">Kongo</language>
-			<language type="kha">Kasi</language>
-			<language type="kho">Kotaneški</language>
+			<language type="kea">zelenortski</language>
+			<language type="kfo">koro</language>
+			<language type="kg">kongo</language>
+			<language type="kha">kasi</language>
+			<language type="kho">kotaneški</language>
 			<language type="khq">kojra čiini</language>
 			<language type="ki">kikuju</language>
-			<language type="kj">Kuanjama</language>
+			<language type="kj">kvanjama</language>
 			<language type="kk">kazaški</language>
-			<language type="kl">kalalisut</language>
-			<language type="kln">kalendžin</language>
+			<language type="kkj">kako</language>
+			<language type="kl">grenlandski</language>
+			<language type="kln">kalendžinski</language>
 			<language type="km">kmerski</language>
-			<language type="kmb">Kimbundu</language>
+			<language type="kmb">kimbundu</language>
 			<language type="kn">kanada</language>
 			<language type="ko">korejski</language>
 			<language type="koi">komi-permski</language>
 			<language type="kok">konkani</language>
-			<language type="kos">Kosreanski</language>
-			<language type="kpe">Kpele</language>
-			<language type="kr">Kanuri</language>
-			<language type="krc">Karačaj-balkar</language>
-			<language type="kri" draft="provisional">Krio</language>
-			<language type="krl">Karelijski</language>
-			<language type="kru">Kurukh</language>
+			<language type="kos">kosrenski</language>
+			<language type="kpe">kpele</language>
+			<language type="kr">kanuri</language>
+			<language type="krc">karačajsko-balkarski</language>
+			<language type="kri">krio</language>
+			<language type="krl">karelski</language>
+			<language type="kru">kuruk</language>
 			<language type="ks">kašmirski</language>
 			<language type="ksb">šambala</language>
 			<language type="ksf">bafija</language>
+			<language type="ksh">kelnski</language>
 			<language type="ku">kurdski</language>
-			<language type="kum">Kumik</language>
-			<language type="kut">Kutenai</language>
-			<language type="kv">Komi</language>
+			<language type="kum">kumički</language>
+			<language type="kut">kutenaj</language>
+			<language type="kv">komi</language>
 			<language type="kw">kornvolski</language>
 			<language type="ky">kirgiski</language>
 			<language type="la">latinski</language>
-			<language type="lad">Ladino</language>
+			<language type="lad">ladino</language>
 			<language type="lag">langi</language>
-			<language type="lah">Landa</language>
-			<language type="lam">Lamba</language>
+			<language type="lah">landa</language>
+			<language type="lam">lamba</language>
 			<language type="lb">luksemburški</language>
-			<language type="lez">Lezgian</language>
+			<language type="lez">lezginski</language>
 			<language type="lg">ganda</language>
-			<language type="li">Limburgiš</language>
+			<language type="li">limburški</language>
 			<language type="lkt">lakota</language>
 			<language type="ln">lingala</language>
-			<language type="lo">laoški</language>
-			<language type="lol">Mongo</language>
-			<language type="loz">Lozi</language>
-			<language type="lrc" draft="contributed">severni luri</language>
+			<language type="lo">laoski</language>
+			<language type="lol">mongo</language>
+			<language type="lou" draft="contributed">luizijanski kreolski</language>
+			<language type="loz">lozi</language>
+			<language type="lrc">severni luri</language>
 			<language type="lt">litvanski</language>
 			<language type="lu">luba-katanga</language>
-			<language type="lua">Luba-lulua</language>
-			<language type="lui">Luiseno</language>
-			<language type="lun">Lunda</language>
+			<language type="lua">luba-lulua</language>
+			<language type="lui">luisenjo</language>
+			<language type="lun">lunda</language>
 			<language type="luo">luo</language>
-			<language type="lus">Lušai</language>
+			<language type="lus">mizo</language>
 			<language type="luy">lujia</language>
 			<language type="lv">letonski</language>
-			<language type="mad">Madureški</language>
-			<language type="mag">Magahi</language>
-			<language type="mai">Maitili</language>
-			<language type="mak">Makasar</language>
-			<language type="man">Mandingo</language>
-			<language type="mas">masai</language>
-			<language type="mdf">Mokša</language>
-			<language type="mdr">Mandar</language>
-			<language type="men">Mende</language>
+			<language type="mad">madurski</language>
+			<language type="mag">magahi</language>
+			<language type="mai">maitili</language>
+			<language type="mak">makasarski</language>
+			<language type="man">mandingo</language>
+			<language type="mas">masajski</language>
+			<language type="mdf">mokša</language>
+			<language type="mdr">mandar</language>
+			<language type="men">mende</language>
 			<language type="mer">meru</language>
 			<language type="mfe">morisjen</language>
 			<language type="mg">malgaški</language>
-			<language type="mga">Srednji irski</language>
-			<language type="mgh">makuva-meeto</language>
+			<language type="mga">srednjeirski</language>
+			<language type="mgh">makuva-mito</language>
 			<language type="mgo">meta</language>
-			<language type="mh">Maršalski</language>
+			<language type="mh">maršalski</language>
 			<language type="mi">maorski</language>
-			<language type="mic">Mikmak</language>
-			<language type="min">Minangkabau</language>
+			<language type="mic">mikmak</language>
+			<language type="min">minangkabau</language>
 			<language type="mk">makedonski</language>
 			<language type="ml">malajalam</language>
 			<language type="mn">mongolski</language>
-			<language type="mnc">Manču</language>
-			<language type="mni">Manipuri</language>
-			<language type="moh">mohok</language>
-			<language type="mos">Mosi</language>
+			<language type="mnc">mandžurski</language>
+			<language type="mni">manipurski</language>
+			<language type="moh">mohočki</language>
+			<language type="mos">mosi</language>
 			<language type="mr">marati</language>
 			<language type="ms">malajski</language>
 			<language type="mt">malteški</language>
 			<language type="mua">mundang</language>
 			<language type="mul">Više jezika</language>
-			<language type="mus">Kriški</language>
-			<language type="mwl">Mirandeški</language>
-			<language type="mwr">Marvari</language>
+			<language type="mus">kriški</language>
+			<language type="mwl">mirandski</language>
+			<language type="mwr">marvari</language>
 			<language type="my">burmanski</language>
-			<language type="myv">Erzija</language>
-			<language type="mzn" draft="contributed">mazanderanski</language>
-			<language type="na">Nauru</language>
-			<language type="nap">Neapolitanski</language>
+			<language type="myv">erzja</language>
+			<language type="mzn">mazanderanski</language>
+			<language type="na">nauruski</language>
+			<language type="nap">napuljski</language>
 			<language type="naq">nama</language>
-			<language type="nb">norveški bokmal</language>
+			<language type="nb">norveški bukmol</language>
 			<language type="nd">severni ndebele</language>
-			<language type="nds">Niski nemački</language>
-			<language type="nds_NL" draft="contributed">niskosaksonski</language>
+			<language type="nds">niskonemački</language>
+			<language type="nds_NL">niskosaksonski</language>
 			<language type="ne">nepalski</language>
-			<language type="new">Nevari</language>
-			<language type="ng">Ndonga</language>
-			<language type="nia">Nias</language>
-			<language type="niu">Niuean</language>
+			<language type="new">nevari</language>
+			<language type="ng">ndonga</language>
+			<language type="nia">nias</language>
+			<language type="niu">niuejski</language>
 			<language type="nl">holandski</language>
 			<language type="nl_BE">flamanski</language>
 			<language type="nmg">kvasio</language>
 			<language type="nn">norveški ninorsk</language>
-			<language type="no">Norveški</language>
-			<language type="nog">Nogai</language>
-			<language type="non">Stari norski</language>
-			<language type="nqo">n’ko</language>
-			<language type="nr">Južni ndebele</language>
-			<language type="nso">Severni soto</language>
+			<language type="nnh">ngiembun</language>
+			<language type="no">norveški</language>
+			<language type="nog">nogajski</language>
+			<language type="non">staronordijski</language>
+			<language type="nqo">nko</language>
+			<language type="nr">južni ndebele</language>
+			<language type="nso">severni soto</language>
 			<language type="nus">nuer</language>
-			<language type="nv">Navaho</language>
-			<language type="nwc">Klasični nevari</language>
-			<language type="ny">Njanja</language>
-			<language type="nym">Njamvezi</language>
+			<language type="nv">navaho</language>
+			<language type="nwc">klasični nevarski</language>
+			<language type="ny">njandža</language>
+			<language type="nym">njamvezi</language>
 			<language type="nyn">njankole</language>
-			<language type="nyo">Njoro</language>
-			<language type="nzi">Nzima</language>
-			<language type="oc">Provansalski</language>
-			<language type="oj">Ojibva</language>
+			<language type="nyo">njoro</language>
+			<language type="nzi">nzima</language>
+			<language type="oc">oksitanski</language>
+			<language type="oj">odžibve</language>
 			<language type="om">oromo</language>
-			<language type="or">orija</language>
-			<language type="os">Osetski</language>
-			<language type="osa">Osage</language>
-			<language type="ota">Otomanski turski</language>
-			<language type="pa">pandžabi</language>
-			<language type="pag">Pangasinski</language>
-			<language type="pal">Pahlavi</language>
-			<language type="pam">Pampanga</language>
-			<language type="pap">Papiamento</language>
-			<language type="pau">Palauanski</language>
-			<language type="peo">Staropersijski</language>
-			<language type="phn">Feničanski</language>
-			<language type="pi">Pali</language>
+			<language type="or">odija</language>
+			<language type="os">osetinski</language>
+			<language type="osa">osage</language>
+			<language type="ota">osmanski turski</language>
+			<language type="pa">pendžapski</language>
+			<language type="pag">pangasinanski</language>
+			<language type="pal">pahlavi</language>
+			<language type="pam">pampanga</language>
+			<language type="pap">papijamento</language>
+			<language type="pau">palauski</language>
+			<language type="pcm">nigerijski pidžin</language>
+			<language type="peo">staropersijski</language>
+			<language type="phn">feničanski</language>
+			<language type="pi">pali</language>
 			<language type="pl">poljski</language>
-			<language type="pon">Ponpejski</language>
-			<language type="pro">Staroprovansalski</language>
+			<language type="pon">ponpejski</language>
+			<language type="prg">pruski</language>
+			<language type="pro">starooksitanski</language>
 			<language type="ps">paštunski</language>
 			<language type="ps" alt="variant">pašto</language>
 			<language type="pt">portugalski</language>
-			<language type="pt_BR">Brazilski portugalski</language>
-			<language type="pt_PT">Iberijski portugalski</language>
+			<language type="pt_PT">portugalski (Portugal)</language>
 			<language type="qu">kečua</language>
-			<language type="quc">k’iče</language>
-			<language type="raj">Rađastani</language>
-			<language type="rap">Rapanui</language>
-			<language type="rar">Rarotongan</language>
-			<language type="rm">reto-romanski</language>
-			<language type="rn">rundi</language>
+			<language type="quc">kiče</language>
+			<language type="raj">radžastanski</language>
+			<language type="rap">rapanui</language>
+			<language type="rar">rarotonganski</language>
+			<language type="rm">romanš</language>
+			<language type="rn">kirundi</language>
 			<language type="ro">rumunski</language>
 			<language type="ro_MD">moldavski</language>
 			<language type="rof">rombo</language>
-			<language type="rom">Romani</language>
-			<language type="root">Rut</language>
+			<language type="rom">romski</language>
+			<language type="root">rut</language>
 			<language type="ru">ruski</language>
-			<language type="rup">Aromanijski</language>
+			<language type="rup">cincarski</language>
 			<language type="rw">kinjaruanda</language>
 			<language type="rwk">rua</language>
 			<language type="sa">sanskrit</language>
-			<language type="sad">Sandave</language>
-			<language type="sah">Jakut</language>
-			<language type="sam">Samaritanski aramejski</language>
+			<language type="sad">sandave</language>
+			<language type="sah">saha</language>
+			<language type="sam">samarijanski aramejski</language>
 			<language type="saq">samburu</language>
-			<language type="sas">Sasak</language>
-			<language type="sat">Santali</language>
+			<language type="sas">sasak</language>
+			<language type="sat">santali</language>
+			<language type="sba">ngambaj</language>
 			<language type="sbp">sangu</language>
-			<language type="sc">Sardinjaski</language>
-			<language type="scn">Sicilijanski</language>
-			<language type="sco">Škotski</language>
+			<language type="sc">sardinski</language>
+			<language type="scn">sicilijanski</language>
+			<language type="sco">škotski</language>
 			<language type="sd">sindi</language>
 			<language type="sdh">južnokurdski</language>
 			<language type="se">severni sami</language>
 			<language type="seh">sena</language>
-			<language type="sel">Selkap</language>
+			<language type="sel">selkupski</language>
 			<language type="ses">kojraboro seni</language>
 			<language type="sg">sango</language>
-			<language type="sga">Staroirski</language>
-			<language type="sh">Srpskohrvatski</language>
+			<language type="sga">staroirski</language>
+			<language type="sh">srpskohrvatski</language>
 			<language type="shi">tašelhit</language>
-			<language type="shn">Šan</language>
-			<language type="si">sinhalski</language>
-			<language type="sid">Sidamo</language>
+			<language type="shn">šanski</language>
+			<language type="si">sinhaleški</language>
+			<language type="sid">sidamo</language>
 			<language type="sk">slovački</language>
 			<language type="sl">slovenački</language>
-			<language type="sm">Samoanski</language>
+			<language type="sm">samoanski</language>
 			<language type="sma">južni sami</language>
 			<language type="smj">lule sami</language>
 			<language type="smn">inari sami</language>
 			<language type="sms">skolt sami</language>
 			<language type="sn">šona</language>
-			<language type="snk">Soninke</language>
+			<language type="snk">soninke</language>
 			<language type="so">somalski</language>
-			<language type="sog">Sodžijenski</language>
+			<language type="sog">sogdijski</language>
 			<language type="sq">albanski</language>
 			<language type="sr">srpski</language>
-			<language type="srn">Srananski tongo</language>
-			<language type="srr">Serer</language>
-			<language type="ss">Svati</language>
-			<language type="st">Sesoto</language>
+			<language type="srn">sranan tongo</language>
+			<language type="srr">sererski</language>
+			<language type="ss">svazi</language>
+			<language type="ssy">saho</language>
+			<language type="st">sesoto</language>
 			<language type="su">sundanski</language>
-			<language type="suk">Sukuma</language>
-			<language type="sus">Susu</language>
-			<language type="sux">Sumerski</language>
+			<language type="suk">sukuma</language>
+			<language type="sus">susu</language>
+			<language type="sux">sumerski</language>
 			<language type="sv">švedski</language>
 			<language type="sw">svahili</language>
-			<language type="sw_CD">kongo svahili</language>
-			<language type="swb">Komorski</language>
-			<language type="syc">Klasični sirijski</language>
-			<language type="syr">Sirijski</language>
+			<language type="sw_CD">kisvahili</language>
+			<language type="swb">komorski</language>
+			<language type="syc">sirijački</language>
+			<language type="syr">sirijski</language>
 			<language type="ta">tamilski</language>
 			<language type="te">telugu</language>
-			<language type="tem">Timne</language>
+			<language type="tem">timne</language>
 			<language type="teo">teso</language>
-			<language type="ter">Tereno</language>
-			<language type="tet">Tetum</language>
+			<language type="ter">tereno</language>
+			<language type="tet">tetum</language>
 			<language type="tg">tadžički</language>
-			<language type="th">tajlandski</language>
+			<language type="th">tajski</language>
 			<language type="ti">tigrinja</language>
-			<language type="tig">Tigre</language>
-			<language type="tiv">Tiv</language>
+			<language type="tig">tigre</language>
+			<language type="tiv">tiv</language>
 			<language type="tk">turkmenski</language>
-			<language type="tkl">Tokelau</language>
-			<language type="tl">Tagalski</language>
-			<language type="tlh">Klingonski</language>
-			<language type="tli">Tlingit</language>
-			<language type="tmh">Tamašek</language>
-			<language type="tn">Tsvana</language>
-			<language type="to">tonga</language>
-			<language type="tog">Njasa tonga</language>
-			<language type="tpi">Tok Pisin</language>
+			<language type="tkl">tokelau</language>
+			<language type="tl">tagalog</language>
+			<language type="tlh">klingonski</language>
+			<language type="tli">tlingit</language>
+			<language type="tmh">tamašek</language>
+			<language type="tn">cvana</language>
+			<language type="to">tonganski</language>
+			<language type="tog">njasa tonga</language>
+			<language type="tpi">tok pisin</language>
 			<language type="tr">turski</language>
-			<language type="ts">Tsonga</language>
-			<language type="tsi">Tsimšian</language>
+			<language type="trv">taroko</language>
+			<language type="ts">conga</language>
+			<language type="tsi">cimšian</language>
 			<language type="tt">tatarski</language>
-			<language type="tum">Tumbuka</language>
-			<language type="tvl">Tuvalu</language>
-			<language type="tw">Tvi</language>
+			<language type="tum">tumbuka</language>
+			<language type="tvl">tuvalu</language>
+			<language type="tw">tvi</language>
 			<language type="twq">tasavak</language>
-			<language type="ty">Tahićanski</language>
-			<language type="tyv">Tuvinijski</language>
+			<language type="ty">tahićanski</language>
+			<language type="tyv">tuvinski</language>
 			<language type="tzm">centralnoatlaski tamazigt</language>
-			<language type="udm">Udmurt</language>
+			<language type="udm">udmurtski</language>
 			<language type="ug">ujgurski</language>
-			<language type="uga">Ugaritski</language>
+			<language type="uga">ugaritski</language>
 			<language type="uk">ukrajinski</language>
-			<language type="umb">Umbundu</language>
+			<language type="umb">umbundu</language>
 			<language type="und">nepoznat jezik</language>
 			<language type="ur">urdu</language>
 			<language type="uz">uzbečki</language>
 			<language type="vai">vai</language>
-			<language type="ve">Venda</language>
+			<language type="ve">venda</language>
 			<language type="vi">vijetnamski</language>
-			<language type="vo">Volapuk</language>
-			<language type="vot">Votski</language>
+			<language type="vo">volapik</language>
+			<language type="vot">vodski</language>
 			<language type="vun">vundžo</language>
-			<language type="wa">Valun</language>
-			<language type="wal">Valamo</language>
-			<language type="war">Varaj</language>
-			<language type="was">Vašo</language>
-			<language type="wbp" draft="contributed">varlpiri</language>
+			<language type="wa">valonski</language>
+			<language type="wae">valserski</language>
+			<language type="wal">volajta</language>
+			<language type="war">varajski</language>
+			<language type="was">vašo</language>
+			<language type="wbp">varlpiri</language>
 			<language type="wo">volof</language>
-			<language type="xal">Kalmik</language>
+			<language type="xal">kalmički</language>
 			<language type="xh">kosa</language>
 			<language type="xog">soga</language>
-			<language type="yao">Jao</language>
-			<language type="yap">Japeški</language>
-			<language type="yi">Jidiš</language>
+			<language type="yao">jao</language>
+			<language type="yap">japski</language>
+			<language type="yav">jangben</language>
+			<language type="ybb">jemba</language>
+			<language type="yi">jidiš</language>
 			<language type="yo">joruba</language>
-			<language type="yue">Kantonski</language>
-			<language type="za">Žuang</language>
-			<language type="zap">Zapotečki</language>
-			<language type="zbl">Blisimboli</language>
-			<language type="zen">Zenaga</language>
+			<language type="yue">kantonski</language>
+			<language type="za">džuanški</language>
+			<language type="zap">zapotečki</language>
+			<language type="zbl">blisimboli</language>
+			<language type="zen">zenaga</language>
 			<language type="zgh">standardni marokanski tamazigt</language>
 			<language type="zh">kineski</language>
+			<language type="zh_Hans">pojednostavljeni kineski</language>
+			<language type="zh_Hant">tradicionalni kineski</language>
 			<language type="zu">zulu</language>
-			<language type="zun">Zuni</language>
+			<language type="zun">zuni</language>
 			<language type="zxx">bez lingvističkog sadržaja</language>
-			<language type="zza">Zaza</language>
+			<language type="zza">zaza</language>
 		</languages>
 		<scripts>
 			<script type="Arab">arapsko pismo</script>
@@ -546,6 +565,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">grčko pismo</script>
 			<script type="Gujr">gudžaratsko pismo</script>
 			<script type="Guru">gurmuki pismo</script>
+			<script type="Hanb">hanb</script>
 			<script type="Hang">hangul</script>
 			<script type="Hani">han</script>
 			<script type="Hano">hanuno</script>
@@ -556,10 +576,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hebr">hebrejsko pismo</script>
 			<script type="Hira">hiragana</script>
 			<script type="Hmng">pahav hmong pismo</script>
-			<script type="Hrkt">Katakana ili Hiragana</script>
+			<script type="Hrkt">japanska slogovna pisma</script>
 			<script type="Hung">staromađarsko pismo</script>
 			<script type="Inds">induško pismo</script>
 			<script type="Ital">stari italik</script>
+			<script type="Jamo">džamo</script>
 			<script type="Java">javansko pismo</script>
 			<script type="Jpan">japansko pismo</script>
 			<script type="Kali">kajah-li pismo</script>
@@ -584,7 +605,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mani">manihejsko pismo</script>
 			<script type="Maya">majanski hijeroglifi</script>
 			<script type="Mero">meroitik pismo</script>
-			<script type="Mlym">malajalam pismo</script>
+			<script type="Mlym">malajalamsko pismo</script>
 			<script type="Mong">mongolsko pismo</script>
 			<script type="Moon">mesečevo pismo</script>
 			<script type="Mtei">meitei majek pismo</script>
@@ -627,7 +648,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Teng">tengvar pismo</script>
 			<script type="Tfng">tifinag pismo</script>
 			<script type="Tglg">Tagalog</script>
-			<script type="Thaa">thana pismo</script>
+			<script type="Thaa">tana pismo</script>
 			<script type="Thai">tajlandsko pismo</script>
 			<script type="Tibt">tibetansko pismo</script>
 			<script type="Ugar">ugaritsko pismo</script>
@@ -638,6 +659,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii">ji pismo</script>
 			<script type="Zinh">nasledno pismo</script>
 			<script type="Zmth">matematička notacija</script>
+			<script type="Zsye">emodži</script>
 			<script type="Zsym">simboli</script>
 			<script type="Zxxx">nepisani jezik</script>
 			<script type="Zyyy">zajedničko pismo</script>
@@ -673,6 +695,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Istočna Evropa</territory>
 			<territory type="154">Severna Evropa</territory>
 			<territory type="155">Zapadna Evropa</territory>
+			<territory type="202" draft="contributed">Afrika južno od Sahare</territory>
 			<territory type="419">Latinska Amerika</territory>
 			<territory type="AC">Ostrvo Asension</territory>
 			<territory type="AD">Andora</territory>
@@ -689,7 +712,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="AT">Austrija</territory>
 			<territory type="AU">Australija</territory>
 			<territory type="AW">Aruba</territory>
-			<territory type="AX">Olandska ostrva</territory>
+			<territory type="AX">Olandska Ostrva</territory>
 			<territory type="AZ">Azerbejdžan</territory>
 			<territory type="BA">Bosna i Hercegovina</territory>
 			<territory type="BB">Barbados</territory>
@@ -720,7 +743,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CG">Kongo - Brazavil</territory>
 			<territory type="CG" alt="variant">Kongo (Republika)</territory>
 			<territory type="CH">Švajcarska</territory>
-			<territory type="CI">Obala Slonovače</territory>
+			<territory type="CI">Obala Slonovače (Kot d’Ivoar)</territory>
+			<territory type="CI" alt="variant">Obala Slonovače</territory>
 			<territory type="CK">Kukova Ostrva</territory>
 			<territory type="CL">Čile</territory>
 			<territory type="CM">Kamerun</territory>
@@ -731,9 +755,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CU">Kuba</territory>
 			<territory type="CV">Zelenortska Ostrva</territory>
 			<territory type="CW">Kurasao</territory>
-			<territory type="CX">Božićno ostrvo</territory>
+			<territory type="CX">Božićno Ostrvo</territory>
 			<territory type="CY">Kipar</territory>
 			<territory type="CZ">Češka</territory>
+			<territory type="CZ" alt="variant">Češka Republika</territory>
 			<territory type="DE">Nemačka</territory>
 			<territory type="DG">Dijego Garsija</territory>
 			<territory type="DJ">Džibuti</territory>
@@ -750,52 +775,53 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Španija</territory>
 			<territory type="ET">Etiopija</territory>
 			<territory type="EU">Evropska Unija</territory>
+			<territory type="EZ">Evrozona</territory>
 			<territory type="FI">Finska</territory>
 			<territory type="FJ">Fidži</territory>
-			<territory type="FK">Foklandska ostrva</territory>
+			<territory type="FK">Foklandska Ostrva</territory>
 			<territory type="FK" alt="variant">Foklandska (Malvinska) ostrva</territory>
 			<territory type="FM">Mikronezija</territory>
 			<territory type="FO">Farska Ostrva</territory>
 			<territory type="FR">Francuska</territory>
 			<territory type="GA">Gabon</territory>
-			<territory type="GB">Velika Britanija</territory>
+			<territory type="GB">Ujedinjeno Kraljevstvo</territory>
 			<territory type="GB" alt="short">UK</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Gruzija</territory>
 			<territory type="GF">Francuska Gvajana</territory>
-			<territory type="GG">Gurnsi</territory>
+			<territory type="GG">Gernzi</territory>
 			<territory type="GH">Gana</territory>
 			<territory type="GI">Gibraltar</territory>
 			<territory type="GL">Grenland</territory>
 			<territory type="GM">Gambija</territory>
 			<territory type="GN">Gvineja</territory>
-			<territory type="GP">Gvadelupe</territory>
+			<territory type="GP">Gvadelup</territory>
 			<territory type="GQ">Ekvatorijalna Gvineja</territory>
 			<territory type="GR">Grčka</territory>
-			<territory type="GS">Južna Džordžija i Južna Sendvič Ostrva</territory>
+			<territory type="GS">Južna Džordžija i Južna Sendvička Ostrva</territory>
 			<territory type="GT">Gvatemala</territory>
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Gvineja-Bisao</territory>
 			<territory type="GY">Gvajana</territory>
 			<territory type="HK">SAR Hongkong (Kina)</territory>
-			<territory type="HK" alt="short">Hong Kong</territory>
-			<territory type="HM">Ostrva Herd i Mekdonald</territory>
+			<territory type="HK" alt="short">Hongkong</territory>
+			<territory type="HM">Ostrvo Herd i Mekdonaldova ostrva</territory>
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Hrvatska</territory>
 			<territory type="HT">Haiti</territory>
 			<territory type="HU">Mađarska</territory>
-			<territory type="IC">Kanarska ostrva</territory>
+			<territory type="IC">Kanarska Ostrva</territory>
 			<territory type="ID">Indonezija</territory>
 			<territory type="IE">Irska</territory>
 			<territory type="IL">Izrael</territory>
 			<territory type="IM">Ostrvo Man</territory>
 			<territory type="IN">Indija</territory>
-			<territory type="IO">Britanska teritorija u Indijskom okeanu</territory>
+			<territory type="IO">Britanska teritorija Indijskog okeana</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Island</territory>
 			<territory type="IT">Italija</territory>
-			<territory type="JE">Džersi</territory>
+			<territory type="JE">Džerzi</territory>
 			<territory type="JM">Jamajka</territory>
 			<territory type="JO">Jordan</territory>
 			<territory type="JP">Japan</territory>
@@ -825,7 +851,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MC">Monako</territory>
 			<territory type="MD">Moldavija</territory>
 			<territory type="ME">Crna Gora</territory>
-			<territory type="MF">Sent Martin</territory>
+			<territory type="MF">Sveti Martin (Francuska)</territory>
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Maršalska Ostrva</territory>
 			<territory type="MK">Makedonija</territory>
@@ -871,7 +897,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PR">Portoriko</territory>
 			<territory type="PS">Palestinske teritorije</territory>
 			<territory type="PS" alt="short">Palestina</territory>
-			<territory type="PT">Portugal</territory>
+			<territory type="PT">Portugalija</territory>
 			<territory type="PW">Palau</territory>
 			<territory type="PY">Paragvaj</territory>
 			<territory type="QA">Katar</territory>
@@ -899,7 +925,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SS">Južni Sudan</territory>
 			<territory type="ST">Sao Tome i Principe</territory>
 			<territory type="SV">Salvador</territory>
-			<territory type="SX">Sveti Martin</territory>
+			<territory type="SX">Sveti Martin (Holandija)</territory>
 			<territory type="SY">Sirija</territory>
 			<territory type="SZ">Svazilend</territory>
 			<territory type="TA">Tristan da Kunja</territory>
@@ -910,7 +936,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TH">Tajland</territory>
 			<territory type="TJ">Tadžikistan</territory>
 			<territory type="TK">Tokelau</territory>
-			<territory type="TL">Istočni Timor</territory>
+			<territory type="TL">Timor-Leste (Istočni Timor)</territory>
+			<territory type="TL" alt="variant">Istočni Timor</territory>
 			<territory type="TM">Turkmenistan</territory>
 			<territory type="TN">Tunis</territory>
 			<territory type="TO">Tonga</territory>
@@ -922,7 +949,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Ukrajina</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Udaljena ostrva SAD</territory>
-			<territory type="US">Sjedinjene Američke Države</territory>
+			<territory type="UN">Ujedinjene nacije</territory>
+			<territory type="UN" alt="short">UN</territory>
+			<territory type="US">Sjedinjene Države</territory>
 			<territory type="US" alt="short">SAD</territory>
 			<territory type="UY">Urugvaj</territory>
 			<territory type="UZ">Uzbekistan</territory>
@@ -978,23 +1007,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">kalendar</key>
+			<key type="cf">format valute</key>
 			<key type="colAlternate" draft="contributed">Sortiranje uz ignorisanje simbola</key>
 			<key type="colBackwards" draft="contributed">Sortiranje prema obrnutim akcentima</key>
 			<key type="colCaseFirst" draft="contributed">Ređanje prema malom/velikom slovu</key>
 			<key type="colCaseLevel" draft="contributed">Sortiranje prema malom/velikom slovu</key>
-			<key type="colHiraganaQuaternary" draft="contributed">Sortiranje prema kana simbolima</key>
-			<key type="collation">Sortiranje</key>
+			<key type="collation">redosled sortiranja</key>
 			<key type="colNormalization" draft="contributed">Normalizovano sortiranje</key>
 			<key type="colNumeric" draft="contributed">Numeričko sortiranje</key>
 			<key type="colStrength" draft="contributed">Sortiranje prema jačini</key>
 			<key type="currency">valuta</key>
-			<key type="hc" draft="provisional">hc</key>
-			<key type="lb" draft="contributed">stil preloma reda</key>
-			<key type="ms" draft="provisional">ms</key>
+			<key type="hc">prikazivanje vremena (12- ili 24-časovno)</key>
+			<key type="lb">stil preloma reda</key>
+			<key type="ms">sistem mernih jedinica</key>
 			<key type="numbers">brojevi</key>
 			<key type="timezone" draft="contributed">Vremenska zona</key>
 			<key type="va" draft="contributed">Varijanta lokaliteta</key>
-			<key type="variableTop" draft="contributed">Sortiraj kao simbole</key>
 			<key type="x" draft="contributed">Privatna upotreba</key>
 		</keys>
 		<types>
@@ -1009,10 +1037,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="indian">Indijski nacionalni kalendar</type>
 			<type key="calendar" type="islamic">islamski kalendar</type>
 			<type key="calendar" type="islamic-civil">Islamski civilni kalendar</type>
+			<type key="calendar" type="islamic-umalqura" draft="contributed">islamski kalendar (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 kalendar</type>
 			<type key="calendar" type="japanese">japanski kalendar</type>
 			<type key="calendar" type="persian">persijski kalendar</type>
 			<type key="calendar" type="roc">kalendar Republike Kine</type>
+			<type key="cf" type="account">računovodstveni format valute</type>
+			<type key="cf" type="standard">standardni format valute</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">Sortiraj simbole</type>
 			<type key="colAlternate" type="shifted" draft="contributed">Sortiranje uz ignorisanje simbola</type>
 			<type key="colBackwards" type="no" draft="contributed">Sortiraj akcente normalno</type>
@@ -1022,11 +1053,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper" draft="contributed">Sortiraj prvo velika slova</type>
 			<type key="colCaseLevel" type="no" draft="contributed">Sortiraj bez obzira na velika i mala slova</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">Sortiraj mala i velika slova</type>
-			<type key="colHiraganaQuaternary" type="no" draft="contributed">Sortiraj kana simbole odvojeno</type>
-			<type key="colHiraganaQuaternary" type="yes" draft="contributed">Sortiraj kana simbole drugačije</type>
 			<type key="collation" type="big5han">Tradicionalno kinesko sortiranje</type>
+			<type key="collation" type="compat" draft="contributed">prethodni redosled sortiranja, zbog kompatibilnosti</type>
 			<type key="collation" type="dictionary" draft="contributed">Redosled sortiranja u rečniku</type>
-			<type key="collation" type="ducet" draft="contributed">Podrazumevani Unicode redosled sortiranja</type>
+			<type key="collation" type="ducet">podrazumevani Unicode redosled sortiranja</type>
+			<type key="collation" type="eor" draft="contributed">evropska pravila redosleda</type>
 			<type key="collation" type="gb2312han">Pojednostavljeno kinesko sortiranje</type>
 			<type key="collation" type="phonebook">Sortiranje kao telefonski imenik</type>
 			<type key="collation" type="phonetic" draft="contributed">Fonetski redosled sortiranja</type>
@@ -1047,16 +1078,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary" draft="contributed">Sortiraj akcente/mala i velika slova/širinu/kana simbole</type>
 			<type key="colStrength" type="secondary" draft="contributed">Sortiraj akcente</type>
 			<type key="colStrength" type="tertiary" draft="contributed">Sortiraj akcente/mala i velika slova/širinu</type>
-			<type key="hc" type="h11" draft="provisional">12-časovni sistem (0-11)</type>
-			<type key="hc" type="h12" draft="provisional">12-časovni sistem (1-12)</type>
-			<type key="hc" type="h23" draft="provisional">24-časovni sistem (0-23)</type>
-			<type key="hc" type="h24" draft="provisional">24-časovni sistem (1-24)</type>
-			<type key="lb" type="loose" draft="provisional">loose</type>
-			<type key="lb" type="normal" draft="provisional">normal</type>
-			<type key="lb" type="strict" draft="provisional">strict</type>
-			<type key="ms" type="metric" draft="provisional">metrički</type>
-			<type key="ms" type="uksystem" draft="provisional">uksystem</type>
-			<type key="ms" type="ussystem" draft="provisional">ussystem</type>
+			<type key="d0" type="fwidth">puna širina</type>
+			<type key="d0" type="hwidth">pola širine</type>
+			<type key="d0" type="npinyin" draft="contributed">Numerička</type>
+			<type key="hc" type="h11">12-časovni sistem (0-11)</type>
+			<type key="hc" type="h12">12-časovni sistem (1-12)</type>
+			<type key="hc" type="h23">24-časovni sistem (0-23)</type>
+			<type key="hc" type="h24">24-časovni sistem (1-24)</type>
+			<type key="lb" type="loose">razmaknuti stil preloma reda</type>
+			<type key="lb" type="normal">normalni stil preloma reda</type>
+			<type key="lb" type="strict">strogi stil preloma reda</type>
+			<type key="m0" type="bgn">BGN (BGN)</type>
+			<type key="m0" type="ungegn">UNGEGN (BGN)</type>
+			<type key="ms" type="metric">metrički</type>
+			<type key="ms" type="uksystem">imperijalni</type>
+			<type key="ms" type="ussystem">američki</type>
 			<type key="numbers" type="arab">arapsko-indijske cifre</type>
 			<type key="numbers" type="arabext">produžene arapsko-indijske cifre</type>
 			<type key="numbers" type="armn">jermenski brojevi</type>
@@ -1098,18 +1134,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional" draft="contributed">Tradicionalni brojevi</type>
 			<type key="numbers" type="vaii" draft="contributed">Vai cifre</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN" draft="contributed">BGN (BGN)</transformName>
-			<transformName type="Numeric" draft="contributed">Numerička</transformName>
-			<transformName type="Tone" draft="contributed">Ton</transformName>
-			<transformName type="UNGEGN" draft="contributed">UNGEGN (BGN)</transformName>
-			<transformName type="x-Accents" draft="contributed">Akcenti</transformName>
-			<transformName type="x-Fullwidth" draft="contributed">puna širina</transformName>
-			<transformName type="x-Halfwidth" draft="contributed">pola širine</transformName>
-			<transformName type="x-Jamo" draft="contributed">Džamo</transformName>
-			<transformName type="x-Pinyin" draft="contributed">Pinjin</transformName>
-			<transformName type="x-Publishing" draft="contributed">Izdavački</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metrički</measurementSystemName>
 			<measurementSystemName type="UK">UK</measurementSystemName>
@@ -1117,7 +1141,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Jezik: {0}</codePattern>
-			<codePattern type="script">pismo: {0}</codePattern>
+			<codePattern type="script">Pismo: {0}</codePattern>
 			<codePattern type="territory">Region: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
@@ -1125,6 +1149,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a b c č ć d {dž} đ e f g h i j k l {lj} m n {nj} o p r s š t u v z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[å q w x y]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A B C Č Ć D {DŽ} E F G H I J K L {LJ} M N {NJ} O P Q R S Š T U V W X Y Z Ž]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – , ; \: ! ? . … ‘ ‚ “ „ ( ) \[ \] \{ \} * #]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1133,6 +1158,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>„</quotationStart>
@@ -1195,17 +1239,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, dd. MMMM y. G</pattern>
+							<pattern>EEEE, d. MMMM y. G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>dd. MMMM y. G</pattern>
+							<pattern>d. MMMM y. G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>dd.MM.y. G</pattern>
+							<pattern>d.MM.y. G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1236,35 +1280,44 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">hh:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">hh:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E hh:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E hh:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d.</dateFormatItem>
+						<dateFormatItem id="Ehm">E hh:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E hh:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y. G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y. G</dateFormatItem>
-						<dateFormatItem id="h">hh a</dateFormatItem>
-						<dateFormatItem id="H" draft="contributed">HH</dateFormatItem>
-						<dateFormatItem id="hm">hh.mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
-						<dateFormatItem id="hms">hh.mm.ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH.mm.ss</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d/M</dateFormatItem>
-						<dateFormatItem id="MEd">E, M-d</dateFormatItem>
+						<dateFormatItem id="Md">d.M.</dateFormatItem>
+						<dateFormatItem id="MEd">E, d.M.</dateFormatItem>
 						<dateFormatItem id="MMdd">MM-dd</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMdd">dd.MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMEd">E d. MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm.ss</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y. G</dateFormatItem>
 						<dateFormatItem id="yyyy">y. G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M.y. G</dateFormatItem>
-						<dateFormatItem id="yyyyMd">d.M.y. G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, d.M.y. G</dateFormatItem>
+						<dateFormatItem id="yyyyM">M.y. GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d.M.y. GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d.M.y. GGGGG</dateFormatItem>
 						<dateFormatItem id="yyyyMM">MM.y. G</dateFormatItem>
 						<dateFormatItem id="yyyyMMdd">dd.MM.y. G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">MMM y. G</dateFormatItem>
@@ -1287,22 +1340,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h.mm a – h.mm a</greatestDifference>
-							<greatestDifference id="h">h.mm–h.mm a</greatestDifference>
-							<greatestDifference id="m">h.mm–h.mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH.mm–HH.mm</greatestDifference>
-							<greatestDifference id="m">HH.mm–HH.mm</greatestDifference>
+							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h.mm a – h.mm a v</greatestDifference>
-							<greatestDifference id="h">h.mm–h.mm a v</greatestDifference>
-							<greatestDifference id="m">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH.mm–HH.mm v</greatestDifference>
-							<greatestDifference id="m">HH.mm–HH.mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
@@ -1326,8 +1379,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">dd – dd. MMM</greatestDifference>
-							<greatestDifference id="M">dd. MMM – dd. MMM</greatestDifference>
+							<greatestDifference id="d">d – d. MMM</greatestDifference>
+							<greatestDifference id="M">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, dd. – E, dd. MMM</greatestDifference>
@@ -1351,22 +1404,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">E, d.M.y – E, d.M.y. GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM–MMM y.</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y. G</greatestDifference>
 							<greatestDifference id="y">MMM y – MMM y. G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">dd.–dd. MMM y.</greatestDifference>
-							<greatestDifference id="M">dd. MMM – dd. MMM y.</greatestDifference>
-							<greatestDifference id="y">dd. MMM y. – dd. MMM y.</greatestDifference>
+							<greatestDifference id="d">d–d. MMM y. G</greatestDifference>
+							<greatestDifference id="M">d. MMM – d. MMM y. G</greatestDifference>
+							<greatestDifference id="y">d. MMM y. – d. MMM y. G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, dd. – E, dd. MMM y.</greatestDifference>
-							<greatestDifference id="M">E, dd. MMM – E, dd. MMM y.</greatestDifference>
-							<greatestDifference id="y">E, dd. MMM y. – E, dd. MMM y.</greatestDifference>
+							<greatestDifference id="d">E, d. MMM – E, d. MMM y. G</greatestDifference>
+							<greatestDifference id="M">E, d. MMM – E, d. MMM y. G</greatestDifference>
+							<greatestDifference id="y">E, d. MMM y – E, d. MMM y. G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">y-MM – MM</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y. G</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y. G</greatestDifference>
+							<greatestDifference id="y">MMMM y. – MMMM y. G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1483,13 +1536,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="sat">s</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun" draft="contributed">ned</day>
-							<day type="mon" draft="contributed">pon</day>
-							<day type="tue" draft="contributed">uto</day>
-							<day type="wed" draft="contributed">sre</day>
-							<day type="thu" draft="contributed">čet</day>
-							<day type="fri" draft="contributed">pet</day>
-							<day type="sat" draft="contributed">sub</day>
+							<day type="sun">ne</day>
+							<day type="mon">po</day>
+							<day type="tue">ut</day>
+							<day type="wed">sr</day>
+							<day type="thu">če</day>
+							<day type="fri">pe</day>
+							<day type="sat">su</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">nedelja</day>
@@ -1589,16 +1642,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="am">pre podne</dayPeriod>
 							<dayPeriod type="noon">podne</dayPeriod>
 							<dayPeriod type="pm">po podne</dayPeriod>
-							<dayPeriod type="morning1">jutro</dayPeriod>
-							<dayPeriod type="afternoon1">po pod.</dayPeriod>
-							<dayPeriod type="evening1">veče</dayPeriod>
-							<dayPeriod type="night1">noć</dayPeriod>
+							<dayPeriod type="morning1">ujutro</dayPeriod>
+							<dayPeriod type="afternoon1">po podne</dayPeriod>
+							<dayPeriod type="evening1">uveče</dayPeriod>
+							<dayPeriod type="night1">noću</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">u ponoć</dayPeriod>
-							<dayPeriod type="am" draft="contributed">a</dayPeriod>
-							<dayPeriod type="noon">u podne</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">p</dayPeriod>
+							<dayPeriod type="midnight">ponoć</dayPeriod>
+							<dayPeriod type="am">a</dayPeriod>
+							<dayPeriod type="noon">podne</dayPeriod>
+							<dayPeriod type="pm">p</dayPeriod>
 							<dayPeriod type="morning1">ujutru</dayPeriod>
 							<dayPeriod type="afternoon1">po podne</dayPeriod>
 							<dayPeriod type="evening1">uveče</dayPeriod>
@@ -1609,10 +1662,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="am">pre podne</dayPeriod>
 							<dayPeriod type="noon">podne</dayPeriod>
 							<dayPeriod type="pm">po podne</dayPeriod>
-							<dayPeriod type="morning1">jutro</dayPeriod>
-							<dayPeriod type="afternoon1">popodne</dayPeriod>
-							<dayPeriod type="evening1">veče</dayPeriod>
-							<dayPeriod type="night1">noć</dayPeriod>
+							<dayPeriod type="morning1">ujutro</dayPeriod>
+							<dayPeriod type="afternoon1">po podne</dayPeriod>
+							<dayPeriod type="evening1">uveče</dayPeriod>
+							<dayPeriod type="night1">noću</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
@@ -1651,9 +1704,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<eras>
 					<eraNames>
 						<era type="0">pre nove ere</era>
-						<era type="0" alt="variant">p. n. e.</era>
 						<era type="1">nove ere</era>
-						<era type="1" alt="variant">n. e.</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">p. n. e.</era>
@@ -1689,22 +1740,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>HH.mm.ss zzzz</pattern>
+							<pattern>HH:mm:ss zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>HH.mm.ss z</pattern>
+							<pattern>HH:mm:ss z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>HH.mm.ss</pattern>
+							<pattern>HH:mm:ss</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>HH.mm</pattern>
+							<pattern>HH:mm</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1730,38 +1781,46 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">hh:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">hh:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">E</dateFormatItem>
+						<dateFormatItem id="EBhm">E hh:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E hh:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d.</dateFormatItem>
-						<dateFormatItem id="Ehm">E, h.mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E, HH.mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E, h.mm.ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E, HH.mm.ss</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y. G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d. MMM y. G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">hh.mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH.mm</dateFormatItem>
-						<dateFormatItem id="hms">hh.mm.ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH.mm.ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h.mm.ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH.mm.ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h.mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH.mm v</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="Md">d.M.</dateFormatItem>
 						<dateFormatItem id="MEd">E, d.M.</dateFormatItem>
-						<dateFormatItem id="MMdd">MM-dd</dateFormatItem>
+						<dateFormatItem id="MMdd">dd.MM.</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMdd">dd.MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm.ss</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">W. 'sedmica' 'u' MMM.</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few">W. 'sedmica' 'u' MMM.</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">W. 'sedmica' 'u' MMM.</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y.</dateFormatItem>
 						<dateFormatItem id="yM">M.y.</dateFormatItem>
 						<dateFormatItem id="yMd">d.M.y.</dateFormatItem>
@@ -1772,8 +1831,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMd">d. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y.</dateFormatItem>
-						<dateFormatItem id="yQQQ">QQQ. y</dateFormatItem>
-						<dateFormatItem id="yQQQQ">QQQQ. y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y.</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y.</dateFormatItem>
+						<dateFormatItem id="yw" count="one">w. 'sedmica' 'u' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="few">w. 'sedmica' 'u' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="other">w. 'sedmica' 'u' Y.</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1791,22 +1853,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h.mm a – h.mm a</greatestDifference>
-							<greatestDifference id="h">h.mm–h.mm a</greatestDifference>
-							<greatestDifference id="m">h.mm–h.mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH.mm–HH.mm</greatestDifference>
-							<greatestDifference id="m">HH.mm–HH.mm</greatestDifference>
+							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h.mm a – h.mm a v</greatestDifference>
-							<greatestDifference id="h">h.mm–h.mm a v</greatestDifference>
-							<greatestDifference id="m">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH.mm–HH.mm v</greatestDifference>
-							<greatestDifference id="m">HH.mm–HH.mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
@@ -1870,7 +1932,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">MMMM – MMMM y.</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y.</greatestDifference>
+							<greatestDifference id="y">MMMM y. – MMMM y.</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -2279,6 +2341,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>era</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>era</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>era</displayName>
+			</field>
 			<field type="year">
 				<displayName>godina</displayName>
 				<relative type="-1">prošle godine</relative>
@@ -2297,6 +2365,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="year-short">
 				<displayName>god.</displayName>
+				<relative type="-1" draft="contributed">prošle god.</relative>
+				<relative type="0" draft="contributed">ove god.</relative>
+				<relative type="1" draft="contributed">sledeće god.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} god.</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} god.</relativeTimePattern>
@@ -2310,6 +2381,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="year-narrow">
 				<displayName>g.</displayName>
+				<relative type="-1" draft="contributed">prošle g.</relative>
+				<relative type="0" draft="contributed">ove g.</relative>
+				<relative type="1" draft="contributed">sledeće g.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} g.</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} g.</relativeTimePattern>
@@ -2387,6 +2461,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="month-short">
 				<displayName>mes.</displayName>
+				<relative type="-1" draft="contributed">prošlog mes.</relative>
+				<relative type="0" draft="contributed">ovog mes.</relative>
+				<relative type="1" draft="contributed">sledećeg mes.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} mes.</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} mes.</relativeTimePattern>
@@ -2400,6 +2477,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="month-narrow">
 				<displayName>m.</displayName>
+				<relative type="-1" draft="contributed">prošlog m.</relative>
+				<relative type="0" draft="contributed">ovog m.</relative>
+				<relative type="1" draft="contributed">sledećeg m.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} m.</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} m.</relativeTimePattern>
@@ -2426,9 +2506,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="few">pre {0} nedelje</relativeTimePattern>
 					<relativeTimePattern count="other">pre {0} nedelja</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>nedelja koja počinje {0}.</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>ned.</displayName>
+				<relative type="-1" draft="contributed">prošle ned.</relative>
+				<relative type="0" draft="contributed">ove ned.</relative>
+				<relative type="1" draft="contributed">sledeće ned.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} ned.</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} ned.</relativeTimePattern>
@@ -2439,9 +2523,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="few">pre {0} ned.</relativeTimePattern>
 					<relativeTimePattern count="other">pre {0} ned.</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>nedelja koja počinje {0}.</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>n.</displayName>
+				<relative type="-1" draft="contributed">prošle n.</relative>
+				<relative type="0" draft="contributed">ove n.</relative>
+				<relative type="1" draft="contributed">sledeće n.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} n.</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} n.</relativeTimePattern>
@@ -2452,6 +2540,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="few">pre {0} n.</relativeTimePattern>
 					<relativeTimePattern count="other">pre {0} n.</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>nedelja koja počinje {0}.</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>nedelja u mesecu</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>ned. u mes.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>ned. u mes.</displayName>
 			</field>
 			<field type="day">
 				<displayName>dan</displayName>
@@ -2497,119 +2595,360 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">pre {0} d.</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>dan u godini</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>dan u god.</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>dan u god.</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>dan u nedelji</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>dan u nedelji</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>dan u nedelji</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>dan u mesecu</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>dan u mesecu</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>dan u mesecu</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">prošle nedelje</relative>
 				<relative type="0">u nedelju</relative>
 				<relative type="1">sledeće nedelje</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} nedelju</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} nedelje</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} nedelja</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} nedelje</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} nedelje</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} nedelja</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
-				<relative type="-1">prošle ned</relative>
+				<relative type="-1">pr. ned.</relative>
 				<relative type="0">u ned</relative>
-				<relative type="1">sledeće ned</relative>
+				<relative type="1">sl. ned.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} nedelju</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} nedelje</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} nedelja</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} nedelje</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} nedelje</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} nedelja</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">prošle ned</relative>
 				<relative type="0">u ned</relative>
 				<relative type="1">sledeće ned</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} nedelju</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} nedelje</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} nedelja</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} nedelje</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} nedelje</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} nedelja</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">prošlog ponedeljka</relative>
 				<relative type="0">u ponedeljak</relative>
 				<relative type="1">sledećeg ponedeljka</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} ponedeljak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} ponedeljaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} ponedeljaka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">prošlog pon</relative>
 				<relative type="0">u pon</relative>
 				<relative type="1">sledećeg pon</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} ponedeljak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} ponedeljaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} ponedeljaka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">prošlog pon</relative>
 				<relative type="0">u pon</relative>
 				<relative type="1">sledećeg pon</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} ponedeljak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} ponedeljaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} ponedeljaka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">prošlog utorka</relative>
 				<relative type="0">u utorak</relative>
 				<relative type="1">sledećeg utorka</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} utorak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} utoraka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} utoraka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">prošlog uto</relative>
 				<relative type="0">u uto</relative>
 				<relative type="1">sledećeg uto</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} utorak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} utoraka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} utoraka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">prošlog uto</relative>
 				<relative type="0">u uto</relative>
 				<relative type="1">sledećeg uto</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} utorak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} utoraka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} utorka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} utoraka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">prošle srede</relative>
 				<relative type="0">u sredu</relative>
 				<relative type="1">sledeće srede</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} sredu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} srede</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} sreda</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} srede</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} srede</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} sreda</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">prošle sre</relative>
 				<relative type="0">u sre</relative>
 				<relative type="1">sledeće sre</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} sredu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} srede</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} sreda</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} srede</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} srede</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} sreda</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">prošle sre</relative>
 				<relative type="0">u sre</relative>
 				<relative type="1">sledeće sre</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} sredu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} srede</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} sreda</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} srede</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} srede</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} sreda</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">prošlog četvrtka</relative>
 				<relative type="0">u četvrtak</relative>
 				<relative type="1">sledećeg četvrtka</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} četvrtak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} četvrtaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} četvrtaka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">prošlog čet</relative>
 				<relative type="0">u čet</relative>
 				<relative type="1">sledećeg čet</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} četvrtak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} četvrtaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} četvrtaka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">prošlog čet</relative>
 				<relative type="0">u čet</relative>
 				<relative type="1">sledećeg čet</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} četvrtak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} četvrtaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} četvrtka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} četvrtaka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">prošlog petka</relative>
 				<relative type="0">u petak</relative>
 				<relative type="1">sledećeg petka</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} petak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} petka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} petaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} petka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} petka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} petaka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">prošlog pet</relative>
 				<relative type="0">u pet</relative>
 				<relative type="1">sledećeg pet</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} petak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} petka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} petaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} petka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} petka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} petaka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">prošlog pet</relative>
 				<relative type="0">u pet</relative>
 				<relative type="1">sledećeg pet</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} petak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} petka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} petaka</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} petka</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} petka</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} petaka</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">prošle subote</relative>
 				<relative type="0">u subotu</relative>
 				<relative type="1">sledeće subote</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} subotu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} subote</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} subota</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} subote</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} subote</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} subota</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">prošle sub</relative>
 				<relative type="0">u sub</relative>
 				<relative type="1">sledeće sub</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} subotu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} subote</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} subota</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} subote</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} subote</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} subota</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">prošle sub</relative>
 				<relative type="0">u sub</relative>
 				<relative type="1">sledeće sub</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} subotu</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} subote</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} subota</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">pre {0} subote</relativeTimePattern>
+					<relativeTimePattern count="few">pre {0} subote</relativeTimePattern>
+					<relativeTimePattern count="other">pre {0} subota</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>pre podne/po podne</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>pre podne/po podne</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>pre podne/po podne</displayName>
+			</field>
 			<field type="hour">
 				<displayName>sat</displayName>
+				<relative type="0">ovog sata</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} sat</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} sata</relativeTimePattern>
@@ -2649,6 +2988,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>minut</displayName>
+				<relative type="0">ovog minuta</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">za {0} minut</relativeTimePattern>
 					<relativeTimePattern count="few">za {0} minuta</relativeTimePattern>
@@ -2729,15 +3069,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>vremenska zona</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>vremenska zona</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>vremenska zona</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HHmm;-HHmm</hourFormat>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat draft="contributed">Vreme u zemlji: {0}</regionFormat>
+			<regionFormat>{0}</regionFormat>
 			<regionFormat type="daylight">{0}, letnje vreme</regionFormat>
 			<regionFormat type="standard">{0}, standardno vreme</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Izabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Koordinisano univerzalno vreme</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Nepoznat grad</exemplarCity>
 			</zone>
@@ -2796,7 +3153,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Makmurdo</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity>Rio Gelegos</exemplarCity>
+				<exemplarCity>Rio Galjegos</exemplarCity>
 			</zone>
 			<zone type="America/Mendoza">
 				<exemplarCity>Mendosa</exemplarCity>
@@ -2913,13 +3270,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Porto Novo</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity draft="contributed">Sv. Bartolomej</exemplarCity>
+				<exemplarCity>Sv. Bartolomej</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity>Bermuda</exemplarCity>
 			</zone>
 			<zone type="Asia/Brunei">
-				<exemplarCity>Bruneji</exemplarCity>
+				<exemplarCity>Brunej</exemplarCity>
 			</zone>
 			<zone type="America/La_Paz">
 				<exemplarCity>La Paz</exemplarCity>
@@ -3001,6 +3358,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Vancouver">
 				<exemplarCity>Vankuver</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Doson Krik</exemplarCity>
@@ -3098,6 +3458,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Uskršnje ostrvo</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santjago</exemplarCity>
 			</zone>
@@ -3105,7 +3468,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Duala</exemplarCity>
 			</zone>
 			<zone type="Asia/Urumqi">
-				<exemplarCity>Urumkvi</exemplarCity>
+				<exemplarCity>Urumći</exemplarCity>
 			</zone>
 			<zone type="Asia/Shanghai">
 				<exemplarCity>Šangaj</exemplarCity>
@@ -3130,6 +3493,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nikozija</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Prag</exemplarCity>
@@ -3214,7 +3580,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Europe/London">
 				<long>
-					<daylight>Britanija letnje računanje vremena</daylight>
+					<daylight>Britanija, letnje vreme</daylight>
 				</long>
 				<exemplarCity>London</exemplarCity>
 			</zone>
@@ -3279,7 +3645,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Gvajana</exemplarCity>
 			</zone>
 			<zone type="Asia/Hong_Kong">
-				<exemplarCity>Hong Kong</exemplarCity>
+				<exemplarCity>Hongkong</exemplarCity>
 			</zone>
 			<zone type="America/Tegucigalpa">
 				<exemplarCity>Tegusigalpa</exemplarCity>
@@ -3288,7 +3654,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Zagreb</exemplarCity>
 			</zone>
 			<zone type="America/Port-au-Prince">
-				<exemplarCity>Port-o-Prens</exemplarCity>
+				<exemplarCity>Port o Prens</exemplarCity>
 			</zone>
 			<zone type="Europe/Budapest">
 				<exemplarCity>Budimpešta</exemplarCity>
@@ -3307,7 +3673,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
-					<daylight>Irska standardno vreme</daylight>
+					<daylight>Irska, standardno vreme</daylight>
 				</long>
 				<exemplarCity>Dablin</exemplarCity>
 			</zone>
@@ -3388,6 +3754,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atirau</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Akutobe</exemplarCity>
@@ -3503,9 +3872,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Tijuana">
 				<exemplarCity>Tihuana</exemplarCity>
 			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Izabel</exemplarCity>
-			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosiljo</exemplarCity>
 			</zone>
@@ -3606,7 +3972,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Port Morzbi</exemplarCity>
 			</zone>
 			<zone type="Pacific/Bougainville">
-				<exemplarCity draft="contributed">Buganvil</exemplarCity>
+				<exemplarCity>Buganvil</exemplarCity>
 			</zone>
 			<zone type="Asia/Manila">
 				<exemplarCity>Manila</exemplarCity>
@@ -3671,6 +4037,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrakan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Uljanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -3683,6 +4061,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
 			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
+			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznjeck</exemplarCity>
 			</zone>
@@ -3693,7 +4077,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Irkuck</exemplarCity>
 			</zone>
 			<zone type="Asia/Chita">
-				<exemplarCity draft="contributed">Čita</exemplarCity>
+				<exemplarCity>Čita</exemplarCity>
 			</zone>
 			<zone type="Asia/Yakutsk">
 				<exemplarCity>Jakutsk</exemplarCity>
@@ -3714,7 +4098,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Magadan</exemplarCity>
 			</zone>
 			<zone type="Asia/Srednekolymsk">
-				<exemplarCity draft="contributed">Srednjekolimsk</exemplarCity>
+				<exemplarCity>Srednjekolimsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Kamchatka">
 				<exemplarCity>Kamčatka</exemplarCity>
@@ -3801,7 +4185,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Lome</exemplarCity>
 			</zone>
 			<zone type="Asia/Bangkok">
-				<exemplarCity>Bankok</exemplarCity>
+				<exemplarCity>Bangkok</exemplarCity>
 			</zone>
 			<zone type="Asia/Dushanbe">
 				<exemplarCity>Dušanbe</exemplarCity>
@@ -3851,9 +4235,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midvej</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Džonston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Vejk</exemplarCity>
 			</zone>
@@ -3863,8 +4244,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nom</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Džonston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Enkoridž</exemplarCity>
@@ -3915,7 +4296,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Pitersburg, Indijana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Tell_City">
-				<exemplarCity>Tel Siti</exemplarCity>
+				<exemplarCity>Tel Siti, Indijana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Knox">
 				<exemplarCity>Noks, Indijana</exemplarCity>
@@ -4026,14 +4407,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Zapadno-afričko vreme</generic>
 					<standard>Zapadno-afričko standardno vreme</standard>
-					<daylight>Zapadno-afričko letnje računanje vremena</daylight>
+					<daylight>Zapadno-afričko letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
 				<long>
 					<generic>Aljaska</generic>
 					<standard>Aljaska, standardno vreme</standard>
-					<daylight>Aljaska, letnje računanje vremena</daylight>
+					<daylight>Aljaska, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Almaty">
@@ -4046,36 +4427,36 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Amazon">
 				<long>
 					<generic>Amazon vreme</generic>
-					<standard>Amazon standardno vreme</standard>
-					<daylight>Amazon letnje računanje vremena</daylight>
+					<standard>Amazon, standardno vreme</standard>
+					<daylight>Amazon, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>Severnoamerički Centralno vreme</generic>
-					<standard>Severnoamerički Centralno standardno vreme</standard>
-					<daylight>Severnoamerički Centralno letnje računanje vremena</daylight>
+					<generic>Severnoameričko centralno vreme</generic>
+					<standard>Severnoameričko centralno standardno vreme</standard>
+					<daylight>Severnoameričko centralno letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>Severnoamerički Istočno vreme</generic>
-					<standard>Severnoamerički Istočno standardno vreme</standard>
-					<daylight>Severnoamerički Istočno letnje računanje vremena</daylight>
+					<generic>Severnoameričko istočno vreme</generic>
+					<standard>Severnoameričko istočno standardno vreme</standard>
+					<daylight>Severnoameričko istočno letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Severnoamerički Planinsko vreme</generic>
-					<standard>Severnoamerički Planinsko standardno vreme</standard>
-					<daylight>Severnoamerički Planinsko letnje računanje vremena</daylight>
+					<generic>Severnoameričko planinsko vreme</generic>
+					<standard>Severnoameričko planinsko standardno vreme</standard>
+					<daylight>Severnoameričko planinsko letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>Severnoamerički Pacifičko vreme</generic>
-					<standard>Severnoamerički Pacifičko standardno vreme</standard>
-					<daylight>Severnoamerički Pacifičko letnje računanje vremena</daylight>
+					<generic>Severnoameričko pacifičko vreme</generic>
+					<standard>Severnoameričko pacifičko standardno vreme</standard>
+					<daylight>Severnoameričko pacifičko letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Anadyr">
@@ -4087,9 +4468,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic draft="contributed">Apija vreme</generic>
-					<standard draft="contributed">Apija standardno vreme</standard>
-					<daylight draft="contributed">Apija letnje računanje vremena</daylight>
+					<generic>Apija vreme</generic>
+					<standard>Apija, standardno vreme</standard>
+					<daylight>Apija, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtau">
@@ -4110,84 +4491,84 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Arabijsko vreme</generic>
 					<standard>Arabijsko standardno vreme</standard>
-					<daylight>Arabijsko letnje računanje vremena</daylight>
+					<daylight>Arabijsko letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
 					<generic>Argentina vreme</generic>
-					<standard>Argentina standardno vreme</standard>
-					<daylight>Argentina letnje računanje vremena</daylight>
+					<standard>Argentina, standardno vreme</standard>
+					<daylight>Argentina, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
 					<generic>Zapadna Argentina vreme</generic>
-					<standard>Zapadna Argentina standardno vreme</standard>
-					<daylight>Zapadna Argentina letnje računanje vremena</daylight>
+					<standard>Zapadna Argentina, standardno vreme</standard>
+					<daylight>Zapadna Argentina, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
 				<long>
 					<generic>Jermenija vreme</generic>
-					<standard>Jermenija standardno vreme</standard>
-					<daylight>Jermenija letnje računanje vremena</daylight>
+					<standard>Jermenija, standardno vreme</standard>
+					<daylight>Jermenija, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>Atlansko vreme</generic>
-					<standard>Atlansko standardno vreme</standard>
-					<daylight>Atlansko ltnje računanje vremena</daylight>
+					<generic>Atlantsko vreme</generic>
+					<standard>Atlantsko standardno vreme</standard>
+					<daylight>Atlantsko letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
 					<generic>Australijsko centralno vreme</generic>
 					<standard>Australijsko centralno standardno vreme</standard>
-					<daylight>Australijsko centralno letnje računanje vremena</daylight>
+					<daylight>Australijsko centralno letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
 					<generic>Australijsko centralno zapadno vreme</generic>
 					<standard>Australijsko centralno zapadno standardno vreme</standard>
-					<daylight>Australijsko centralno zapadno letnje računanje vremena</daylight>
+					<daylight>Australijsko centralno zapadno letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
 					<generic>Australijsko istočno vreme</generic>
 					<standard>Australijsko istočno standardno vreme</standard>
-					<daylight>Australijsko istočno letnje računanje vremena</daylight>
+					<daylight>Australijsko istočno letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
 					<generic>Australijsko zapadno vreme</generic>
 					<standard>Australijsko zapadno standardno vreme</standard>
-					<daylight>Australijsko zapadno letnje računanje vremena</daylight>
+					<daylight>Australijsko zapadno letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
 					<generic>Azerbejdžan vreme</generic>
-					<standard>Azerbejdžan standardno vreme</standard>
-					<daylight>Azerbejdžan letnje računanje vremena</daylight>
+					<standard>Azerbejdžan, standardno vreme</standard>
+					<daylight>Azerbejdžan, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azores">
 				<long>
 					<generic>Azori vreme</generic>
-					<standard>Azori standardno vreme</standard>
-					<daylight>Azori letnje računanje vremena</daylight>
+					<standard>Azori, standardno vreme</standard>
+					<daylight>Azori, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
 					<generic>Bangladeš vreme</generic>
-					<standard>Bangladeš standardno vreme</standard>
-					<daylight>Bangladeš letnje računanje vremena</daylight>
+					<standard>Bangladeš, standardno vreme</standard>
+					<daylight>Bangladeš, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bhutan">
@@ -4203,8 +4584,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Brasilia">
 				<long>
 					<generic>Brazilija vreme</generic>
-					<standard>Brazilija standardno vreme</standard>
-					<daylight>Brazilija letnje računanje vremena</daylight>
+					<standard>Brazilija, standardno vreme</standard>
+					<daylight>Brazilija, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
@@ -4215,8 +4596,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Cape_Verde">
 				<long>
 					<generic>Zelenortska Ostrva vreme</generic>
-					<standard>Zelenortska Ostrva standardno vreme</standard>
-					<daylight>Zelenortska Ostrva letnje računanje vremena</daylight>
+					<standard>Zelenortska Ostrva, standardno vreme</standard>
+					<daylight>Zelenortska Ostrva, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chamorro">
@@ -4227,29 +4608,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Chatham">
 				<long>
 					<generic>Čatam vreme</generic>
-					<standard>Čatam standardno vreme</standard>
-					<daylight>Čatam letnje računanje vremena</daylight>
+					<standard>Čatam, standardno vreme</standard>
+					<daylight>Čatam, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
 				<long>
 					<generic>Čile vreme</generic>
-					<standard>Čile standardno vreme</standard>
-					<daylight>Čile letnje računanje vremena</daylight>
+					<standard>Čile, standardno vreme</standard>
+					<daylight>Čile, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
 				<long>
 					<generic>Kina vreme</generic>
 					<standard>Kinesko standardno vreme</standard>
-					<daylight>Kina letnje računanje vremena</daylight>
+					<daylight>Kina, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Choibalsan">
 				<long>
 					<generic>Čojbalsan vreme</generic>
-					<standard>Čojbalsan standardno vreme</standard>
-					<daylight>Čojbalsan letnje računanje vremena</daylight>
+					<standard>Čojbalsan, standardno vreme</standard>
+					<daylight>Čojbalsan, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -4265,22 +4646,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Colombia">
 				<long>
 					<generic>Kolumbija vreme</generic>
-					<standard>Kolumbija standardno vreme</standard>
-					<daylight>Kolumbija letnje računanje vremena</daylight>
+					<standard>Kolumbija, standardno vreme</standard>
+					<daylight>Kolumbija, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
 				<long>
 					<generic>Kukova ostrva vreme</generic>
-					<standard>Kukova ostrva standardno vreme</standard>
-					<daylight>Kukova ostrva polu-letnje računanje vremena</daylight>
+					<standard>Kukova ostrva, standardno vreme</standard>
+					<daylight>Kukova ostrva, polu-letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic>Kuba vreme</generic>
-					<standard>Kuba standardno vreme</standard>
-					<daylight>Kuba letnje računanje vremena</daylight>
+					<generic>Kuba</generic>
+					<standard>Kuba, standardno vreme</standard>
+					<daylight>Kuba, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
@@ -4301,8 +4682,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Easter">
 				<long>
 					<generic>Uskršnja ostrva vreme</generic>
-					<standard>Uskršnja ostrva standardno vreme</standard>
-					<daylight>Uskršnja ostrva letnje računanje vremena</daylight>
+					<standard>Uskršnja ostrva, standardno vreme</standard>
+					<daylight>Uskršnja ostrva, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
@@ -4314,7 +4695,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Srednjeevropsko vreme</generic>
 					<standard>Srednjeevropsko standardno vreme</standard>
-					<daylight>Srednjeevropsko letnje računanje vremena</daylight>
+					<daylight>Srednjeevropsko letnje vreme</daylight>
 				</long>
 				<short>
 					<generic>CET</generic>
@@ -4326,7 +4707,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Istočnoevropsko vreme</generic>
 					<standard>Istočnoevropsko standardno vreme</standard>
-					<daylight>Istočnoevropsko letnje računanje vremena</daylight>
+					<daylight>Istočnoevropsko letnje vreme</daylight>
 				</long>
 				<short>
 					<generic>EET</generic>
@@ -4336,14 +4717,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard draft="contributed">dalji istok Evrope</standard>
+					<standard>Dalji istok Evrope</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
 					<generic>Zapadnoevropsko vreme</generic>
 					<standard>Zapadnoevropsko standardno vreme</standard>
-					<daylight>Zapadnoevropsko letnje računanje vremena</daylight>
+					<daylight>Zapadnoevropsko letnje vreme</daylight>
 				</long>
 				<short>
 					<generic>WET</generic>
@@ -4354,15 +4735,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Falkland">
 				<long>
 					<generic>Folklandska Ostrva vreme</generic>
-					<standard>Folklandska Ostrva standardno vreme</standard>
-					<daylight>Folklandska Ostrva letnje računanje vremena</daylight>
+					<standard>Folklandska Ostrva, standardno vreme</standard>
+					<daylight>Folklandska Ostrva, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
 				<long>
 					<generic>Fidži vreme</generic>
-					<standard>Fidži standardno vreme</standard>
-					<daylight>Fidži letnje računanje vremena</daylight>
+					<standard>Fidži, standardno vreme</standard>
+					<daylight>Fidži, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="French_Guiana">
@@ -4388,8 +4769,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Georgia">
 				<long>
 					<generic>Gruzija vreme</generic>
-					<standard>Gruzija standardno vreme</standard>
-					<daylight>Gruzija letnje računanje vremena</daylight>
+					<standard>Gruzija, standardno vreme</standard>
+					<daylight>Gruzija, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gilbert_Islands">
@@ -4407,16 +4788,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>Istočni Grenland vreme</generic>
-					<standard>Istočni Grenland standardno vreme</standard>
-					<daylight>Istočni Grenland letnje računanje vremena</daylight>
+					<generic>Istočni Grenland</generic>
+					<standard>Istočni Grenland, standardno vreme</standard>
+					<daylight>Istočni Grenland, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>Zapadni Grenland vreme</generic>
-					<standard>Zapadni Grenland standardno vreme</standard>
-					<daylight>Zapadni Grenland letnje računanje vremena</daylight>
+					<generic>Zapadni Grenland</generic>
+					<standard>Zapadni Grenland, standardno vreme</standard>
+					<daylight>Zapadni Grenland, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Guam">
@@ -4438,21 +4819,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Havajsko-aleutsko vreme</generic>
 					<standard>Havajsko-aleutsko standardno vreme</standard>
-					<daylight>Havajsko-aleutsko letnje računanje vremena</daylight>
+					<daylight>Havajsko-aleutsko letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
 					<generic>Hong Kong vreme</generic>
-					<standard>Hong Kong standardno vreme</standard>
-					<daylight>Hong Kong letnje računanje vremena</daylight>
+					<standard>Hong Kong, standardno vreme</standard>
+					<daylight>Hong Kong, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hovd">
 				<long>
 					<generic>Hovd vreme</generic>
-					<standard>Hovd standardno vreme</standard>
-					<daylight>Hovd letnje računanje vremena</daylight>
+					<standard>Hovd, standardno vreme</standard>
+					<daylight>Hovd, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
@@ -4488,29 +4869,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Iran">
 				<long>
 					<generic>Iran vreme</generic>
-					<standard>Iran standardno vreme</standard>
-					<daylight>Iran letnje računanje vremena</daylight>
+					<standard>Iran, standardno vreme</standard>
+					<daylight>Iran, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Irkuck vreme</generic>
-					<standard>Irkuck standardno vreme</standard>
-					<daylight>Irkuck letnje računanje vremena</daylight>
+					<standard>Irkuck, standardno vreme</standard>
+					<daylight>Irkuck, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
 				<long>
 					<generic>Izraelsko vreme</generic>
 					<standard>Izraelsko standardno vreme</standard>
-					<daylight>Izraelsko letnje računanje vremena</daylight>
+					<daylight>Izraelsko letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
 				<long>
 					<generic>Japansko vreme</generic>
 					<standard>Japansko standardno vreme</standard>
-					<daylight>Japansko letnje računanje vremena</daylight>
+					<daylight>Japansko letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kamchatka">
@@ -4534,7 +4915,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Korejsko vreme</generic>
 					<standard>Korejsko standardno vreme</standard>
-					<daylight>Korejsko letnje računanje vremena</daylight>
+					<daylight>Korejsko letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kosrae">
@@ -4545,13 +4926,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Krasnoyarsk">
 				<long>
 					<generic>Krasnojarsk vreme</generic>
-					<standard>Krasnojarsk standardno vreme</standard>
-					<daylight>Krasnojarsk letnje računanje vremena</daylight>
+					<standard>Krasnojarsk, standardno vreme</standard>
+					<daylight>Krasnojarsk, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
-					<standard>Kirgizstan vreme</standard>
+					<standard>Kirgistan vreme</standard>
 				</long>
 			</metazone>
 			<metazone type="Lanka">
@@ -4567,8 +4948,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Lord_Howe">
 				<long>
 					<generic>Lord Hov vreme</generic>
-					<standard>Lord Hov standardno vreme</standard>
-					<daylight>Lord Hov letnje računanje vremena</daylight>
+					<standard>Lord Hov, standardno vreme</standard>
+					<daylight>Lord Hov, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macau">
@@ -4586,8 +4967,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan vreme</generic>
-					<standard>Magadan standardno vreme</standard>
-					<daylight>Magadan letnje računanje vremena</daylight>
+					<standard>Magadan, standardno vreme</standard>
+					<daylight>Magadan, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Malaysia">
@@ -4613,8 +4994,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Mauritius">
 				<long>
 					<generic>Mauricijus vreme</generic>
-					<standard>Mauricijus standardno vreme</standard>
-					<daylight>Mauricijus letnje računanje vremena</daylight>
+					<standard>Mauricijus, standardno vreme</standard>
+					<daylight>Mauricijus, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mawson">
@@ -4624,30 +5005,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Mexico_Northwest">
 				<long>
-					<generic>Severni Meksiko</generic>
-					<standard>Severozapadni Meksiko standardno vreme</standard>
-					<daylight>Severozapadni Meksiko letnje računanje vremena</daylight>
+					<generic>Severozapadni Meksiko</generic>
+					<standard>Severozapadni Meksiko, standardno vreme</standard>
+					<daylight>Severozapadni Meksiko, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
 					<generic>Meksički Pacifik</generic>
-					<standard>Meksički Pacifik standardno vreme</standard>
-					<daylight>Meksički Pacifik letnje računanje vremena</daylight>
+					<standard>Meksički Pacifik, standardno vreme</standard>
+					<daylight>Meksički Pacifik, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
 					<generic>Ulan Bator vreme</generic>
-					<standard>Ulan Bator standardno vreme</standard>
-					<daylight>Ulan Bator letnje računanje vremena</daylight>
+					<standard>Ulan Bator, standardno vreme</standard>
+					<daylight>Ulan Bator, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
 				<long>
 					<generic>Moskva vreme</generic>
-					<standard>Moskva standardno vreme</standard>
-					<daylight>Moskva letnje računanje vremena</daylight>
+					<standard>Moskva, standardno vreme</standard>
+					<daylight>Moskva, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Myanmar">
@@ -4668,22 +5049,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="New_Caledonia">
 				<long>
 					<generic>Nova Kaledonija vreme</generic>
-					<standard>Nova Kaledonija standardno vreme</standard>
-					<daylight>Nova Kaledonija letnje računanje vremena</daylight>
+					<standard>Nova Kaledonija, standardno vreme</standard>
+					<daylight>Nova Kaledonija, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="New_Zealand">
 				<long>
 					<generic>Novi Zeland vreme</generic>
-					<standard>Novi Zeland standardno vreme</standard>
-					<daylight>Novi Zeland letnje računanje vremena</daylight>
+					<standard>Novi Zeland, standardno vreme</standard>
+					<daylight>Novi Zeland, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic>Njufaundlend vreme</generic>
-					<standard>Njufaundlend standardno vreme</standard>
-					<daylight>Njufaundlend letnje računanje vremena</daylight>
+					<generic>Njufaundlend</generic>
+					<standard>Njufaundlend, standardno vreme</standard>
+					<daylight>Njufaundlend, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
@@ -4699,8 +5080,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Noronha">
 				<long>
 					<generic>Fernando de Noronja vreme</generic>
-					<standard>Fernando de Noronja standardno vreme</standard>
-					<daylight>Fernando de Noronja letnje računanje vremena</daylight>
+					<standard>Fernando de Noronja, standardno vreme</standard>
+					<daylight>Fernando de Noronja, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="North_Mariana">
@@ -4711,22 +5092,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Novosibirsk vreme</generic>
-					<standard>Novosibirsk standardno vreme</standard>
-					<daylight>Novosibirsk letnje računanje vremena</daylight>
+					<standard>Novosibirsk, standardno vreme</standard>
+					<daylight>Novosibirsk, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
 					<generic>Omsk vreme</generic>
-					<standard>Omsk standardno vreme</standard>
-					<daylight>Omsk letnje računanje vremena</daylight>
+					<standard>Omsk, standardno vreme</standard>
+					<daylight>Omsk, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
 					<generic>Pakistan vreme</generic>
-					<standard>Pakistan standardno vreme</standard>
-					<daylight>Pakistan letnje računanje vremena</daylight>
+					<standard>Pakistan, standardno vreme</standard>
+					<daylight>Pakistan, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Palau">
@@ -4742,22 +5123,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Paraguay">
 				<long>
 					<generic>Paragvaj vreme</generic>
-					<standard>Paragvaj standardno vreme</standard>
-					<daylight>Paragvaj letnje računanje vremena</daylight>
+					<standard>Paragvaj, standardno vreme</standard>
+					<daylight>Paragvaj, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
 					<generic>Peru vreme</generic>
-					<standard>Peru standardno vreme</standard>
-					<daylight>Peru letnje računanje vremena</daylight>
+					<standard>Peru, standardno vreme</standard>
+					<daylight>Peru, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Philippines">
 				<long>
 					<generic>Filipini vreme</generic>
-					<standard>Filipini standardno vreme</standard>
-					<daylight>Filipini letnje računanje vremena</daylight>
+					<standard>Filipini, standardno vreme</standard>
+					<daylight>Filipini, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Phoenix_Islands">
@@ -4767,9 +5148,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>Sen Pjer i Mikelon vreme</generic>
-					<standard>Sen Pjer i Mikelon standardno vreme</standard>
-					<daylight>Sen Pjer i Mikelon letnje računanje vremena</daylight>
+					<generic>Sen Pjer i Mikelon</generic>
+					<standard>Sen Pjer i Mikelon, standardno vreme</standard>
+					<daylight>Sen Pjer i Mikelon, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -4780,6 +5161,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Ponape">
 				<long>
 					<standard>Ponpej vreme</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pjongjanško vreme</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -4802,8 +5188,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Sakhalin">
 				<long>
 					<generic>Sahalin vreme</generic>
-					<standard>Sahalin standardno vreme</standard>
-					<daylight>Sahalin letnje računanje vremena</daylight>
+					<standard>Sahalin, standardno vreme</standard>
+					<daylight>Sahalin, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samara">
@@ -4816,8 +5202,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Samoa">
 				<long>
 					<generic>Samoa vreme</generic>
-					<standard>Samoa standardno vreme</standard>
-					<daylight>Samoa letnje računanje vremena</daylight>
+					<standard>Samoa, standardno vreme</standard>
+					<daylight>Samoa, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4827,7 +5213,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Singapore">
 				<long>
-					<standard>Singapur standardno vreme</standard>
+					<standard>Singapur, standardno vreme</standard>
 				</long>
 			</metazone>
 			<metazone type="Solomon">
@@ -4857,9 +5243,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic>Taipei vreme</generic>
-					<standard>Taipei standardno vreme</standard>
-					<daylight>Taipei letnje računanje vremena</daylight>
+					<generic>Tajpej vreme</generic>
+					<standard>Tajpej, standardno vreme</standard>
+					<daylight>Tajpej, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -4875,8 +5261,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Tonga">
 				<long>
 					<generic>Tonga vreme</generic>
-					<standard>Tonga standardno vreme</standard>
-					<daylight>Tonga letnje računanje vremena</daylight>
+					<standard>Tonga, standardno vreme</standard>
+					<daylight>Tonga, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Truk">
@@ -4887,8 +5273,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Turkmenistan vreme</generic>
-					<standard>Turkmenistan standardno vreme</standard>
-					<daylight>Turkmenistan letnje računanje vremena</daylight>
+					<standard>Turkmenistan, standardno vreme</standard>
+					<daylight>Turkmenistan, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tuvalu">
@@ -4899,22 +5285,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Uruguay">
 				<long>
 					<generic>Urugvaj vreme</generic>
-					<standard>Urugvaj standardno vreme</standard>
-					<daylight>Urugvaj letnje računanje vremena</daylight>
+					<standard>Urugvaj, standardno vreme</standard>
+					<daylight>Urugvaj, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
 					<generic>Uzbekistan vreme</generic>
-					<standard>Uzbekistan standardno vreme</standard>
-					<daylight>Uzbekistan letnje računanje vremena</daylight>
+					<standard>Uzbekistan, standardno vreme</standard>
+					<daylight>Uzbekistan, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
 					<generic>Vanuatu vreme</generic>
-					<standard>Vanuatu standardno vreme</standard>
-					<daylight>Vanuatu letnje računanje vremena</daylight>
+					<standard>Vanuatu, standardno vreme</standard>
+					<daylight>Vanuatu, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Venezuela">
@@ -4925,15 +5311,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Vladivostok">
 				<long>
 					<generic>Vladivostok vreme</generic>
-					<standard>Vladivostok standardno vreme</standard>
-					<daylight>Vladivostok letnje računanje vremena</daylight>
+					<standard>Vladivostok, standardno vreme</standard>
+					<daylight>Vladivostok, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
 					<generic>Volgograd vreme</generic>
-					<standard>Volgograd standardno vreme</standard>
-					<daylight>Volgograd letnje računanje vremena</daylight>
+					<standard>Volgograd, standardno vreme</standard>
+					<daylight>Volgograd, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vostok">
@@ -4954,15 +5340,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Yakutsk">
 				<long>
 					<generic>Jakutsk vreme</generic>
-					<standard>Jakutsk standardno vreme</standard>
-					<daylight>Jakutsk letnje računanje vremena</daylight>
+					<standard>Jakutsk, standardno vreme</standard>
+					<daylight>Jakutsk, letnje vreme</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
 					<generic>Jekaterinburg vreme</generic>
-					<standard>Jekaterinburg standardno vreme</standard>
-					<daylight>Jekaterinburg letnje računanje vremena</daylight>
+					<standard>Jekaterinburg, standardno vreme</standard>
+					<daylight>Jekaterinburg, letnje vreme</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -4985,7 +5371,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
-			<timeSeparator>.</timeSeparator>
+			<timeSeparator>:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
@@ -5022,15 +5408,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="100000000000" count="one">000 milijarda</pattern>
 					<pattern type="100000000000" count="few">000 milijarde</pattern>
 					<pattern type="100000000000" count="other">000 milijardi</pattern>
-					<pattern type="1000000000000" count="one">0 trilion</pattern>
-					<pattern type="1000000000000" count="few">0 triliona</pattern>
-					<pattern type="1000000000000" count="other">0 triliona</pattern>
-					<pattern type="10000000000000" count="one">00 trilion</pattern>
-					<pattern type="10000000000000" count="few">00 triliona</pattern>
-					<pattern type="10000000000000" count="other">00 triliona</pattern>
-					<pattern type="100000000000000" count="one">000 trilion</pattern>
-					<pattern type="100000000000000" count="few">000 triliona</pattern>
-					<pattern type="100000000000000" count="other">000 triliona</pattern>
+					<pattern type="1000000000000" count="one">0 bilion</pattern>
+					<pattern type="1000000000000" count="few">0 biliona</pattern>
+					<pattern type="1000000000000" count="other">0 biliona</pattern>
+					<pattern type="10000000000000" count="one">00 bilion</pattern>
+					<pattern type="10000000000000" count="few">00 biliona</pattern>
+					<pattern type="10000000000000" count="other">00 biliona</pattern>
+					<pattern type="100000000000000" count="one">000 bilion</pattern>
+					<pattern type="100000000000000" count="few">000 biliona</pattern>
+					<pattern type="100000000000000" count="other">000 biliona</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
@@ -5099,42 +5485,42 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">0 hilj'.' ¤</pattern>
-					<pattern type="1000" count="few" draft="provisional">0 hilj'.' ¤</pattern>
-					<pattern type="1000" count="other" draft="provisional">0 hilj'.' ¤</pattern>
-					<pattern type="10000" count="one" draft="provisional">00 hilj'.' ¤</pattern>
-					<pattern type="10000" count="few" draft="provisional">00 hilj'.' ¤</pattern>
-					<pattern type="10000" count="other" draft="provisional">00 hilj'.' ¤</pattern>
-					<pattern type="100000" count="one" draft="provisional">000 hilj'.' ¤</pattern>
-					<pattern type="100000" count="few" draft="provisional">000 hilj'.' ¤</pattern>
-					<pattern type="100000" count="other" draft="provisional">000 hilj'.' ¤</pattern>
-					<pattern type="1000000" count="one" draft="provisional">0 mil'.' ¤</pattern>
-					<pattern type="1000000" count="few" draft="provisional">0 mil'.' ¤</pattern>
-					<pattern type="1000000" count="other" draft="provisional">0 mil'.' ¤</pattern>
-					<pattern type="10000000" count="one" draft="provisional">00 mil'.' ¤</pattern>
-					<pattern type="10000000" count="few" draft="provisional">00 mil'.' ¤</pattern>
-					<pattern type="10000000" count="other" draft="provisional">00 mil'.' ¤</pattern>
-					<pattern type="100000000" count="one" draft="provisional">000 mil'.' ¤</pattern>
-					<pattern type="100000000" count="few" draft="provisional">000 mil'.' ¤</pattern>
-					<pattern type="100000000" count="other" draft="provisional">000 mil'.' ¤</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">0 mlrd'.' ¤</pattern>
-					<pattern type="1000000000" count="few" draft="provisional">0 mlrd'.' ¤</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">0 mlrd'.' ¤</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">00 mlrd'.' ¤</pattern>
-					<pattern type="10000000000" count="few" draft="provisional">00 mlrd'.' ¤</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">00 mlrd'.' ¤</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">000 mlrd'.' ¤</pattern>
-					<pattern type="100000000000" count="few" draft="provisional">000 mlrd'.' ¤</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">000 mlrd'.' ¤</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">0 bil'.' ¤</pattern>
-					<pattern type="1000000000000" count="few" draft="provisional">0 bil'.' ¤</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">0 bil'.' ¤</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">00 bil'.' ¤</pattern>
-					<pattern type="10000000000000" count="few" draft="provisional">00 bil'.' ¤</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">00 bil'.' ¤</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">000 bil'.' ¤</pattern>
-					<pattern type="100000000000000" count="few" draft="provisional">000 bil'.' ¤</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">000 bil'.' ¤</pattern>
+					<pattern type="1000" count="one">0 hilj'.' ¤</pattern>
+					<pattern type="1000" count="few">0 hilj'.' ¤</pattern>
+					<pattern type="1000" count="other">0 hilj'.' ¤</pattern>
+					<pattern type="10000" count="one">00 hilj'.' ¤</pattern>
+					<pattern type="10000" count="few">00 hilj'.' ¤</pattern>
+					<pattern type="10000" count="other">00 hilj'.' ¤</pattern>
+					<pattern type="100000" count="one">000 hilj'.' ¤</pattern>
+					<pattern type="100000" count="few">000 hilj'.' ¤</pattern>
+					<pattern type="100000" count="other">000 hilj'.' ¤</pattern>
+					<pattern type="1000000" count="one">0 mil'.' ¤</pattern>
+					<pattern type="1000000" count="few">0 mil'.' ¤</pattern>
+					<pattern type="1000000" count="other">0 mil'.' ¤</pattern>
+					<pattern type="10000000" count="one">00 mil'.' ¤</pattern>
+					<pattern type="10000000" count="few">00 mil'.' ¤</pattern>
+					<pattern type="10000000" count="other">00 mil'.' ¤</pattern>
+					<pattern type="100000000" count="one">000 mil'.' ¤</pattern>
+					<pattern type="100000000" count="few">000 mil'.' ¤</pattern>
+					<pattern type="100000000" count="other">000 mil'.' ¤</pattern>
+					<pattern type="1000000000" count="one">0 mlrd'.' ¤</pattern>
+					<pattern type="1000000000" count="few">0 mlrd'.' ¤</pattern>
+					<pattern type="1000000000" count="other">0 mlrd'.' ¤</pattern>
+					<pattern type="10000000000" count="one">00 mlrd'.' ¤</pattern>
+					<pattern type="10000000000" count="few">00 mlrd'.' ¤</pattern>
+					<pattern type="10000000000" count="other">00 mlrd'.' ¤</pattern>
+					<pattern type="100000000000" count="one">000 mlrd'.' ¤</pattern>
+					<pattern type="100000000000" count="few">000 mlrd'.' ¤</pattern>
+					<pattern type="100000000000" count="other">000 mlrd'.' ¤</pattern>
+					<pattern type="1000000000000" count="one">0 bil'.' ¤</pattern>
+					<pattern type="1000000000000" count="few">0 bil'.' ¤</pattern>
+					<pattern type="1000000000000" count="other">0 bil'.' ¤</pattern>
+					<pattern type="10000000000000" count="one">00 bil'.' ¤</pattern>
+					<pattern type="10000000000000" count="few">00 bil'.' ¤</pattern>
+					<pattern type="10000000000000" count="other">00 bil'.' ¤</pattern>
+					<pattern type="100000000000000" count="one">000 bil'.' ¤</pattern>
+					<pattern type="100000000000000" count="few">000 bil'.' ¤</pattern>
+					<pattern type="100000000000000" count="other">000 bil'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -5357,7 +5743,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">bugarski lev</displayName>
 				<displayName count="few">bugarska leva</displayName>
 				<displayName count="other">bugarskih leva</displayName>
-				<symbol draft="contributed">[BGN]</symbol>
+				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName draft="provisional">Stari bugarski lev</displayName>
@@ -5500,13 +5886,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="few">beloruske nove rublja (1994–1999)</displayName>
 				<displayName count="other">beloruskih novih rublji (1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Beloruska rublja</displayName>
 				<displayName count="one">beloruska rublja</displayName>
 				<displayName count="few">beloruske rublje</displayName>
 				<displayName count="other">beloruskih rublji</displayName>
-				<symbol draft="contributed">[BYR]</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">r.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Beloruska rublja (2000–2016)</displayName>
+				<displayName count="one">beloruska rublja (2000–2016)</displayName>
+				<displayName count="few">beloruske rublje (2000–2016)</displayName>
+				<displayName count="other">beloruskih rublji (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Beliski dolar</displayName>
@@ -5569,6 +5962,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">čileanskih pezosa</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>Kineski juan (ostrvski)</displayName>
+				<displayName count="one">kineski juan (ostrvski)</displayName>
+				<displayName count="few">kineska juana (ostrvska)</displayName>
+				<displayName count="other">kineskih juana (ostrvskih)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName draft="provisional">Dolar kineske narodne banke</displayName>
@@ -5811,6 +6211,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="few">gruzijska larija</displayName>
 				<displayName count="other">gruzijskih larija</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">ლ</symbol>
 				<symbol alt="variant" draft="contributed">ლ</symbol>
 			</currency>
 			<currency type="GHC">
@@ -5837,7 +6238,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="GMD">
 				<displayName>Gambijski dalasi</displayName>
 				<displayName count="one">gambijski dalasi</displayName>
-				<displayName count="few">gambijska dalasa</displayName>
+				<displayName count="few">gambijskih dalasija</displayName>
 				<displayName count="other">gambijskih dalasija</displayName>
 				<symbol>GMD</symbol>
 			</currency>
@@ -6090,7 +6491,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other" draft="provisional">starih južnokorejskih vona</displayName>
 			</currency>
 			<currency type="KRW">
-				<displayName>Južnokorejski Von</displayName>
+				<displayName>Južnokorejski von</displayName>
 				<displayName count="one">južnokorejski von</displayName>
 				<displayName count="few">južnokorejska vona</displayName>
 				<displayName count="other">južnokorejskih vona</displayName>
@@ -6243,9 +6644,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currency>
 			<currency type="MGA">
 				<displayName>Madagaskarski ariari</displayName>
-				<displayName count="one">malagasijski ariari</displayName>
-				<displayName count="few">malagasijska ariarija</displayName>
-				<displayName count="other">malagasijskih ariarija</displayName>
+				<displayName count="one">madagaskarski ariari</displayName>
+				<displayName count="few">madagaskarska ariarija</displayName>
+				<displayName count="other">madagaskarskih ariarija</displayName>
 				<symbol>MGA</symbol>
 				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
@@ -6298,11 +6699,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Mauritanijska ogija (1973–2017)</displayName>
+				<displayName count="one">mauritanijska ogija (1973–2017)</displayName>
+				<displayName count="few">mauritanijske ogije (1973–2017)</displayName>
+				<displayName count="other">mauritanijskih ogija (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Mauritanijska ogija</displayName>
 				<displayName count="one">mauritanijska ogija</displayName>
 				<displayName count="few">mauritanijske ogije</displayName>
 				<displayName count="other">mauritanijskih ogija</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Malteška lira</displayName>
@@ -6466,17 +6873,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">peruvijskih intija</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>Peruanski novi sol</displayName>
-				<displayName count="one">peruanski novi sol</displayName>
-				<displayName count="few">peruanska nova sola</displayName>
-				<displayName count="other">peruanskih novih sola</displayName>
-				<symbol>PEN</symbol>
-			</currency>
-			<currency type="PES">
 				<displayName>Peruanski sol</displayName>
 				<displayName count="one">peruanski sol</displayName>
 				<displayName count="few">peruanska sola</displayName>
 				<displayName count="other">peruanskih sola</displayName>
+				<symbol>PEN</symbol>
+			</currency>
+			<currency type="PES">
+				<displayName>Peruanski sol (1863–1965)</displayName>
+				<displayName count="one">peruanski sol (1863–1965)</displayName>
+				<displayName count="few">peruanska sola (1863–1965)</displayName>
+				<displayName count="other">peruanskih sola (1863–1965)</displayName>
+				<symbol>PES</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>Papuanska kina</displayName>
@@ -6543,17 +6951,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">rodežanskih dolara</displayName>
 			</currency>
 			<currency type="ROL">
-				<displayName>Rumunski lej</displayName>
-				<displayName count="one">rumunski lej</displayName>
-				<displayName count="few">rumunska leja</displayName>
-				<displayName count="other">rumunskih leja</displayName>
-			</currency>
-			<currency type="RON">
 				<displayName>Rumunski lej (1952–2006)</displayName>
 				<displayName count="one">rumunski lej (1952–2006)</displayName>
 				<displayName count="few">rumunska leja (1952–2006)</displayName>
 				<displayName count="other">rumunskih leja (1952–2006)</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>Rumunski lej</displayName>
+				<displayName count="one">rumunski lej</displayName>
+				<displayName count="few">rumunska leja</displayName>
+				<displayName count="other">rumunskih leja</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Srpski dinar</displayName>
@@ -6568,7 +6977,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="few">ruske rublje</displayName>
 				<displayName count="other">ruskih rublji</displayName>
 				<symbol>RUB</symbol>
-				<symbol alt="narrow" draft="contributed">rub</symbol>
+				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>Ruska rublja (1991–1998)</displayName>
@@ -6698,11 +7107,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>Saotomska dobra (1977–2017)</displayName>
+				<displayName count="one">saotomska dobra (1977–2017)</displayName>
+				<displayName count="few">saotomske dobre (1977–2017)</displayName>
+				<displayName count="other">saotomskih dobri (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>Saotomska dobra</displayName>
 				<displayName count="one">saotomska dobra</displayName>
 				<displayName count="few">saotomske dobre</displayName>
 				<displayName count="other">saotomskih dobri</displayName>
-				<symbol>STD</symbol>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -6747,7 +7163,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">tadžihistanskih rublji</displayName>
 			</currency>
 			<currency type="TJS">
-				<displayName>Tadžihistanski somon</displayName>
+				<displayName>Tadžikistanski somon</displayName>
 				<displayName count="one">tadžikistanski somon</displayName>
 				<displayName count="few">tadžikistanska somona</displayName>
 				<displayName count="other">tadžikistanskih somona</displayName>
@@ -6779,6 +7195,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="few">tonganske pange</displayName>
 				<displayName count="other">tonganskih pangi</displayName>
 				<symbol>TOP</symbol>
+				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>Timorški eskudo</displayName>
@@ -6827,7 +7244,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="UAH">
 				<displayName>Ukrajinska hrivnja</displayName>
 				<displayName count="one">ukrajinska hrivnja</displayName>
-				<displayName count="few">ukrajinske hrivnje</displayName>
+				<displayName count="few">ukrajinske grivne</displayName>
 				<displayName count="other">ukrajinskih hrivnji</displayName>
 				<symbol>UAH</symbol>
 				<symbol alt="narrow" draft="contributed">₴</symbol>
@@ -7156,9 +7573,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="atLeast">⩾{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one" draft="contributed">{0} sat</pluralMinimalPairs>
+			<pluralMinimalPairs count="few" draft="contributed">{0} sata</pluralMinimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">{0} sati</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="contributed">Skrenite u {0}. desno.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -7212,6 +7635,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} kvadratni kilometar</unitPattern>
 				<unitPattern count="few">{0} kvadratna kilometra</unitPattern>
 				<unitPattern count="other">{0} kvadratnih kilometara</unitPattern>
+				<perUnitPattern>{0} po kvadratnom kilometru</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektari</displayName>
@@ -7238,6 +7662,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} kvadratna milja</unitPattern>
 				<unitPattern count="few">{0} kvadratne milje</unitPattern>
 				<unitPattern count="other">{0} kvadratnih milja</unitPattern>
+				<perUnitPattern>{0} po kvadratnoj milji</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akeri</displayName>
@@ -7270,6 +7695,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} karata</unitPattern>
 				<unitPattern count="other">{0} karata</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>miligrami po decilitru</displayName>
+				<unitPattern count="one">{0} miligram po decilitru</unitPattern>
+				<unitPattern count="few">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="other">{0} miligrama po decilitru</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>milimol po litri</displayName>
+				<unitPattern count="one">{0} milimol po litri</unitPattern>
+				<unitPattern count="few">{0} milimola po litri</unitPattern>
+				<unitPattern count="other">{0} milimola po litri</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>čestica na milion</displayName>
+				<unitPattern count="one">{0} čestica na milion</unitPattern>
+				<unitPattern count="few">{0} čestice na milion</unitPattern>
+				<unitPattern count="other">{0} čestica na milion</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litri po kilometru</displayName>
 				<unitPattern count="one">{0} litar po kilometru</unitPattern>
@@ -7287,6 +7730,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} milja po galonu</unitPattern>
 				<unitPattern count="few">{0} milje po galonu</unitPattern>
 				<unitPattern count="other">{0} milja po galonu</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>milja po imperijalnom galonu</displayName>
+				<unitPattern count="one">{0} milja po imperijalnom galonu</unitPattern>
+				<unitPattern count="few">{0} milje po imperijalnom galonu</unitPattern>
+				<unitPattern count="other">{0} milja po imperijalnom galonu</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabajti</displayName>
@@ -7401,7 +7850,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} sekunda</unitPattern>
 				<unitPattern count="few">{0} sekunde</unitPattern>
 				<unitPattern count="other">{0} sekundi</unitPattern>
-				<perUnitPattern>{0}/sek</perUnitPattern>
+				<perUnitPattern>{0}/u sekundi</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>milisekunde</displayName>
@@ -7434,7 +7883,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} miliampera</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName>om</displayName>
+				<displayName>omi</displayName>
 				<unitPattern count="one">{0} om</unitPattern>
 				<unitPattern count="few">{0} oma</unitPattern>
 				<unitPattern count="other">{0} oma</unitPattern>
@@ -7608,9 +8057,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName>skandinavska milja</displayName>
-				<unitPattern count="one" draft="provisional">{0} smi</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} smi</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} smi</unitPattern>
+				<unitPattern count="one">{0} skandinavska milja</unitPattern>
+				<unitPattern count="few">{0} skandinavske milje</unitPattern>
+				<unitPattern count="other">{0} skandinavskih milja</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="few">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>luks</displayName>
@@ -7767,10 +8222,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} milja na sat</unitPattern>
 			</unit>
 			<unit type="speed-knot">
-				<displayName draft="provisional">kn</displayName>
-				<unitPattern count="one" draft="provisional">{0} kn</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} kn</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} kn</unitPattern>
+				<displayName>čvor</displayName>
+				<unitPattern count="one">{0} čvor</unitPattern>
+				<unitPattern count="few">{0} čvora</unitPattern>
+				<unitPattern count="other">{0} čvorova</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
@@ -7878,10 +8333,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} mililitara</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<displayName draft="contributed">metričke pinte</displayName>
-				<unitPattern count="one" draft="contributed">{0} metrička pinta</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} metričke pinte</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} metričkih pinti</unitPattern>
+				<displayName>metričke pinte</displayName>
+				<unitPattern count="one">{0} metrička pinta</unitPattern>
+				<unitPattern count="few">{0} metričke pinte</unitPattern>
+				<unitPattern count="other">{0} metričkih pinti</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>metrička šolja</displayName>
@@ -7901,6 +8356,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} galona</unitPattern>
 				<unitPattern count="other">{0} galona</unitPattern>
 				<perUnitPattern>{0} po galonu</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>imperijalni galon</displayName>
+				<unitPattern count="one">{0} imp. galon</unitPattern>
+				<unitPattern count="few">{0} imp. galona</unitPattern>
+				<unitPattern count="other">{0} imp. galona</unitPattern>
+				<perUnitPattern>{0} po imp. galonu</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>kvarti</displayName>
@@ -7939,10 +8401,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} kašičica</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="provisional">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="provisional">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="provisional">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="provisional">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0}I</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}J</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}Z</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -7951,9 +8413,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ge sila</displayName>
-				<unitPattern count="one" draft="contributed">{0} G</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} G</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} G</unitPattern>
+				<unitPattern count="one">{0} G</unitPattern>
+				<unitPattern count="few">{0} G</unitPattern>
+				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-second-squared">
 				<displayName>m/s²</displayName>
@@ -7986,7 +8448,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName>sekundi</displayName>
+				<displayName>lučne sek</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="few">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
@@ -7996,6 +8458,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="few">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektari</displayName>
@@ -8022,6 +8485,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} mi²</unitPattern>
 				<unitPattern count="few">{0} mi²</unitPattern>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akeri</displayName>
@@ -8054,6 +8518,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="few">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="few">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="few">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
 				<unitPattern count="one">{0} L/km</unitPattern>
@@ -8061,16 +8543,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} L/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName>L/100km</displayName>
-				<unitPattern count="one">{0} L/100km</unitPattern>
-				<unitPattern count="few">{0} L/100km</unitPattern>
-				<unitPattern count="other">{0} L/100km</unitPattern>
+				<displayName>L/100 km</displayName>
+				<unitPattern count="one">{0} L/100 km</unitPattern>
+				<unitPattern count="few">{0} L/100 km</unitPattern>
+				<unitPattern count="other">{0} L/100 km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mpg</displayName>
 				<unitPattern count="one">{0} mpg</unitPattern>
 				<unitPattern count="few">{0} mpg</unitPattern>
 				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg Imp.</displayName>
+				<unitPattern count="one">{0} mpg Imp.</unitPattern>
+				<unitPattern count="few">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -8171,7 +8659,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} sat</unitPattern>
 				<unitPattern count="few">{0} sata</unitPattern>
 				<unitPattern count="other">{0} sati</unitPattern>
-				<perUnitPattern>{0}/s</perUnitPattern>
+				<perUnitPattern>{0}/č</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>min</displayName>
@@ -8185,7 +8673,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} sek</unitPattern>
 				<unitPattern count="few">{0} sek</unitPattern>
 				<unitPattern count="other">{0} sek</unitPattern>
-				<perUnitPattern>{0}/sek</perUnitPattern>
+				<perUnitPattern>{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
@@ -8206,7 +8694,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ns</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<displayName>amperi</displayName>
+				<displayName>A</displayName>
 				<unitPattern count="one">{0} A</unitPattern>
 				<unitPattern count="few">{0} A</unitPattern>
 				<unitPattern count="other">{0} A</unitPattern>
@@ -8218,13 +8706,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName>omi</displayName>
+				<displayName>Ω</displayName>
 				<unitPattern count="one">{0} Ω</unitPattern>
 				<unitPattern count="few">{0} Ω</unitPattern>
 				<unitPattern count="other">{0} Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName>volti</displayName>
+				<displayName>V</displayName>
 				<unitPattern count="one">{0} V</unitPattern>
 				<unitPattern count="few">{0} V</unitPattern>
 				<unitPattern count="other">{0} V</unitPattern>
@@ -8254,7 +8742,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} kJ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName>džuli</displayName>
+				<displayName>J</displayName>
 				<unitPattern count="one">{0} J</unitPattern>
 				<unitPattern count="few">{0} J</unitPattern>
 				<unitPattern count="other">{0} J</unitPattern>
@@ -8291,13 +8779,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
-				<unitPattern count="one" draft="contributed">{0} km</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} km</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} km</unitPattern>
+				<unitPattern count="one">{0} km</unitPattern>
+				<unitPattern count="few">{0} km</unitPattern>
+				<unitPattern count="other">{0} km</unitPattern>
 				<perUnitPattern>{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>metri</displayName>
+				<displayName>m</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
 				<unitPattern count="few">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
@@ -8396,6 +8884,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="few">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
@@ -8410,9 +8904,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
-				<unitPattern count="one" draft="contributed">{0} kg</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} kg</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} kg</unitPattern>
+				<unitPattern count="one">{0} kg</unitPattern>
+				<unitPattern count="few">{0} kg</unitPattern>
+				<unitPattern count="other">{0} kg</unitPattern>
 				<perUnitPattern>{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
@@ -8449,9 +8943,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>oz</displayName>
-				<unitPattern count="one">{0} unca</unitPattern>
-				<unitPattern count="few">{0} unce</unitPattern>
-				<unitPattern count="other">{0} unci</unitPattern>
+				<unitPattern count="one">{0} oz</unitPattern>
+				<unitPattern count="few">{0} oz</unitPattern>
+				<unitPattern count="other">{0} oz</unitPattern>
 				<perUnitPattern>{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
@@ -8485,7 +8979,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<displayName>vati</displayName>
+				<displayName>W</displayName>
 				<unitPattern count="one">{0} W</unitPattern>
 				<unitPattern count="few">{0} W</unitPattern>
 				<unitPattern count="other">{0} W</unitPattern>
@@ -8497,10 +8991,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} mW</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
-				<displayName>ks</displayName>
-				<unitPattern count="one">{0} ks</unitPattern>
-				<unitPattern count="few">{0} ks</unitPattern>
-				<unitPattern count="other">{0} ks</unitPattern>
+				<displayName>hp</displayName>
+				<unitPattern count="one">{0} hp</unitPattern>
+				<unitPattern count="few">{0} hp</unitPattern>
+				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
@@ -8528,12 +9022,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mbar</displayName>
-				<unitPattern count="one" draft="contributed">{0} mbar</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} mbar</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mbar</unitPattern>
+				<unitPattern count="one">{0} mbar</unitPattern>
+				<unitPattern count="few">{0} mbar</unitPattern>
+				<unitPattern count="other">{0} mbar</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
-				<displayName>kilometri na sat</displayName>
+				<displayName>km/h</displayName>
 				<unitPattern count="one">{0} km/h</unitPattern>
 				<unitPattern count="few">{0} km/h</unitPattern>
 				<unitPattern count="other">{0} km/h</unitPattern>
@@ -8551,10 +9045,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} mi/h</unitPattern>
 			</unit>
 			<unit type="speed-knot">
-				<displayName draft="provisional">kn</displayName>
-				<unitPattern count="one" draft="provisional">{0} kn</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} kn</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} kn</unitPattern>
+				<displayName>kn</displayName>
+				<unitPattern count="one">{0} kn</unitPattern>
+				<unitPattern count="few">{0} kn</unitPattern>
+				<unitPattern count="other">{0} kn</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
@@ -8564,15 +9058,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
-				<unitPattern count="one" draft="contributed">{0}°C</unitPattern>
-				<unitPattern count="few" draft="contributed">{0}°C</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}°C</unitPattern>
+				<unitPattern count="one">{0}°C</unitPattern>
+				<unitPattern count="few">{0}°C</unitPattern>
+				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>stepeni Farenhajta</displayName>
-				<unitPattern count="one" draft="contributed">{0}°F</unitPattern>
-				<unitPattern count="few" draft="contributed">{0}°F</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}°F</unitPattern>
+				<unitPattern count="one">{0}°F</unitPattern>
+				<unitPattern count="few">{0}°F</unitPattern>
+				<unitPattern count="other">{0}°F</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
 				<displayName>K</displayName>
@@ -8582,9 +9076,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
-				<unitPattern count="one" draft="contributed">{0} km³</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} km³</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} km³</unitPattern>
+				<unitPattern count="one">{0} km³</unitPattern>
+				<unitPattern count="few">{0} km³</unitPattern>
+				<unitPattern count="other">{0} km³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
 				<displayName>m³</displayName>
@@ -8638,9 +9132,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-liter">
 				<displayName>litri</displayName>
-				<unitPattern count="one" draft="contributed">{0} l</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} l</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} l</unitPattern>
+				<unitPattern count="one">{0} l</unitPattern>
+				<unitPattern count="few">{0} l</unitPattern>
+				<unitPattern count="other">{0} l</unitPattern>
 				<perUnitPattern>{0}/l</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -8686,6 +9180,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="few">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
 				<unitPattern count="one">{0} qt</unitPattern>
@@ -8723,10 +9224,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} kašič.</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="provisional">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="provisional">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="provisional">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="provisional">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0}I</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}J</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}Z</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -8808,16 +9309,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} n</unitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>d.</displayName>
+				<displayName>d</displayName>
 				<unitPattern count="one">{0} d</unitPattern>
 				<unitPattern count="few">{0} d</unitPattern>
 				<unitPattern count="other">{0} d</unitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>sat</displayName>
-				<unitPattern count="one">{0} sat</unitPattern>
-				<unitPattern count="few">{0} sata</unitPattern>
-				<unitPattern count="other">{0} sati</unitPattern>
+				<displayName>č</displayName>
+				<unitPattern count="one">{0} č</unitPattern>
+				<unitPattern count="few">{0} č</unitPattern>
+				<unitPattern count="other">{0} č</unitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>min</displayName>
@@ -8826,10 +9327,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} m</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>sek</displayName>
-				<unitPattern count="one">{0} sek</unitPattern>
-				<unitPattern count="few">{0} sek</unitPattern>
-				<unitPattern count="other">{0} sek</unitPattern>
+				<displayName>s</displayName>
+				<unitPattern count="one">{0} s</unitPattern>
+				<unitPattern count="few">{0} s</unitPattern>
+				<unitPattern count="other">{0} s</unitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
@@ -8839,12 +9340,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
-				<unitPattern count="one" draft="contributed">{0} km</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} km</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} km</unitPattern>
+				<unitPattern count="one">{0} km</unitPattern>
+				<unitPattern count="few">{0} km</unitPattern>
+				<unitPattern count="other">{0} km</unitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>metar</displayName>
+				<displayName>m</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
 				<unitPattern count="few">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
@@ -8962,9 +9463,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="few">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
+				<unitPattern count="one">{0}°C</unitPattern>
+				<unitPattern count="few">{0}°C</unitPattern>
+				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<unitPattern count="one" draft="contributed">{0}°F</unitPattern>
@@ -8988,24 +9489,36 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} l</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="provisional">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="provisional">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="provisional">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="provisional">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0}I</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}J</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}Z</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
-			<durationUnitPattern>h.mm</durationUnitPattern>
+			<durationUnitPattern>h:mm</durationUnitPattern>
 		</durationUnit>
 		<durationUnit type="hms">
-			<durationUnitPattern>h.mm.ss</durationUnitPattern>
+			<durationUnitPattern>h:mm:ss</durationUnitPattern>
 		</durationUnit>
 		<durationUnit type="ms">
-			<durationUnitPattern>m.ss</durationUnitPattern>
+			<durationUnitPattern>m:ss</durationUnitPattern>
 		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} i {1}</listPatternPart>
+			<listPatternPart type="2">{0} i {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ili {1}</listPatternPart>
+			<listPatternPart type="2">{0} ili {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} i {1}</listPatternPart>
@@ -9036,4 +9549,104 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>ne:n</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — sve</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — kompatibilnost</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — zatvoreno</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — prošireno</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — istorijsko</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — razno</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — drugo</characterLabelPattern>
+		<characterLabelPattern type="scripts">Pisma — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} potez</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="few">{0} poteza</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} poteza</characterLabelPattern>
+		<characterLabel type="activities">Aktivnosti</characterLabel>
+		<characterLabel type="african_scripts">Afrička pisma</characterLabel>
+		<characterLabel type="american_scripts">Američka pisma</characterLabel>
+		<characterLabel type="animal">životinja</characterLabel>
+		<characterLabel type="animals_nature">Životinje i priroda</characterLabel>
+		<characterLabel type="arrows">Strelice</characterLabel>
+		<characterLabel type="body">telo</characterLabel>
+		<characterLabel type="box_drawing">Uokvireni crtež</characterLabel>
+		<characterLabel type="braille">Brajevo pismo</characterLabel>
+		<characterLabel type="building">zgrada</characterLabel>
+		<characterLabel type="bullets_stars">Znakovi za nabrajanje/zvezdice</characterLabel>
+		<characterLabel type="consonantal_jamo">Konsonantni džamo</characterLabel>
+		<characterLabel type="currency_symbols">Simboli valuta</characterLabel>
+		<characterLabel type="dash_connector">Crta/konektor</characterLabel>
+		<characterLabel type="digits">Cifre</characterLabel>
+		<characterLabel type="dingbats">Grafički simboli</characterLabel>
+		<characterLabel type="divination_symbols">Simboli za proricanje</characterLabel>
+		<characterLabel type="downwards_arrows">Strelice nadole</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">Strelice nadole i nagore</characterLabel>
+		<characterLabel type="east_asian_scripts">Istočnoazijska pisma</characterLabel>
+		<characterLabel type="emoji">Emodži</characterLabel>
+		<characterLabel type="european_scripts">Evropska pisma</characterLabel>
+		<characterLabel type="female">žensko</characterLabel>
+		<characterLabel type="flag">zastava</characterLabel>
+		<characterLabel type="flags">Zastave</characterLabel>
+		<characterLabel type="food_drink">Hrana i piće</characterLabel>
+		<characterLabel type="format">Oblikovanje</characterLabel>
+		<characterLabel type="format_whitespace">Oblikovanje i razmak</characterLabel>
+		<characterLabel type="full_width_form_variant">Varijante sa punom širinom</characterLabel>
+		<characterLabel type="geometric_shapes">Geometrijski oblici</characterLabel>
+		<characterLabel type="half_width_form_variant">Varijante sa pola širine</characterLabel>
+		<characterLabel type="han_characters">Han znakovi</characterLabel>
+		<characterLabel type="han_radicals">Han radikali</characterLabel>
+		<characterLabel type="hanja">Handža</characterLabel>
+		<characterLabel type="hanzi_simplified">Hanzi (pojednostavljeni)</characterLabel>
+		<characterLabel type="hanzi_traditional">Hanzi (tradicionalni)</characterLabel>
+		<characterLabel type="heart">srce</characterLabel>
+		<characterLabel type="historic_scripts">Istorijska pisma</characterLabel>
+		<characterLabel type="ideographic_desc_characters">Ideografski opisni znakovi</characterLabel>
+		<characterLabel type="japanese_kana">Japanska kana</characterLabel>
+		<characterLabel type="kanbun">Kanbun</characterLabel>
+		<characterLabel type="kanji">Kandži</characterLabel>
+		<characterLabel type="keycap">taster</characterLabel>
+		<characterLabel type="leftwards_arrows">Strelice nalevo</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">Strelice nalevo i nadesno</characterLabel>
+		<characterLabel type="letterlike_symbols">Simboli nalik na slova</characterLabel>
+		<characterLabel type="limited_use">Za ograničenu upotrebu</characterLabel>
+		<characterLabel type="male">muško</characterLabel>
+		<characterLabel type="math_symbols">Matematički simboli</characterLabel>
+		<characterLabel type="middle_eastern_scripts">Bliskoistočna pisma</characterLabel>
+		<characterLabel type="miscellaneous">Razno</characterLabel>
+		<characterLabel type="modern_scripts">Moderna pisma</characterLabel>
+		<characterLabel type="modifier">Modifikator</characterLabel>
+		<characterLabel type="musical_symbols">Muzički simboli</characterLabel>
+		<characterLabel type="nature">priroda</characterLabel>
+		<characterLabel type="nonspacing">Bez razmaka</characterLabel>
+		<characterLabel type="numbers">Brojevi</characterLabel>
+		<characterLabel type="objects">Objekti</characterLabel>
+		<characterLabel type="other">Ostalo</characterLabel>
+		<characterLabel type="paired">Upareno</characterLabel>
+		<characterLabel type="person">osoba</characterLabel>
+		<characterLabel type="phonetic_alphabet">Fonetski alfabet</characterLabel>
+		<characterLabel type="pictographs">Piktogrami</characterLabel>
+		<characterLabel type="place">mesto</characterLabel>
+		<characterLabel type="plant">biljka</characterLabel>
+		<characterLabel type="punctuation">Interpunkcija</characterLabel>
+		<characterLabel type="rightwards_arrows">Strelica nadesno</characterLabel>
+		<characterLabel type="sign_standard_symbols">Znakovni/standardni simboli</characterLabel>
+		<characterLabel type="small_form_variant">Mali znakovi interpunkcije</characterLabel>
+		<characterLabel type="smiley">smajli</characterLabel>
+		<characterLabel type="smileys_people">Smajliji i ljudi</characterLabel>
+		<characterLabel type="south_asian_scripts">Južnoazijska pisma</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Jugoistočna azijska pisma</characterLabel>
+		<characterLabel type="spacing">Razmak</characterLabel>
+		<characterLabel type="sport">sport</characterLabel>
+		<characterLabel type="symbols">Simboli</characterLabel>
+		<characterLabel type="technical_symbols">Tehnički simboli</characterLabel>
+		<characterLabel type="tone_marks">Tonalne oznake</characterLabel>
+		<characterLabel type="travel">putovanje</characterLabel>
+		<characterLabel type="travel_places">Putovanja i mesta</characterLabel>
+		<characterLabel type="upwards_arrows">Strelice nagore</characterLabel>
+		<characterLabel type="variant_forms">Varijantni oblici</characterLabel>
+		<characterLabel type="vocalic_jamo">Vokalni džamo</characterLabel>
+		<characterLabel type="weather">vreme</characterLabel>
+		<characterLabel type="western_asian_scripts">Zapadnoazijska pisma</characterLabel>
+		<characterLabel type="whitespace">Razmak</characterLabel>
+	</characterLabels>
 </ldml>

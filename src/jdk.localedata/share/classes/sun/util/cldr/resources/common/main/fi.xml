@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13920 $"/>
 		<language type="fi"/>
 	</identity>
 	<localeDisplayNames>
@@ -32,7 +35,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="akk">akkadi</language>
 			<language type="akz">alabama</language>
 			<language type="ale">aleutti</language>
-			<language type="aln">geg</language>
+			<language type="aln">gegi</language>
 			<language type="alt">altai</language>
 			<language type="am">amhara</language>
 			<language type="an">aragonia</language>
@@ -45,6 +48,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="aro">araona</language>
 			<language type="arp">arapaho</language>
 			<language type="arq">algerianarabia</language>
+			<language type="ars">arabia – najd</language>
 			<language type="arw">arawak</language>
 			<language type="ary">marokonarabia</language>
 			<language type="arz">egyptinarabia</language>
@@ -123,6 +127,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="cr">cree</language>
 			<language type="crh">krimintataari</language>
 			<language type="crh" alt="secondary">kriminturkki</language>
+			<language type="crs">seychellienkreoli</language>
 			<language type="cs">tšekki</language>
 			<language type="csb">kašubi</language>
 			<language type="cu">kirkkoslaavi</language>
@@ -176,7 +181,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="eu">baski</language>
 			<language type="ewo">ewondo</language>
 			<language type="ext">extremadura</language>
-			<language type="fa">farsi</language>
+			<language type="fa">persia</language>
 			<language type="fa" alt="secondary">persia</language>
 			<language type="fan">fang</language>
 			<language type="fat">fanti</language>
@@ -190,7 +195,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="fr">ranska</language>
 			<language type="fr_CA">kanadanranska</language>
 			<language type="fr_CH">sveitsinranska</language>
-			<language type="frc">cajun</language>
+			<language type="frc">cajunranska</language>
 			<language type="frm">keskiranska</language>
 			<language type="fro">muinaisranska</language>
 			<language type="frp">arpitaani</language>
@@ -339,6 +344,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ln">lingala</language>
 			<language type="lo">lao</language>
 			<language type="lol">mongo</language>
+			<language type="lou">louisianankreoli</language>
 			<language type="loz">lozi</language>
 			<language type="lrc">pohjoisluri</language>
 			<language type="lt">liettua</language>
@@ -386,7 +392,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ms">malaiji</language>
 			<language type="mt">malta</language>
 			<language type="mua">mundang</language>
-			<language type="mul">monia kieliä</language>
+			<language type="mul">useita kieliä</language>
 			<language type="mus">creek</language>
 			<language type="mwl">mirandeesi</language>
 			<language type="mwr">marwari</language>
@@ -443,6 +449,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pap">papiamentu</language>
 			<language type="pau">palau</language>
 			<language type="pcd">picardi</language>
+			<language type="pcm">nigerianpidgin</language>
 			<language type="pdc">pennsylvaniansaksa</language>
 			<language type="pdt">plautdietsch</language>
 			<language type="peo">muinaispersia</language>
@@ -588,7 +595,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="uga">ugarit</language>
 			<language type="uk">ukraina</language>
 			<language type="umb">mbundu</language>
-			<language type="und">määrittämätön kieli</language>
+			<language type="und">tuntematon kieli</language>
 			<language type="ur">urdu</language>
 			<language type="uz">uzbekki</language>
 			<language type="vai">vai</language>
@@ -637,6 +644,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zza">zaza</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">fulanin adlam-aakkosto</script>
 			<script type="Afak">afaka</script>
 			<script type="Aghb">kaukasianalbanialainen</script>
 			<script type="Ahom">ahom</script>
@@ -650,6 +658,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Bass">bassa</script>
 			<script type="Batk">batakilainen</script>
 			<script type="Beng">bengalilainen</script>
+			<script type="Bhks">sanskritin bhaiksuki-aakkosto</script>
 			<script type="Blis">bliss-symbolit</script>
 			<script type="Bopo">bopomofo</script>
 			<script type="Brah">brahmi</script>
@@ -680,27 +689,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Geor">georgialainen</script>
 			<script type="Geor" alt="secondary">mkhedruli</script>
 			<script type="Glag">glagoliittinen</script>
+			<script type="Gonm" draft="contributed">masaram-gondi</script>
 			<script type="Goth">goottilainen</script>
 			<script type="Gran">grantha</script>
 			<script type="Grek">kreikkalainen</script>
 			<script type="Gujr">gudžaratilainen</script>
 			<script type="Guru">gurmukhi</script>
+			<script type="Hanb">kiinan han ja bopomofo</script>
 			<script type="Hang">hangul</script>
 			<script type="Hani">kiinalainen han</script>
 			<script type="Hano">hanunoolainen</script>
-			<script type="Hans">yksinkertaistettu han</script>
-			<script type="Hans" alt="stand-alone">kiinalainen yksinkertaistettu han</script>
-			<script type="Hant">perinteinen han</script>
-			<script type="Hant" alt="stand-alone">kiinalainen perinteinen han</script>
+			<script type="Hans">yksinkertaistettu</script>
+			<script type="Hans" alt="stand-alone">yksinkertaistettu han</script>
+			<script type="Hant">perinteinen</script>
+			<script type="Hant" alt="stand-alone">perinteinen han</script>
 			<script type="Hatr">hatralainen</script>
 			<script type="Hebr">heprealainen</script>
 			<script type="Hira">hiragana</script>
 			<script type="Hluw">anatolialaiset hieroglyfit</script>
 			<script type="Hmng">pahawh hmong</script>
-			<script type="Hrkt">hiragana tai katakana</script>
+			<script type="Hrkt">japanin tavumerkistöt</script>
 			<script type="Hung">muinaisunkarilainen</script>
 			<script type="Inds">induslainen</script>
 			<script type="Ital">muinaisitalialainen</script>
+			<script type="Jamo">korean hangulin jamo-elementit</script>
 			<script type="Java">jaavalainen</script>
 			<script type="Jpan">japanilainen</script>
 			<script type="Jurc">džurtšen</script>
@@ -729,6 +741,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mahj">mahajanilainen</script>
 			<script type="Mand">mandealainen</script>
 			<script type="Mani">manikealainen</script>
+			<script type="Marc">tiibetiläinen marchan-kirjoitus</script>
 			<script type="Maya">maya-hieroglyfit</script>
 			<script type="Mend">mende</script>
 			<script type="Merc">meroiittinen kursiivikirjoitus</script>
@@ -744,6 +757,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mymr">burmalainen</script>
 			<script type="Narb">muinaispohjoisarabialainen</script>
 			<script type="Nbat">nabatealainen</script>
+			<script type="Newa">newarin newa-tavukirjoitus</script>
 			<script type="Nkgb">naxi geba</script>
 			<script type="Nkoo">n’ko</script>
 			<script type="Nshu">nüshu</script>
@@ -751,6 +765,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Olck">ol chiki</script>
 			<script type="Orkh">orkhon</script>
 			<script type="Orya">orijalainen</script>
+			<script type="Osge">osagen aakkosto</script>
 			<script type="Osma">osmanjalainen</script>
 			<script type="Palm">palmyralainen</script>
 			<script type="Pauc">zotuallai</script>
@@ -776,6 +791,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Sind">khudabadi</script>
 			<script type="Sinh">sinhalilainen</script>
 			<script type="Sora">sorang sompeng</script>
+			<script type="Soyo" draft="contributed">soyombo-kirjaimisto</script>
 			<script type="Sund">sundalainen</script>
 			<script type="Sylo">syloti nagri</script>
 			<script type="Syrc">syyrialainen</script>
@@ -806,8 +822,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Xpeo">muinaispersialainen</script>
 			<script type="Xsux">sumerilais-akkadilainen nuolenpääkirjoitus</script>
 			<script type="Yiii">yiläinen</script>
+			<script type="Zanb" draft="contributed">zanabazar-neliökirjaimisto</script>
 			<script type="Zinh">peritty</script>
 			<script type="Zmth">matemaattinen</script>
+			<script type="Zsye">emoji-symbolit</script>
 			<script type="Zsym">symbolit</script>
 			<script type="Zxxx">kirjoittamaton</script>
 			<script type="Zyyy">määrittämätön</script>
@@ -843,6 +861,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Itä-Eurooppa</territory>
 			<territory type="154">Pohjois-Eurooppa</territory>
 			<territory type="155">Länsi-Eurooppa</territory>
+			<territory type="202" draft="contributed">Saharan eteläpuolinen Afrikka</territory>
 			<territory type="419">Latinalainen Amerikka</territory>
 			<territory type="AC">Ascension-saari</territory>
 			<territory type="AD">Andorra</territory>
@@ -905,6 +924,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CX">Joulusaari</territory>
 			<territory type="CY">Kypros</territory>
 			<territory type="CZ">Tšekki</territory>
+			<territory type="CZ" alt="variant">Tšekin tasavalta</territory>
 			<territory type="DE">Saksa</territory>
 			<territory type="DG">Diego Garcia</territory>
 			<territory type="DJ">Djibouti</territory>
@@ -921,6 +941,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Espanja</territory>
 			<territory type="ET">Etiopia</territory>
 			<territory type="EU">Euroopan unioni</territory>
+			<territory type="EZ">euroalue</territory>
 			<territory type="FI">Suomi</territory>
 			<territory type="FJ">Fidži</territory>
 			<territory type="FK">Falklandinsaaret</territory>
@@ -1066,7 +1087,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SM">San Marino</territory>
 			<territory type="SN">Senegal</territory>
 			<territory type="SO">Somalia</territory>
-			<territory type="SR">Surinam</territory>
+			<territory type="SR">Suriname</territory>
 			<territory type="SS">Etelä-Sudan</territory>
 			<territory type="ST">São Tomé ja Príncipe</territory>
 			<territory type="SV">El Salvador</territory>
@@ -1094,6 +1115,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Ukraina</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Yhdysvaltain erillissaaret</territory>
+			<territory type="UN">Yhdistyneet kansakunnat</territory>
+			<territory type="UN" alt="short">YK</territory>
 			<territory type="US">Yhdysvallat</territory>
 			<territory type="US" alt="short">USA</territory>
 			<territory type="UY">Uruguay</territory>
@@ -1122,34 +1145,41 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<variant type="1606NICT">myöhäiskeskiranska</variant>
 			<variant type="1694ACAD">varhaisnykyranska</variant>
 			<variant type="1959ACAD">valkovenäjän virallinen oikeinkirjoitus</variant>
+			<variant type="ABL1943">portugalin oikeinkirjoitus 1943</variant>
 			<variant type="ALALC97">amerikkalainen kirjastolatinaistus 1997</variant>
 			<variant type="ALUKU">alukun kreolimurre</variant>
+			<variant type="AO1990">portugalin oikeinkirjoitussopimus 1990</variant>
 			<variant type="AREVELA">itäarmenialainen</variant>
 			<variant type="AREVMDA">länsiarmenialainen</variant>
 			<variant type="BAKU1926">yhtenäistetty turkkilainen latinalainen aakkosto</variant>
 			<variant type="BALANKA">aniin balankalaismurre</variant>
 			<variant type="BARLA">kapverdenkreolin barlaventolainen murreryhmä</variant>
+			<variant type="BASICENG">Ogdenin perusenglanti</variant>
 			<variant type="BAUDDHA">sanskriitin buddhalainen sekamuoto</variant>
 			<variant type="BISCAYAN">baskin biskajalaismurre</variant>
 			<variant type="BISKE">sloveenin resian San Giorgion/Bilan alamurre</variant>
 			<variant type="BOHORIC">sloveenin Bohorič-aakkosto</variant>
 			<variant type="BOONT">englannin boontling-murre</variant>
+			<variant type="COLB1945">portugalin oikeinkirjoitus 1945</variant>
+			<variant type="CORNU">englannin cornu-murre</variant>
 			<variant type="DAJNKO">sloveenin Dajnko-aakkosto</variant>
 			<variant type="EKAVSK">serbian ekavialainen ääntämys</variant>
 			<variant type="EMODENG">varhaisnykyenglanti</variant>
 			<variant type="FONIPA">kansainvälinen foneettinen aakkosto IPA</variant>
+			<variant type="FONNAPA" draft="contributed">pohjoisamerikkalainen foneettinen aakkosto NAPA</variant>
 			<variant type="FONUPA">uralilainen foneettinen aakkosto UPA</variant>
 			<variant type="FONUPA" alt="secondary">suomalais-ugrilainen tarkekirjoitus</variant>
 			<variant type="FONXSAMP">foneettinen X-SAMPA-merkistö</variant>
 			<variant type="HEPBURN">japanin Hepburn-latinaistus</variant>
 			<variant type="HOGNORSK">norjan högnorsk</variant>
-			<variant type="IJEKAVSK">serbian ijekavialainen ääntämiys</variant>
+			<variant type="HSISTEMO" draft="contributed">esperanton h-kirjoitus</variant>
+			<variant type="IJEKAVSK">serbian ijekavialainen ääntämys</variant>
 			<variant type="ITIHASA">sanskriitin eeppinen muoto</variant>
 			<variant type="JAUER">retoromaanin jauer-murre</variant>
 			<variant type="JYUTPING">kantoninkiinan jyutping-latinaistus</variant>
 			<variant type="KKCOR">kornin yleiskirjoitus</variant>
 			<variant type="KOCIEWIE">puolan kociewielainen murre</variant>
-			<variant type="KSCOR">kornin standardikirjoitus</variant>
+			<variant type="KSCOR">kornin Kernowek-ortografia</variant>
 			<variant type="LAUKIKA">klassinen sanskriitti</variant>
 			<variant type="LIPAW">sloveenin resian Lipovazin/Lipovecin alamurre</variant>
 			<variant type="LUNA1918">venäjän ortografia 1918</variant>
@@ -1157,9 +1187,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<variant type="MONOTON">monotoninen kreikka</variant>
 			<variant type="NDYUKA">ndyukan kreolimurre</variant>
 			<variant type="NEDIS">sloveenin natisonen murre</variant>
+			<variant type="NEWFOUND">englannin newfoundlandilaismurre</variant>
 			<variant type="NJIVA">sloveenin resian Gnivan/Njivan alamurre</variant>
 			<variant type="NULIK">nykyvolapük</variant>
 			<variant type="OSOJS">sloveenin resian Oseaccon/Osojanen alamurre</variant>
+			<variant type="OXENDICT">englannin Oxfordin sanakirjan oikeinkirjoitus</variant>
+			<variant type="PAHAWH2" draft="contributed">pahawh-hmongin tavukirjoituksen toinen vaihe</variant>
+			<variant type="PAHAWH3" draft="contributed">pahawh-hmongin tavukirjoituksen kolmas vaihe</variant>
+			<variant type="PAHAWH4" draft="contributed">pahawh-hmongin tavukirjoituksen viimeinen vaihe</variant>
 			<variant type="PAMAKA">pamakan kreolimurre</variant>
 			<variant type="PETR1708">venäjän Pietarin siviiliaakkosto 1708</variant>
 			<variant type="PINYIN">kiinan pinyin-latinaistus</variant>
@@ -1173,8 +1208,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<variant type="SAAHO">afarin saho-murre</variant>
 			<variant type="SCOTLAND">skotlanninenglanti</variant>
 			<variant type="SCOUSE">englannin scouse-murre</variant>
+			<variant type="SIMPLE">yksinkertaistettu kielimuoto</variant>
 			<variant type="SOLBA">sloveenin resian Stolvizzan/Solbican alamurre</variant>
 			<variant type="SOTAV">kapverdenkreolin sotaventolainen murreryhmä</variant>
+			<variant type="SPANGLIS" draft="contributed">spanglish</variant>
 			<variant type="SURMIRAN">retoromaanin surmiran-muoto</variant>
 			<variant type="SURSILV">retoromaanin sursilvan-muoto</variant>
 			<variant type="SUTSILV">retoromaanin sutsilvan-muoto</variant>
@@ -1187,14 +1224,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<variant type="VALENCIA">katalaanin valencian murre</variant>
 			<variant type="VALLADER">reoromaanin vallader-muoto</variant>
 			<variant type="WADEGILE">kiinan Wade-Giles-latinaistus</variant>
+			<variant type="XSISTEMO" draft="contributed">esperanton x-kirjoitus</variant>
 		</variants>
 		<keys>
 			<key type="calendar">kalenteri</key>
+			<key type="cf">valuuttojen esitysmuoto</key>
 			<key type="colAlternate">symbolien lajittelu</key>
 			<key type="colBackwards">painomerkkien lajittelu</key>
 			<key type="colCaseFirst">isojen ja pienten kirjainten järjestys</key>
 			<key type="colCaseLevel">aakkoslajien lajittelu</key>
-			<key type="colHiraganaQuaternary">kana-merkkien lajittelu</key>
 			<key type="collation">lajittelujärjestys</key>
 			<key type="colNormalization">lajittelun normalisointi</key>
 			<key type="colNumeric">numeroiden lajittelu</key>
@@ -1206,7 +1244,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">numerot</key>
 			<key type="timezone">aikavyöhyke</key>
 			<key type="va">maavalinnan muunnelma</key>
-			<key type="variableTop">lajittelu symboleina</key>
 			<key type="x">yksityiskäyttö</key>
 		</keys>
 		<types>
@@ -1228,6 +1265,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">japanilainen kalenteri</type>
 			<type key="calendar" type="persian">persialainen kalenteri</type>
 			<type key="calendar" type="roc">Kiinan tasavallan kalenteri</type>
+			<type key="cf" type="account">valuuttojen laskentatoimen esitysmuoto</type>
+			<type key="cf" type="standard">valuuttojen vakioesitysmuoto</type>
 			<type key="colAlternate" type="non-ignorable">symbolit huomioiva lajittelu</type>
 			<type key="colAlternate" type="shifted">symbolit ohittava lajittelu</type>
 			<type key="colBackwards" type="no">painomerkkien normaali lajittelu</type>
@@ -1237,8 +1276,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper">isot kirjaimet edeltävät pieniä</type>
 			<type key="colCaseLevel" type="no">isojen ja pienten kirjainten lajittelu yhdessä</type>
 			<type key="colCaseLevel" type="yes">isojen ja pienten kirjainten lajittelu erikseen</type>
-			<type key="colHiraganaQuaternary" type="no">kana-merkkien lajittelu erillisinä</type>
-			<type key="colHiraganaQuaternary" type="yes">kana-merkkien lajittelu tyypin mukaan</type>
 			<type key="collation" type="big5han">perinteinen kiinalainen järjestys Big5</type>
 			<type key="collation" type="compat">aiempi lajittelujärjestys yhteensopivuutta varten</type>
 			<type key="collation" type="dictionary">sanakirjajärjestys</type>
@@ -1266,6 +1303,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary">painomerkit ja aakkoslajit tai merkkileveydet ja kana-merkit huomioiva lajittelu</type>
 			<type key="colStrength" type="secondary">painomerkit huomioiva lajittelu</type>
 			<type key="colStrength" type="tertiary">painomerkit ja aakkoslajit tai merkkileveydet huomioiva lajittelu</type>
+			<type key="d0" type="fwidth">ideogrammin levyinen</type>
+			<type key="d0" type="hwidth">ideogrammin puolikkaan levyinen</type>
+			<type key="d0" type="npinyin">numeerinen muunnos</type>
 			<type key="hc" type="h11">12 tunnin järjestelmä (0–11)</type>
 			<type key="hc" type="h12">12 tunnin järjestelmä (1–12)</type>
 			<type key="hc" type="h23">24 tunnin järjestelmä (0–23)</type>
@@ -1273,9 +1313,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">väljä rivinvaihto</type>
 			<type key="lb" type="normal">normaali rivinvaihto</type>
 			<type key="lb" type="strict">tarkka rivinvaihto</type>
+			<type key="m0" type="bgn">BGN-latinaistus</type>
+			<type key="m0" type="ungegn">UNGEGN-latinaistus</type>
 			<type key="ms" type="metric">metrijärjestelmä</type>
 			<type key="ms" type="uksystem">brittiläinen mittajärjestelmä</type>
 			<type key="ms" type="ussystem">yhdysvaltalainen mittajärjestelmä</type>
+			<type key="numbers" type="ahom">ahom-numerot</type>
 			<type key="numbers" type="arab">arabialaiset numerot</type>
 			<type key="numbers" type="arabext">laajennetut arabialaiset numerot</type>
 			<type key="numbers" type="armn">armenialaiset numerot</type>
@@ -1285,6 +1328,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="brah">brahmilaiset numerot</type>
 			<type key="numbers" type="cakm">chakmalaiset numerot</type>
 			<type key="numbers" type="cham">cham-numerot</type>
+			<type key="numbers" type="cyrl">kyrilliset numerot</type>
 			<type key="numbers" type="deva">devanagarinumerot</type>
 			<type key="numbers" type="ethi">etiopialaiset numerot</type>
 			<type key="numbers" type="finance">talousnumerot</type>
@@ -1300,6 +1344,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="hant">perinteiset kiinalaiset numerot</type>
 			<type key="numbers" type="hantfin">perinteiset kiinalaiset talousnumerot</type>
 			<type key="numbers" type="hebr">heprealaiset numerot</type>
+			<type key="numbers" type="hmng">pahawh hmong -numerot</type>
 			<type key="numbers" type="java">jaavalaiset numerot</type>
 			<type key="numbers" type="jpan">japanilaiset numerot</type>
 			<type key="numbers" type="jpanfin">japanilaiset talousnumerot</type>
@@ -1312,11 +1357,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="latn">länsimaiset numerot</type>
 			<type key="numbers" type="lepc">lepchanumerot</type>
 			<type key="numbers" type="limb">limbunumerot</type>
+			<type key="numbers" type="mathbold">matemaattiset lihavoidut numerot</type>
+			<type key="numbers" type="mathdbl">matemaattiset kaksoislyöntinumerot</type>
+			<type key="numbers" type="mathmono">matemaattiset tasalevyiset numerot</type>
+			<type key="numbers" type="mathsanb">matemaattiset pääteviivattomat lihavoidut numerot</type>
+			<type key="numbers" type="mathsans">matemaattiset pääteviivattomat numerot</type>
 			<type key="numbers" type="mlym">malajalamilaiset numerot</type>
+			<type key="numbers" type="modi">modi-numerot</type>
 			<type key="numbers" type="mong">mongolialaiset numerot</type>
+			<type key="numbers" type="mroo">mro-numerot</type>
 			<type key="numbers" type="mtei">meetei mayek -numerot</type>
 			<type key="numbers" type="mymr">burmalaiset numerot</type>
 			<type key="numbers" type="mymrshan">myanmarin shan-numerot</type>
+			<type key="numbers" type="mymrtlng">myanmarin tai laing -numerot</type>
 			<type key="numbers" type="native">kielen omat numerot</type>
 			<type key="numbers" type="nkoo">n’ko-numerot</type>
 			<type key="numbers" type="olck">ol chiki -numerot</type>
@@ -1325,7 +1378,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="roman">roomalaiset numerot</type>
 			<type key="numbers" type="romanlow">roomalaiset piennumerot</type>
 			<type key="numbers" type="saur">saurashtra-numerot</type>
-			<type key="numbers" type="shrd">šarida-numerot</type>
+			<type key="numbers" type="shrd">šarada-numerot</type>
+			<type key="numbers" type="sind">khutabadi-numerot</type>
+			<type key="numbers" type="sinh">sinhalan lith-numerot</type>
 			<type key="numbers" type="sora">sora sompeng -numerot</type>
 			<type key="numbers" type="sund">sundalaiset numerot</type>
 			<type key="numbers" type="takr">takri-numerot</type>
@@ -1335,21 +1390,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="telu">telugulaiset numerot</type>
 			<type key="numbers" type="thai">thainumerot</type>
 			<type key="numbers" type="tibt">tiibetiläiset numerot</type>
+			<type key="numbers" type="tirh">tirhuta-numerot</type>
 			<type key="numbers" type="traditional">perinteiset numerot</type>
 			<type key="numbers" type="vaii">vai-numerot</type>
+			<type key="numbers" type="wara">varang kshiti -numerot</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN">BGN-latinaistus</transformName>
-			<transformName type="Numeric">numeerinen muunnos</transformName>
-			<transformName type="Tone">tooni</transformName>
-			<transformName type="UNGEGN">UNGEGN-latinaistus</transformName>
-			<transformName type="x-Accents">aksenttimerkit</transformName>
-			<transformName type="x-Fullwidth">ideogrammin levyinen</transformName>
-			<transformName type="x-Halfwidth">ideogrammin puolikkaan levyinen</transformName>
-			<transformName type="x-Jamo">jamo</transformName>
-			<transformName type="x-Pinyin">pinyin-latinaistus</transformName>
-			<transformName type="x-Publishing">julkaisuvalinta</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrinen</measurementSystemName>
 			<measurementSystemName type="UK">brittiläinen</measurementSystemName>
@@ -1368,19 +1413,43 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<contextTransformUsage type="relative">
 			<contextTransform type="stand-alone">titlecase-firstword</contextTransform>
 		</contextTransformUsage>
+		<contextTransformUsage type="typographicNames">
+			<contextTransform type="stand-alone">titlecase-firstword</contextTransform>
+			<contextTransform type="uiListOrMenu">titlecase-firstword</contextTransform>
+		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s š t u v w x y z ž å ä ö]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â ã ą ā ć č ċ ç ď ð đ é è ê ě ë ė ę ē ğ ǧ ģ ǥ ȟ ħ í î ï İ į ī ı ǩ ķ ĺ ľ ļ ł ń ň ñ ņ ŋ ó ò ô ő õ œ ŕ ř ś ŝ ş ß ť ţ ŧ ú ù û ů ű ų ū ý ÿ ü ź ż ʒ ǯ þ æ ø]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à ă â ã ą ā ć č ċ ç ď ð đ é è ê ě ë ė ę ē ğ ǧ ģ ǥ ȟ ħ í î ï İ į ī ı ǩ ķ ĺ ľ ļ ł ń ň ñ ņ ŋ ó ò ô ő õ œ ŕ ř ś ŝ ş ș ß ť ţ ț ŧ ú ù û ů ű ų ū ý ÿ ü ź ż ʒ ǯ þ æ ø]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Å Ä Ö]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[‐ – , ; \: ! ? . … ’ ” » ( ) \[ \] § @ * / \\ \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ – , ; \: ! ? . … ’ ” » ( ) \[ \] § @ * / \\ \&amp; #]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
 		<ellipsis type="word-final">{0}…</ellipsis>
 		<ellipsis type="word-initial">…{0}</ellipsis>
-		<ellipsis type="word-medial">{0}… {1}</ellipsis>
+		<ellipsis type="word-medial">{0}…{1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>”</quotationStart>
@@ -1392,9 +1461,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<calendars>
 			<calendar type="buddhist">
 				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">buddhalainen aika</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">BE</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">BE</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1432,15 +1507,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">ccc d. MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="contributed">d. MMMM</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">L.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">d.M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E d.M.y G</dateFormatItem>
+						<dateFormatItem id="yyyyMM" draft="contributed">M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">LLL y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E d. MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMM">LLLL y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMccccd" draft="contributed">cccc d. MMMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
@@ -1490,6 +1568,170 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
+			<calendar type="coptic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">thoutkuuta</month>
+							<month type="2" draft="contributed">paopikuuta</month>
+							<month type="3" draft="contributed">hathorkuuta</month>
+							<month type="4" draft="contributed">koiakkuuta</month>
+							<month type="5" draft="contributed">tobikuuta</month>
+							<month type="6" draft="contributed">meshirkuuta</month>
+							<month type="7" draft="contributed">paremhatkuuta</month>
+							<month type="8" draft="contributed">paremoudekuuta</month>
+							<month type="9" draft="contributed">pashonskuuta</month>
+							<month type="10" draft="contributed">paonikuuta</month>
+							<month type="11" draft="contributed">epipkuuta</month>
+							<month type="12" draft="contributed">mesorikuuta</month>
+							<month type="13" draft="contributed">pi-kogi-enavotkuuta</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">thoutkuuta</month>
+							<month type="2" draft="contributed">paopikuuta</month>
+							<month type="3" draft="contributed">hathorkuuta</month>
+							<month type="4" draft="contributed">koiakkuuta</month>
+							<month type="5" draft="contributed">tobikuuta</month>
+							<month type="6" draft="contributed">meshirkuuta</month>
+							<month type="7" draft="contributed">paremhatkuuta</month>
+							<month type="8" draft="contributed">paremoudekuuta</month>
+							<month type="9" draft="contributed">pashonskuuta</month>
+							<month type="10" draft="contributed">paonikuuta</month>
+							<month type="11" draft="contributed">epipkuuta</month>
+							<month type="12" draft="contributed">mesorikuuta</month>
+							<month type="13" draft="contributed">pi-kogi-enavotkuuta</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">thout</month>
+							<month type="2" draft="contributed">paopi</month>
+							<month type="3" draft="contributed">hathor</month>
+							<month type="4" draft="contributed">koiak</month>
+							<month type="5" draft="contributed">toba</month>
+							<month type="6" draft="contributed">meshir</month>
+							<month type="7" draft="contributed">paremhat</month>
+							<month type="8" draft="contributed">paremoude</month>
+							<month type="9" draft="contributed">pashons</month>
+							<month type="10" draft="contributed">paoni</month>
+							<month type="11" draft="contributed">epip</month>
+							<month type="12" draft="contributed">mesori</month>
+							<month type="13" draft="contributed">pi kogi enavot</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">thoutkuu</month>
+							<month type="2" draft="contributed">paopikuu</month>
+							<month type="3" draft="contributed">hathorkuu</month>
+							<month type="4" draft="contributed">koiakkuu</month>
+							<month type="5" draft="contributed">tobikuu</month>
+							<month type="6" draft="contributed">meshirkuu</month>
+							<month type="7" draft="contributed">paremhatkuu</month>
+							<month type="8" draft="contributed">paremoudekuu</month>
+							<month type="9" draft="contributed">pashonskuu</month>
+							<month type="10" draft="contributed">paonikuu</month>
+							<month type="11" draft="contributed">epipkuu</month>
+							<month type="12" draft="contributed">mesorikuu</month>
+							<month type="13" draft="contributed">pi-kogi-enavotkuu</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="ethiopic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">mäskärämkuuta</month>
+							<month type="2" draft="contributed">ṭəqəmtkuuta</month>
+							<month type="3" draft="contributed">ḫədarkuuta</month>
+							<month type="4" draft="contributed">taḫśaśkuuta</month>
+							<month type="5" draft="contributed">ṭərrkuuta</month>
+							<month type="6" draft="contributed">yäkatitkuuta</month>
+							<month type="7" draft="contributed">mägabitkuuta</month>
+							<month type="8" draft="contributed">miyazyakuuta</month>
+							<month type="9" draft="contributed">gənbotkuuta</month>
+							<month type="10" draft="contributed">sänekuuta</month>
+							<month type="11" draft="contributed">ḥamlekuuta</month>
+							<month type="12" draft="contributed">nähasekuuta</month>
+							<month type="13" draft="contributed">ṗagumenkuuta</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">mäskärämkuuta</month>
+							<month type="2" draft="contributed">ṭəqəmtkuuta</month>
+							<month type="3" draft="contributed">ḫədarkuuta</month>
+							<month type="4" draft="contributed">taḫśaśkuuta</month>
+							<month type="5" draft="contributed">ṭərrkuuta</month>
+							<month type="6" draft="contributed">yäkatitkuuta</month>
+							<month type="7" draft="contributed">mägabitkuuta</month>
+							<month type="8" draft="contributed">miyazyakuuta</month>
+							<month type="9" draft="contributed">gənbotkuuta</month>
+							<month type="10" draft="contributed">sänekuuta</month>
+							<month type="11" draft="contributed">ḥamlekuuta</month>
+							<month type="12" draft="contributed">nähasekuuta</month>
+							<month type="13" draft="contributed">ṗagumenkuuta</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">mäskärämkuu</month>
+							<month type="2">ṭəqəmtkuu</month>
+							<month type="3">ḫədarkuu</month>
+							<month type="4">taḫśaśkuu</month>
+							<month type="5">ṭərrkuu</month>
+							<month type="6">yäkatitkuu</month>
+							<month type="7">mägabitkuu</month>
+							<month type="8">miyazyakuu</month>
+							<month type="9">gənbotkuu</month>
+							<month type="10">sänekuu</month>
+							<month type="11">ḥamlekuu</month>
+							<month type="12">nähasekuu</month>
+							<month type="13">ṗagumenkuu</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">mäskärämkuu</month>
+							<month type="2" draft="contributed">ṭəqəmtkuu</month>
+							<month type="3" draft="contributed">ḫədarkuu</month>
+							<month type="4" draft="contributed">taḫśaśkuu</month>
+							<month type="5" draft="contributed">ṭərrkuu</month>
+							<month type="6" draft="contributed">yäkatitkuu</month>
+							<month type="7" draft="contributed">mägabitkuu</month>
+							<month type="8" draft="contributed">miyazyakuu</month>
+							<month type="9" draft="contributed">gənbotkuu</month>
+							<month type="10" draft="contributed">sänekuu</month>
+							<month type="11" draft="contributed">ḥamlekuu</month>
+							<month type="12" draft="contributed">nähasekuu</month>
+							<month type="13" draft="contributed">ṗagumenkuu</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1535,9 +1777,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h.mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h.mm.ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h.mm. B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h.mm.ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d.</dateFormatItem>
+						<dateFormatItem id="Ehm">E h.mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH.mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH.mm.ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
@@ -1554,7 +1805,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">ccc d. MMM</dateFormatItem>
-						<dateFormatItem id="MMMMd" draft="contributed">d. MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm.ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
@@ -1674,18 +1925,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1">tammikuuta</month>
-							<month type="2">helmikuuta</month>
-							<month type="3">maaliskuuta</month>
-							<month type="4">huhtikuuta</month>
-							<month type="5">toukokuuta</month>
-							<month type="6">kesäkuuta</month>
-							<month type="7">heinäkuuta</month>
-							<month type="8">elokuuta</month>
-							<month type="9">syyskuuta</month>
-							<month type="10">lokakuuta</month>
-							<month type="11">marraskuuta</month>
-							<month type="12">joulukuuta</month>
+							<month type="1">tammik.</month>
+							<month type="2">helmik.</month>
+							<month type="3">maalisk.</month>
+							<month type="4">huhtik.</month>
+							<month type="5">toukok.</month>
+							<month type="6">kesäk.</month>
+							<month type="7">heinäk.</month>
+							<month type="8">elok.</month>
+							<month type="9">syysk.</month>
+							<month type="10">lokak.</month>
+							<month type="11">marrask.</month>
+							<month type="12">jouluk.</month>
 						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">T</month>
@@ -1884,26 +2135,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">keskiyö</dayPeriod>
+							<dayPeriod type="midnight">keskiyöllä</dayPeriod>
 							<dayPeriod type="am">ap.</dayPeriod>
 							<dayPeriod type="noon">keskip.</dayPeriod>
 							<dayPeriod type="pm">ip.</dayPeriod>
-							<dayPeriod type="morning1">aamu</dayPeriod>
+							<dayPeriod type="morning1">aamulla</dayPeriod>
 							<dayPeriod type="morning2">aamup.</dayPeriod>
 							<dayPeriod type="afternoon1">iltap.</dayPeriod>
-							<dayPeriod type="evening1">ilta</dayPeriod>
-							<dayPeriod type="night1">yö</dayPeriod>
+							<dayPeriod type="evening1">illalla</dayPeriod>
+							<dayPeriod type="night1">yöllä</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">ky.</dayPeriod>
 							<dayPeriod type="am">ap.</dayPeriod>
 							<dayPeriod type="noon">kp.</dayPeriod>
 							<dayPeriod type="pm">ip.</dayPeriod>
-							<dayPeriod type="morning1">aamu</dayPeriod>
+							<dayPeriod type="morning1">aamulla</dayPeriod>
 							<dayPeriod type="morning2">ap.</dayPeriod>
 							<dayPeriod type="afternoon1">ip.</dayPeriod>
-							<dayPeriod type="evening1">ilta</dayPeriod>
-							<dayPeriod type="night1">yö</dayPeriod>
+							<dayPeriod type="evening1">illalla</dayPeriod>
+							<dayPeriod type="night1">yöllä</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">keskiyöllä</dayPeriod>
@@ -1967,9 +2218,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<era type="1" alt="variant">jaa.</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0">eK</era>
+						<era type="0">eKr</era>
 						<era type="0" alt="variant">eaa</era>
-						<era type="1">jK</era>
+						<era type="1">jKr</era>
 						<era type="1" alt="variant">jaa</era>
 					</eraNarrow>
 				</eras>
@@ -2039,8 +2290,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h.mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h.mm.ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h.mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h.mm.ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d.</dateFormatItem>
 						<dateFormatItem id="Ehm">E h.mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E H.mm</dateFormatItem>
@@ -2067,6 +2323,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">ccc d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">LLLL'n' W. 'viikko'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">LLLL'n' W. 'viikko'</dateFormatItem>
 						<dateFormatItem id="ms">m.ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">L.y</dateFormatItem>
@@ -2080,6 +2338,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMMccccd">cccc d. MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'vuoden' Y 'viikko' w</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'vuoden' Y 'viikko' w</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -2187,6 +2447,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<calendar type="hebrew">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">tišrí</month>
+							<month type="2" draft="contributed">hešván</month>
+							<month type="3" draft="contributed">kislév</month>
+							<month type="4" draft="contributed">tevét</month>
+							<month type="5" draft="contributed">ševát</month>
+							<month type="6" draft="contributed">adár I</month>
+							<month type="7" draft="contributed">adár</month>
+							<month type="7" yeartype="leap" draft="contributed">adár II</month>
+							<month type="8" draft="contributed">nisán</month>
+							<month type="9" draft="contributed">ijjár</month>
+							<month type="10" draft="contributed">siván</month>
+							<month type="11" draft="contributed">tammúz</month>
+							<month type="12" draft="contributed">ab</month>
+							<month type="13" draft="contributed">elúl</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">tišríkuuta</month>
 							<month type="2">hešvánkuuta</month>
@@ -2255,6 +2531,92 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">Anno Mundi</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">AM</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">AM</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">chaitrakuuta</month>
+							<month type="2" draft="contributed">vaisakhakuuta</month>
+							<month type="3" draft="contributed">jyaisthakuuta</month>
+							<month type="4" draft="contributed">asadhakuuta</month>
+							<month type="5" draft="contributed">sravanakuuta</month>
+							<month type="6" draft="contributed">bhadrakuuta</month>
+							<month type="7" draft="contributed">asvinakuuta</month>
+							<month type="8" draft="contributed">kartikakuuta</month>
+							<month type="9" draft="contributed">agrahayanakuuta</month>
+							<month type="10" draft="contributed">pausakuuta</month>
+							<month type="11" draft="contributed">maghakuuta</month>
+							<month type="12" draft="contributed">phalgunakuuta</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">chaitrakuuta</month>
+							<month type="2" draft="contributed">vaisakhakuuta</month>
+							<month type="3" draft="contributed">jyaisthakuuta</month>
+							<month type="4" draft="contributed">asadhakuuta</month>
+							<month type="5" draft="contributed">sravanakuuta</month>
+							<month type="6" draft="contributed">bhadrakuuta</month>
+							<month type="7" draft="contributed">asvinakuuta</month>
+							<month type="8" draft="contributed">kartikakuuta</month>
+							<month type="9" draft="contributed">agrahayanakuuta</month>
+							<month type="10" draft="contributed">pausakuuta</month>
+							<month type="11" draft="contributed">maghakuuta</month>
+							<month type="12" draft="contributed">phalgunakuuta</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">chaitra</month>
+							<month type="2" draft="contributed">vaisakha</month>
+							<month type="3" draft="contributed">jyaistha</month>
+							<month type="4" draft="contributed">asadha</month>
+							<month type="5" draft="contributed">sravana</month>
+							<month type="6" draft="contributed">bhadra</month>
+							<month type="7" draft="contributed">asvina</month>
+							<month type="8" draft="contributed">kartika</month>
+							<month type="9" draft="contributed">agrahayana</month>
+							<month type="10" draft="contributed">pausa</month>
+							<month type="11" draft="contributed">magha</month>
+							<month type="12" draft="contributed">phalguna</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">chaitrakuu</month>
+							<month type="2" draft="contributed">vaisakhakuu</month>
+							<month type="3" draft="contributed">jyaisthakuu</month>
+							<month type="4" draft="contributed">asadhakuu</month>
+							<month type="5" draft="contributed">sravanakuu</month>
+							<month type="6" draft="contributed">bhadrakuu</month>
+							<month type="7" draft="contributed">asvinakuu</month>
+							<month type="8" draft="contributed">kartikakuu</month>
+							<month type="9" draft="contributed">agrahayanakuu</month>
+							<month type="10" draft="contributed">pausakuu</month>
+							<month type="11" draft="contributed">maghakuu</month>
+							<month type="12" draft="contributed">phalgunakuu</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">Saka-ajanlaskua</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">Saka</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">Saka</era>
+					</eraNarrow>
+				</eras>
 			</calendar>
 			<calendar type="islamic">
 				<months>
@@ -2291,6 +2653,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">hidžran jälkeen</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">AH</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">AH</era>
+					</eraNarrow>
+				</eras>
 			</calendar>
 			<calendar type="japanese">
 				<dateFormats>
@@ -2316,17 +2689,106 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dateFormatLength>
 				</dateFormats>
 			</calendar>
+			<calendar type="persian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">farvardinkuuta</month>
+							<month type="2" draft="contributed">ordibeheštkuuta</month>
+							<month type="3" draft="contributed">khordadkuuta</month>
+							<month type="4" draft="contributed">tirkuuta</month>
+							<month type="5" draft="contributed">mordadkuuta</month>
+							<month type="6" draft="contributed">šahrivarkuuta</month>
+							<month type="7" draft="contributed">mehrkuuta</month>
+							<month type="8" draft="contributed">abankuuta</month>
+							<month type="9" draft="contributed">azarkuuta</month>
+							<month type="10" draft="contributed">deykuuta</month>
+							<month type="11" draft="contributed">bahmankuuta</month>
+							<month type="12" draft="contributed">esfandkuuta</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">farvardinkuuta</month>
+							<month type="2" draft="contributed">ordibeheštkuuta</month>
+							<month type="3" draft="contributed">khordadkuuta</month>
+							<month type="4" draft="contributed">tirkuuta</month>
+							<month type="5" draft="contributed">mordadkuuta</month>
+							<month type="6" draft="contributed">šahrivarkuuta</month>
+							<month type="7" draft="contributed">mehrkuuta</month>
+							<month type="8" draft="contributed">abankuuta</month>
+							<month type="9" draft="contributed">azarkuuta</month>
+							<month type="10" draft="contributed">deykuuta</month>
+							<month type="11" draft="contributed">bahmankuuta</month>
+							<month type="12" draft="contributed">esfandkuuta</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">farvardin</month>
+							<month type="2" draft="contributed">ordibehešt</month>
+							<month type="3" draft="contributed">khordad</month>
+							<month type="4" draft="contributed">tir</month>
+							<month type="5" draft="contributed">mordad</month>
+							<month type="6" draft="contributed">šahrivar</month>
+							<month type="7" draft="contributed">mehr</month>
+							<month type="8" draft="contributed">aban</month>
+							<month type="9" draft="contributed">azar</month>
+							<month type="10" draft="contributed">dey</month>
+							<month type="11" draft="contributed">bahman</month>
+							<month type="12" draft="contributed">esfand</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">farvardinkuu</month>
+							<month type="2" draft="contributed">ordibeheštkuu</month>
+							<month type="3" draft="contributed">khordadkuu</month>
+							<month type="4" draft="contributed">tirkuu</month>
+							<month type="5" draft="contributed">mordadkuu</month>
+							<month type="6" draft="contributed">šahrivarkuu</month>
+							<month type="7" draft="contributed">mehrkuu</month>
+							<month type="8" draft="contributed">abankuu</month>
+							<month type="9" draft="contributed">azarkuu</month>
+							<month type="10" draft="contributed">deykuu</month>
+							<month type="11" draft="contributed">bahmankuu</month>
+							<month type="12" draft="contributed">esfandkuu</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">Anno Persico</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">AP</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">AP</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="roc">
 				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ennen Kiinan tasavaltaa</era>
+						<era type="1" draft="contributed">Minguo</era>
+					</eraNames>
 					<eraAbbr>
-						<era type="0">Before R.O.C.</era>
+						<era type="0">e. Kiinan tasav.</era>
 						<era type="1">Minguo</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">e. Kiinan tasav.</era>
+						<era type="1" draft="contributed">Minguo</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
+				<displayName>aikakausi</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>aikakausi</displayName>
+			</field>
+			<field type="era-narrow">
 				<displayName>aikakausi</displayName>
 			</field>
 			<field type="year">
@@ -2396,7 +2858,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} neljännes sitten</relativeTimePattern>
-					<relativeTimePattern count="other">{0} neljännes sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} neljännestä sitten</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
@@ -2468,6 +2930,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} viikko sitten</relativeTimePattern>
 					<relativeTimePattern count="other">{0} viikkoa sitten</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>päivän {0} viikolla</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>vk</displayName>
@@ -2482,6 +2945,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} vk sitten</relativeTimePattern>
 					<relativeTimePattern count="other">{0} vk sitten</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>päivän {0} viikolla</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>vk</displayName>
@@ -2496,6 +2960,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} vk sitten</relativeTimePattern>
 					<relativeTimePattern count="other">{0} vk sitten</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>päivän {0} viikolla</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>kuukauden viikko</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>kuukauden vk</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>kuukauden vk</displayName>
 			</field>
 			<field type="day">
 				<displayName>päivä</displayName>
@@ -2545,119 +3019,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} pv sitten</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>vuodenpäivä</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>vuodenpv</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>vuodenpv</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>viikonpäivä</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>viikonpäivä</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>viikonpäivä</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>kuukauden viikonpäivä</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>kuukauden vk päivä</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>kuukauden vk päivä</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">viime sunnuntaina</relative>
 				<relative type="0">tänä sunnuntaina</relative>
 				<relative type="1">ensi sunnuntaina</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} sunnuntain päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sunnuntain päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} sunnuntai sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sunnuntaita sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">viime su</relative>
 				<relative type="0">tänä su</relative>
 				<relative type="1">ensi su</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} su päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} su päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} su sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} su sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">viime su</relative>
 				<relative type="0">tänä su</relative>
 				<relative type="1">ensi su</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} su päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} su päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} su sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} su sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">viime maanantaina</relative>
 				<relative type="0">tänä maanantaina</relative>
 				<relative type="1">ensi maanantaina</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} maanantain päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} maanantain päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} maanantai sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} maanantaita sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">viime ma</relative>
 				<relative type="0">tänä ma</relative>
 				<relative type="1">ensi ma</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ma päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ma päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ma sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ma sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">viime ma</relative>
 				<relative type="0">tänä ma</relative>
 				<relative type="1">ensi ma</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ma päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ma päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ma sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ma sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">viime tiistaina</relative>
 				<relative type="0">tänä tiistaina</relative>
 				<relative type="1">ensi tiistaina</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} tiistain päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} tiistain päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} tiistai sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} tiistaita sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">viime ti</relative>
 				<relative type="0">tänä ti</relative>
 				<relative type="1">ensi ti</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ti päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ti päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ti sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ti sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">viime ti</relative>
 				<relative type="0">tänä ti</relative>
 				<relative type="1">ensi ti</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ti päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ti päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ti sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ti sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">viime keskiviikkona</relative>
 				<relative type="0">tänä keskiviikkona</relative>
 				<relative type="1">ensi keskiviikkona</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} keskiviikon päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} keskiviikon päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} keskiviikko sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} keskiviikkoa sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">viime ke</relative>
 				<relative type="0">tänä ke</relative>
 				<relative type="1">ensi ke</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ke päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ke päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ke sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ke sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">viime ke</relative>
 				<relative type="0">tänä ke</relative>
 				<relative type="1">ensi ke</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ke päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ke päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ke sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ke sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">viime torstaina</relative>
 				<relative type="0">tänä torstaina</relative>
 				<relative type="1">ensi torstaina</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} torstain päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} torstain päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} torstai sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} torstaita sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">viime to</relative>
 				<relative type="0">tänä to</relative>
 				<relative type="1">ensi to</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} to päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} to päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} to sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} to sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">viime to</relative>
 				<relative type="0">tänä to</relative>
 				<relative type="1">ensi to</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} to päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} to päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} to sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} to sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">viime perjantaina</relative>
 				<relative type="0">tänä perjantaina</relative>
 				<relative type="1">ensi perjantaina</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} perjantain päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} perjantain päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} perjantai sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} perjantaita sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">viime pe</relative>
 				<relative type="0">tänä pe</relative>
 				<relative type="1">ensi pe</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} pe päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} pe päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} pe sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} pe sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">viime pe</relative>
 				<relative type="0">tänä pe</relative>
 				<relative type="1">ensi pe</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} pe päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} pe päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} pe sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} pe sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">viime lauantaina</relative>
 				<relative type="0">tänä lauantaina</relative>
 				<relative type="1">ensi lauantaina</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} lauantain päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} lauantain päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} lauantai sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} lauantaita sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">viime la</relative>
 				<relative type="0">tänä la</relative>
 				<relative type="1">ensi la</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} la päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} la päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} la sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} la sitten</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">viime la</relative>
 				<relative type="0">tänä la</relative>
 				<relative type="1">ensi la</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} la päästä</relativeTimePattern>
+					<relativeTimePattern count="other">{0} la päästä</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} la sitten</relativeTimePattern>
+					<relativeTimePattern count="other">{0} la sitten</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>vuorokaudenaika</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>vuorokaudenaika</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>vuorokaudenaika</displayName>
+			</field>
 			<field type="hour">
 				<displayName>tunti</displayName>
+				<relative type="0">tämän tunnin aikana</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} tunnin päästä</relativeTimePattern>
 					<relativeTimePattern count="other">{0} tunnin päästä</relativeTimePattern>
@@ -2669,6 +3342,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-short">
 				<displayName>t</displayName>
+				<relative type="0">tunnin sisällä</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} t päästä</relativeTimePattern>
 					<relativeTimePattern count="other">{0} t päästä</relativeTimePattern>
@@ -2680,6 +3354,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-narrow">
 				<displayName>t</displayName>
+				<relative type="0">tunnin sisällä</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} t päästä</relativeTimePattern>
 					<relativeTimePattern count="other">{0} t päästä</relativeTimePattern>
@@ -2691,6 +3366,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>minuutti</displayName>
+				<relative type="0">tämän minuutin aikana</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} minuutin päästä</relativeTimePattern>
 					<relativeTimePattern count="other">{0} minuutin päästä</relativeTimePattern>
@@ -2702,6 +3378,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-short">
 				<displayName>min</displayName>
+				<relative type="0">minuutin sisällä</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} min päästä</relativeTimePattern>
 					<relativeTimePattern count="other">{0} min päästä</relativeTimePattern>
@@ -2713,6 +3390,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-narrow">
 				<displayName>min</displayName>
+				<relative type="0">minuutin sisällä</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} min päästä</relativeTimePattern>
 					<relativeTimePattern count="other">{0} min päästä</relativeTimePattern>
@@ -2761,6 +3439,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>aikavyöhyke</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>aikavyöhyke</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>aikavyöhyke</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+H.mm;-H.mm</hourFormat>
@@ -2770,6 +3454,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} (kesäaika)</regionFormat>
 			<regionFormat type="standard">{0} (normaaliaika)</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Isabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>UTC-yleisaika</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>tuntematon</exemplarCity>
 			</zone>
@@ -3035,6 +3730,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>Vancouver</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Dawson Creek</exemplarCity>
 			</zone>
@@ -3131,6 +3829,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Pääsiäissaari</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santiago de Chile</exemplarCity>
 			</zone>
@@ -3164,11 +3865,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nikosia</exemplarCity>
 			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
+			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Praha</exemplarCity>
 			</zone>
 			<zone type="Europe/Busingen">
-				<exemplarCity>Busingen</exemplarCity>
+				<exemplarCity>Büsingen</exemplarCity>
 			</zone>
 			<zone type="Europe/Berlin">
 				<exemplarCity>Berliini</exemplarCity>
@@ -3425,6 +4129,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>Uralsk</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atıraw</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtöbe</exemplarCity>
 			</zone>
@@ -3539,9 +4246,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Tijuana">
 				<exemplarCity>Tijuana</exemplarCity>
 			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosillo</exemplarCity>
 			</zone>
@@ -3621,7 +4325,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Auckland</exemplarCity>
 			</zone>
 			<zone type="Asia/Muscat">
-				<exemplarCity>Muscat</exemplarCity>
+				<exemplarCity>Masqat</exemplarCity>
 			</zone>
 			<zone type="America/Panama">
 				<exemplarCity>Panama</exemplarCity>
@@ -3707,6 +4411,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrahan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Uljanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -3718,6 +4434,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
@@ -3885,10 +4607,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Kampala</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
-				<exemplarCity>Midway</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
+				<exemplarCity>Midwaysaaret</exemplarCity>
 			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake</exemplarCity>
@@ -3899,8 +4618,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -4123,9 +4842,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic draft="contributed">Apian aika</generic>
-					<standard draft="contributed">Apian normaaliaika</standard>
-					<daylight draft="contributed">Apian kesäaika</daylight>
+					<generic>Apian aika</generic>
+					<standard>Apian normaaliaika</standard>
+					<daylight>Apian kesäaika</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtau">
@@ -4331,7 +5050,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
-					<standard>Dumont-d’Urvillen aika</standard>
+					<standard>Dumont d’Urvillen aika</standard>
 				</long>
 			</metazone>
 			<metazone type="East_Timor">
@@ -4408,7 +5127,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Gambier">
 				<long>
-					<standard>Gambierin aika</standard>
+					<standard>Gambiersaarten aika</standard>
 				</long>
 			</metazone>
 			<metazone type="Georgia">
@@ -4625,7 +5344,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Marquesas">
 				<long>
-					<standard>Marquesasin aika</standard>
+					<standard>Marquesassaarten aika</standard>
 				</long>
 			</metazone>
 			<metazone type="Marshall_Islands">
@@ -4716,7 +5435,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<standard>Norfolkinsaarten aika</standard>
+					<standard>Norfolkinsaaren aika</standard>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
@@ -4805,6 +5524,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>Pohnpein aika</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pjongjangin aika</standard>
+				</long>
+			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
 					<generic>Qızılordan aika</generic>
@@ -4865,7 +5589,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Suriname">
 				<long>
-					<standard>Surinamin aika</standard>
+					<standard>Surinamen aika</standard>
 				</long>
 			</metazone>
 			<metazone type="Syowa">
@@ -4991,9 +5715,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="contributed">latn</defaultNumberingSystem>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
+			<native>latn</native>
 		</otherNumberingSystems>
 		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
@@ -5181,7 +5905,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Angolan kwanza</displayName>
 				<displayName count="other">Angolan kwanzaa</displayName>
 				<symbol>AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
+				<symbol alt="narrow">AOA</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>Angolan kwanza (1977–1991)</displayName>
@@ -5230,7 +5954,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Argentiinan peso</displayName>
 				<displayName count="other">Argentiinan pesoa</displayName>
 				<symbol>ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">ARS</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>Itävallan šillinki</displayName>
@@ -5243,7 +5967,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Australian dollari</displayName>
 				<displayName count="other">Australian dollaria</displayName>
 				<symbol>AUD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">AUD</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>Aruban floriini</displayName>
@@ -5274,7 +5998,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Bosnia-Hertsegovinan vaihdettava markka</displayName>
 				<displayName count="other">Bosnia-Hertsegovinan vaihdettavaa markkaa</displayName>
 				<symbol>BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
+				<symbol alt="narrow">BAM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName>Bosnia-Hertsegovinan uusi dinaari (1994–1997)</displayName>
@@ -5287,14 +6011,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Barbadosin dollari</displayName>
 				<displayName count="other">Barbadosin dollaria</displayName>
 				<symbol>BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">BBD</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>Bangladeshin taka</displayName>
 				<displayName count="one">Bangladeshin taka</displayName>
 				<displayName count="other">Bangladeshin takaa</displayName>
 				<symbol>BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
+				<symbol alt="narrow">BDT</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>Belgian vaihdettava frangi</displayName>
@@ -5355,21 +6079,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Bermudan dollari</displayName>
 				<displayName count="other">Bermudan dollaria</displayName>
 				<symbol>BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">BMD</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>Brunein dollari</displayName>
 				<displayName count="one">Brunein dollari</displayName>
 				<displayName count="other">Brunein dollaria</displayName>
 				<symbol>BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">BND</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>Bolivian boliviano</displayName>
 				<displayName count="one">Bolivian boliviano</displayName>
 				<displayName count="other">Bolivian bolivianoa</displayName>
 				<symbol>BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol alt="narrow">BOB</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName>Bolivian boliviano (1863–1963)</displayName>
@@ -5412,7 +6136,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Brasilian real</displayName>
 				<displayName count="other">Brasilian realia</displayName>
 				<symbol>BRL</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
+				<symbol alt="narrow">BRL</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>Brasilian uusi cruzado (1989–1990)</displayName>
@@ -5437,7 +6161,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Bahaman dollari</displayName>
 				<displayName count="other">Bahaman dollaria</displayName>
 				<symbol>BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">BSD</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>Bhutanin ngultrum</displayName>
@@ -5456,7 +6180,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Botswanan pula</displayName>
 				<displayName count="other">Botswanan pulaa</displayName>
 				<symbol>BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
+				<symbol alt="narrow">BWP</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>Valko-Venäjän uusi rupla (1994–1999)</displayName>
@@ -5464,26 +6188,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Valko-Venäjän uutta ruplaa (1994–1999)</displayName>
 				<symbol>BYB</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Valko-Venäjän rupla</displayName>
 				<displayName count="one">Valko-Venäjän rupla</displayName>
 				<displayName count="other">Valko-Venäjän ruplaa</displayName>
+				<symbol>BYN</symbol>
+				<symbol alt="narrow">BYN</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Valko-Venäjän rupla (2000–2016)</displayName>
+				<displayName count="one">Valko-Venäjän rupla (2000–2016)</displayName>
+				<displayName count="other">Valko-Venäjän ruplaa (2000–2016)</displayName>
 				<symbol>BYR</symbol>
-				<symbol alt="narrow" draft="contributed">р.</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belizen dollari</displayName>
 				<displayName count="one">Belizen dollari</displayName>
 				<displayName count="other">Belizen dollaria</displayName>
 				<symbol>BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">BZD</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>Kanadan dollari</displayName>
 				<displayName count="one">Kanadan dollari</displayName>
 				<displayName count="other">Kanadan dollaria</displayName>
 				<symbol>CAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">CAD</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>Kongon frangi</displayName>
@@ -5526,7 +6256,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Chilen peso</displayName>
 				<displayName count="other">Chilen pesoa</displayName>
 				<symbol>CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">CLP</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>Kiinan juan (offshore)</displayName>
+				<displayName count="one">Kiinan juan (offshore)</displayName>
+				<displayName count="other">Kiinan juania (offshore)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName>Kiinan kansanpankin dollari</displayName>
@@ -5535,18 +6271,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>CNX</symbol>
 			</currency>
 			<currency type="CNY">
-				<displayName>Kiinan yuan</displayName>
-				<displayName count="one">Kiinan yuan</displayName>
-				<displayName count="other">Kiinan yuania</displayName>
+				<displayName>Kiinan juan</displayName>
+				<displayName count="one">Kiinan juan</displayName>
+				<displayName count="other">Kiinan juania</displayName>
 				<symbol>CNY</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol alt="narrow">CNY</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>Kolumbian peso</displayName>
 				<displayName count="one">Kolumbian peso</displayName>
 				<displayName count="other">Kolumbian pesoa</displayName>
 				<symbol>COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">COP</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>Kolumbian unidad de valor real</displayName>
@@ -5555,11 +6291,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>COU</symbol>
 			</currency>
 			<currency type="CRC">
-				<displayName>Costa Rican colon</displayName>
-				<displayName count="one">Costa Rican colon</displayName>
-				<displayName count="other">Costa Rican colonia</displayName>
+				<displayName>Costa Rican colón</displayName>
+				<displayName count="one">Costa Rican colón</displayName>
+				<displayName count="other">Costa Rican colónia</displayName>
 				<symbol>CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
+				<symbol alt="narrow">CRC</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>Serbian dinaari (2002–2006)</displayName>
@@ -5578,14 +6314,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Kuuban vaihdettava peso</displayName>
 				<displayName count="other">Kuuban vaihdettavaa pesoa</displayName>
 				<symbol>CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">CUC</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>Kuuban peso</displayName>
 				<displayName count="one">Kuuban peso</displayName>
 				<displayName count="other">Kuuban pesoa</displayName>
 				<symbol>CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">CUP</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Kap Verden escudo</displayName>
@@ -5604,7 +6340,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Tšekin koruna</displayName>
 				<displayName count="other">Tšekin korunaa</displayName>
 				<symbol>CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
+				<symbol alt="narrow">CZK</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>Itä-Saksan markka</displayName>
@@ -5629,14 +6365,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Tanskan kruunu</displayName>
 				<displayName count="other">Tanskan kruunua</displayName>
 				<symbol>DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol alt="narrow">DKK</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>Dominikaanisen tasavallan peso</displayName>
 				<displayName count="one">Dominikaanisen tasavallan peso</displayName>
 				<displayName count="other">Dominikaanisen tasavallan pesoa</displayName>
 				<symbol>DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">DOP</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>Algerian dinaari</displayName>
@@ -5667,7 +6403,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Egyptin punta</displayName>
 				<displayName count="other">Egyptin puntaa</displayName>
 				<symbol>EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
+				<symbol alt="narrow">EGP</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>Eritrean nakfa</displayName>
@@ -5676,9 +6412,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ESA">
-				<displayName>Espanjan peseta (A–tili)</displayName>
-				<displayName count="one">Espanjan peseta (A–tili)</displayName>
-				<displayName count="other">Espanjan pesetaa (A–tili)</displayName>
+				<displayName>Espanjan peseta (A-tili)</displayName>
+				<displayName count="one">Espanjan peseta (A-tili)</displayName>
+				<displayName count="other">Espanjan pesetaa (A-tili)</displayName>
 				<symbol>ESA</symbol>
 			</currency>
 			<currency type="ESB">
@@ -5692,6 +6428,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Espanjan peseta</displayName>
 				<displayName count="other">Espanjan pesetaa</displayName>
 				<symbol>ESP</symbol>
+				<symbol alt="narrow">ESP</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>Etiopian birr</displayName>
@@ -5717,14 +6454,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Fidžin dollari</displayName>
 				<displayName count="other">Fidžin dollaria</displayName>
 				<symbol>FJD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">FJD</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>Falklandinsaarten punta</displayName>
 				<displayName count="one">Falklandinsaarten punta</displayName>
 				<displayName count="other">Falklandinsaarten puntaa</displayName>
 				<symbol>FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">FKP</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>Ranskan frangi</displayName>
@@ -5750,7 +6487,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Georgian lari</displayName>
 				<displayName count="other">Georgian laria</displayName>
 				<symbol>GEL</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
+				<symbol alt="narrow">GEL</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ghanan cedi (1979–2007)</displayName>
@@ -5769,7 +6506,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Gibraltarin punta</displayName>
 				<displayName count="other">Gibraltarin puntaa</displayName>
 				<symbol>GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">GIP</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>Gambian dalasi</displayName>
@@ -5782,7 +6519,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Guinean frangi</displayName>
 				<displayName count="other">Guinean frangia</displayName>
 				<symbol>GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol alt="narrow">GNF</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>Guinean syli</displayName>
@@ -5807,7 +6544,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Guatemalan quetzal</displayName>
 				<displayName count="other">Guatemalan quetzalia</displayName>
 				<symbol>GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
+				<symbol alt="narrow">GTQ</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>Portugalin Guinean escudo</displayName>
@@ -5826,21 +6563,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Guyanan dollari</displayName>
 				<displayName count="other">Guyanan dollaria</displayName>
 				<symbol>GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">GYD</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>Hongkongin dollari</displayName>
 				<displayName count="one">Hongkongin dollari</displayName>
 				<displayName count="other">Hongkongin dollaria</displayName>
 				<symbol>HKD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">HKD</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>Hondurasin lempira</displayName>
 				<displayName count="one">Hondurasin lempira</displayName>
 				<displayName count="other">Hondurasin lempiraa</displayName>
 				<symbol>HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
+				<symbol alt="narrow">HNL</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>Kroatian dinaari</displayName>
@@ -5853,7 +6590,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Kroatian kuna</displayName>
 				<displayName count="other">Kroatian kunaa</displayName>
 				<symbol>HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
+				<symbol alt="narrow">HRK</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>Haitin gourde</displayName>
@@ -5866,14 +6603,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Unkarin forintti</displayName>
 				<displayName count="other">Unkarin forinttia</displayName>
 				<symbol>HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
+				<symbol alt="narrow">HUF</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>Indonesian rupia</displayName>
 				<displayName count="one">Indonesian rupia</displayName>
 				<displayName count="other">Indonesian rupiaa</displayName>
 				<symbol>IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
+				<symbol alt="narrow">IDR</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>Irlannin punta</displayName>
@@ -5898,14 +6635,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Israelin uusi sekeli</displayName>
 				<displayName count="other">Israelin uutta sekeliä</displayName>
 				<symbol>ILS</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
+				<symbol alt="narrow">ILS</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Intian rupia</displayName>
 				<displayName count="one">Intian rupia</displayName>
 				<displayName count="other">Intian rupiaa</displayName>
 				<symbol>INR</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
+				<symbol alt="narrow">INR</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>Irakin dinaari</displayName>
@@ -5930,7 +6667,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Islannin kruunu</displayName>
 				<displayName count="other">Islannin kruunua</displayName>
 				<symbol>ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol alt="narrow">ISK</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>Italian liira</displayName>
@@ -5943,7 +6680,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Jamaikan dollari</displayName>
 				<displayName count="other">Jamaikan dollaria</displayName>
 				<symbol>JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">JMD</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>Jordanian dinaari</displayName>
@@ -5975,21 +6712,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Kambodžan riel</displayName>
 				<displayName count="other">Kambodžan rieliä</displayName>
 				<symbol>KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
+				<symbol alt="narrow">KHR</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>Komorien frangi</displayName>
 				<displayName count="one">Komorien frangi</displayName>
 				<displayName count="other">Komorien frangia</displayName>
 				<symbol>KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
+				<symbol alt="narrow">KMF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>Pohjois-Korean won</displayName>
 				<displayName count="one">Pohjois-Korean won</displayName>
 				<displayName count="other">Pohjois-Korean wonia</displayName>
 				<symbol>KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol alt="narrow">KPW</symbol>
 			</currency>
 			<currency type="KRH">
 				<displayName>Etelä-Korean hwan (1953–1962)</displayName>
@@ -6008,7 +6745,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Etelä-Korean won</displayName>
 				<displayName count="other">Etelä-Korean wonia</displayName>
 				<symbol>KRW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
+				<symbol alt="narrow">KRW</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>Kuwaitin dinaari</displayName>
@@ -6021,42 +6758,42 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Caymansaarten dollari</displayName>
 				<displayName count="other">Caymansaarten dollaria</displayName>
 				<symbol>KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">KYD</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>Kazakstanin tenge</displayName>
 				<displayName count="one">Kazakstanin tenge</displayName>
 				<displayName count="other">Kazakstanin tengeä</displayName>
 				<symbol>KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
+				<symbol alt="narrow">KZT</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>Laosin kip</displayName>
 				<displayName count="one">Laosin kip</displayName>
 				<displayName count="other">Laosin kipiä</displayName>
 				<symbol>LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
+				<symbol alt="narrow">LAK</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>Libanonin punta</displayName>
 				<displayName count="one">Libanonin punta</displayName>
 				<displayName count="other">Libanonin puntaa</displayName>
 				<symbol>LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
+				<symbol alt="narrow">LBP</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>Sri Lankan rupia</displayName>
 				<displayName count="one">Sri Lankan rupia</displayName>
 				<displayName count="other">Sri Lankan rupiaa</displayName>
 				<symbol>LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol alt="narrow">LKR</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>Liberian dollari</displayName>
 				<displayName count="one">Liberian dollari</displayName>
 				<displayName count="other">Liberian dollaria</displayName>
 				<symbol>LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">LRD</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>Lesothon loti</displayName>
@@ -6069,6 +6806,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Liettuan liti</displayName>
 				<displayName count="other">Liettuan litiä</displayName>
 				<symbol>LTL</symbol>
+				<symbol alt="narrow">LTL</symbol>
 			</currency>
 			<currency type="LTT">
 				<displayName>Liettuan talonas</displayName>
@@ -6099,6 +6837,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Latvian lati</displayName>
 				<displayName count="other">Latvian latia</displayName>
 				<symbol>LVL</symbol>
+				<symbol alt="narrow">LVL</symbol>
 			</currency>
 			<currency type="LVR">
 				<displayName>Latvian rupla</displayName>
@@ -6147,7 +6886,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Madagaskarin ariary</displayName>
 				<displayName count="other">Madagaskarin ariarya</displayName>
 				<symbol>MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
+				<symbol alt="narrow">MGA</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>Madagaskarin frangi</displayName>
@@ -6178,14 +6917,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Myanmarin kyat</displayName>
 				<displayName count="other">Myanmarin kyatia</displayName>
 				<symbol>MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
+				<symbol alt="narrow">MMK</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>Mongolian tugrik</displayName>
 				<displayName count="one">Mongolian tugrik</displayName>
 				<displayName count="other">Mongolian tugrikia</displayName>
 				<symbol>MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
+				<symbol alt="narrow">MNT</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>Macaon pataca</displayName>
@@ -6194,10 +6933,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Mauritanian ouguiya (1973–2017)</displayName>
+				<displayName count="one">Mauritanian ouguiya (1973–2017)</displayName>
+				<displayName count="other">Mauritanian ouguiyaa (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Mauritanian ouguiya</displayName>
 				<displayName count="one">Mauritanian ouguiya</displayName>
 				<displayName count="other">Mauritanian ouguiyaa</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Maltan liira</displayName>
@@ -6216,7 +6960,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Mauritiuksen rupia</displayName>
 				<displayName count="other">Mauritiuksen rupiaa</displayName>
 				<symbol>MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol alt="narrow">MUR</symbol>
 			</currency>
 			<currency type="MVP">
 				<displayName>Malediivien rupia (1947–1981)</displayName>
@@ -6241,7 +6985,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Meksikon peso</displayName>
 				<displayName count="other">Meksikon pesoa</displayName>
 				<symbol>MXN</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">MXN</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>Meksikon hopeapeso (1861–1992)</displayName>
@@ -6260,7 +7004,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Malesian ringgit</displayName>
 				<displayName count="other">Malesian ringgitiä</displayName>
 				<symbol>MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
+				<symbol alt="narrow">MYR</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>Mosambikin escudo</displayName>
@@ -6285,27 +7029,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Namibian dollari</displayName>
 				<displayName count="other">Namibian dollaria</displayName>
 				<symbol>NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">NAD</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>Nigerian naira</displayName>
 				<displayName count="one">Nigerian naira</displayName>
 				<displayName count="other">Nigerian nairaa</displayName>
 				<symbol>NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol alt="narrow">NGN</symbol>
 			</currency>
 			<currency type="NIC">
-				<displayName>Nicaraguan cordoba (1988–1991)</displayName>
-				<displayName count="one">Nicaraguan cordoba (1988–1991)</displayName>
-				<displayName count="other">Nicaraguan cordobaa (1988–1991)</displayName>
+				<displayName>Nicaraguan córdoba (1988–1991)</displayName>
+				<displayName count="one">Nicaraguan córdoba (1988–1991)</displayName>
+				<displayName count="other">Nicaraguan córdobaa (1988–1991)</displayName>
 				<symbol>NIC</symbol>
 			</currency>
 			<currency type="NIO">
-				<displayName>Nicaraguan cordoba</displayName>
-				<displayName count="one">Nicaraguan cordoba</displayName>
-				<displayName count="other">Nicaraguan cordobaa</displayName>
+				<displayName>Nicaraguan córdoba</displayName>
+				<displayName count="one">Nicaraguan córdoba</displayName>
+				<displayName count="other">Nicaraguan córdobaa</displayName>
 				<symbol>NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
+				<symbol alt="narrow">NIO</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>Alankomaiden guldeni</displayName>
@@ -6318,21 +7062,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Norjan kruunu</displayName>
 				<displayName count="other">Norjan kruunua</displayName>
 				<symbol>NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol alt="narrow">NOK</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>Nepalin rupia</displayName>
 				<displayName count="one">Nepalin rupia</displayName>
 				<displayName count="other">Nepalin rupiaa</displayName>
 				<symbol>NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol alt="narrow">NPR</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>Uuden-Seelannin dollari</displayName>
 				<displayName count="one">Uuden-Seelannin dollari</displayName>
 				<displayName count="other">Uuden-Seelannin dollaria</displayName>
 				<symbol>NZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">NZD</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>Omanin rial</displayName>
@@ -6353,9 +7097,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>PEI</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>Perun uusi sol</displayName>
-				<displayName count="one">Perun uusi sol</displayName>
-				<displayName count="other">Perun uutta solia</displayName>
+				<displayName>Perun sol</displayName>
+				<displayName count="one">Perun sol</displayName>
+				<displayName count="other">Perun solia</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
@@ -6375,26 +7119,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Filippiinien peso</displayName>
 				<displayName count="other">Filippiinien pesoa</displayName>
 				<symbol>PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
+				<symbol alt="narrow">PHP</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>Pakistanin rupia</displayName>
 				<displayName count="one">Pakistanin rupia</displayName>
 				<displayName count="other">Pakistanin rupiaa</displayName>
 				<symbol>PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
+				<symbol alt="narrow">PKR</symbol>
 			</currency>
 			<currency type="PLN">
-				<displayName>Puolan zloty</displayName>
-				<displayName count="one">Puolan zloty</displayName>
-				<displayName count="other">Puolan zlotya</displayName>
+				<displayName>Puolan złoty</displayName>
+				<displayName count="one">Puolan złoty</displayName>
+				<displayName count="other">Puolan złotya</displayName>
 				<symbol>PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
+				<symbol alt="narrow">PLN</symbol>
 			</currency>
 			<currency type="PLZ">
-				<displayName>Puolan zloty (1950–1995)</displayName>
-				<displayName count="one">Puolan zloty (1950–1995)</displayName>
-				<displayName count="other">Puolan zlotya (1950–1995)</displayName>
+				<displayName>Puolan złoty (1950–1995)</displayName>
+				<displayName count="one">Puolan złoty (1950–1995)</displayName>
+				<displayName count="other">Puolan złotya (1950–1995)</displayName>
 				<symbol>PLZ</symbol>
 			</currency>
 			<currency type="PTE">
@@ -6408,7 +7152,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Paraguayn guarani</displayName>
 				<displayName count="other">Paraguayn guarania</displayName>
 				<symbol>PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
+				<symbol alt="narrow">PYG</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>Qatarin rial</displayName>
@@ -6433,6 +7177,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Romanian leu</displayName>
 				<displayName count="other">Romanian leuta</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow">RON</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Serbian dinaari</displayName>
@@ -6445,20 +7190,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Venäjän rupla</displayName>
 				<displayName count="other">Venäjän ruplaa</displayName>
 				<symbol>RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
+				<symbol alt="narrow">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>Venäjän rupla (1991–1998)</displayName>
 				<displayName count="one">Venäjän rupla (1991–1998)</displayName>
 				<displayName count="other">Venäjän ruplaa (1991–1998)</displayName>
 				<symbol>RUR</symbol>
+				<symbol alt="narrow">RUR</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>Ruandan frangi</displayName>
 				<displayName count="one">Ruandan frangi</displayName>
 				<displayName count="other">Ruandan frangia</displayName>
 				<symbol>RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
+				<symbol alt="narrow">RWF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>Saudi-Arabian rial</displayName>
@@ -6471,7 +7217,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Salomonsaarten dollari</displayName>
 				<displayName count="other">Salomonsaarten dollaria</displayName>
 				<symbol>SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">SBD</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>Seychellien rupia</displayName>
@@ -6502,21 +7248,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Ruotsin kruunu</displayName>
 				<displayName count="other">Ruotsin kruunua</displayName>
 				<symbol>SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
+				<symbol alt="narrow">SEK</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>Singaporen dollari</displayName>
 				<displayName count="one">Singaporen dollari</displayName>
 				<displayName count="other">Singaporen dollaria</displayName>
 				<symbol>SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">SGD</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>Saint Helenan punta</displayName>
 				<displayName count="one">Saint Helenan punta</displayName>
 				<displayName count="other">Saint Helenan puntaa</displayName>
 				<symbol>SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">SHP</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>Slovenian tolar</displayName>
@@ -6543,16 +7289,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
-				<displayName>Surinamin dollari</displayName>
-				<displayName count="one">Surinamin dollari</displayName>
-				<displayName count="other">Surinamin dollaria</displayName>
+				<displayName>Surinamen dollari</displayName>
+				<displayName count="one">Surinamen dollari</displayName>
+				<displayName count="other">Surinamen dollaria</displayName>
 				<symbol>SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">SRD</symbol>
 			</currency>
 			<currency type="SRG">
-				<displayName>Surinamin guldeni</displayName>
-				<displayName count="one">Surinamin guldeni</displayName>
-				<displayName count="other">Surinamin guldenia</displayName>
+				<displayName>Surinamen guldeni</displayName>
+				<displayName count="one">Surinamen guldeni</displayName>
+				<displayName count="other">Surinamen guldeni</displayName>
 				<symbol>SRG</symbol>
 			</currency>
 			<currency type="SSP">
@@ -6560,14 +7306,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Etelä-Sudanin punta</displayName>
 				<displayName count="other">Etelä-Sudanin puntaa</displayName>
 				<symbol>SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">SSP</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>São Tomén ja Príncipen dobra (1977–2017)</displayName>
+				<displayName count="one">São Tomén ja Príncipen dobra (1977–2017)</displayName>
+				<displayName count="other">São Tomén ja Príncipen dobraa (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>São Tomén ja Príncipen dobra</displayName>
 				<displayName count="one">São Tomén ja Príncipen dobra</displayName>
 				<displayName count="other">São Tomén ja Príncipen dobraa</displayName>
-				<symbol>STD</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
+				<symbol draft="contributed">STN</symbol>
+				<symbol alt="narrow">STD</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>Neuvostoliiton rupla</displayName>
@@ -6576,9 +7328,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>SUR</symbol>
 			</currency>
 			<currency type="SVC">
-				<displayName>El Salvadorin colon</displayName>
-				<displayName count="one">El Salvadorin colon</displayName>
-				<displayName count="other">El Salvadorin colonia</displayName>
+				<displayName>El Salvadorin colón</displayName>
+				<displayName count="one">El Salvadorin colón</displayName>
+				<displayName count="other">El Salvadorin colónia</displayName>
 				<symbol>SVC</symbol>
 			</currency>
 			<currency type="SYP">
@@ -6586,7 +7338,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Syyrian punta</displayName>
 				<displayName count="other">Syyrian puntaa</displayName>
 				<symbol>SYP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">SYP</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>Swazimaan lilangeni</displayName>
@@ -6599,7 +7351,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Thaimaan baht</displayName>
 				<displayName count="other">Thaimaan bahtia</displayName>
 				<symbol>THB</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
+				<symbol alt="narrow">THB</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>Tadžikistanin rupla</displayName>
@@ -6636,7 +7388,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Tongan pa’anga</displayName>
 				<displayName count="other">Tongan pa’angaa</displayName>
 				<symbol>TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
+				<symbol alt="narrow">TOP</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>Timorin escudo</displayName>
@@ -6655,7 +7407,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Turkin liira</displayName>
 				<displayName count="other">Turkin liiraa</displayName>
 				<symbol>TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
+				<symbol alt="narrow">TRY</symbol>
 				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
@@ -6663,14 +7415,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Trinidadin ja Tobagon dollari</displayName>
 				<displayName count="other">Trinidadin ja Tobagon dollaria</displayName>
 				<symbol>TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">TTD</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>Taiwanin uusi dollari</displayName>
 				<displayName count="one">Taiwanin uusi dollari</displayName>
 				<displayName count="other">Taiwanin uutta dollaria</displayName>
 				<symbol>TWD</symbol>
-				<symbol alt="narrow" draft="contributed">NT$</symbol>
+				<symbol alt="narrow">TWD</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>Tansanian šillinki</displayName>
@@ -6683,7 +7435,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Ukrainan hryvnia</displayName>
 				<displayName count="other">Ukrainan hryvniaa</displayName>
 				<symbol>UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
+				<symbol alt="narrow">UAH</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>Ukrainan karbovanetz</displayName>
@@ -6739,7 +7491,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Uruguayn peso</displayName>
 				<displayName count="other">Uruguayn pesoa</displayName>
 				<symbol>UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$U</symbol>
+				<symbol alt="narrow">UYU</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>Uzbekistanin som</displayName>
@@ -6758,14 +7510,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Venezuelan bolivar</displayName>
 				<displayName count="other">Venezuelan bolivaria</displayName>
 				<symbol>VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
+				<symbol alt="narrow">VEF</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Vietnamin dong</displayName>
 				<displayName count="one">Vietnamin dong</displayName>
 				<displayName count="other">Vietnamin dongia</displayName>
 				<symbol>VND</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
+				<symbol alt="narrow">VND</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName>Vietnamin dong (1978–1985)</displayName>
@@ -6832,7 +7584,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Itä-Karibian dollari</displayName>
 				<displayName count="other">Itä-Karibian dollaria</displayName>
 				<symbol>XCD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">XCD</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>erityisnosto-oikeus (SDR)</displayName>
@@ -6901,9 +7653,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>XTS</symbol>
 			</currency>
 			<currency type="XUA">
-				<displayName>afrikkalainen ADB-laskentayksikkö</displayName>
-				<displayName count="one">ADB-laskentayksikkö</displayName>
-				<displayName count="other">ADB-laskentayksikköä</displayName>
+				<displayName>afrikkalainen AfDB-laskentayksikkö</displayName>
+				<displayName count="one">AfDB-laskentayksikkö</displayName>
+				<displayName count="other">AfDB-laskentayksikköä</displayName>
 				<symbol>XUA</symbol>
 			</currency>
 			<currency type="XXX">
@@ -6959,7 +7711,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Etelä-Afrikan randi</displayName>
 				<displayName count="other">Etelä-Afrikan randia</displayName>
 				<symbol>ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
+				<symbol alt="narrow">ZAR</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Sambian kwacha (1968–2012)</displayName>
@@ -6972,7 +7724,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Sambian kwacha</displayName>
 				<displayName count="other">Sambian kwachaa</displayName>
 				<symbol>ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
+				<symbol alt="narrow">ZMW</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>Zairen uusi zaire (1993–1998)</displayName>
@@ -7007,8 +7759,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">vähintään {0}</pattern>
-			<pattern type="range">{0}‒{1}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} päivä</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} päivää</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Käänny {0}. risteyksestä oikealle.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -7054,6 +7811,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>neliökilometrit</displayName>
 				<unitPattern count="one">{0} neliökilometri</unitPattern>
 				<unitPattern count="other">{0} neliökilometriä</unitPattern>
+				<perUnitPattern>{0} / neliökilometri</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hehtaarit</displayName>
@@ -7076,6 +7834,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>neliömailit</displayName>
 				<unitPattern count="one">{0} neliömaili</unitPattern>
 				<unitPattern count="other">{0} neliömailia</unitPattern>
+				<perUnitPattern>{0} / neliömaili</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>eekkerit</displayName>
@@ -7103,20 +7862,40 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} karaatti</unitPattern>
 				<unitPattern count="other">{0} karaattia</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dl</displayName>
+				<unitPattern count="one">{0} mg/dl</unitPattern>
+				<unitPattern count="other">{0} mg/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/l</displayName>
+				<unitPattern count="one">{0} mmol/l</unitPattern>
+				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName>litrat per kilometri</displayName>
-				<unitPattern count="one">{0} litra per kilometri</unitPattern>
-				<unitPattern count="other">{0} litraa per kilometri</unitPattern>
+				<displayName>litrat / kilometri</displayName>
+				<unitPattern count="one">{0} litra / kilometri</unitPattern>
+				<unitPattern count="other">{0} litraa / kilometri</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName>litrat per 100 kilometriä</displayName>
-				<unitPattern count="one">{0} litra per 100 km</unitPattern>
-				<unitPattern count="other">{0} litraa per 100 km</unitPattern>
+				<displayName>litrat / 100 kilometriä</displayName>
+				<unitPattern count="one">{0} litra / 100 km</unitPattern>
+				<unitPattern count="other">{0} litraa / 100 km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>mailit per gallona</displayName>
-				<unitPattern count="one">{0} maili per gallona</unitPattern>
-				<unitPattern count="other">{0} mailia per gallona</unitPattern>
+				<displayName>mailit / am. gallona</displayName>
+				<unitPattern count="one">{0} maili / am. gallona</unitPattern>
+				<unitPattern count="other">{0} mailia / am. gallona</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mailit / br. gallona</displayName>
+				<unitPattern count="one">{0} maili / br. gallona</unitPattern>
+				<unitPattern count="other">{0} mailia / br. gallona</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>teratavut</displayName>
@@ -7177,43 +7956,43 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>vuodet</displayName>
 				<unitPattern count="one">{0} vuosi</unitPattern>
 				<unitPattern count="other">{0} vuotta</unitPattern>
-				<perUnitPattern>{0} vuodessa</perUnitPattern>
+				<perUnitPattern>{0} / vuosi</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>kuukaudet</displayName>
 				<unitPattern count="one">{0} kuukausi</unitPattern>
 				<unitPattern count="other">{0} kuukautta</unitPattern>
-				<perUnitPattern>{0} kuukaudessa</perUnitPattern>
+				<perUnitPattern>{0} / kuukausi</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>viikot</displayName>
 				<unitPattern count="one">{0} viikko</unitPattern>
 				<unitPattern count="other">{0} viikkoa</unitPattern>
-				<perUnitPattern>{0} viikossa</perUnitPattern>
+				<perUnitPattern>{0} / viikko</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>päivät</displayName>
 				<unitPattern count="one">{0} päivä</unitPattern>
 				<unitPattern count="other">{0} päivää</unitPattern>
-				<perUnitPattern>{0} päivässä</perUnitPattern>
+				<perUnitPattern>{0} / päivä</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>tunnit</displayName>
 				<unitPattern count="one">{0} tunti</unitPattern>
 				<unitPattern count="other">{0} tuntia</unitPattern>
-				<perUnitPattern>{0} tunnissa</perUnitPattern>
+				<perUnitPattern>{0} / tunti</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>minuutit</displayName>
 				<unitPattern count="one">{0} minuutti</unitPattern>
 				<unitPattern count="other">{0} minuuttia</unitPattern>
-				<perUnitPattern>{0} minuutissa</perUnitPattern>
+				<perUnitPattern>{0} / minuutti</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sekunnit</displayName>
 				<unitPattern count="one">{0} sekunti</unitPattern>
 				<unitPattern count="other">{0} sekuntia</unitPattern>
-				<perUnitPattern>{0} sekunnissa</perUnitPattern>
+				<perUnitPattern>{0} / sekunti</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>millisekunnit</displayName>
@@ -7387,7 +8166,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="length-fathom">
 				<displayName>sylet</displayName>
-				<unitPattern count="one">syli</unitPattern>
+				<unitPattern count="one">{0} syli</unitPattern>
 				<unitPattern count="other">{0} syltä</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
@@ -7399,6 +8178,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>peninkulmat</displayName>
 				<unitPattern count="one">{0} peninkulma</unitPattern>
 				<unitPattern count="other">{0} peninkulmaa</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>luksit</displayName>
@@ -7414,13 +8198,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kilogrammat</displayName>
 				<unitPattern count="one">{0} kilogramma</unitPattern>
 				<unitPattern count="other">{0} kilogrammaa</unitPattern>
-				<perUnitPattern>{0}/kg</perUnitPattern>
+				<perUnitPattern>{0} / kilogramma</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>grammat</displayName>
 				<unitPattern count="one">{0} gramma</unitPattern>
 				<unitPattern count="other">{0} grammaa</unitPattern>
-				<perUnitPattern>{0}/g</perUnitPattern>
+				<perUnitPattern>{0} / gramma</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>milligrammat</displayName>
@@ -7433,9 +8217,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} mikrogrammaa</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>US-tonnit</displayName>
-				<unitPattern count="one">{0} US-tonni</unitPattern>
-				<unitPattern count="other">{0} US-tonnia</unitPattern>
+				<displayName>am. tonnit</displayName>
+				<unitPattern count="one">{0} am. tonni</unitPattern>
+				<unitPattern count="other">{0} am. tonnia</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>stonet</displayName>
@@ -7505,9 +8289,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} millimetriä elohopeaa</unitPattern>
 			</unit>
 			<unit type="pressure-pound-per-square-inch">
-				<displayName>paunat neliötuumaa kohti</displayName>
-				<unitPattern count="one">{0} pauna neliötuumaa kohti</unitPattern>
-				<unitPattern count="other">{0} paunaa neliötuumaa kohti</unitPattern>
+				<displayName>paunat / neliötuuma</displayName>
+				<unitPattern count="one">{0} pauna / neliötuuma</unitPattern>
+				<unitPattern count="other">{0} paunaa / neliötuuma</unitPattern>
 			</unit>
 			<unit type="pressure-inch-hg">
 				<displayName>elohopeatuumat</displayName>
@@ -7610,7 +8394,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>litrat</displayName>
 				<unitPattern count="one">{0} litra</unitPattern>
 				<unitPattern count="other">{0} litraa</unitPattern>
-				<perUnitPattern>{0} litrassa</perUnitPattern>
+				<perUnitPattern>{0} / litra</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>desilitrat</displayName>
@@ -7648,10 +8432,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} bushelia</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
-				<displayName>gallonat</displayName>
-				<unitPattern count="one">{0} gallona</unitPattern>
-				<unitPattern count="other">{0} gallonaa</unitPattern>
-				<perUnitPattern>{0} / gallona</perUnitPattern>
+				<displayName>am. gallonat</displayName>
+				<unitPattern count="one">{0} am. gallona</unitPattern>
+				<unitPattern count="other">{0} am. gallonaa</unitPattern>
+				<perUnitPattern>{0} / am. gallona</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>br. gallonat</displayName>
+				<unitPattern count="one">{0} br. gallona</unitPattern>
+				<unitPattern count="other">{0} br. gallonaa</unitPattern>
+				<perUnitPattern>{0} / br. gallona</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>neljännesgallonat</displayName>
@@ -7733,6 +8523,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
@@ -7755,6 +8546,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mi²</displayName>
 				<unitPattern count="one">{0} mi²</unitPattern>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ac</displayName>
@@ -7782,6 +8574,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} ka</unitPattern>
 				<unitPattern count="other">{0} ka</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dl</displayName>
+				<unitPattern count="one">{0} mg/dl</unitPattern>
+				<unitPattern count="other">{0} mg/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/l</displayName>
+				<unitPattern count="one">{0} mmol/l</unitPattern>
+				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="one">{0} l/km</unitPattern>
@@ -7793,9 +8600,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>mpg</displayName>
-				<unitPattern count="one">{0} mpg</unitPattern>
-				<unitPattern count="other">{0} mpg</unitPattern>
+				<displayName>mpg-am</displayName>
+				<unitPattern count="one">{0} mpg-am</unitPattern>
+				<unitPattern count="other">{0} mpg-am</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg-br</displayName>
+				<unitPattern count="one">{0} mpg-br</unitPattern>
+				<unitPattern count="other">{0} mpg-br</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>Tt</displayName>
@@ -8079,6 +8891,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} pnk</unitPattern>
 				<unitPattern count="other">{0} pnk</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
@@ -8112,9 +8929,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} µg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>US-tn</displayName>
-				<unitPattern count="one">{0} US-tn</unitPattern>
-				<unitPattern count="other">{0} US-tn</unitPattern>
+				<displayName>am. tn</displayName>
+				<unitPattern count="one">{0} am. tn</unitPattern>
+				<unitPattern count="other">{0} am. tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>st</displayName>
@@ -8327,10 +9144,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
-				<displayName>gal</displayName>
-				<unitPattern count="one">{0} gal</unitPattern>
-				<unitPattern count="other">{0} gal</unitPattern>
-				<perUnitPattern>{0}/gal</perUnitPattern>
+				<displayName>am. gal</displayName>
+				<unitPattern count="one">{0} am. gal</unitPattern>
+				<unitPattern count="other">{0} am. gal</unitPattern>
+				<perUnitPattern>{0}/am. gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>br. gal</displayName>
+				<unitPattern count="one">{0} br. gal</unitPattern>
+				<unitPattern count="other">{0} br. gal</unitPattern>
+				<perUnitPattern>{0}/br. gal</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
@@ -8412,6 +9235,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0}km²</unitPattern>
 				<unitPattern count="other">{0}km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
@@ -8434,6 +9258,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mi²</displayName>
 				<unitPattern count="one">{0}mi²</unitPattern>
 				<unitPattern count="other">{0}mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ac</displayName>
@@ -8461,6 +9286,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0}ka</unitPattern>
 				<unitPattern count="other">{0}ka</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dl</displayName>
+				<unitPattern count="one">{0}mg/dl</unitPattern>
+				<unitPattern count="other">{0}mg/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/l</displayName>
+				<unitPattern count="one">{0}mmol/l</unitPattern>
+				<unitPattern count="other">{0}mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0}ppm</unitPattern>
+				<unitPattern count="other">{0}ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="one">{0}l/km</unitPattern>
@@ -8472,9 +9312,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}l/100km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>mpg</displayName>
-				<unitPattern count="one">{0}mpg</unitPattern>
-				<unitPattern count="other">{0}mpg</unitPattern>
+				<displayName>mpg-am</displayName>
+				<unitPattern count="one">{0}mpg-am</unitPattern>
+				<unitPattern count="other">{0}mpg-am</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg-br</displayName>
+				<unitPattern count="one">{0}mpg-br</unitPattern>
+				<unitPattern count="other">{0}mpg-br</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>Tt</displayName>
@@ -8755,8 +9600,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName>pnk</displayName>
-				<unitPattern count="one">{0} pnk</unitPattern>
-				<unitPattern count="other">{0} pnk</unitPattern>
+				<unitPattern count="one">{0}pnk</unitPattern>
+				<unitPattern count="other">{0}pnk</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
@@ -8791,9 +9636,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>US-tn</displayName>
-				<unitPattern count="one">{0}US-tn</unitPattern>
-				<unitPattern count="other">{0}US-tn</unitPattern>
+				<displayName>am.tn</displayName>
+				<unitPattern count="one">{0}am.tn</unitPattern>
+				<unitPattern count="other">{0}am.tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>st</displayName>
@@ -8858,9 +9703,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}hPa</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-of-mercury">
-				<displayName>mm Hg</displayName>
-				<unitPattern count="one">{0}mm Hg</unitPattern>
-				<unitPattern count="other">{0}mm Hg</unitPattern>
+				<displayName>mmHg</displayName>
+				<unitPattern count="one">{0}mmHg</unitPattern>
+				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-per-square-inch">
 				<displayName>psi</displayName>
@@ -8894,8 +9739,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="speed-knot">
 				<displayName>kn</displayName>
-				<unitPattern count="one">{0} kn</unitPattern>
-				<unitPattern count="other">{0} kn</unitPattern>
+				<unitPattern count="one">{0}kn</unitPattern>
+				<unitPattern count="other">{0}kn</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
@@ -8925,7 +9770,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="volume-cubic-meter">
 				<displayName>m³</displayName>
 				<unitPattern count="one">{0}m³</unitPattern>
-				<unitPattern count="other">{0} m³</unitPattern>
+				<unitPattern count="other">{0}m³</unitPattern>
 				<perUnitPattern>{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
@@ -8987,13 +9832,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>tp</displayName>
-				<unitPattern count="one">{0} tp</unitPattern>
-				<unitPattern count="other">{0} tp</unitPattern>
+				<unitPattern count="one">{0}tp</unitPattern>
+				<unitPattern count="other">{0}tp</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>tkp</displayName>
-				<unitPattern count="one">{0} tkp</unitPattern>
-				<unitPattern count="other">{0} tkp</unitPattern>
+				<unitPattern count="one">{0}tkp</unitPattern>
+				<unitPattern count="other">{0}tkp</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ac ft</displayName>
@@ -9006,10 +9851,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
-				<displayName>gal</displayName>
-				<unitPattern count="one">{0}gal</unitPattern>
-				<unitPattern count="other">{0}gal</unitPattern>
-				<perUnitPattern>{0}/gal</perUnitPattern>
+				<displayName>am.gal</displayName>
+				<unitPattern count="one">{0}am.gal</unitPattern>
+				<unitPattern count="other">{0}am.gal</unitPattern>
+				<perUnitPattern>{0}/am.gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>br.gal</displayName>
+				<unitPattern count="one">{0}br.gal</unitPattern>
+				<unitPattern count="other">{0}br.gal</unitPattern>
+				<perUnitPattern>{0}/br.gal</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
@@ -9065,6 +9916,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} ja {1}</listPatternPart>
 			<listPatternPart type="2">{0} ja {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} tai {1}</listPatternPart>
+			<listPatternPart type="2">{0} tai {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ja {1}</listPatternPart>
+			<listPatternPart type="2">{0} ja {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
@@ -9090,5 +9953,162 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>ei:e</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} – kaikki</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} – yhteensopivuus</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} – ympäröity</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} – laajennettu</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} – historiallinen</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} – sekalaiset</characterLabelPattern>
+		<characterLabelPattern type="other">{0} – muut</characterLabelPattern>
+		<characterLabelPattern type="scripts">kirjoitusjärjestelmät – {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} piirtoviiva</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} piirtoviivaa</characterLabelPattern>
+		<characterLabel type="activities">toiminta</characterLabel>
+		<characterLabel type="african_scripts">afrikkalaiset kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="american_scripts">amerikkalaiset kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="animal">eläin</characterLabel>
+		<characterLabel type="animals_nature">eläimet ja luonto</characterLabel>
+		<characterLabel type="arrows">nuolet</characterLabel>
+		<characterLabel type="body">keho</characterLabel>
+		<characterLabel type="box_drawing">viivapiirrosmerkit</characterLabel>
+		<characterLabel type="braille">pistekirjoitus</characterLabel>
+		<characterLabel type="building">rakennus</characterLabel>
+		<characterLabel type="bullets_stars">luettelomerkit ja tähdet</characterLabel>
+		<characterLabel type="consonantal_jamo">jamo-konsonanttielementit</characterLabel>
+		<characterLabel type="currency_symbols">valuuttamerkit</characterLabel>
+		<characterLabel type="dash_connector">yhdysmerkit</characterLabel>
+		<characterLabel type="digits">numerot</characterLabel>
+		<characterLabel type="dingbats">ornamentit</characterLabel>
+		<characterLabel type="divination_symbols">ennustussymbolit</characterLabel>
+		<characterLabel type="downwards_arrows">alaspäin osoittavat nuolet</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">alas- ja ylöspäin osoittavat nuolet</characterLabel>
+		<characterLabel type="east_asian_scripts">itäaasialaiset kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="emoji">emojit</characterLabel>
+		<characterLabel type="european_scripts">eurooppalaiset kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="female">naissukupuolinen</characterLabel>
+		<characterLabel type="flag">lippu</characterLabel>
+		<characterLabel type="flags">liput</characterLabel>
+		<characterLabel type="food_drink">ruoka ja juoma</characterLabel>
+		<characterLabel type="format">muotoilu</characterLabel>
+		<characterLabel type="format_whitespace">muotoilu ja tyhjämerkki</characterLabel>
+		<characterLabel type="full_width_form_variant">ideografin levyiset muotovariantit</characterLabel>
+		<characterLabel type="geometric_shapes">geometriset kuviot</characterLabel>
+		<characterLabel type="half_width_form_variant">ideografin puolikkaan levyiset muotovariantit</characterLabel>
+		<characterLabel type="han_characters">han-merkit</characterLabel>
+		<characterLabel type="han_radicals">han-radikaalit</characterLabel>
+		<characterLabel type="hanja">hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">hanzi (yksinkertaistettu)</characterLabel>
+		<characterLabel type="hanzi_traditional">hanzi (perinteinen)</characterLabel>
+		<characterLabel type="heart">sydän</characterLabel>
+		<characterLabel type="historic_scripts">historialliset kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ideogrammien kuvausmerkit</characterLabel>
+		<characterLabel type="japanese_kana">japanilainen kana-kirjoitusjärjestelmä</characterLabel>
+		<characterLabel type="kanbun">kanbun</characterLabel>
+		<characterLabel type="kanji">kanji</characterLabel>
+		<characterLabel type="keycap">näppäin</characterLabel>
+		<characterLabel type="leftwards_arrows">vasemmalle osoittavat nuolet</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">vasemmalle ja oikealle osoittavat nuolet</characterLabel>
+		<characterLabel type="letterlike_symbols">kirjainsymbolit</characterLabel>
+		<characterLabel type="limited_use">rajoitettu käyttö</characterLabel>
+		<characterLabel type="male">miessukupuolinen</characterLabel>
+		<characterLabel type="math_symbols">matemaattiset symbolit</characterLabel>
+		<characterLabel type="middle_eastern_scripts">Lähi-idän kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="miscellaneous">sekalaiset</characterLabel>
+		<characterLabel type="modern_scripts">nykyaikaiset kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="modifier">tarkkeenomaiset merkit</characterLabel>
+		<characterLabel type="musical_symbols">musiikkisymbolit</characterLabel>
+		<characterLabel type="nature">luonto</characterLabel>
+		<characterLabel type="nonspacing">omaa tilaa viemättömät merkit</characterLabel>
+		<characterLabel type="numbers">numerot</characterLabel>
+		<characterLabel type="objects">objektit</characterLabel>
+		<characterLabel type="other">muut</characterLabel>
+		<characterLabel type="paired">merkkiparit</characterLabel>
+		<characterLabel type="person">henkilö</characterLabel>
+		<characterLabel type="phonetic_alphabet">foneettiset aakkoset</characterLabel>
+		<characterLabel type="pictographs">kuvakirjoitus</characterLabel>
+		<characterLabel type="place">paikka</characterLabel>
+		<characterLabel type="plant">kasvi</characterLabel>
+		<characterLabel type="punctuation">välimerkit</characterLabel>
+		<characterLabel type="rightwards_arrows">oikealle osoittavat nuolet</characterLabel>
+		<characterLabel type="sign_standard_symbols">vakiosymboli</characterLabel>
+		<characterLabel type="small_form_variant">vähäiset muotovariantit</characterLabel>
+		<characterLabel type="smiley">hymiö</characterLabel>
+		<characterLabel type="smileys_people">hymiöt ja ihmiset</characterLabel>
+		<characterLabel type="south_asian_scripts">eteläaasialaiset kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="southeast_asian_scripts">kaakkoisaasialaiset kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="spacing">välistys</characterLabel>
+		<characterLabel type="sport">urheilu</characterLabel>
+		<characterLabel type="symbols">symbolit</characterLabel>
+		<characterLabel type="technical_symbols">tekniset symbolit</characterLabel>
+		<characterLabel type="tone_marks">toonimerkit</characterLabel>
+		<characterLabel type="travel">matkustus</characterLabel>
+		<characterLabel type="travel_places">matkustus ja paikat</characterLabel>
+		<characterLabel type="upwards_arrows">ylöspäin osoittavat nuolet</characterLabel>
+		<characterLabel type="variant_forms">varianttimuodot</characterLabel>
+		<characterLabel type="vocalic_jamo">jamo-vokaalielementit</characterLabel>
+		<characterLabel type="weather">sää</characterLabel>
+		<characterLabel type="western_asian_scripts">länsiaasialaiset kirjoitusjärjestelmät</characterLabel>
+		<characterLabel type="whitespace">tyhjämerkki</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">kursivoitu</axisName>
+		<axisName type="opsz">optinen koko</axisName>
+		<axisName type="slnt">kallistus</axisName>
+		<axisName type="wdth">leveys</axisName>
+		<axisName type="wght">paksuus</axisName>
+		<styleName type="ital" subtype="1">kursiivi</styleName>
+		<styleName type="opsz" subtype="18">otsikko</styleName>
+		<styleName type="opsz" subtype="72">näyttö</styleName>
+		<styleName type="opsz" subtype="144">juliste</styleName>
+		<styleName type="slnt" subtype="-12">taaksepäin kallistettu</styleName>
+		<styleName type="slnt" subtype="0">pysty</styleName>
+		<styleName type="slnt" subtype="12">vino</styleName>
+		<styleName type="slnt" subtype="24">extravino</styleName>
+		<styleName type="wdth" subtype="50">ultrakapea</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">ultratiivis</styleName>
+		<styleName type="wdth" subtype="62.5">extrakapea</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">extratiivis</styleName>
+		<styleName type="wdth" subtype="75">kavennettu</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">pakattu</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">kapea</styleName>
+		<styleName type="wdth" subtype="87.5">semikapea</styleName>
+		<styleName type="wdth" subtype="100">normaali</styleName>
+		<styleName type="wdth" subtype="112.5">semilaaja</styleName>
+		<styleName type="wdth" subtype="125">laajennettu</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">leveä</styleName>
+		<styleName type="wdth" subtype="150">extralaaja</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">extraleveä</styleName>
+		<styleName type="wdth" subtype="200">ultralaaja</styleName>
+		<styleName type="wght" subtype="100">kapea</styleName>
+		<styleName type="wght" subtype="200">extraohut</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ultraohut</styleName>
+		<styleName type="wght" subtype="300">ohut</styleName>
+		<styleName type="wght" subtype="350">semiohut</styleName>
+		<styleName type="wght" subtype="380">kirja</styleName>
+		<styleName type="wght" subtype="400">normaali</styleName>
+		<styleName type="wght" subtype="500">keskipaksu</styleName>
+		<styleName type="wght" subtype="600">semilihava</styleName>
+		<styleName type="wght" subtype="600" alt="demi">demilihava</styleName>
+		<styleName type="wght" subtype="700">lihavoitu</styleName>
+		<styleName type="wght" subtype="800">extralihava</styleName>
+		<styleName type="wght" subtype="800" alt="ultra">ultralihava</styleName>
+		<styleName type="wght" subtype="900">musta</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">paksu</styleName>
+		<styleName type="wght" subtype="950">extramusta</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ultrapaksu</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">ultramusta</styleName>
+		<featureName type="afrc">pystysuuntaiset murtoluvut</featureName>
+		<featureName type="cpsp">versaalivälistys</featureName>
+		<featureName type="dlig">valinnaiset ligatuurit</featureName>
+		<featureName type="frac">vinoviivaiset murtoluvut</featureName>
+		<featureName type="lnum">otsikkonumerot</featureName>
+		<featureName type="onum">gemenanumerot</featureName>
+		<featureName type="ordn">järjestysluvut</featureName>
+		<featureName type="pnum">suhteelliset numerot</featureName>
+		<featureName type="smcp">kapiteelit</featureName>
+		<featureName type="tnum">sarkautuvat numerot</featureName>
+		<featureName type="zero">lävistetty nolla</featureName>
+	</typographicNames>
 </ldml>
-

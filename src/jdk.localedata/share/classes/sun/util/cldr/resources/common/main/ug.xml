@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
 Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Science Association http://ukij.org
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12313 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="ug"/>
 	</identity>
 	<localeDisplayNames>
@@ -24,7 +26,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="ada" draft="contributed">ئاداڭمېچە</language>
 			<language type="ady" draft="contributed">ئادىگېيچە</language>
 			<language type="ae" draft="contributed">ئاۋېستاچە</language>
-			<language type="af" draft="contributed">ئافرىكانچە</language>
+			<language type="af">ئافرىكانچە</language>
 			<language type="afh" draft="contributed">ئافرىخىلىچە</language>
 			<language type="agq" draft="contributed">ئاگەمچە</language>
 			<language type="ain" draft="contributed">ئاينۇچە</language>
@@ -32,35 +34,35 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="akk" draft="contributed">ئاككادچە</language>
 			<language type="ale" draft="contributed">ئالېيۇتچە</language>
 			<language type="alt" draft="contributed">جەنۇبى ئالتاي تىللىرى</language>
-			<language type="am" draft="contributed">ئامخاراچە</language>
+			<language type="am">ئامھارچە</language>
 			<language type="an" draft="contributed">ئاراگونچە</language>
 			<language type="ang" draft="contributed">قەدىمكى ئىنگلىزچە</language>
 			<language type="anp" draft="contributed">ئانگىكاچە</language>
-			<language type="ar" draft="contributed">ئەرەبچە</language>
+			<language type="ar">ئەرەبچە</language>
 			<language type="ar_001" draft="contributed">ھازىرقى زامان ئۆلچەملىك ئەرەبچە</language>
 			<language type="arc" draft="contributed">ئارامۇچە</language>
-			<language type="arn" draft="contributed">ماپۇچە</language>
+			<language type="arn">ماپۇدۇنگۇنچە</language>
 			<language type="arp" draft="contributed">ئاراپاخوچە</language>
 			<language type="arw" draft="contributed">ئاراۋاكچە</language>
-			<language type="as" draft="contributed">ئاسسامچە</language>
+			<language type="as">ئاسامچە</language>
 			<language type="asa" draft="contributed">ئاسۇچە</language>
 			<language type="ast" draft="contributed">ئاستۇرىيەچە</language>
 			<language type="av" draft="contributed">ئاۋارچە</language>
 			<language type="awa" draft="contributed">ئاۋادىچە</language>
 			<language type="ay" draft="contributed">ئايماراچە</language>
-			<language type="az" draft="contributed">ئەزەرىچە</language>
-			<language type="ba" draft="contributed">باشقىرتچە</language>
+			<language type="az">ئەزەربەيجانچە</language>
+			<language type="ba">باشقىرتچە</language>
 			<language type="bal" draft="contributed">بېلۇجىچە</language>
-			<language type="ban" draft="contributed">بالىچە</language>
+			<language type="ban">بالىچە</language>
 			<language type="bas" draft="contributed">باساچە</language>
 			<language type="bax" draft="contributed">بامۇنچە</language>
 			<language type="bbj" draft="contributed">گومالاچە</language>
-			<language type="be" draft="contributed">بېلارۇسچە</language>
+			<language type="be">بېلارۇسچە</language>
 			<language type="bej" draft="contributed">بېجاچە</language>
-			<language type="bem" draft="contributed">بېمباچە</language>
+			<language type="bem">بېمباچە</language>
 			<language type="bez" draft="contributed">بېناچە</language>
 			<language type="bfd" draft="contributed">بافۇتچە</language>
-			<language type="bg" draft="contributed">بۇلغارچە</language>
+			<language type="bg">بۇلغارچە</language>
 			<language type="bho" draft="contributed">بوجپۇرىچە</language>
 			<language type="bi" draft="contributed">بىسلاماچە</language>
 			<language type="bik" draft="contributed">بىكولچە</language>
@@ -68,51 +70,51 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="bkm" draft="contributed">كومچە</language>
 			<language type="bla" draft="contributed">سىكسىكاچە</language>
 			<language type="bm" draft="contributed">بامباراچە</language>
-			<language type="bn" draft="contributed">بېنگالچە</language>
-			<language type="bo" draft="contributed">تىبەتچە</language>
-			<language type="br" draft="contributed">بىرېتونچە</language>
+			<language type="bn">بېنگالچە</language>
+			<language type="bo">تىبەتچە</language>
+			<language type="br">بىرېتونچە</language>
 			<language type="bra" draft="contributed">بىراجچە</language>
 			<language type="brx" draft="contributed">بودوچە</language>
-			<language type="bs" draft="contributed">بوسنىيەچە</language>
+			<language type="bs">بوسىنچە</language>
 			<language type="bss" draft="contributed">ئاكۇسچە</language>
 			<language type="bua" draft="contributed">بۇرىياتچە</language>
 			<language type="bug" draft="contributed">بۇگىچە</language>
 			<language type="bum" draft="contributed">بۇلۇچە</language>
 			<language type="byn" draft="contributed">بىلىنچە</language>
 			<language type="byv" draft="contributed">مېدۇمباچە</language>
-			<language type="ca" draft="contributed">كاتالانچە</language>
+			<language type="ca">كاتالانچە</language>
 			<language type="cad" draft="contributed">كاددوچە</language>
 			<language type="car" draft="contributed">كارىبچە</language>
 			<language type="cay" draft="contributed">كايۇگاچە</language>
 			<language type="cch" draft="contributed">ئاتسامچە</language>
 			<language type="ce" draft="contributed">چېچىنچە</language>
-			<language type="ceb" draft="contributed">سېبۇچە</language>
+			<language type="ceb">سېبۇچە</language>
 			<language type="cgg" draft="contributed">چىگاچە</language>
 			<language type="ch" draft="contributed">چامورروچە</language>
 			<language type="chb" draft="contributed">چىبچاچە</language>
 			<language type="chg" draft="contributed">چاغاتايچە</language>
 			<language type="chk" draft="contributed">چۇكچە</language>
-			<language type="chm" draft="contributed">مارىچە</language>
+			<language type="chm">مارىچە</language>
 			<language type="chn" draft="contributed">چىنۇك-ژارگونچە</language>
 			<language type="cho" draft="contributed">چوكتاۋچە</language>
 			<language type="chp" draft="contributed">چىپېۋيانچە</language>
-			<language type="chr" draft="contributed">چېروكىچە</language>
+			<language type="chr">چېروكىچە</language>
 			<language type="chy" draft="contributed">چېيېنچە</language>
-			<language type="ckb" draft="contributed">سورانى كۇردچە</language>
-			<language type="co" draft="contributed">كورساچە</language>
+			<language type="ckb">مەركىزىي كۇردچە</language>
+			<language type="co">كورسۇچە</language>
 			<language type="cop" draft="contributed">كوپتىكچە</language>
 			<language type="cr" draft="contributed">كرىچە</language>
 			<language type="crh" draft="contributed">قىرىم تۈركچە</language>
-			<language type="cs" draft="contributed">چېخچە</language>
+			<language type="cs">چېخچە</language>
 			<language type="csb" draft="contributed">كاسزۇبىچە</language>
 			<language type="cu" draft="contributed">قەدىمكى سلاۋيانچە</language>
 			<language type="cv" draft="contributed">چۇۋاشچە</language>
-			<language type="cy" draft="contributed">ۋېلشچە</language>
-			<language type="da" draft="contributed">دانىشچە</language>
+			<language type="cy">ۋېلشچە</language>
+			<language type="da">دانىشچە</language>
 			<language type="dak" draft="contributed">داكوتاچە</language>
 			<language type="dar" draft="contributed">دارگىۋاچە</language>
 			<language type="dav" draft="contributed">تايتاچە</language>
-			<language type="de" draft="contributed">گېرمانچە</language>
+			<language type="de">گېرمانچە</language>
 			<language type="de_AT" draft="contributed">ئاۋستىرىيە گېرمانچە</language>
 			<language type="de_CH" draft="contributed">شىۋىتسارىيە ئېگىزلىك گېرمانچە</language>
 			<language type="del" draft="contributed">دېلاۋارېچە</language>
@@ -121,22 +123,22 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="din" draft="contributed">دىنكاچە</language>
 			<language type="dje" draft="contributed">زارماچە</language>
 			<language type="doi" draft="contributed">دوگرىچە</language>
-			<language type="dsb" draft="contributed">توۋەن سېربچە</language>
+			<language type="dsb">تۆۋەن سوربچە</language>
 			<language type="dua" draft="contributed">دۇئالاچە</language>
 			<language type="dum" draft="contributed">ئوتتۇرا گوللاندىيەچە</language>
-			<language type="dv" draft="contributed">دىۋەخىچە</language>
+			<language type="dv">دىۋېخچە</language>
 			<language type="dyo" draft="contributed">جولاچە</language>
 			<language type="dyu" draft="contributed">دىيۇلاچە</language>
-			<language type="dz" draft="contributed">بۇتانچە</language>
+			<language type="dz">زوڭخاچە</language>
 			<language type="dzg" draft="contributed">دازاگاچە</language>
 			<language type="ebu" draft="contributed">ئېمبۇچە</language>
 			<language type="ee" draft="contributed">ئېۋېچە</language>
 			<language type="efi" draft="contributed">ئېفىكچە</language>
 			<language type="egy" draft="contributed">قەدىمكى مىسىرچە</language>
 			<language type="eka" draft="contributed">ئېكاجۇكچە</language>
-			<language type="el" draft="contributed">گىرېكچە</language>
+			<language type="el">گىرېكچە</language>
 			<language type="elx" draft="contributed">ئېلامىتچە</language>
-			<language type="en" draft="contributed">ئىنگلىزچە</language>
+			<language type="en">ئىنگلىزچە</language>
 			<language type="en_AU" draft="contributed">ئاۋسترالىيە ئىنگلىزچە</language>
 			<language type="en_CA" draft="contributed">كانادا ئىنگلىزچە</language>
 			<language type="en_GB" draft="contributed">ئەنگلىيە ئىنگلىزچە</language>
@@ -144,24 +146,24 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="en_US" draft="contributed">ئامېرىكا ئىنگلىزچە</language>
 			<language type="en_US" alt="short" draft="contributed">ئامېرىكا ئىنگلىزچە</language>
 			<language type="enm" draft="contributed">ئوتتۇرا ئەسىر ئىنگلىزچە</language>
-			<language type="eo" draft="contributed">دۇنيا تىلى</language>
-			<language type="es" draft="contributed">ئىسپانچە</language>
+			<language type="eo">ئېسپرانتوچە</language>
+			<language type="es">ئىسپانچە</language>
 			<language type="es_419" draft="contributed">لاتىن ئامېرىكا ئىسپانچە</language>
 			<language type="es_ES" draft="contributed">ياۋروپا ئىسپانچە</language>
 			<language type="es_MX" draft="contributed">مېكسىكا ئىسپانچە</language>
-			<language type="et" draft="contributed">ئېستونچە</language>
-			<language type="eu" draft="contributed">باسكىچە</language>
+			<language type="et">ئېستونچە</language>
+			<language type="eu">باسكىچە</language>
 			<language type="ewo" draft="contributed">ئېۋوندوچە</language>
-			<language type="fa" draft="contributed">پارسچە</language>
+			<language type="fa">پارسچە</language>
 			<language type="fan" draft="contributed">فاڭچە</language>
 			<language type="fat" draft="contributed">فانتىچە</language>
-			<language type="ff" draft="contributed">فۇلاچە</language>
-			<language type="fi" draft="contributed">فىنچە</language>
-			<language type="fil" draft="contributed">فىلىپپىنچە</language>
+			<language type="ff">فۇلاھچە</language>
+			<language type="fi">فىنچە</language>
+			<language type="fil">فىلىپپىنچە</language>
 			<language type="fj" draft="contributed">فىجىچە</language>
-			<language type="fo" draft="contributed">فائېروچە</language>
+			<language type="fo">فائېروچە</language>
 			<language type="fon" draft="contributed">فونچە</language>
-			<language type="fr" draft="contributed">فىرانسۇزچە</language>
+			<language type="fr">فىرانسۇزچە</language>
 			<language type="fr_CA" draft="contributed">كانادا فىرانسۇزچە</language>
 			<language type="fr_CH" draft="contributed">شىۋىتسارىيە فىرانسۇزچە</language>
 			<language type="frm" draft="contributed">ئوتتۇرا ئەسىر فىرانسۇزچە</language>
@@ -169,17 +171,17 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="frr" draft="contributed">شىمالى فىرىزيەچە</language>
 			<language type="frs" draft="contributed">شەرقى فىرىزيەچە</language>
 			<language type="fur" draft="contributed">فىرىئۇلىچە</language>
-			<language type="fy" draft="contributed">غەربى فىرىزيەچە</language>
-			<language type="ga" draft="contributed">ئىرېلاندچە</language>
+			<language type="fy">غەربىي فىرسچە</language>
+			<language type="ga">ئىرېلاندچە</language>
 			<language type="gaa" draft="contributed">گاچە</language>
 			<language type="gay" draft="contributed">گايوچە</language>
 			<language type="gba" draft="contributed">گىباياچە</language>
-			<language type="gd" draft="contributed">سكوتچە</language>
+			<language type="gd">شوتلاندىيە گايلچىسى</language>
 			<language type="gez" draft="contributed">گىزچە</language>
 			<language type="gil" draft="contributed">گىلبېرتچە</language>
-			<language type="gl" draft="contributed">گالىتسىيانچە</language>
+			<language type="gl">گالىچە</language>
 			<language type="gmh" draft="contributed">ئوتتۇرا ئەسىر ئېگىزلىك گېرمانچە</language>
-			<language type="gn" draft="contributed">گۇئارانىچە</language>
+			<language type="gn">گۇئارانىچە</language>
 			<language type="goh" draft="contributed">قەدىمكى ئېگىزلىك گېرمانچە</language>
 			<language type="gon" draft="contributed">گوندىچە</language>
 			<language type="gor" draft="contributed">گورونتالوچە</language>
@@ -187,48 +189,48 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="grb" draft="contributed">گرېبوچە</language>
 			<language type="grc" draft="contributed">قەدىمكى گىرېكچە</language>
 			<language type="gsw" draft="contributed">گېرمانچە شىۋىتسارىيە</language>
-			<language type="gu" draft="contributed">گۇجاراتچە</language>
+			<language type="gu">گۇجاراتچە</language>
 			<language type="guz" draft="contributed">گۇسىچە</language>
 			<language type="gv" draft="contributed">مانچە</language>
 			<language type="gwi" draft="contributed">گىۋىچىنچە</language>
-			<language type="ha" draft="contributed">خائۇساچە</language>
+			<language type="ha">خائۇساچە</language>
 			<language type="hai" draft="contributed">ھەيدەچە</language>
-			<language type="haw" draft="contributed">ھاۋايچە</language>
-			<language type="he" draft="contributed">ئىبرانىچە</language>
-			<language type="hi" draft="contributed">ھىندىچە</language>
-			<language type="hil" draft="contributed">خىلىگاينونچە</language>
+			<language type="haw">ھاۋايچە</language>
+			<language type="he">ئىبرانىيچە</language>
+			<language type="hi">ھىندىچە</language>
+			<language type="hil">خىلىگاينونچە</language>
 			<language type="hit" draft="contributed">خىتتىتچە</language>
 			<language type="hmn" draft="contributed">مۆڭچە</language>
 			<language type="ho" draft="contributed">ھىرى موتۇچە</language>
-			<language type="hr" draft="contributed">خورۋاتچە</language>
-			<language type="hsb" draft="contributed">يۇقىرىقى سېربچە</language>
-			<language type="ht" draft="contributed">ھايتىچە</language>
-			<language type="hu" draft="contributed">ماجارچە</language>
+			<language type="hr">كىرودىچە</language>
+			<language type="hsb">ئۈستۈن سوربچە</language>
+			<language type="ht">ھايتىچە</language>
+			<language type="hu">ۋېنگىرچە</language>
 			<language type="hup" draft="contributed">خۇپاچە</language>
-			<language type="hy" draft="contributed">ئەرمەنچە</language>
-			<language type="hz" draft="contributed">خېرېروچە</language>
+			<language type="hy">ئەرمېنچە</language>
+			<language type="hz">خېرېروچە</language>
 			<language type="ia" draft="contributed">ئارىلىق تىل</language>
 			<language type="iba" draft="contributed">ئىبانچە</language>
-			<language type="ibb" draft="contributed">ئىبىبىئوچە</language>
-			<language type="id" draft="contributed">ھىندونېزىيەچە</language>
+			<language type="ibb">ئىبىبىئوچە</language>
+			<language type="id">ھىندونېزچە</language>
 			<language type="ie" draft="contributed">ئىنتىرلىڭچە</language>
-			<language type="ig" draft="contributed">ئىبوچە</language>
+			<language type="ig">ئىگبوچە</language>
 			<language type="ii" draft="contributed">يىچە (سىچۈەن)</language>
 			<language type="ik" draft="contributed">ئىنۇپىكچە</language>
 			<language type="ilo" draft="contributed">ئىلوكانوچە</language>
 			<language type="inh" draft="contributed">ئىنگۇشچە</language>
 			<language type="io" draft="contributed">ئىدوچە</language>
-			<language type="is" draft="contributed">ئىسلاندچە</language>
-			<language type="it" draft="contributed">ئىتاليانچە</language>
-			<language type="iu" draft="contributed">ئىنۇكتىتۇتچە</language>
-			<language type="ja" draft="contributed">ياپونچە</language>
+			<language type="is">ئىسلاندچە</language>
+			<language type="it">ئىتالىيانچە</language>
+			<language type="iu">ئىنۇكتىتۇتچە</language>
+			<language type="ja">ياپونچە</language>
 			<language type="jbo" draft="contributed">لوجبانچە</language>
 			<language type="jgo" draft="contributed">نگومباچە</language>
 			<language type="jmc" draft="contributed">ماچامچە</language>
 			<language type="jpr" draft="contributed">ئىبرانى پارسچە</language>
 			<language type="jrb" draft="contributed">ئىبرانى ئەرەبچە</language>
 			<language type="jv" draft="contributed">ياۋاچە</language>
-			<language type="ka" draft="contributed">گىرۇزىنچە</language>
+			<language type="ka">گىرۇزچە</language>
 			<language type="kaa" draft="contributed">قارا-قالپاقچە</language>
 			<language type="kab" draft="contributed">كابىلېچە</language>
 			<language type="kac" draft="contributed">كاچىنچە</language>
@@ -247,45 +249,45 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="khq" draft="contributed">كويرا چىنىچە</language>
 			<language type="ki" draft="contributed">كىكۇيۇچە</language>
 			<language type="kj" draft="contributed">كىۋانياماچە</language>
-			<language type="kk" draft="contributed">قازاقچە</language>
+			<language type="kk">قازاقچە</language>
 			<language type="kkj" draft="contributed">كاكوچە</language>
 			<language type="kl" draft="contributed">گىرېنلاندچە</language>
 			<language type="kln" draft="contributed">كالېنجىنچە</language>
-			<language type="km" draft="contributed">كىخمېرچە</language>
+			<language type="km">كىمېرچە</language>
 			<language type="kmb" draft="contributed">كىمبۇندۇچە</language>
-			<language type="kn" draft="contributed">كانناداچە</language>
-			<language type="ko" draft="contributed">كورېيەچە</language>
-			<language type="kok" draft="contributed">كونكانىچە</language>
+			<language type="kn">كانناداچە</language>
+			<language type="ko">كورېيەچە</language>
+			<language type="kok">كونكانچە</language>
 			<language type="kos" draft="contributed">كوسرايېچە</language>
 			<language type="kpe" draft="contributed">كىپەللېچە</language>
-			<language type="kr" draft="contributed">كانۇرىچە</language>
+			<language type="kr">كانۇرچە</language>
 			<language type="krc" draft="contributed">قاراچاي-بالقارچە</language>
 			<language type="krl" draft="contributed">كارەلچە</language>
-			<language type="kru" draft="contributed">كۇرۇكچە</language>
-			<language type="ks" draft="contributed">كەشمىرچە</language>
+			<language type="kru">كۇرۇخچە</language>
+			<language type="ks">كەشمىرچە</language>
 			<language type="ksb" draft="contributed">شامبالاچە</language>
 			<language type="ksf" draft="contributed">بافىياچە</language>
 			<language type="ksh" draft="contributed">كولىشچە</language>
-			<language type="ku" draft="contributed">كۇردچە</language>
+			<language type="ku">كۇردچە</language>
 			<language type="kum" draft="contributed">قۇمۇقچە</language>
 			<language type="kut" draft="contributed">كۇتەنايچە</language>
 			<language type="kv" draft="contributed">كومىچە</language>
 			<language type="kw" draft="contributed">كورنىشچە</language>
-			<language type="ky" draft="contributed">قىرغىزچە</language>
-			<language type="la" draft="contributed">لاتىنچە</language>
+			<language type="ky">قىرغىزچە</language>
+			<language type="la">لاتىنچە</language>
 			<language type="lad" draft="contributed">لادىنوچە</language>
 			<language type="lag" draft="contributed">لانگىچە</language>
 			<language type="lah" draft="contributed">لانداچە</language>
 			<language type="lam" draft="contributed">لامباچە</language>
-			<language type="lb" draft="contributed">لىيۇكسېمبۇرگچە</language>
+			<language type="lb">لىيۇكسېمبۇرگچە</language>
 			<language type="lez" draft="contributed">لېزگىنچە</language>
 			<language type="lg" draft="contributed">گانداچە</language>
 			<language type="li" draft="contributed">لىمبۇرگچە</language>
 			<language type="ln" draft="contributed">لىنگالاچە</language>
-			<language type="lo" draft="contributed">لائوسچە</language>
+			<language type="lo">لائوسچە</language>
 			<language type="lol" draft="contributed">مونگوچە</language>
 			<language type="loz" draft="contributed">لوزىچە</language>
-			<language type="lt" draft="contributed">لىتۋاچە</language>
+			<language type="lt">لىتۋانىچە</language>
 			<language type="lu" draft="contributed">لۇبا-كاتانگاچە</language>
 			<language type="lua" draft="contributed">لۇبا-لۇئاچە</language>
 			<language type="lui" draft="contributed">لۇيسېنگوچە</language>
@@ -293,7 +295,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="luo" draft="contributed">لۇئوچە</language>
 			<language type="lus" draft="contributed">مىزوچە</language>
 			<language type="luy" draft="contributed">لۇياچە</language>
-			<language type="lv" draft="contributed">لاتۋىيەچە</language>
+			<language type="lv">لاتچە</language>
 			<language type="mad" draft="contributed">مادۇرېسچە</language>
 			<language type="maf" draft="contributed">مافاچە</language>
 			<language type="mag" draft="contributed">ماگاخىچە</language>
@@ -304,33 +306,33 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="mde" draft="contributed">ماباچە</language>
 			<language type="mdf" draft="contributed">موكشاچە</language>
 			<language type="mdr" draft="contributed">ماندارچە</language>
-			<language type="men" draft="contributed">مېندېچە</language>
+			<language type="men">مېندېچە</language>
 			<language type="mer" draft="contributed">مېرۇچە</language>
 			<language type="mfe" draft="contributed">مورىسيېنچە</language>
-			<language type="mg" draft="contributed">ماداغاسقارچە</language>
+			<language type="mg">مالاگاسچە</language>
 			<language type="mga" draft="contributed">ئوتتۇرا ئەسىر ئىرېلاندچە</language>
 			<language type="mgh" draft="contributed">ماكۇۋاچە</language>
 			<language type="mgo" draft="contributed">مېتاچە’</language>
 			<language type="mh" draft="contributed">مارشالچە</language>
-			<language type="mi" draft="contributed">ماۋرىچە</language>
+			<language type="mi">ماۋرىچە</language>
 			<language type="mic" draft="contributed">مىكماكچە</language>
 			<language type="min" draft="contributed">مىناڭكابائۇچە</language>
-			<language type="mk" draft="contributed">ماكېدونچە</language>
-			<language type="ml" draft="contributed">مالايامچە</language>
-			<language type="mn" draft="contributed">موڭغۇلچە</language>
+			<language type="mk">ماكېدونچە</language>
+			<language type="ml">مالايالامچە</language>
+			<language type="mn">موڭغۇلچە</language>
 			<language type="mnc" draft="contributed">مانجۇچە</language>
-			<language type="mni" draft="contributed">مانىپۇرىچە</language>
-			<language type="moh" draft="contributed">موخوكچە</language>
+			<language type="mni">مانىپۇرچە</language>
+			<language type="moh">موخاۋكچە</language>
 			<language type="mos" draft="contributed">موسسىچە</language>
-			<language type="mr" draft="contributed">ماراتچە</language>
-			<language type="ms" draft="contributed">مالايچە</language>
-			<language type="mt" draft="contributed">مالتاچە</language>
+			<language type="mr">ماراتىچە</language>
+			<language type="ms">مالايچە</language>
+			<language type="mt">مالتاچە</language>
 			<language type="mua" draft="contributed">مۇنداڭچە</language>
 			<language type="mul" draft="contributed">كۆپ تىللار</language>
 			<language type="mus" draft="contributed">كىرىكچە</language>
 			<language type="mwl" draft="contributed">مىراندېسچە</language>
-			<language type="mwr" draft="contributed">مارۋارىچە</language>
-			<language type="my" draft="contributed">بىرماچە</language>
+			<language type="mwr">مارۋارىچە</language>
+			<language type="my">بىرماچە</language>
 			<language type="mye" draft="contributed">ميېنېچە</language>
 			<language type="myv" draft="contributed">ئېرزاچە</language>
 			<language type="na" draft="contributed">ناۋرۇچە</language>
@@ -339,79 +341,79 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="nb" draft="contributed">نورۋىگىيە بوكمالچە</language>
 			<language type="nd" draft="contributed">شىمالى ندەبەلەچە</language>
 			<language type="nds" draft="contributed">تۆۋەن گېرمانچە</language>
-			<language type="ne" draft="contributed">نېپالچە</language>
+			<language type="ne">نېپالچە</language>
 			<language type="new" draft="contributed">نېۋارىچە</language>
 			<language type="ng" draft="contributed">ندونگاچە</language>
 			<language type="nia" draft="contributed">نىئاسچە</language>
-			<language type="niu" draft="contributed">نيۇئېچە</language>
-			<language type="nl" draft="contributed">گوللاندىيەچە</language>
+			<language type="niu">نيۇئېچە</language>
+			<language type="nl">گوللاندچە</language>
 			<language type="nmg" draft="contributed">كۋاسىيوچە</language>
 			<language type="nn" draft="contributed">يېڭى نورۋېگچە</language>
 			<language type="nnh" draft="contributed">نگېمبۇنچە</language>
-			<language type="no" draft="contributed">نورۋېگچە</language>
+			<language type="no">نورۋېگچە</language>
 			<language type="nog" draft="contributed">نوغايچە</language>
 			<language type="non" draft="contributed">قەدىمكى نورۋېگچە</language>
 			<language type="nqo" draft="contributed">نىكوچە</language>
 			<language type="nr" draft="contributed">جەنۇبى ندەبەلەچە</language>
-			<language type="nso" draft="contributed">شىمالى سوتوچە</language>
+			<language type="nso">شىمالىي سوتوچە</language>
 			<language type="nus" draft="contributed">مۇئېرچە</language>
 			<language type="nv" draft="contributed">ناۋاخوچە</language>
 			<language type="nwc" draft="contributed">نېۋارچە</language>
-			<language type="ny" draft="contributed">نيانجاچە</language>
+			<language type="ny">نىيانجاچە</language>
 			<language type="nym" draft="contributed">نيامۋېزىچە</language>
 			<language type="nyn" draft="contributed">نىيانكولېچە</language>
 			<language type="nyo" draft="contributed">نىئوروچە</language>
 			<language type="nzi" draft="contributed">نىزەماچە</language>
-			<language type="oc" draft="contributed">ئوكسىتانچە</language>
+			<language type="oc">ئوكسىتچە</language>
 			<language type="oj" draft="contributed">ئوجىبۋاچە</language>
-			<language type="om" draft="contributed">ئوروموچە</language>
-			<language type="or" draft="contributed">ئورىياچە</language>
+			<language type="om">ئوروموچە</language>
+			<language type="or">ئودىياچە</language>
 			<language type="os" draft="contributed">ئوسسېتچەچە</language>
 			<language type="osa" draft="contributed">ئوساگېلارچە</language>
 			<language type="ota" draft="contributed">ئوسمان تۈركچە</language>
-			<language type="pa" draft="contributed">پەنجابچە</language>
+			<language type="pa">پەنجابچە</language>
 			<language type="pag" draft="contributed">پانگاسىنانچە</language>
 			<language type="pal" draft="contributed">پەھلەۋىچە</language>
 			<language type="pam" draft="contributed">پامپانگاچە</language>
-			<language type="pap" draft="contributed">پاپىيامەنتۇچە</language>
+			<language type="pap">پاپىيامېنتوچە</language>
 			<language type="pau" draft="contributed">پالاۋچە</language>
 			<language type="peo" draft="contributed">قەدىمكى پارىسچە</language>
 			<language type="phn" draft="contributed">فىنىكىيەچە</language>
 			<language type="pi" draft="contributed">پالىچە</language>
-			<language type="pl" draft="contributed">پولەكچە</language>
+			<language type="pl">پولەكچە</language>
 			<language type="pon" draft="contributed">پوناپېئانچە</language>
 			<language type="pro" draft="contributed">قەدىمكى پروۋېنچالچە</language>
-			<language type="ps" draft="contributed">پۇشتۇچە</language>
-			<language type="pt" draft="contributed">پورتۇگالچە</language>
+			<language type="ps">پۇشتۇچە</language>
+			<language type="pt">پورتۇگالچە</language>
 			<language type="pt_BR" draft="contributed">بىرازىلىيە پورتۇگالچە</language>
 			<language type="pt_PT" draft="contributed">ياۋروپا پورتۇگالچە</language>
-			<language type="qu" draft="contributed">كېچياچە</language>
+			<language type="qu">كېچىۋاچە</language>
 			<language type="raj" draft="contributed">راجاستانچە</language>
 			<language type="rap" draft="contributed">راپانىيچە</language>
-			<language type="rm" draft="contributed">رومانىشچە</language>
+			<language type="rm">رومانسچە</language>
 			<language type="rn" draft="contributed">رۇندىچە</language>
-			<language type="ro" draft="contributed">رۇمىنىيەچە</language>
+			<language type="ro">رومىنچە</language>
 			<language type="rof" draft="contributed">رومبوچە</language>
 			<language type="rom" draft="contributed">سىگانچە</language>
 			<language type="root" draft="contributed">غول تىل</language>
-			<language type="ru" draft="contributed">رۇسچە</language>
+			<language type="ru">رۇسچە</language>
 			<language type="rup" draft="contributed">ئارومانچە</language>
-			<language type="rw" draft="contributed">رىۋانداچە</language>
+			<language type="rw">كېنىيەرىۋانداچە</language>
 			<language type="rwk" draft="contributed">رىۋاچە</language>
-			<language type="sa" draft="contributed">سانسكرىتچە</language>
+			<language type="sa">سانسكرىتچە</language>
 			<language type="sad" draft="contributed">سانداۋېچە</language>
-			<language type="sah" draft="contributed">ياقۇتچە</language>
+			<language type="sah">ساخاچە</language>
 			<language type="sam" draft="contributed">سامارىتانچە</language>
 			<language type="saq" draft="contributed">سامبۇرۇچە</language>
 			<language type="sas" draft="contributed">ساساكچە</language>
-			<language type="sat" draft="contributed">سانتالىچە</language>
+			<language type="sat">سانتالچە</language>
 			<language type="sba" draft="contributed">نگامبايچە</language>
 			<language type="sbp" draft="contributed">سانگۇچە</language>
 			<language type="sc" draft="contributed">ساردىنىيەچە</language>
 			<language type="scn" draft="contributed">سىتسىلىيەچە</language>
 			<language type="sco" draft="contributed">شوتلاندىيەچە</language>
-			<language type="sd" draft="contributed">سىندىچە</language>
-			<language type="se" draft="contributed">شىمالى سامىچە</language>
+			<language type="sd">سىندىچە</language>
+			<language type="se">شىمالىي سامىچە</language>
 			<language type="see" draft="contributed">سېكنېكاچە</language>
 			<language type="seh" draft="contributed">سېناچە</language>
 			<language type="sel" draft="contributed">سېلكاپچە</language>
@@ -422,80 +424,80 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="shi" draft="contributed">شىلخاچە</language>
 			<language type="shn" draft="contributed">شانچە</language>
 			<language type="shu" draft="contributed">چاد ئەرەبچە</language>
-			<language type="si" draft="contributed">سىنگالچە</language>
+			<language type="si">سىنگالچە</language>
 			<language type="sid" draft="contributed">سىداموچە</language>
-			<language type="sk" draft="contributed">سىلوۋاكچە</language>
-			<language type="sl" draft="contributed">سىلوۋېنىيەچە</language>
+			<language type="sk">سىلوۋاكچە</language>
+			<language type="sl">سىلوۋېنچە</language>
 			<language type="sm" draft="contributed">ساموئاچە</language>
-			<language type="sma" draft="contributed">جەنۇبى سامى تىللىرى</language>
-			<language type="smj" draft="contributed">لۇلې سامىچە</language>
-			<language type="smn" draft="contributed">ئىنارى سامىچە</language>
-			<language type="sms" draft="contributed">سىكولت سامىچە</language>
+			<language type="sma">جەنۇبىي سامىچە</language>
+			<language type="smj">لۇلې سامىچە</language>
+			<language type="smn">ئىنارى سامىچە</language>
+			<language type="sms">سكولت سامىچە</language>
 			<language type="sn" draft="contributed">شوناچە</language>
 			<language type="snk" draft="contributed">سونىنكەچە</language>
-			<language type="so" draft="contributed">سومالىچە</language>
+			<language type="so">سومالىچە</language>
 			<language type="sog" draft="contributed">سوغدىچە</language>
-			<language type="sq" draft="contributed">ئالبانچە</language>
-			<language type="sr" draft="contributed">سېربچە</language>
+			<language type="sq">ئالبانچە</language>
+			<language type="sr">سېربچە</language>
 			<language type="srn" draft="contributed">سىرانان-توڭوچە</language>
 			<language type="srr" draft="contributed">سېرېرچە</language>
 			<language type="ss" draft="contributed">سىۋاتىچە</language>
 			<language type="ssy" draft="contributed">ساخوچە</language>
-			<language type="st" draft="contributed">جەنۇبى سوتوچە</language>
+			<language type="st">سوتوچە</language>
 			<language type="su" draft="contributed">سۇنداچە</language>
 			<language type="suk" draft="contributed">سۇكۇماچە</language>
 			<language type="sus" draft="contributed">سۇسۇچە</language>
 			<language type="sux" draft="contributed">سۈمەرچە</language>
-			<language type="sv" draft="contributed">شۋېدچە</language>
-			<language type="sw" draft="contributed">سىۋالىچە</language>
+			<language type="sv">شىۋېدچە</language>
+			<language type="sw">سىۋاھىلچە</language>
 			<language type="sw_CD">كونگو سىۋالىچە</language>
 			<language type="swb" draft="contributed">كومورىچە</language>
-			<language type="syc" draft="contributed">كلاسسىك سۈرىيەچە</language>
-			<language type="syr" draft="contributed">سۈرىيەچە</language>
-			<language type="ta" draft="contributed">تامىلچە</language>
-			<language type="te" draft="contributed">تېلۇگۇچە</language>
+			<language type="syc">قەدىمىي سۇرىيەچە</language>
+			<language type="syr">سۇرىيەچە</language>
+			<language type="ta">تامىلچە</language>
+			<language type="te">تېلۇگۇچە</language>
 			<language type="tem" draft="contributed">تېمنېچە</language>
 			<language type="teo" draft="contributed">تېسوچە</language>
 			<language type="ter" draft="contributed">تېرېناچە</language>
 			<language type="tet" draft="contributed">تېتۇمچە</language>
-			<language type="tg" draft="contributed">تاجىكچە</language>
-			<language type="th" draft="contributed">تايلاندچە</language>
-			<language type="ti" draft="contributed">تىگرىنياچە</language>
+			<language type="tg">تاجىكچە</language>
+			<language type="th">تايلاندچە</language>
+			<language type="ti">تىگرىنياچە</language>
 			<language type="tig" draft="contributed">تىگرېچە</language>
 			<language type="tiv" draft="contributed">تىۋچە</language>
-			<language type="tk" draft="contributed">تۈركمەنچە</language>
+			<language type="tk">تۈركمەنچە</language>
 			<language type="tkl" draft="contributed">توكېلاۋچە</language>
 			<language type="tl" draft="contributed">تاگالوگچە</language>
 			<language type="tlh" draft="contributed">كىلىنگونچە</language>
 			<language type="tli" draft="contributed">تىلىنگىتچە</language>
 			<language type="tmh" draft="contributed">تاماشېكچە</language>
 			<language type="tn" draft="contributed">سىۋاناچە</language>
-			<language type="to" draft="contributed">توڭانچە</language>
+			<language type="to">تونگانچە</language>
 			<language type="tog" draft="contributed">نياسا توڭانچە</language>
 			<language type="tpi" draft="contributed">توك-پىسىنچە</language>
-			<language type="tr" draft="contributed">تۈركچە</language>
+			<language type="tr">تۈركچە</language>
 			<language type="trv" draft="contributed">توروكوچە</language>
 			<language type="ts" draft="contributed">سونگاچە</language>
 			<language type="tsi" draft="contributed">سىمشيانچە</language>
-			<language type="tt" draft="contributed">تاتارچە</language>
+			<language type="tt">تاتارچە</language>
 			<language type="tum" draft="contributed">تۇمبۇكاچە</language>
 			<language type="tvl" draft="contributed">تۇۋالۇچە</language>
 			<language type="tw" draft="contributed">تىۋىچە</language>
 			<language type="twq" draft="contributed">شىمالىي سوڭخايچە</language>
 			<language type="ty" draft="contributed">تاختىچە</language>
 			<language type="tyv" draft="contributed">توۋاچە</language>
-			<language type="tzm" draft="contributed">مەركىزى ئاتلاس تاماچاگىت</language>
+			<language type="tzm">مەركىزىي ئاتلاس تامازايتچە</language>
 			<language type="udm" draft="contributed">ئۇدمۇرتچە</language>
-			<language type="ug" draft="contributed">ئۇيغۇرچە</language>
+			<language type="ug">ئۇيغۇرچە</language>
 			<language type="uga" draft="contributed">ئۇگارىتىكچە</language>
-			<language type="uk" draft="contributed">ئۇكرائىنچە</language>
+			<language type="uk">ئۇكرائىنچە</language>
 			<language type="umb" draft="contributed">ئۇمبۇندۇچە</language>
 			<language type="und" draft="contributed">يوچۇن تىل</language>
-			<language type="ur" draft="contributed">ئوردوچە</language>
-			<language type="uz" draft="contributed">ئۆزبېكچە</language>
+			<language type="ur">ئوردۇچە</language>
+			<language type="uz">ئۆزبېكچە</language>
 			<language type="vai" draft="contributed">ۋايچە</language>
-			<language type="ve" draft="contributed">ۋېنداچە</language>
-			<language type="vi" draft="contributed">ۋىيېتنامچە</language>
+			<language type="ve">ۋېنداچە</language>
+			<language type="vi">ۋىيېتنامچە</language>
 			<language type="vo" draft="contributed">ۋولاپۇكچە</language>
 			<language type="vot" draft="contributed">ۋوتېچە</language>
 			<language type="vun" draft="contributed">ۋۇنجوچە</language>
@@ -504,26 +506,26 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<language type="wal" draft="contributed">ۋولايتاچە</language>
 			<language type="war" draft="contributed">ۋارايچە</language>
 			<language type="was" draft="contributed">ۋاشوچە</language>
-			<language type="wo" draft="contributed">ۋولوفچە</language>
+			<language type="wo">ۋولوفچە</language>
 			<language type="xal" draft="contributed">قالماقچە</language>
-			<language type="xh" draft="contributed">خوساچە</language>
+			<language type="xh">خوساچە</language>
 			<language type="xog" draft="contributed">سوگاچە</language>
 			<language type="yao" draft="contributed">ياۋچە</language>
 			<language type="yap" draft="contributed">ياپچە</language>
 			<language type="yav" draft="contributed">ياڭبەنچە</language>
 			<language type="ybb" draft="contributed">يېمباچە</language>
-			<language type="yi" draft="contributed">يىددىشچە</language>
-			<language type="yo" draft="contributed">يورۇباچە</language>
+			<language type="yi">يىددىشچە</language>
+			<language type="yo">يورۇباچە</language>
 			<language type="yue" draft="contributed">گۇاڭدوڭچە</language>
 			<language type="za" draft="contributed">جۇاڭچە</language>
 			<language type="zap" draft="contributed">زاپوتېكچە</language>
 			<language type="zbl" draft="contributed">بىلىس بەلگىلىرى</language>
 			<language type="zen" draft="contributed">زېناگاچە</language>
 			<language type="zgh" draft="contributed">ئۆلچەملىك ماراكەش تامازىتچە</language>
-			<language type="zh" draft="contributed">خەنچە</language>
+			<language type="zh">خەنزۇچە</language>
 			<language type="zh_Hans" draft="contributed">ئاددىي خەنچە</language>
 			<language type="zh_Hant" draft="contributed">مۇرەككەپ خەنچە</language>
-			<language type="zu" draft="contributed">زۇلۇچە</language>
+			<language type="zu">زۇلۇچە</language>
 			<language type="zun" draft="contributed">زۇنىچە</language>
 			<language type="zxx" draft="contributed">تىل مەزمۇنى يوق</language>
 			<language type="zza" draft="contributed">زازاچە</language>
@@ -721,273 +723,273 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<territory type="155" draft="contributed">غەربىي ياۋروپا</territory>
 			<territory type="419" draft="contributed">لاتىن ئامېرىكا</territory>
 			<territory type="AC" draft="contributed">ئاسسېنسىيون ئارىلى</territory>
-			<territory type="AD" draft="contributed">ئاندوررا</territory>
-			<territory type="AE" draft="contributed">ئەرەب بىرلەشمە خەلىپىلىكى</territory>
-			<territory type="AF" draft="contributed">ئافغانىستان</territory>
-			<territory type="AG" draft="contributed">ئانتىگۋا ۋە باربۇدا</territory>
-			<territory type="AI" draft="contributed">ئانگۋىللا</territory>
-			<territory type="AL" draft="contributed">ئالبانىيە</territory>
-			<territory type="AM" draft="contributed">ئەرمېنىيە</territory>
-			<territory type="AO" draft="contributed">ئانگولا</territory>
-			<territory type="AQ" draft="contributed">ئانتاركتىكا</territory>
-			<territory type="AR" draft="contributed">ئارگېنتىنا</territory>
-			<territory type="AS" draft="contributed">ئامېرىكا تەۋەلىكىدىكى ساموئا</territory>
-			<territory type="AT" draft="contributed">ئاۋسترىيە</territory>
-			<territory type="AU" draft="contributed">ئاۋسترالىيە</territory>
-			<territory type="AW" draft="contributed">ئارۇبا</territory>
-			<territory type="AX" draft="contributed">ئالاند ئاراللىرى</territory>
-			<territory type="AZ" draft="contributed">ئەزەربەيجان</territory>
-			<territory type="BA" draft="contributed">بوسنىيە-گېرتسېگوۋىنا</territory>
-			<territory type="BB" draft="contributed">باربادوس</territory>
-			<territory type="BD" draft="contributed">باڭلادىش</territory>
-			<territory type="BE" draft="contributed">بېلگىيە</territory>
-			<territory type="BF" draft="contributed">بۇركىنا-فاسو</territory>
-			<territory type="BG" draft="contributed">بۇلغارىيە</territory>
-			<territory type="BH" draft="contributed">بەھرەين</territory>
-			<territory type="BI" draft="contributed">بۇرۇندى</territory>
-			<territory type="BJ" draft="contributed">بېنىن</territory>
-			<territory type="BL" draft="contributed">ساينىت-بارتھېلەمي ئاراللىرى</territory>
-			<territory type="BM" draft="contributed">بېرمۇدا</territory>
-			<territory type="BN" draft="contributed">بىرۇنېي</territory>
-			<territory type="BO" draft="contributed">بولىۋىيە</territory>
+			<territory type="AD">ئاندوررا</territory>
+			<territory type="AE">ئەرەب بىرلەشمە خەلىپىلىكى</territory>
+			<territory type="AF">ئافغانىستان</territory>
+			<territory type="AG">ئانتىگۇئا ۋە باربۇدا</territory>
+			<territory type="AI">ئانگۋىللا</territory>
+			<territory type="AL">ئالبانىيە</territory>
+			<territory type="AM">ئەرمېنىيە</territory>
+			<territory type="AO">ئانگولا</territory>
+			<territory type="AQ">ئانتاركتىكا</territory>
+			<territory type="AR">ئارگېنتىنا</territory>
+			<territory type="AS">ئامېرىكا ساموئا</territory>
+			<territory type="AT">ئاۋىستىرىيە</territory>
+			<territory type="AU">ئاۋسترالىيە</territory>
+			<territory type="AW">ئارۇبا</territory>
+			<territory type="AX">ئالاند ئاراللىرى</territory>
+			<territory type="AZ">ئەزەربەيجان</territory>
+			<territory type="BA">بوسىنىيە ۋە گېرتسېگوۋىنا</territory>
+			<territory type="BB">باربادوس</territory>
+			<territory type="BD">بېنگال</territory>
+			<territory type="BE">بېلگىيە</territory>
+			<territory type="BF">بۇركىنا فاسو</territory>
+			<territory type="BG">بۇلغارىيە</territory>
+			<territory type="BH">بەھرەين</territory>
+			<territory type="BI">بۇرۇندى</territory>
+			<territory type="BJ">بېنىن</territory>
+			<territory type="BL">ساينت بارتېلېمى</territory>
+			<territory type="BM">بېرمۇدا</territory>
+			<territory type="BN">بىرۇنېي</territory>
+			<territory type="BO">بولىۋىيە</territory>
 			<territory type="BQ" draft="contributed">كارىب دېڭىزى گوللاندىيە</territory>
-			<territory type="BR" draft="contributed">بىرازىلىيە</territory>
-			<territory type="BS" draft="contributed">باھاما</territory>
-			<territory type="BT" draft="contributed">بۇتان</territory>
-			<territory type="BV" draft="contributed">بۇۋېت ئاراللىرى</territory>
-			<territory type="BW" draft="contributed">بوتسۋانا</territory>
-			<territory type="BY" draft="contributed">بېلارۇسىيە</territory>
-			<territory type="BZ" draft="contributed">بېلىز</territory>
-			<territory type="CA" draft="contributed">كانادا</territory>
-			<territory type="CC" draft="contributed">كەئەلىڭ كوكۇس ئاراللىرى</territory>
+			<territory type="BR">بىرازىلىيە</territory>
+			<territory type="BS">باھاما</territory>
+			<territory type="BT">بۇتان</territory>
+			<territory type="BV">بوۋېت ئارىلى</territory>
+			<territory type="BW">بوتسۋانا</territory>
+			<territory type="BY">بېلارۇسىيە</territory>
+			<territory type="BZ">بېلىز</territory>
+			<territory type="CA">كانادا</territory>
+			<territory type="CC">كوكوس (كىلىڭ) ئاراللىرى</territory>
 			<territory type="CD" draft="contributed">كونگو - كىنشاسا</territory>
-			<territory type="CD" alt="variant" draft="contributed">كونگو (دېموكراتىك كونگو جۇمھۇرىيىتى)</territory>
-			<territory type="CF" draft="contributed">ئوتتۇرا ئافرىقا جۇمھۇرىيىتى</territory>
+			<territory type="CD" alt="variant">كونگو (ك د ج)</territory>
+			<territory type="CF">ئوتتۇرا ئافرىقا جۇمھۇرىيىتى</territory>
 			<territory type="CG" draft="contributed">كونگو - بىراززاۋىل</territory>
 			<territory type="CG" alt="variant" draft="contributed">كونگو (جۇمھۇرىيىتى)</territory>
-			<territory type="CH" draft="contributed">شىۋىتسارىيە</territory>
-			<territory type="CI" draft="contributed">كوتې دې ئىۋوئىر</territory>
+			<territory type="CH">شىۋېتسارىيە</territory>
+			<territory type="CI">كوتې دې ئىۋوئىر</territory>
 			<territory type="CI" alt="variant" draft="contributed">پىل چىشى قىرغىقى</territory>
-			<territory type="CK" draft="contributed">كۇك ئاراللىرى</territory>
-			<territory type="CL" draft="contributed">چىلى</territory>
-			<territory type="CM" draft="contributed">كامېرون</territory>
-			<territory type="CN" draft="contributed">جۇڭگو</territory>
-			<territory type="CO" draft="contributed">كولومبىيە</territory>
+			<territory type="CK">كۇك ئاراللىرى</territory>
+			<territory type="CL">چىلى</territory>
+			<territory type="CM">كامېرون</territory>
+			<territory type="CN">جۇڭگو</territory>
+			<territory type="CO">كولومبىيە</territory>
 			<territory type="CP" draft="contributed">كىلىپپېرتون ئاراللىرى</territory>
-			<territory type="CR" draft="contributed">كوستارىكا</territory>
-			<territory type="CU" draft="contributed">كۇبا</territory>
-			<territory type="CV" draft="contributed">يېشىل تۇمشۇق</territory>
-			<territory type="CW" draft="contributed">كۇراسو</territory>
-			<territory type="CX" draft="contributed">روژدېستۋو ئارىلى</territory>
-			<territory type="CY" draft="contributed">سىپرۇس</territory>
-			<territory type="CZ" draft="contributed">چېخ جۇمھۇرىيىتى</territory>
-			<territory type="DE" draft="contributed">گېرمانىيە</territory>
+			<territory type="CR">كوستارىكا</territory>
+			<territory type="CU">كۇبا</territory>
+			<territory type="CV">يېشىل تۇمشۇق</territory>
+			<territory type="CW">كۇراچاۋ</territory>
+			<territory type="CX">مىلاد ئارىلى</territory>
+			<territory type="CY">سىپرۇس</territory>
+			<territory type="CZ">چېخ جۇمھۇرىيىتى</territory>
+			<territory type="DE">گېرمانىيە</territory>
 			<territory type="DG" draft="contributed">دېگو-گارشىيا</territory>
-			<territory type="DJ" draft="contributed">جىبۇتى</territory>
-			<territory type="DK" draft="contributed">دانىيە</territory>
-			<territory type="DM" draft="contributed">دومىنىكا</territory>
-			<territory type="DO" draft="contributed">دومىنىكا جۇمھۇرىيىتى</territory>
-			<territory type="DZ" draft="contributed">ئالجىرىيە</territory>
+			<territory type="DJ">جىبۇتى</territory>
+			<territory type="DK">دانىيە</territory>
+			<territory type="DM">دومىنىكا</territory>
+			<territory type="DO">دومىنىكا جۇمھۇرىيىتى</territory>
+			<territory type="DZ">ئالجىرىيە</territory>
 			<territory type="EA" draft="contributed">سېيتا ۋە مېلىلا</territory>
-			<territory type="EC" draft="contributed">ئېكۋادور</territory>
-			<territory type="EE" draft="contributed">ئېستونىيە</territory>
-			<territory type="EG" draft="contributed">مىسىر</territory>
+			<territory type="EC">ئېكۋاتور</territory>
+			<territory type="EE">ئېستونىيە</territory>
+			<territory type="EG">مىسىر</territory>
 			<territory type="EH" draft="contributed">غەربىي ساخارا</territory>
-			<territory type="ER" draft="contributed">ئېرىترېيە</territory>
-			<territory type="ES" draft="contributed">ئىسپانىيە</territory>
-			<territory type="ET" draft="contributed">ئېفىيوپىيە</territory>
+			<territory type="ER">ئېرىترىيە</territory>
+			<territory type="ES">ئىسپانىيە</territory>
+			<territory type="ET">ئېفىيوپىيە</territory>
 			<territory type="EU" draft="contributed">ياۋروپا ئىتتىپاقى</territory>
-			<territory type="FI" draft="contributed">فىنلاندىيە</territory>
-			<territory type="FJ" draft="contributed">فىجى</territory>
-			<territory type="FK" draft="contributed">فالكلاند ئاراللىرى</territory>
+			<territory type="FI">فىنلاندىيە</territory>
+			<territory type="FJ">فىجى</territory>
+			<territory type="FK">فالكلاند ئاراللىرى</territory>
 			<territory type="FK" alt="variant" draft="contributed">فالكلاند ئاراللىرى (ئىسلاس مالۋىناس)</territory>
-			<territory type="FM" draft="contributed">مىكرونېزىيە</territory>
-			<territory type="FO" draft="contributed">فائېرو ئاراللىرى</territory>
-			<territory type="FR" draft="contributed">فىرانسىيە</territory>
-			<territory type="GA" draft="contributed">گابون</territory>
-			<territory type="GB" draft="contributed">ئەنگلىيە پادىشاھلىقى</territory>
+			<territory type="FM">مىكرونېزىيە</territory>
+			<territory type="FO">فارو ئاراللىرى</territory>
+			<territory type="FR">فىرانسىيە</territory>
+			<territory type="GA">گابون</territory>
+			<territory type="GB">بىرلەشمە پادىشاھلىق</territory>
 			<territory type="GB" alt="short" draft="contributed">ئەنگلىيە</territory>
-			<territory type="GD" draft="contributed">گىرېنادا</territory>
-			<territory type="GE" draft="contributed">گىروزىيە</territory>
-			<territory type="GF" draft="contributed">فىرانسىيەگە قاراشلىق گىۋىيانا</territory>
-			<territory type="GG" draft="contributed">گېرىنسى</territory>
-			<territory type="GH" draft="contributed">گانا</territory>
-			<territory type="GI" draft="contributed">جەبىلتارىق</territory>
-			<territory type="GL" draft="contributed">گىرېنلاند</territory>
-			<territory type="GM" draft="contributed">گامبىيە</territory>
-			<territory type="GN" draft="contributed">گىۋىنېيە</territory>
-			<territory type="GP" draft="contributed">گىۋادېلۇپ</territory>
-			<territory type="GQ" draft="contributed">ئېكۋاتور گىۋىنېيەسى</territory>
-			<territory type="GR" draft="contributed">گىرېتسىيە</territory>
-			<territory type="GS" draft="contributed">جەنۇبىي جورجىيە ۋە جەنۇبىي ساندىۋىچ ئاراللىرى</territory>
-			<territory type="GT" draft="contributed">گىۋاتېمالا</territory>
-			<territory type="GU" draft="contributed">گۇئام</territory>
-			<territory type="GW" draft="contributed">گىۋىنېيە-بىسسائۇ</territory>
-			<territory type="GY" draft="contributed">گىۋىيانا</territory>
+			<territory type="GD">گىرېنادا</territory>
+			<territory type="GE">گىرۇزىيە</territory>
+			<territory type="GF">فىرانسىيەگە قاراشلىق گىۋىيانا</territory>
+			<territory type="GG">گۇرنسېي</territory>
+			<territory type="GH">گانا</territory>
+			<territory type="GI">جەبىلتارىق</territory>
+			<territory type="GL">گىرېنلاندىيە</territory>
+			<territory type="GM">گامبىيە</territory>
+			<territory type="GN">گىۋىنىيە</territory>
+			<territory type="GP">گىۋادېلۇپ</territory>
+			<territory type="GQ">ئېكۋاتور گىۋىنىيەسى</territory>
+			<territory type="GR">گىرېتسىيە</territory>
+			<territory type="GS">جەنۇبىي جورجىيە ۋە جەنۇبىي ساندۋىچ ئاراللىرى</territory>
+			<territory type="GT">گىۋاتېمالا</territory>
+			<territory type="GU">گۇئام</territory>
+			<territory type="GW">گىۋىنىيە بىسسائۇ</territory>
+			<territory type="GY">گىۋىيانا</territory>
 			<territory type="HK" draft="contributed">شياڭگاڭ ئالاھىدە مەمۇرىي رايونى (جۇڭگو)</territory>
-			<territory type="HK" alt="short" draft="contributed">شياڭگاڭ</territory>
-			<territory type="HM" draft="contributed">خېرد ۋە ماك-دونالد ئارىلى</territory>
-			<territory type="HN" draft="contributed">ھوندۇراس</territory>
-			<territory type="HR" draft="contributed">كىرودىيە</territory>
-			<territory type="HT" draft="contributed">ھايتى</territory>
-			<territory type="HU" draft="contributed">ۋېنگىرىيە</territory>
+			<territory type="HK" alt="short">شياڭگاڭ</territory>
+			<territory type="HM">ھېرد ئارىلى ۋە ماكدونالد ئاراللىرى</territory>
+			<territory type="HN">ھوندۇراس</territory>
+			<territory type="HR">كىرودىيە</territory>
+			<territory type="HT">ھايتى</territory>
+			<territory type="HU">ۋېنگىرىيە</territory>
 			<territory type="IC" draft="contributed">كانارى ئاراللىرى</territory>
-			<territory type="ID" draft="contributed">ھىندونېزىيە</territory>
-			<territory type="IE" draft="contributed">ئىرېلاندىيە</territory>
-			<territory type="IL" draft="contributed">ئىسرائىلىيە</territory>
-			<territory type="IM" draft="contributed">مېن ئارىلى</territory>
-			<territory type="IN" draft="contributed">ھىندىستان</territory>
-			<territory type="IO" draft="contributed">ئەنگلىيەنىڭ ھىندى ئوكياندىكى تەۋەلىكى</territory>
-			<territory type="IQ" draft="contributed">ئىراق</territory>
-			<territory type="IR" draft="contributed">ئىران</territory>
-			<territory type="IS" draft="contributed">ئىسلاندىيە</territory>
-			<territory type="IT" draft="contributed">ئىتالىيە</territory>
-			<territory type="JE" draft="contributed">جېرسېي</territory>
-			<territory type="JM" draft="contributed">يامايكا</territory>
-			<territory type="JO" draft="contributed">ئىيوردانىيە</territory>
-			<territory type="JP" draft="contributed">ياپونىيە</territory>
-			<territory type="KE" draft="contributed">كېنىيە</territory>
-			<territory type="KG" draft="contributed">قىرغىزىستان</territory>
-			<territory type="KH" draft="contributed">كامبودژا</territory>
-			<territory type="KI" draft="contributed">كىرىباتى</territory>
-			<territory type="KM" draft="contributed">كومورو</territory>
-			<territory type="KN" draft="contributed">ساينىت-كىرىستوفېر ۋە نېۋىس</territory>
-			<territory type="KP" draft="contributed">شىمالىي كورىيە</territory>
-			<territory type="KR" draft="contributed">جەنۇبىي كورىيە</territory>
-			<territory type="KW" draft="contributed">كۇۋەيت</territory>
-			<territory type="KY" draft="contributed">كايمان ئاراللىرى</territory>
-			<territory type="KZ" draft="contributed">قازاقىستان</territory>
-			<territory type="LA" draft="contributed">لائوس</territory>
-			<territory type="LB" draft="contributed">لىۋان</territory>
-			<territory type="LC" draft="contributed">ساينىت-لۇسىيە</territory>
-			<territory type="LI" draft="contributed">لىچتېنشتېين بەگلىكى</territory>
-			<territory type="LK" draft="contributed">سىرىلانكا</territory>
-			<territory type="LR" draft="contributed">لىبېرىيە</territory>
-			<territory type="LS" draft="contributed">لېسوتو</territory>
-			<territory type="LT" draft="contributed">لىتۋانىيە</territory>
-			<territory type="LU" draft="contributed">لىيۇكسېمبۇرگ</territory>
-			<territory type="LV" draft="contributed">لاتۋىيە</territory>
-			<territory type="LY" draft="contributed">لىۋىيە</territory>
-			<territory type="MA" draft="contributed">ماراكەش</territory>
-			<territory type="MC" draft="contributed">موناكو</territory>
-			<territory type="MD" draft="contributed">مولدوۋا</territory>
-			<territory type="ME" draft="contributed">مونتېنېگرو</territory>
-			<territory type="MF" draft="contributed">ساينىت-مارتېن</territory>
-			<territory type="MG" draft="contributed">ماداغاسقار</territory>
-			<territory type="MH" draft="contributed">مارشال ئاراللىرى</territory>
+			<territory type="ID">ھىندونېزىيە</territory>
+			<territory type="IE">ئىرېلاندىيە</territory>
+			<territory type="IL">ئىسرائىلىيە</territory>
+			<territory type="IM">مان ئارىلى</territory>
+			<territory type="IN">ھىندىستان</territory>
+			<territory type="IO">ئەنگلىيەگە قاراشلىق ھىندى ئوكيان تېررىتورىيەسى</territory>
+			<territory type="IQ">ئىراق</territory>
+			<territory type="IR">ئىران</territory>
+			<territory type="IS">ئىسلاندىيە</territory>
+			<territory type="IT">ئىتالىيە</territory>
+			<territory type="JE">جېرسېي</territory>
+			<territory type="JM">يامايكا</territory>
+			<territory type="JO">ئىيوردانىيە</territory>
+			<territory type="JP">ياپونىيە</territory>
+			<territory type="KE">كېنىيە</territory>
+			<territory type="KG">قىرغىزىستان</territory>
+			<territory type="KH">كامبودژا</territory>
+			<territory type="KI">كىرىباتى</territory>
+			<territory type="KM">كومورو</territory>
+			<territory type="KN">ساينت كىتىس ۋە نېۋىس</territory>
+			<territory type="KP">چاۋشيەن</territory>
+			<territory type="KR">كورېيە</territory>
+			<territory type="KW">كۇۋەيت</territory>
+			<territory type="KY">كايمان ئاراللىرى</territory>
+			<territory type="KZ">قازاقىستان</territory>
+			<territory type="LA">لائوس</territory>
+			<territory type="LB">لىۋان</territory>
+			<territory type="LC">ساينت لۇسىيە</territory>
+			<territory type="LI">لىكتېنستېين</territory>
+			<territory type="LK">سىرىلانكا</territory>
+			<territory type="LR">لىبېرىيە</territory>
+			<territory type="LS">لېسوتو</territory>
+			<territory type="LT">لىتۋانىيە</territory>
+			<territory type="LU">لىيۇكسېمبۇرگ</territory>
+			<territory type="LV">لاتۋىيە</territory>
+			<territory type="LY">لىۋىيە</territory>
+			<territory type="MA">ماراكەش</territory>
+			<territory type="MC">موناكو</territory>
+			<territory type="MD">مولدوۋا</territory>
+			<territory type="ME">قارا تاغ</territory>
+			<territory type="MF">ساينت مارتىن</territory>
+			<territory type="MG">ماداغاسقار</territory>
+			<territory type="MH">مارشال ئاراللىرى</territory>
 			<territory type="MK" draft="contributed">ماكېدونىيە</territory>
-			<territory type="MK" alt="variant" draft="contributed">ماكېدونىيە (سابىق يۇگۇسلاۋىيە ماكېدونىيە جۇمھۇرىيىتى)</territory>
-			<territory type="ML" draft="contributed">مالى</territory>
-			<territory type="MM" draft="contributed">بىرما</territory>
-			<territory type="MN" draft="contributed">موڭغۇلىيە</territory>
-			<territory type="MO" draft="contributed">ئاۋمېن ئالاھىدە مەمۇرىي رايونى (جۇڭگو)</territory>
-			<territory type="MO" alt="short" draft="contributed">ئاۋمېن</territory>
-			<territory type="MP" draft="contributed">شىمالىي مارىيانا ئاراللىرى</territory>
-			<territory type="MQ" draft="contributed">مارتىنىكا</territory>
-			<territory type="MR" draft="contributed">ماۋرىتانىيە</territory>
-			<territory type="MS" draft="contributed">مونتسېررات</territory>
-			<territory type="MT" draft="contributed">مالتا</territory>
-			<territory type="MU" draft="contributed">ماۋرىتىئۇس</territory>
-			<territory type="MV" draft="contributed">مالدىۋې</territory>
-			<territory type="MW" draft="contributed">مالاۋى</territory>
-			<territory type="MX" draft="contributed">مېكسىكا</territory>
-			<territory type="MY" draft="contributed">مالايشىيا</territory>
-			<territory type="MZ" draft="contributed">موزامبىك</territory>
-			<territory type="NA" draft="contributed">نامىبىيە</territory>
-			<territory type="NC" draft="contributed">يېڭى كالېدونىيە</territory>
-			<territory type="NE" draft="contributed">نېگىر</territory>
-			<territory type="NF" draft="contributed">نورفولك ئارىلى</territory>
-			<territory type="NG" draft="contributed">نىگېرىيە</territory>
-			<territory type="NI" draft="contributed">نىكاراگۇئا</territory>
-			<territory type="NL" draft="contributed">گوللاندىيە</territory>
-			<territory type="NO" draft="contributed">نورۋېگىيە</territory>
-			<territory type="NP" draft="contributed">نېپال</territory>
-			<territory type="NR" draft="contributed">ناۋرۇ</territory>
-			<territory type="NU" draft="contributed">نىيۇئې</territory>
-			<territory type="NZ" draft="contributed">يېڭى زېلاندىيە</territory>
-			<territory type="OM" draft="contributed">ئومان</territory>
-			<territory type="PA" draft="contributed">پاناما</territory>
-			<territory type="PE" draft="contributed">پېرۇ</territory>
-			<territory type="PF" draft="contributed">فىرانسىيەگە قاراشلىق پولىنېزىيە</territory>
-			<territory type="PG" draft="contributed">پاپۇئا يېڭى گىۋىنېيەسى</territory>
-			<territory type="PH" draft="contributed">فىلىپپىن</territory>
-			<territory type="PK" draft="contributed">پاكىستان</territory>
-			<territory type="PL" draft="contributed">پولشا</territory>
-			<territory type="PM" draft="contributed">ساينىت-پىئېر ۋە مىكېلون ئاراللىرى</territory>
-			<territory type="PN" draft="contributed">پىتكاير ئاراللىرى</territory>
-			<territory type="PR" draft="contributed">پۇئېرتو-رىكو</territory>
+			<territory type="MK" alt="variant">ماكېدونىيە (سابىق يۇگوسلاۋىيە ماكېدونىيە جۇمھۇرىيىتى)</territory>
+			<territory type="ML">مالى</territory>
+			<territory type="MM">بىرما</territory>
+			<territory type="MN">موڭغۇلىيە</territory>
+			<territory type="MO">ئاۋمېن ئالاھىدە مەمۇرىي رايونى</territory>
+			<territory type="MO" alt="short">ئاۋمېن</territory>
+			<territory type="MP">شىمالىي مارىيانا ئاراللىرى</territory>
+			<territory type="MQ">مارتىنىكا</territory>
+			<territory type="MR">ماۋرىتانىيە</territory>
+			<territory type="MS">مونتسېررات</territory>
+			<territory type="MT">مالتا</territory>
+			<territory type="MU">ماۋرىتىيۇس</territory>
+			<territory type="MV">مالدىۋې</territory>
+			<territory type="MW">مالاۋى</territory>
+			<territory type="MX">مېكسىكا</territory>
+			<territory type="MY">مالايسىيا</territory>
+			<territory type="MZ">موزامبىك</territory>
+			<territory type="NA">نامىبىيە</territory>
+			<territory type="NC">يېڭى كالېدونىيە</territory>
+			<territory type="NE">نىگېر</territory>
+			<territory type="NF">نورفولك ئارىلى</territory>
+			<territory type="NG">نىگېرىيە</territory>
+			<territory type="NI">نىكاراگۇئا</territory>
+			<territory type="NL">گوللاندىيە</territory>
+			<territory type="NO">نورۋېگىيە</territory>
+			<territory type="NP">نېپال</territory>
+			<territory type="NR">ناۋرۇ</territory>
+			<territory type="NU">نيۇئې</territory>
+			<territory type="NZ">يېڭى زېلاندىيە</territory>
+			<territory type="OM">ئومان</territory>
+			<territory type="PA">پاناما</territory>
+			<territory type="PE">پېرۇ</territory>
+			<territory type="PF">فىرانسىيەگە قاراشلىق پولىنېزىيە</territory>
+			<territory type="PG">پاپۇئا يېڭى گىۋىنىيەسى</territory>
+			<territory type="PH">فىلىپپىن</territory>
+			<territory type="PK">پاكىستان</territory>
+			<territory type="PL">پولشا</territory>
+			<territory type="PM">ساينت پىيېر ۋە مىكېلون ئاراللىرى</territory>
+			<territory type="PN">پىتكايرن ئاراللىرى</territory>
+			<territory type="PR">پۇئېرتو رىكو</territory>
 			<territory type="PS" draft="contributed">پەلەستىن زېمىنى</territory>
 			<territory type="PS" alt="short" draft="contributed">پەلەستىن</territory>
-			<territory type="PT" draft="contributed">پورتۇگالىيە</territory>
-			<territory type="PW" draft="contributed">پالاۋ</territory>
-			<territory type="PY" draft="contributed">پاراگۋاي</territory>
-			<territory type="QA" draft="contributed">قاتار</territory>
+			<territory type="PT">پورتۇگالىيە</territory>
+			<territory type="PW">پالائۇ</territory>
+			<territory type="PY">پاراگۋاي</territory>
+			<territory type="QA">قاتار</territory>
 			<territory type="QO" draft="contributed">ئوكيانىيە ئەتراپىدىكى ئاراللار</territory>
-			<territory type="RE" draft="contributed">رېئونىيون</territory>
-			<territory type="RO" draft="contributed">رۇمىنىيە</territory>
-			<territory type="RS" draft="contributed">سېربىيە</territory>
-			<territory type="RU" draft="contributed">رۇسىيە</territory>
-			<territory type="RW" draft="contributed">رىۋاندا</territory>
-			<territory type="SA" draft="contributed">سەئۇدى ئەرەبىستان</territory>
-			<territory type="SB" draft="contributed">سولومون ئاراللىرى</territory>
-			<territory type="SC" draft="contributed">سېيشېل</territory>
-			<territory type="SD" draft="contributed">سۇدان</territory>
-			<territory type="SE" draft="contributed">شىۋېتسىيە</territory>
-			<territory type="SG" draft="contributed">سىنگاپور</territory>
+			<territory type="RE">رېيۇنىيون</territory>
+			<territory type="RO">رومىنىيە</territory>
+			<territory type="RS">سېربىيە</territory>
+			<territory type="RU">رۇسىيە</territory>
+			<territory type="RW">رىۋاندا</territory>
+			<territory type="SA">سەئۇدىي ئەرەبىستان</territory>
+			<territory type="SB">سولومون ئاراللىرى</territory>
+			<territory type="SC">سېيشېل</territory>
+			<territory type="SD">سۇدان</territory>
+			<territory type="SE">شىۋېتسىيە</territory>
+			<territory type="SG">سىنگاپور</territory>
 			<territory type="SH" draft="contributed">ساينىت ھېلېنا</territory>
-			<territory type="SI" draft="contributed">سىلوۋېنىيە</territory>
-			<territory type="SJ" draft="contributed">سىۋالبارد ۋە يان-مايېن ئارىلى</territory>
-			<territory type="SK" draft="contributed">سىلوۋاكىيە</territory>
-			<territory type="SL" draft="contributed">سېررالېئون</territory>
-			<territory type="SM" draft="contributed">سان-مارىنو</territory>
-			<territory type="SN" draft="contributed">سېنېگال</territory>
-			<territory type="SO" draft="contributed">سومالى</territory>
-			<territory type="SR" draft="contributed">سۇرىنام</territory>
-			<territory type="SS" draft="contributed">جەنۇبىي سۇدان</territory>
-			<territory type="ST" draft="contributed">سان تومې ۋە پرىنسىپې</territory>
-			<territory type="SV" draft="contributed">ئەل سالۋادور</territory>
-			<territory type="SX" draft="contributed">سىنت مارتېن</territory>
-			<territory type="SY" draft="contributed">سۈرىيە</territory>
-			<territory type="SZ" draft="contributed">سىۋېزىلاند</territory>
+			<territory type="SI">سىلوۋېنىيە</territory>
+			<territory type="SJ">سىۋالبارد ۋە يان مايېن</territory>
+			<territory type="SK">سىلوۋاكىيە</territory>
+			<territory type="SL">سېررالېئون</territory>
+			<territory type="SM">سان مارىنو</territory>
+			<territory type="SN">سېنېگال</territory>
+			<territory type="SO">سومالى</territory>
+			<territory type="SR">سۇرىنام</territory>
+			<territory type="SS">جەنۇبىي سۇدان</territory>
+			<territory type="ST">سان تومې ۋە پرىنسىپې</territory>
+			<territory type="SV">سالۋادور</territory>
+			<territory type="SX">سىنت مارتېن</territory>
+			<territory type="SY">سۇرىيە</territory>
+			<territory type="SZ">سىۋېزىلاند</territory>
 			<territory type="TA" draft="contributed">ترىستان داكۇنھا</territory>
-			<territory type="TC" draft="contributed">تۇركس ۋە كايكوس ئاراللىرى</territory>
-			<territory type="TD" draft="contributed">چاد</territory>
-			<territory type="TF" draft="contributed">فىرانسىيەگە قاراشلىق جەنۇبتىكى زېمىنلىرى</territory>
-			<territory type="TG" draft="contributed">توگو</territory>
-			<territory type="TH" draft="contributed">تايلاند</territory>
-			<territory type="TJ" draft="contributed">تاجىكىستان</territory>
-			<territory type="TK" draft="contributed">توكېلاۋ</territory>
-			<territory type="TL" draft="contributed">شەرقىي تىمور</territory>
-			<territory type="TM" draft="contributed">تۈركمەنىستان</territory>
-			<territory type="TN" draft="contributed">تۇنىس</territory>
-			<territory type="TO" draft="contributed">تونگا</territory>
-			<territory type="TR" draft="contributed">تۈركىيە</territory>
-			<territory type="TT" draft="contributed">تىرىنىداد ۋە توباگو</territory>
-			<territory type="TV" draft="contributed">تۇۋالۇ</territory>
-			<territory type="TW" draft="contributed">تەيۋەن</territory>
-			<territory type="TZ" draft="contributed">تانزانىيە</territory>
-			<territory type="UA" draft="contributed">ئۇكرائىنا</territory>
-			<territory type="UG" draft="contributed">ئۇگاندا</territory>
-			<territory type="UM" draft="contributed">ئامېرىكا تەۋەلىكىدىكى سىرتقى كىچىك ئاراللار</territory>
-			<territory type="US" draft="contributed">ئامېرىكا قوشما شتاتلىرى</territory>
+			<territory type="TC">تۇركس ۋە كايكوس ئاراللىرى</territory>
+			<territory type="TD">چاد</territory>
+			<territory type="TF">فىرانسىيەنىڭ جەنۇبىي زېمىنى</territory>
+			<territory type="TG">توگو</territory>
+			<territory type="TH">تايلاند</territory>
+			<territory type="TJ">تاجىكىستان</territory>
+			<territory type="TK">توكېلاۋ</territory>
+			<territory type="TL">شەرقىي تىمور</territory>
+			<territory type="TM">تۈركمەنىستان</territory>
+			<territory type="TN">تۇنىس</territory>
+			<territory type="TO">تونگا</territory>
+			<territory type="TR">تۈركىيە</territory>
+			<territory type="TT">تىرىنىداد ۋە توباگو</territory>
+			<territory type="TV">تۇۋالۇ</territory>
+			<territory type="TW">تەيۋەن</territory>
+			<territory type="TZ">تانزانىيە</territory>
+			<territory type="UA">ئۇكرائىنا</territory>
+			<territory type="UG">ئۇگاندا</territory>
+			<territory type="UM">ئا ق ش تاشقى ئاراللىرى</territory>
+			<territory type="US">ئامېرىكا قوشما ئىشتاتلىرى</territory>
 			<territory type="US" alt="short" draft="contributed">ئا ق ش</territory>
-			<territory type="UY" draft="contributed">ئۇرۇگۋاي</territory>
-			<territory type="UZ" draft="contributed">ئۆزبېكىستان</territory>
-			<territory type="VA" draft="contributed">ۋاتىكان شەھىرى</territory>
-			<territory type="VC" draft="contributed">ساينىت-ۋىنسېنت ۋە گىرېنادىنېس</territory>
-			<territory type="VE" draft="contributed">ۋېنېزۇئېلا</territory>
-			<territory type="VG" draft="contributed">ئەنگلىيەگە قاراشلىق ۋىرجىن ئارىلى</territory>
-			<territory type="VI" draft="contributed">ئامېرىكا تەۋەلىكىدىكى ۋىرجىن تاقىم ئاراللىرى</territory>
-			<territory type="VN" draft="contributed">ۋىيېتنام</territory>
-			<territory type="VU" draft="contributed">ۋانۇئاتۇ</territory>
-			<territory type="WF" draft="contributed">ۋالىس ۋە فۇتۇنا</territory>
-			<territory type="WS" draft="contributed">ساموئا</territory>
-			<territory type="XK" draft="contributed">كوسوۋو</territory>
-			<territory type="YE" draft="contributed">يەمەن</territory>
-			<territory type="YT" draft="contributed">مايوتتې</territory>
-			<territory type="ZA" draft="contributed">جەنۇبىي ئافرىقا</territory>
-			<territory type="ZM" draft="contributed">زامبىيە</territory>
-			<territory type="ZW" draft="contributed">زىمبابۋې</territory>
+			<territory type="UY">ئۇرۇگۋاي</territory>
+			<territory type="UZ">ئۆزبېكىستان</territory>
+			<territory type="VA">ۋاتىكان</territory>
+			<territory type="VC">ساينت ۋىنسېنت ۋە گىرېنادىنېس</territory>
+			<territory type="VE">ۋېنېسۇئېلا</territory>
+			<territory type="VG">ئەنگلىيە ۋىرگىن ئاراللىرى</territory>
+			<territory type="VI">ئا ق ش ۋىرگىن ئاراللىرى</territory>
+			<territory type="VN">ۋىيېتنام</territory>
+			<territory type="VU">ۋانۇئاتۇ</territory>
+			<territory type="WF">ۋاللىس ۋە فۇتۇنا</territory>
+			<territory type="WS">ساموئا</territory>
+			<territory type="XK">كوسوۋو</territory>
+			<territory type="YE">يەمەن</territory>
+			<territory type="YT">مايوتى</territory>
+			<territory type="ZA">جەنۇبىي ئافرىقا</territory>
+			<territory type="ZM">زامبىيە</territory>
+			<territory type="ZW">زىمبابۋې</territory>
 			<territory type="ZZ" draft="contributed">يوچۇن جاي</territory>
 		</territories>
 		<variants>
@@ -1155,6 +1157,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 	<characters>
 		<exemplarCharacters draft="contributed">[ئ ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ئ ا ە ب پ ت ج چ خ د ر ز ژ س ش غ ف ق ك گ ڭ ل م ن ھ و ۇ ۆ ۈ ۋ ې ى ي]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart draft="contributed">»</quotationStart>
@@ -1390,35 +1393,49 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">يانۋار</month>
-							<month type="2" draft="contributed">فېۋرال</month>
-							<month type="3" draft="contributed">مارت</month>
-							<month type="4" draft="contributed">ئاپرېل</month>
-							<month type="5" draft="contributed">ماي</month>
-							<month type="6" draft="contributed">ئىيۇن</month>
-							<month type="7" draft="contributed">ئىيۇل</month>
-							<month type="8" draft="contributed">ئاۋغۇست</month>
-							<month type="9" draft="contributed">سېنتەبىر</month>
-							<month type="10" draft="contributed">ئۆكتەبىر</month>
-							<month type="11" draft="contributed">نويابىر</month>
-							<month type="12" draft="contributed">دېكابىر</month>
+							<month type="1">يانۋار</month>
+							<month type="2">فېۋرال</month>
+							<month type="3">مارت</month>
+							<month type="4">ئاپرېل</month>
+							<month type="5">ماي</month>
+							<month type="6">ئىيۇن</month>
+							<month type="7">ئىيۇل</month>
+							<month type="8">ئاۋغۇست</month>
+							<month type="9">سېنتەبىر</month>
+							<month type="10">ئۆكتەبىر</month>
+							<month type="11">نويابىر</month>
+							<month type="12">دېكابىر</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">يانۋار</month>
-							<month type="2" draft="contributed">فېۋرال</month>
-							<month type="3" draft="contributed">مارت</month>
-							<month type="4" draft="contributed">ئاپرېل</month>
-							<month type="5" draft="contributed">ماي</month>
-							<month type="6" draft="contributed">ئىيۇن</month>
-							<month type="7" draft="contributed">ئىيۇل</month>
-							<month type="8" draft="contributed">ئاۋغۇست</month>
-							<month type="9" draft="contributed">سېنتەبىر</month>
-							<month type="10" draft="contributed">ئۆكتەبىر</month>
-							<month type="11" draft="contributed">نويابىر</month>
-							<month type="12" draft="contributed">دېكابىر</month>
+							<month type="1">يانۋار</month>
+							<month type="2">فېۋرال</month>
+							<month type="3">مارت</month>
+							<month type="4">ئاپرېل</month>
+							<month type="5">ماي</month>
+							<month type="6">ئىيۇن</month>
+							<month type="7">ئىيۇل</month>
+							<month type="8">ئاۋغۇست</month>
+							<month type="9">سېنتەبىر</month>
+							<month type="10">ئۆكتەبىر</month>
+							<month type="11">نويابىر</month>
+							<month type="12">دېكابىر</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1">يانۋار</month>
+							<month type="2">فېۋرال</month>
+							<month type="3">مارت</month>
+							<month type="4">ئاپرېل</month>
+							<month type="5">ماي</month>
+							<month type="6">ئىيۇن</month>
+							<month type="7">ئىيۇل</month>
+							<month type="8">ئاۋغۇست</month>
+							<month type="9">سېنتەبىر</month>
+							<month type="10">ئۆكتەبىر</month>
+							<month type="11">نويابىر</month>
+							<month type="12">دېكابىر</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="contributed">1</month>
 							<month type="2" draft="contributed">2</month>
@@ -1433,94 +1450,176 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 							<month type="11" draft="contributed">11</month>
 							<month type="12" draft="contributed">12</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">يانۋار</month>
+							<month type="2">فېۋرال</month>
+							<month type="3">مارت</month>
+							<month type="4">ئاپرېل</month>
+							<month type="5">ماي</month>
+							<month type="6">ئىيۇن</month>
+							<month type="7">ئىيۇل</month>
+							<month type="8">ئاۋغۇست</month>
+							<month type="9">سېنتەبىر</month>
+							<month type="10">ئۆكتەبىر</month>
+							<month type="11">نويابىر</month>
+							<month type="12">دېكابىر</month>
+						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">يە</day>
-							<day type="mon" draft="contributed">دۈ</day>
-							<day type="tue" draft="contributed">سە</day>
-							<day type="wed" draft="contributed">چا</day>
-							<day type="thu" draft="contributed">پە</day>
-							<day type="fri" draft="contributed">جۈ</day>
-							<day type="sat" draft="contributed">شە</day>
+							<day type="sun">يە</day>
+							<day type="mon">دۈ</day>
+							<day type="tue">سە</day>
+							<day type="wed">چا</day>
+							<day type="thu">پە</day>
+							<day type="fri">جۈ</day>
+							<day type="sat">شە</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">ي</day>
+							<day type="mon">د</day>
+							<day type="tue">س</day>
+							<day type="wed">چ</day>
+							<day type="thu">پ</day>
+							<day type="fri">ج</day>
+							<day type="sat">ش</day>
 						</dayWidth>
 						<dayWidth type="short">
-							<day type="sun" draft="contributed">ي</day>
-							<day type="mon" draft="contributed">د</day>
-							<day type="tue" draft="contributed">س</day>
-							<day type="wed" draft="contributed">چ</day>
-							<day type="thu" draft="contributed">پ</day>
-							<day type="fri" draft="contributed">ج</day>
-							<day type="sat" draft="contributed">ش</day>
+							<day type="sun">ي</day>
+							<day type="mon">د</day>
+							<day type="tue">س</day>
+							<day type="wed">چ</day>
+							<day type="thu">پ</day>
+							<day type="fri">ج</day>
+							<day type="sat">ش</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="contributed">يەكشەنبە</day>
-							<day type="mon" draft="contributed">دۈشەنبە</day>
-							<day type="tue" draft="contributed">سەيشەنبە</day>
-							<day type="wed" draft="contributed">چارشەنبە</day>
-							<day type="thu" draft="contributed">پەيشەنبە</day>
-							<day type="fri" draft="contributed">جۈمە</day>
-							<day type="sat" draft="contributed">شەنبە</day>
+							<day type="sun">يەكشەنبە</day>
+							<day type="mon">دۈشەنبە</day>
+							<day type="tue">سەيشەنبە</day>
+							<day type="wed">چارشەنبە</day>
+							<day type="thu">پەيشەنبە</day>
+							<day type="fri">جۈمە</day>
+							<day type="sat">شەنبە</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">يە</day>
+							<day type="mon">دۈ</day>
+							<day type="tue">سە</day>
+							<day type="wed">چا</day>
+							<day type="thu">پە</day>
+							<day type="fri">جۈ</day>
+							<day type="sat">شە</day>
+						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun" draft="contributed">ي</day>
-							<day type="mon" draft="contributed">د</day>
-							<day type="tue" draft="contributed">س</day>
-							<day type="wed" draft="contributed">چ</day>
-							<day type="thu" draft="contributed">پ</day>
-							<day type="fri" draft="contributed">ج</day>
-							<day type="sat" draft="contributed">ش</day>
+							<day type="sun">ي</day>
+							<day type="mon">د</day>
+							<day type="tue">س</day>
+							<day type="wed">چ</day>
+							<day type="thu">پ</day>
+							<day type="fri">ج</day>
+							<day type="sat">ش</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">ي</day>
+							<day type="mon">د</day>
+							<day type="tue">س</day>
+							<day type="wed">چ</day>
+							<day type="thu">پ</day>
+							<day type="fri">ج</day>
+							<day type="sat">ش</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">يەكشەنبە</day>
+							<day type="mon">دۈشەنبە</day>
+							<day type="tue">سەيشەنبە</day>
+							<day type="wed">چارشەنبە</day>
+							<day type="thu">پەيشەنبە</day>
+							<day type="fri">جۈمە</day>
+							<day type="sat">شەنبە</day>
 						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
 						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="contributed">بىرىنچى پەسىل</quarter>
-							<quarter type="2" draft="contributed">ئىككىنچى پەسىل</quarter>
-							<quarter type="3" draft="contributed">ئۈچىنچى پەسىل</quarter>
-							<quarter type="4" draft="contributed">تۆتىنچى پەسىل</quarter>
+							<quarter type="1">1-پەسىل</quarter>
+							<quarter type="2">2-پەسىل</quarter>
+							<quarter type="3">3-پەسىل</quarter>
+							<quarter type="4">4-پەسىل</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1" draft="contributed">بىرىنچى پەسىل</quarter>
-							<quarter type="2" draft="contributed">ئىككىنچى پەسىل</quarter>
-							<quarter type="3" draft="contributed">ئۈچىنچى پەسىل</quarter>
-							<quarter type="4" draft="contributed">تۆتىنچى پەسىل</quarter>
+							<quarter type="1">بىرىنچى پەسىل</quarter>
+							<quarter type="2">ئىككىنچى پەسىل</quarter>
+							<quarter type="3">ئۈچىنچى پەسىل</quarter>
+							<quarter type="4">تۆتىنچى پەسىل</quarter>
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">1-پەسىل</quarter>
+							<quarter type="2">2-پەسىل</quarter>
+							<quarter type="3">3-پەسىل</quarter>
+							<quarter type="4">4-پەسىل</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
-							<quarter type="1" draft="contributed">1</quarter>
-							<quarter type="2" draft="contributed">2</quarter>
-							<quarter type="3" draft="contributed">3</quarter>
-							<quarter type="4" draft="contributed">4</quarter>
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">بىرىنچى پەسىل</quarter>
+							<quarter type="2">ئىككىنچى پەسىل</quarter>
+							<quarter type="3">ئۈچىنچى پەسىل</quarter>
+							<quarter type="4">تۆتىنچى پەسىل</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">PM</dayPeriod>
+							<dayPeriod type="am">چ.ب</dayPeriod>
+							<dayPeriod type="pm">چ.ك</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="contributed">چۈشتىن بۇرۇن</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">چۈشتىن كېيىن</dayPeriod>
+							<dayPeriod type="am">ب</dayPeriod>
+							<dayPeriod type="pm">ك</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="contributed">چۈشتىن بۇرۇن</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">چۈشتىن كېيىن</dayPeriod>
+							<dayPeriod type="am">چۈشتىن بۇرۇن</dayPeriod>
+							<dayPeriod type="pm">چۈشتىن كېيىن</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">چ.ب</dayPeriod>
+							<dayPeriod type="pm">چ.ك</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">چ.ب</dayPeriod>
+							<dayPeriod type="pm">چ.ك</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">چ.ب</dayPeriod>
+							<dayPeriod type="pm">چ.ك</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0" draft="contributed">مىلادىيەدىن بۇرۇن</era>
-						<era type="1" draft="contributed">مىلادىيە</era>
+						<era type="0">مىلادىيەدىن بۇرۇن</era>
+						<era type="1">مىلادىيە</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">BCE</era>
@@ -1534,104 +1633,115 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="contributed">EEEE، MMMM d، y</pattern>
+							<pattern>y d-MMMM، EEEE</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="contributed">MMMM d، y</pattern>
+							<pattern>d-MMMM، y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern draft="contributed">MMM d، y</pattern>
+							<pattern>d-MMM، y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern draft="contributed">M/d/yy</pattern>
+							<pattern>y-MM-dd</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a z</pattern>
+							<pattern>h:mm:ss a z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a</pattern>
+							<pattern>h:mm:ss a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern draft="contributed">h:mm a</pattern>
+							<pattern>h:mm a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1} {0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1}، {0}</pattern>
+							<pattern>{1}، {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1}، {0}</pattern>
+							<pattern>{1}، {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d" draft="contributed">d</dateFormatItem>
-						<dateFormatItem id="Ed" draft="contributed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm" draft="contributed">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm" draft="contributed">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms" draft="contributed">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms" draft="contributed">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy" draft="contributed">y G</dateFormatItem>
-						<dateFormatItem id="GyMMM" draft="contributed">MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd" draft="contributed">MMM d، y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd" draft="contributed">E، MMM d، y G</dateFormatItem>
-						<dateFormatItem id="h" draft="contributed">h a</dateFormatItem>
-						<dateFormatItem id="H" draft="contributed">HH</dateFormatItem>
-						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M" draft="contributed">L</dateFormatItem>
-						<dateFormatItem id="Md" draft="contributed">M/d</dateFormatItem>
-						<dateFormatItem id="MEd" draft="contributed">E، M/d</dateFormatItem>
-						<dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd" draft="contributed">MMM d</dateFormatItem>
-						<dateFormatItem id="MMMEd" draft="contributed">E، MMM d</dateFormatItem>
-						<dateFormatItem id="ms" draft="contributed">mm:ss</dateFormatItem>
-						<dateFormatItem id="y" draft="contributed">y</dateFormatItem>
-						<dateFormatItem id="yM" draft="contributed">M/y</dateFormatItem>
-						<dateFormatItem id="yMd" draft="contributed">M/d/y</dateFormatItem>
-						<dateFormatItem id="yMEd" draft="contributed">E، M/d/y</dateFormatItem>
-						<dateFormatItem id="yMMM" draft="contributed">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="contributed">MMM d، y</dateFormatItem>
-						<dateFormatItem id="yMMMEd" draft="contributed">E، MMM d، y</dateFormatItem>
-						<dateFormatItem id="yQQQ" draft="contributed">QQQ y</dateFormatItem>
-						<dateFormatItem id="yQQQQ" draft="contributed">QQQQ y</dateFormatItem>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">y MMM G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">y d-MMM G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">y d-MMM، E G</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">d-M</dateFormatItem>
+						<dateFormatItem id="MEd">d-M، E</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">d-MMM، E</dateFormatItem>
+						<dateFormatItem id="MMMMd">d-MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMM، W-ھەپتە</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMM، W-ھەپتە</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">M-y</dateFormatItem>
+						<dateFormatItem id="yMd">y-d-M</dateFormatItem>
+						<dateFormatItem id="yMEd">y-d-M، E</dateFormatItem>
+						<dateFormatItem id="yMMM">y MMM</dateFormatItem>
+						<dateFormatItem id="yMMMd">y d-MMM</dateFormatItem>
+						<dateFormatItem id="yMMMEd">y d-MMM، E</dateFormatItem>
+						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
+						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
+						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="one">y، w-ھەپتە</dateFormatItem>
+						<dateFormatItem id="yw" count="other">y، w-ھەپتە</dateFormatItem>
 					</availableFormats>
 					<appendItems>
-						<appendItem request="Timezone" draft="contributed">{0} {1}</appendItem>
+						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
@@ -2977,21 +3087,21 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<native>arabext</native>
 		</otherNumberingSystems>
 		<symbols numberSystem="latn">
-			<decimal draft="contributed">.</decimal>
-			<group draft="contributed">,</group>
-			<percentSign draft="contributed">%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
-			<exponential draft="contributed">E</exponential>
-			<superscriptingExponent draft="contributed">×</superscriptingExponent>
-			<perMille draft="contributed">‰</perMille>
-			<infinity draft="contributed">∞</infinity>
-			<nan draft="contributed">NaN</nan>
+			<decimal>.</decimal>
+			<group>,</group>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
+					<pattern>#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
@@ -3054,24 +3164,24 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
-					<pattern draft="contributed">#E0</pattern>
+					<pattern>#E0</pattern>
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
+					<pattern>#,##0%</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern draft="contributed">¤#,##0.00</pattern>
+					<pattern>¤#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern draft="contributed">¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -3102,8 +3212,8 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 					<pattern type="100000000000000" count="other" draft="provisional">¤000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one" draft="contributed">{0} {1}</unitPattern>
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -3376,10 +3486,15 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<displayName count="one" draft="contributed">بېلارۇسىيە يېڭى رۇبلىسى (1994–1999)</displayName>
 				<displayName count="other" draft="contributed">بېلارۇسىيە يېڭى رۇبلىسى (1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName draft="contributed">بېلارۇسىيە رۇبلىسى</displayName>
 				<displayName count="one" draft="contributed">بېلارۇسىيە رۇبلىسى</displayName>
 				<displayName count="other" draft="contributed">بېلارۇسىيە رۇبلىسى</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName draft="contributed">بېلارۇسىيە رۇبلىسى (۲۰۰۰–۲۰۱۶)</displayName>
+				<displayName count="one" draft="contributed">بېلارۇسىيە رۇبلىسى (۲۰۰۰–۲۰۱۶)</displayName>
+				<displayName count="other" draft="contributed">بېلارۇسىيە رۇبلىسى (۲۰۰۰–۲۰۱۶)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName draft="contributed">بېلىز دوللىرى</displayName>
@@ -3948,6 +4063,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<displayName count="other" draft="contributed">ئاۋمېن پاتاكاسى</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName draft="contributed">ماۋرىتانىيە ئۇگىيەسى (1973–2017)</displayName>
+				<displayName count="one" draft="contributed">ماۋرىتانىيە ئۇگىيەسى (1973–2017)</displayName>
+				<displayName count="other" draft="contributed">ماۋرىتانىيە ئۇگىيەسى (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName draft="contributed">ماۋرىتانىيە ئۇگىيەسى</displayName>
 				<displayName count="one" draft="contributed">ماۋرىتانىيە ئۇگىيەسى</displayName>
 				<displayName count="other" draft="contributed">ماۋرىتانىيە ئۇگىيەسى</displayName>
@@ -4073,9 +4193,9 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<displayName count="other" draft="contributed">پېرۇ ئىنتىسى</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName draft="contributed">پېرۇ يېڭى سولى</displayName>
-				<displayName count="one" draft="contributed">پېرۇ يېڭى سولى</displayName>
-				<displayName count="other" draft="contributed">پېرۇ يېڭى سولى</displayName>
+				<displayName draft="contributed">پېرۇ سولى</displayName>
+				<displayName count="one" draft="contributed">پېرۇ سولى</displayName>
+				<displayName count="other" draft="contributed">پېرۇ سولى</displayName>
 			</currency>
 			<currency type="PES">
 				<displayName draft="contributed">پېرۇ سولى (1863–1965)</displayName>
@@ -4238,6 +4358,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 				<displayName count="other" draft="contributed">جەنۇبىي سۇدان فوندستېرلىڭى</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName draft="contributed">سان-تومې ۋە پىرىنسىپى دوبراسى (1977–2017)</displayName>
+				<displayName count="one" draft="contributed">سان-تومې ۋە پىرىنسىپى دوبراسى (1977–2017)</displayName>
+				<displayName count="other" draft="contributed">سان-تومې ۋە پىرىنسىپى دوبراسى (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName draft="contributed">سان-تومې ۋە پىرىنسىپى دوبراسى</displayName>
 				<displayName count="one" draft="contributed">سان-تومې ۋە پىرىنسىپى دوبراسى</displayName>
 				<displayName count="other" draft="contributed">سان-تومې ۋە پىرىنسىپى دوبراسى</displayName>
@@ -4595,8 +4720,13 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast" draft="contributed">{0}+</pattern>
+			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0}  كىتاب</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} بېلىق كۆردۈم ۋە ئۇنى يەۋەتتىم.</pluralMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5235,4 +5365,3 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 		</messages>
 	</posix>
 </ldml>
-

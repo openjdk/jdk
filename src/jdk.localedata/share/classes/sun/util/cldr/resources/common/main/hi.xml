@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="hi"/>
 	</identity>
 	<localeDisplayNames>
@@ -39,7 +42,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ar_001">आधुनिक मानक अरबी</language>
 			<language type="arc">ऐरेमेक</language>
 			<language type="arn">मापूचे</language>
-			<language type="arp">अराफाओ</language>
+			<language type="arp">अरापाहो</language>
+			<language type="ars">नज्दी अरबी</language>
 			<language type="arw">अरावक</language>
 			<language type="as">असमिया</language>
 			<language type="asa">असु</language>
@@ -89,13 +93,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="chn">चिनूक जारगॉन</language>
 			<language type="cho">चोक्तौ</language>
 			<language type="chp">शिपेव्यान</language>
-			<language type="chr">शेरोकी</language>
+			<language type="chr">चेरोकी</language>
 			<language type="chy">शेयेन्न</language>
 			<language type="ckb">सोरानी कुर्दिश</language>
 			<language type="co">कोर्सीकन</language>
 			<language type="cop">कॉप्टिक</language>
 			<language type="cr">क्री</language>
 			<language type="crh">क्रीमीन तुर्की</language>
+			<language type="crs">सेसेल्वा क्रिओल फ्रेंच</language>
 			<language type="cs">चेक</language>
 			<language type="csb">काशुबियन</language>
 			<language type="cu">चर्च साल्विक</language>
@@ -116,11 +121,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="doi">डोग्री</language>
 			<language type="dsb">निचला सॉर्बियन</language>
 			<language type="dua">दुआला</language>
-			<language type="dum">मध्य पुर्तगाली</language>
+			<language type="dum">मध्यकालीन पुर्तगाली</language>
 			<language type="dv">दिवेही</language>
 			<language type="dyo">जोला-फोंई</language>
 			<language type="dyu">ड्युला</language>
 			<language type="dz">ज़ोन्गखा</language>
+			<language type="dzg">दज़ागा</language>
 			<language type="ebu">एम्बु</language>
 			<language type="ee">ईवे</language>
 			<language type="efi">एफिक</language>
@@ -132,13 +138,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="en_AU">ऑस्ट्रेलियाई अंग्रेज़ी</language>
 			<language type="en_CA">कनाडाई अंग्रेज़ी</language>
 			<language type="en_GB">ब्रिटिश अंग्रेज़ी</language>
-			<language type="en_GB" alt="short">यू.के. अंग्रेज़ी</language>
+			<language type="en_GB" alt="short">यू॰के॰ अंग्रेज़ी</language>
 			<language type="en_US">अमेरिकी अंग्रेज़ी</language>
 			<language type="en_US" alt="short">अमेरिकी अंग्रेज़ी</language>
 			<language type="enm">मध्यकालीन अंग्रेज़ी</language>
 			<language type="eo">एस्पेरेंतो</language>
 			<language type="es">स्पेनी</language>
-			<language type="es_419">लैटिन अमेरिकी स्पेनी</language>
+			<language type="es_419">लैटिन अमेरिकी स्पेनिश</language>
 			<language type="es_ES">यूरोपीय स्पेनिश</language>
 			<language type="es_MX">मैक्सिकन स्पेनिश</language>
 			<language type="et">एस्टोनियाई</language>
@@ -150,16 +156,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ff">फुलाह</language>
 			<language type="fi">फ़िनिश</language>
 			<language type="fil">फ़िलिपीनो</language>
-			<language type="fj">फ़ीजी</language>
+			<language type="fj">फिजियन</language>
 			<language type="fo">फ़ैरोइज़</language>
 			<language type="fon">फॉन</language>
 			<language type="fr">फ़्रेंच</language>
 			<language type="fr_CA">कनाडाई फ़्रेंच</language>
 			<language type="fr_CH">स्विस फ़्रेंच</language>
+			<language type="frc">केजन फ़्रेंच</language>
 			<language type="frm">मध्यकालीन फ़्रांसीसी</language>
 			<language type="fro">पुरातन फ़्रांसीसी</language>
-			<language type="frr">उत्तरी फ्रीसीयन</language>
-			<language type="frs">पूर्वी फ्रीसीयन</language>
+			<language type="frr">उत्तरी फ़्रीसियाई</language>
+			<language type="frs">पूर्वी फ़्रीसियाई</language>
 			<language type="fur">फ्रीयुलीयान</language>
 			<language type="fy">पश्चिमी फ़्रिसियाई</language>
 			<language type="ga">आइरिश</language>
@@ -167,7 +174,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="gag">गागौज़</language>
 			<language type="gay">गायो</language>
 			<language type="gba">ग्बाया</language>
-			<language type="gd">स्काट्स् गायेलिक्</language>
+			<language type="gd">स्कॉटिश गाएलिक</language>
 			<language type="gez">गीज़</language>
 			<language type="gil">गिल्बरतीस</language>
 			<language type="gl">गैलिशियन</language>
@@ -183,7 +190,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="gu">गुजराती</language>
 			<language type="guz">गुसी</language>
 			<language type="gv">मैंक्स</language>
-			<language type="gwi">ग्विच’इन</language>
+			<language type="gwi">ग्विचइन</language>
 			<language type="ha">हौसा</language>
 			<language type="hai">हैडा</language>
 			<language type="haw">हवाई</language>
@@ -200,8 +207,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="hup">हूपा</language>
 			<language type="hy">आर्मेनियाई</language>
 			<language type="hz">हरैरो</language>
-			<language type="ia">ईन्टरलिंगुआ</language>
+			<language type="ia">इंटरलिंगुआ</language>
 			<language type="iba">इबान</language>
+			<language type="ibb">इबिबियो</language>
 			<language type="id">इंडोनेशियाई</language>
 			<language type="ie">ईन्टरलिंगुइ</language>
 			<language type="ig">ईग्बो</language>
@@ -239,16 +247,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ki">किकुयू</language>
 			<language type="kj">क्वान्यामा</language>
 			<language type="kk">कज़ाख़</language>
+			<language type="kkj">काको</language>
 			<language type="kl">कलालीसुत</language>
 			<language type="kln">कलेंजिन</language>
 			<language type="km">खमेर</language>
 			<language type="kmb">किम्बन्दु</language>
 			<language type="kn">कन्नड़</language>
 			<language type="ko">कोरियाई</language>
-			<language type="koi" draft="contributed">कोमी-पर्मयाक</language>
+			<language type="koi">कोमी-पर्मयाक</language>
 			<language type="kok">कोंकणी</language>
 			<language type="kos">कोसरैन</language>
-			<language type="kpe">क्पेल्लै</language>
+			<language type="kpe">क्पेल</language>
 			<language type="kr">कनुरी</language>
 			<language type="krc">कराचय-बल्कार</language>
 			<language type="krl">करेलियन</language>
@@ -256,9 +265,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ks">कश्मीरी</language>
 			<language type="ksb">शम्बाला</language>
 			<language type="ksf">बफिआ</language>
+			<language type="ksh">कोलोनियाई</language>
 			<language type="ku">कुर्दिश</language>
 			<language type="kum">कुमीक</language>
-			<language type="kut">कुतेनाई</language>
+			<language type="kut">क्यूतनाई</language>
 			<language type="kv">कोमी</language>
 			<language type="kw">कोर्निश</language>
 			<language type="ky">किर्गीज़</language>
@@ -275,6 +285,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ln">लिंगाला</language>
 			<language type="lo">लाओ</language>
 			<language type="lol">मोंगो</language>
+			<language type="lou">लुईज़ियाना क्रियोल</language>
 			<language type="loz">लोज़ी</language>
 			<language type="lrc">उत्तरी लूरी</language>
 			<language type="lt">लिथुआनियाई</language>
@@ -283,40 +294,40 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="lui">लुइसेनो</language>
 			<language type="lun">लुन्डा</language>
 			<language type="luo">ल्युओ</language>
-			<language type="lus">लुशाई</language>
+			<language type="lus">मिज़ो</language>
 			<language type="luy">ल्युईआ</language>
 			<language type="lv">लातवियाई</language>
 			<language type="mad">मादुरीस</language>
-			<language type="mag">मगाही</language>
+			<language type="mag">मगही</language>
 			<language type="mai">मैथिली</language>
 			<language type="mak">मकासर</language>
 			<language type="man">मन्डिन्गो</language>
 			<language type="mas">मसाई</language>
 			<language type="mdf">मोक्ष</language>
-			<language type="mdr">मंधार</language>
+			<language type="mdr">मंदार</language>
 			<language type="men">मेन्डे</language>
 			<language type="mer">मेरु</language>
 			<language type="mfe">मोरीस्येन</language>
 			<language type="mg">मालागासी</language>
-			<language type="mga">मध्यकाल आइरिश</language>
+			<language type="mga">मध्यकालीन आइरिश</language>
 			<language type="mgh">मैखुवा-मीट्टो</language>
 			<language type="mgo">मेटा</language>
 			<language type="mh">मार्शलीज़</language>
 			<language type="mi">माओरी</language>
 			<language type="mic">मिकमैक</language>
 			<language type="min">मिनांग्काबाउ</language>
-			<language type="mk">मैसिडोनियाई</language>
+			<language type="mk">मकदूनियाई</language>
 			<language type="ml">मलयालम</language>
-			<language type="mn">मंगोलीयाई</language>
+			<language type="mn">मंगोलियाई</language>
 			<language type="mnc">मन्चु</language>
-			<language type="mni">मणिपूरी</language>
+			<language type="mni">मणिपुरी</language>
 			<language type="moh">मोहौक</language>
 			<language type="mos">मोस्सी</language>
 			<language type="mr">मराठी</language>
 			<language type="ms">मलय</language>
 			<language type="mt">माल्टीज़</language>
 			<language type="mua">मुंडैंग</language>
-			<language type="mul">विविध भाषाएँ</language>
+			<language type="mul">एकाधिक भाषाएँ</language>
 			<language type="mus">क्रीक</language>
 			<language type="mwl">मिरांडी</language>
 			<language type="mwr">मारवाड़ी</language>
@@ -324,6 +335,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="myv">एर्ज़या</language>
 			<language type="mzn">माज़न्देरानी</language>
 			<language type="na">नाउरू</language>
+			<language type="nan" draft="contributed">nan</language>
 			<language type="nap">नीपोलिटन</language>
 			<language type="naq">नामा</language>
 			<language type="nb">नॉर्वेजियाई बोकमाल</language>
@@ -339,6 +351,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="nl_BE">फ़्लेमिश</language>
 			<language type="nmg">क्वासिओ</language>
 			<language type="nn">नॉर्वेजियाई नॉयनॉर्स्क</language>
+			<language type="nnh">गैम्बू</language>
 			<language type="no">नॉर्वेजियाई</language>
 			<language type="nog">नोगाई</language>
 			<language type="non">पुराना नॉर्स</language>
@@ -366,11 +379,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pam">पाम्पान्गा</language>
 			<language type="pap">पापियामेन्टो</language>
 			<language type="pau">पलोउआन</language>
+			<language type="pcm">नाइजीरियाई पिडगिन</language>
 			<language type="peo">पुरानी फारसी</language>
 			<language type="phn">फोएनिशियन</language>
 			<language type="pi">पाली</language>
 			<language type="pl">पोलिश</language>
 			<language type="pon">पोह्नपिएन</language>
+			<language type="prg">प्रुशियाई</language>
 			<language type="pro">पुरानी प्रोवेन्सल</language>
 			<language type="ps">पश्तो</language>
 			<language type="ps" alt="variant">पुश्तो</language>
@@ -399,7 +414,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sam">सामैरिटन अरैमिक</language>
 			<language type="saq">सैम्बुरु</language>
 			<language type="sas">सासाक</language>
-			<language type="sat">संताली</language>
+			<language type="sat">संथाली</language>
+			<language type="sba">न्गाम्बे</language>
 			<language type="sbp">सैंगु</language>
 			<language type="sc">सार्दिनियन</language>
 			<language type="scn">सिसिलियन</language>
@@ -412,7 +428,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ses">कोयराबोरो सेन्नी</language>
 			<language type="sg">सांगो</language>
 			<language type="sga">पुरानी आइरिश</language>
-			<language type="sh">सेर्बो-क्रोएशन्</language>
+			<language type="sh">सेर्बो-क्रोएशियाई</language>
 			<language type="shi">तैचेल्हित</language>
 			<language type="shn">शैन</language>
 			<language type="si">सिंहली</language>
@@ -420,7 +436,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sk">स्लोवाक</language>
 			<language type="sl">स्लोवेनियाई</language>
 			<language type="sm">सामोन</language>
-			<language type="sma">दक्षिण सामी</language>
+			<language type="sma">दक्षिणी सामी</language>
 			<language type="smj">ल्युल सामी</language>
 			<language type="smn">इनारी सामी</language>
 			<language type="sms">स्कोल्ट सामी</language>
@@ -433,7 +449,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="srn">स्रानान टॉन्गो</language>
 			<language type="srr">सेरेर</language>
 			<language type="ss">स्वाती</language>
-			<language type="st">सेसोथो</language>
+			<language type="ssy">साहो</language>
+			<language type="st">दक्षिणी सेसेथो</language>
 			<language type="su">सुंडानी</language>
 			<language type="suk">सुकुमा</language>
 			<language type="sus">सुसु</language>
@@ -441,7 +458,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sv">स्वीडिश</language>
 			<language type="sw">स्वाहिली</language>
 			<language type="sw_CD">कांगो स्वाहिली</language>
-			<language type="swb" draft="provisional">कोमोरियन</language>
+			<language type="swb">कोमोरियन</language>
 			<language type="syc">क्लासिकल सिरिएक</language>
 			<language type="syr">सिरिएक</language>
 			<language type="ta">तमिल</language>
@@ -457,7 +474,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tiv">तिव</language>
 			<language type="tk">तुर्कमेन</language>
 			<language type="tkl">तोकेलाऊ</language>
-			<language type="tl">तागालोग</language>
+			<language type="tl">टैगलॉग</language>
 			<language type="tlh">क्लिंगन</language>
 			<language type="tli">त्लिंगित</language>
 			<language type="tmh">तामाशेक</language>
@@ -466,6 +483,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tog">न्यासा टोन्गा</language>
 			<language type="tpi">टोक पिसिन</language>
 			<language type="tr">तुर्की</language>
+			<language type="trv">तारोको</language>
 			<language type="ts">सोंगा</language>
 			<language type="tsi">त्सिमीशियन</language>
 			<language type="tt">तातार</language>
@@ -491,19 +509,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="vot">वॉटिक</language>
 			<language type="vun">वुंजो</language>
 			<language type="wa">वाल्लून</language>
+			<language type="wae">वाल्सर</language>
 			<language type="wal">वलामो</language>
 			<language type="war">वारै</language>
 			<language type="was">वाशो</language>
 			<language type="wbp">वॉल्पेरी</language>
 			<language type="wo">वोलोफ़</language>
+			<language type="wuu">वू चीनी</language>
 			<language type="xal">काल्मिक</language>
 			<language type="xh">ख़ोसा</language>
 			<language type="xog">सोगा</language>
 			<language type="yao">याओ</language>
 			<language type="yap">यापीस</language>
-			<language type="yi">येहुदी</language>
+			<language type="yav">यांगबेन</language>
+			<language type="ybb">येंबा</language>
+			<language type="yi">यहूदी</language>
 			<language type="yo">योरूबा</language>
-			<language type="yue" draft="contributed">कैंटोनीज़</language>
+			<language type="yue">कैंटोनीज़</language>
 			<language type="za">ज़ुआंग</language>
 			<language type="zap">ज़ेपोटेक</language>
 			<language type="zbl">ब्लिसिम्बॉल्स</language>
@@ -556,6 +578,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">यूनानी</script>
 			<script type="Gujr">गुजराती</script>
 			<script type="Guru">गुरमुखी</script>
+			<script type="Hanb">हांब</script>
 			<script type="Hang">हंगुल</script>
 			<script type="Hani">हान</script>
 			<script type="Hano">हनुनू</script>
@@ -566,10 +589,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hebr">हिब्रू</script>
 			<script type="Hira">हिरागाना</script>
 			<script type="Hmng">पाहो ह्मोन्ग</script>
-			<script type="Hrkt">कचाकना और हिरागना</script>
+			<script type="Hrkt">जापानी सिलेबरीज़</script>
 			<script type="Hung">ऑल्ड हंगेरियन</script>
 			<script type="Inds">सिन्धु</script>
 			<script type="Ital">पुरानी इटली</script>
+			<script type="Jamo">जामो</script>
 			<script type="Java">जावानीस</script>
 			<script type="Jpan">जापानी</script>
 			<script type="Kali">कायाह ली</script>
@@ -648,6 +672,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii">यी</script>
 			<script type="Zinh">विरासत</script>
 			<script type="Zmth">गणितीय संकेतन</script>
+			<script type="Zsye">ईमोजी</script>
 			<script type="Zsym">चिह्न</script>
 			<script type="Zxxx">अलिखित</script>
 			<script type="Zyyy">सामान्य</script>
@@ -675,7 +700,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="053">ऑस्ट्रेलेशिया</territory>
 			<territory type="054">मेलानेशिया</territory>
 			<territory type="057">माइक्रोनेशियाई क्षेत्र</territory>
-			<territory type="061">पोलीनेशिया</territory>
+			<territory type="061">पोलिनेशिया</territory>
 			<territory type="142">एशिया</territory>
 			<territory type="143">मध्य एशिया</territory>
 			<territory type="145">पश्चिमी एशिया</territory>
@@ -683,6 +708,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">पूर्वी यूरोप</territory>
 			<territory type="154">उत्तरी यूरोप</territory>
 			<territory type="155">पश्चिमी यूरोप</territory>
+			<territory type="202" draft="contributed">उप-सहारा अफ़्रीका</territory>
 			<territory type="419">लैटिन अमेरिका</territory>
 			<territory type="AC">असेंशन द्वीप</territory>
 			<territory type="AD">एंडोरा</territory>
@@ -744,7 +770,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">क्यूरासाओ</territory>
 			<territory type="CX">क्रिसमस द्वीप</territory>
 			<territory type="CY">साइप्रस</territory>
-			<territory type="CZ">चेक गणराज्य</territory>
+			<territory type="CZ">चेकिया</territory>
+			<territory type="CZ" alt="variant">चेक गणराज्य</territory>
 			<territory type="DE">जर्मनी</territory>
 			<territory type="DG">डिएगो गार्सिया</territory>
 			<territory type="DJ">जिबूती</territory>
@@ -761,6 +788,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">स्पेन</territory>
 			<territory type="ET">इथियोपिया</territory>
 			<territory type="EU">यूरोपीय संघ</territory>
+			<territory type="EZ">यूरोज़ोन</territory>
 			<territory type="FI">फ़िनलैंड</territory>
 			<territory type="FJ">फ़िजी</territory>
 			<territory type="FK">फ़ॉकलैंड द्वीपसमूह</territory>
@@ -770,10 +798,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="FR">फ़्रांस</territory>
 			<territory type="GA">गैबॉन</territory>
 			<territory type="GB">यूनाइटेड किंगडम</territory>
-			<territory type="GB" alt="short">यू.के.</territory>
+			<territory type="GB" alt="short">यू॰के॰</territory>
 			<territory type="GD">ग्रेनाडा</territory>
 			<territory type="GE">जॉर्जिया</territory>
-			<territory type="GF">फ़्रेंच गयाना</territory>
+			<territory type="GF">फ़्रेंच गुयाना</territory>
 			<territory type="GG">गर्नसी</territory>
 			<territory type="GH">घाना</territory>
 			<territory type="GI">जिब्राल्टर</territory>
@@ -787,7 +815,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GT">ग्वाटेमाला</territory>
 			<territory type="GU">गुआम</territory>
 			<territory type="GW">गिनी-बिसाउ</territory>
-			<territory type="GY">गयाना</territory>
+			<territory type="GY">गुयाना</territory>
 			<territory type="HK">हाँग काँग (चीन विशेष प्रशासनिक क्षेत्र)</territory>
 			<territory type="HK" alt="short">हाँग काँग</territory>
 			<territory type="HM">हर्ड द्वीप और मैकडोनॉल्ड द्वीपसमूह</territory>
@@ -798,7 +826,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="IC">कैनेरी द्वीपसमूह</territory>
 			<territory type="ID">इंडोनेशिया</territory>
 			<territory type="IE">आयरलैंड</territory>
-			<territory type="IL">इसराइल</territory>
+			<territory type="IL">इज़राइल</territory>
 			<territory type="IM">आइल ऑफ़ मैन</territory>
 			<territory type="IN">भारत</territory>
 			<territory type="IO">ब्रिटिश हिंद महासागरीय क्षेत्र</territory>
@@ -819,7 +847,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KP">उत्तर कोरिया</territory>
 			<territory type="KR">दक्षिण कोरिया</territory>
 			<territory type="KW">कुवैत</territory>
-			<territory type="KY">केमैन द्वीपसमूह</territory>
+			<territory type="KY">कैमेन द्वीपसमूह</territory>
 			<territory type="KZ">कज़ाखस्तान</territory>
 			<territory type="LA">लाओस</territory>
 			<territory type="LB">लेबनान</territory>
@@ -839,8 +867,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MF">सेंट मार्टिन</territory>
 			<territory type="MG">मेडागास्कर</territory>
 			<territory type="MH">मार्शल द्वीपसमूह</territory>
-			<territory type="MK">मैसिडोनिया</territory>
-			<territory type="MK" alt="variant">मैसिडोनिया (FYROM)</territory>
+			<territory type="MK">मकदूनिया</territory>
+			<territory type="MK" alt="variant">मकदूनिया (FYROM)</territory>
 			<territory type="ML">माली</territory>
 			<territory type="MM">म्यांमार (बर्मा)</territory>
 			<territory type="MN">मंगोलिया</territory>
@@ -851,7 +879,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MR">मॉरिटानिया</territory>
 			<territory type="MS">मोंटसेरात</territory>
 			<territory type="MT">माल्टा</territory>
-			<territory type="MU">मॉरिशस</territory>
+			<territory type="MU">मॉरीशस</territory>
 			<territory type="MV">मालदीव</territory>
 			<territory type="MW">मलावी</territory>
 			<territory type="MX">मैक्सिको</territory>
@@ -884,7 +912,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PS" alt="short">फ़िलिस्तीन</territory>
 			<territory type="PT">पुर्तगाल</territory>
 			<territory type="PW">पलाऊ</territory>
-			<territory type="PY">पेराग्वे</territory>
+			<territory type="PY">पराग्वे</territory>
 			<territory type="QA">क़तर</territory>
 			<territory type="QO">आउटलाइंग ओशिनिया</territory>
 			<territory type="RE">रियूनियन</territory>
@@ -919,7 +947,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TF">फ़्रांसीसी दक्षिणी क्षेत्र</territory>
 			<territory type="TG">टोगो</territory>
 			<territory type="TH">थाईलैंड</territory>
-			<territory type="TJ">ताजिकिस्तान</territory>
+			<territory type="TJ">ताज़िकिस्तान</territory>
 			<territory type="TK">तोकेलाउ</territory>
 			<territory type="TL">तिमोर-लेस्त</territory>
 			<territory type="TL" alt="variant">पूर्वी तिमोर</territory>
@@ -933,7 +961,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TZ">तंज़ानिया</territory>
 			<territory type="UA">यूक्रेन</territory>
 			<territory type="UG">युगांडा</territory>
-			<territory type="UM">यू.एस. आउटलाइंग द्वीपसमूह</territory>
+			<territory type="UM">यू॰एस॰ आउटलाइंग द्वीपसमूह</territory>
+			<territory type="UN">संयुक्त राष्ट्र</territory>
+			<territory type="UN" alt="short">संयुक्त राष्ट्र</territory>
 			<territory type="US">संयुक्त राज्य</territory>
 			<territory type="US" alt="short">अमेरिका</territory>
 			<territory type="UY">उरूग्वे</territory>
@@ -942,7 +972,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="VC">सेंट विंसेंट और ग्रेनाडाइंस</territory>
 			<territory type="VE">वेनेज़ुएला</territory>
 			<territory type="VG">ब्रिटिश वर्जिन द्वीपसमूह</territory>
-			<territory type="VI">यू.एस. वर्जिन द्वीपसमूह</territory>
+			<territory type="VI">यू॰एस॰ वर्जिन द्वीपसमूह</territory>
 			<territory type="VN">वियतनाम</territory>
 			<territory type="VU">वनुआतू</territory>
 			<territory type="WF">वालिस और फ़्यूचूना</territory>
@@ -969,11 +999,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">कैलेंडर</key>
+			<key type="cf" draft="contributed">मुद्रा प्रारूप</key>
 			<key type="colAlternate" draft="contributed">चिह्न वर्गीकरण पर ध्यान न दें</key>
 			<key type="colBackwards" draft="contributed">विपरीत उच्‍चारण वर्गीकरण</key>
 			<key type="colCaseFirst" draft="contributed">अपरकेस/लोअरकेस क्रमांकन</key>
 			<key type="colCaseLevel" draft="contributed">केस संवेदी वर्गीकरण</key>
-			<key type="colHiraganaQuaternary" draft="contributed">काना वर्गीकरण</key>
 			<key type="collation">सॉर्ट क्रम</key>
 			<key type="colNormalization" draft="contributed">सामान्यीकृत वर्गीकरण</key>
 			<key type="colNumeric" draft="contributed">संख्यात्मक वर्गीकरण</key>
@@ -985,7 +1015,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">संख्याएँ</key>
 			<key type="timezone" draft="contributed">समय क्षेत्र</key>
 			<key type="va" draft="contributed">स्थानीय प्रकार</key>
-			<key type="variableTop" draft="contributed">चिह्न के रूप में क्रमित करें</key>
 			<key type="x" draft="contributed">निजी-उपयोग</key>
 		</keys>
 		<types>
@@ -1000,10 +1029,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="indian">भारतीय राष्ट्रीय कैलेंडर</type>
 			<type key="calendar" type="islamic">इस्लामी पंचांग</type>
 			<type key="calendar" type="islamic-civil">इस्लामी नागरिक पंचांग</type>
+			<type key="calendar" type="islamic-umalqura" draft="contributed">इस्लामी कैलेंडर (उम्म अल-क़ुरा)</type>
 			<type key="calendar" type="iso8601">आईएसओ-8601 कैलेंडर</type>
 			<type key="calendar" type="japanese">जापानी पंचांग</type>
 			<type key="calendar" type="persian">फ़ारसी कैलेंडर</type>
 			<type key="calendar" type="roc">चीनी गणतंत्र पंचांग</type>
+			<type key="cf" type="account" draft="contributed">लेखांकन मुद्रा प्रारूप</type>
+			<type key="cf" type="standard" draft="contributed">मानक मुद्रा प्रारूप</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">प्रतीकों को क्रमित करें</type>
 			<type key="colAlternate" type="shifted" draft="contributed">प्रतीकों पर ध्यान न देकर क्रमित करें</type>
 			<type key="colBackwards" type="no" draft="contributed">उच्‍चारणों को सामान्‍य रूप से क्रमित करें</type>
@@ -1013,11 +1045,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper" draft="contributed">पहले अपरकेस क्रमित करें</type>
 			<type key="colCaseLevel" type="no" draft="contributed">केस असंवेदी क्रमित करें</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">केस संवेदी को क्रमित करें</type>
-			<type key="colHiraganaQuaternary" type="no" draft="contributed">काना को अलग से क्रमित करें</type>
-			<type key="colHiraganaQuaternary" type="yes" draft="contributed">काना को भिन्‍न रूप में क्रमित करें</type>
 			<type key="collation" type="big5han">पारम्पारिक चीनी वर्गीकरण</type>
+			<type key="collation" type="compat" draft="contributed">संगतता के लिए पिछला क्रमण</type>
 			<type key="collation" type="dictionary" draft="contributed">शब्दकोश क्रम विन्यास</type>
 			<type key="collation" type="ducet">डिफ़ॉल्ट यूनिकोड सॉर्ट क्रम</type>
+			<type key="collation" type="eor" draft="contributed">यूरोपीय क्रमण नियम</type>
 			<type key="collation" type="gb2312han">सरलीकृत चीनी वर्गीकरण</type>
 			<type key="collation" type="phonebook">दूरभाष निर्देशिका वर्गीकरण</type>
 			<type key="collation" type="phonetic" draft="contributed">ध्‍वन्यात्मक क्रमित करने का क्रम</type>
@@ -1038,6 +1070,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary" draft="contributed">उच्‍चारणों/केस/चौड़ाई/काना क्रमित करें</type>
 			<type key="colStrength" type="secondary" draft="contributed">उच्‍चारण क्रमित करें</type>
 			<type key="colStrength" type="tertiary" draft="contributed">उच्‍चारणों/केस/चौड़ाई क्रमित करें</type>
+			<type key="d0" type="fwidth" draft="contributed">पूर्ण-चौड़ाई</type>
+			<type key="d0" type="hwidth" draft="contributed">आधी-चौड़ाई</type>
+			<type key="d0" type="npinyin" draft="contributed">सांख्यिक</type>
 			<type key="hc" type="h11">12 घंटों की प्रणाली (0–11)</type>
 			<type key="hc" type="h12">12 घंटों की प्रणाली (1–12)</type>
 			<type key="hc" type="h23">24 घंटों की प्रणाली (0–23)</type>
@@ -1045,7 +1080,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">ढीली पंक्ति विच्छेद शैली</type>
 			<type key="lb" type="normal">सामान्य पंक्ति विच्छेद शैली</type>
 			<type key="lb" type="strict">सख्त पंक्ति विच्छेद शैली</type>
-			<type key="ms" type="metric">मीट्रिक</type>
+			<type key="m0" type="bgn">BGN लिप्यंतरण</type>
+			<type key="m0" type="ungegn">UNGEGN लिप्यंतरण</type>
+			<type key="ms" type="metric">मेट्रिक प्रणाली</type>
 			<type key="ms" type="uksystem">इम्पीरियल मापन प्रणाली</type>
 			<type key="ms" type="ussystem">अमेरिकी मापन प्रणाली</type>
 			<type key="numbers" type="arab">अरबी-भारतीय अंक</type>
@@ -1054,7 +1091,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="armnlow">आर्मेनियाई लोअरकेस संख्याएँ</type>
 			<type key="numbers" type="beng">बंगाली अंक</type>
 			<type key="numbers" type="deva">देवनागरी अंक</type>
-			<type key="numbers" type="ethi">इथियोपिक संख्याएँ</type>
+			<type key="numbers" type="ethi">इथियोपियाई संख्याएँ</type>
 			<type key="numbers" type="finance" draft="contributed">वित्तीय अंक</type>
 			<type key="numbers" type="fullwide">पूर्ण चौड़ाई अंक</type>
 			<type key="numbers" type="geor">जॉर्जियन संख्याएँ</type>
@@ -1089,18 +1126,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional" draft="contributed">परंपरागत अंक</type>
 			<type key="numbers" type="vaii" draft="contributed">वाई अंक</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN" draft="contributed">BGN</transformName>
-			<transformName type="Numeric" draft="contributed">सांख्यिक</transformName>
-			<transformName type="Tone" draft="contributed">स्वर</transformName>
-			<transformName type="UNGEGN" draft="contributed">UNGEGN</transformName>
-			<transformName type="x-Accents" draft="contributed">स्वराघात</transformName>
-			<transformName type="x-Fullwidth" draft="contributed">पूर्ण-चौड़ाई</transformName>
-			<transformName type="x-Halfwidth" draft="contributed">आधी-चौड़ाई</transformName>
-			<transformName type="x-Jamo" draft="contributed">जामो</transformName>
-			<transformName type="x-Pinyin" draft="contributed">पिनयिन</transformName>
-			<transformName type="x-Publishing" draft="contributed">प्रकाशन</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">मीट्रिक</measurementSystemName>
 			<measurementSystemName type="UK">यूके</measurementSystemName>
@@ -1116,6 +1141,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[\u093C ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह ऽ ा ि ी \u0941 \u0942 \u0943 \u0944 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[अ आ इ ई उ ऊ ऋ ए ऐ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- , ; \: ! ? . ‘ ’ “ ” ( ) \[ \] \{ \} ॰]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1124,6 +1150,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1199,9 +1244,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G d MMM y</dateFormatItem>
@@ -1219,7 +1273,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMM">MMM</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMd" draft="contributed">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">G y</dateFormatItem>
 						<dateFormatItem id="yyyy">G y</dateFormatItem>
@@ -1230,7 +1284,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yyyyMMM">G MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">G d MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">G E, d MMM y</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM" draft="contributed">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">G y MMMM</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ G y</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ G y</dateFormatItem>
 					</availableFormats>
@@ -1545,37 +1599,42 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight" draft="contributed">मध्यरात्रि</dayPeriod>
-							<dayPeriod type="am">पूर्व</dayPeriod>
-							<dayPeriod type="pm">अपर</dayPeriod>
-							<dayPeriod type="morning1" draft="contributed">सुबह</dayPeriod>
-							<dayPeriod type="afternoon1" draft="contributed">अपराह्न</dayPeriod>
-							<dayPeriod type="evening1" draft="contributed">शाम</dayPeriod>
-							<dayPeriod type="night1" draft="contributed">रात</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight" draft="contributed">आधी रात</dayPeriod>
-							<dayPeriod type="am">पू</dayPeriod>
-							<dayPeriod type="pm">अ</dayPeriod>
-							<dayPeriod type="morning1" draft="contributed">सुबह</dayPeriod>
-							<dayPeriod type="afternoon1" draft="contributed">अपराह्न</dayPeriod>
-							<dayPeriod type="evening1" draft="contributed">शाम</dayPeriod>
-							<dayPeriod type="night1" draft="contributed">शाम</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight" draft="contributed">मध्यरात्रि</dayPeriod>
+							<dayPeriod type="midnight">मध्यरात्रि</dayPeriod>
 							<dayPeriod type="am">पूर्वाह्न</dayPeriod>
 							<dayPeriod type="pm">अपराह्न</dayPeriod>
-							<dayPeriod type="morning1" draft="contributed">सुबह</dayPeriod>
-							<dayPeriod type="afternoon1" draft="contributed">अपराह्न</dayPeriod>
-							<dayPeriod type="evening1" draft="contributed">शाम</dayPeriod>
-							<dayPeriod type="night1" draft="contributed">रात</dayPeriod>
+							<dayPeriod type="morning1">सुबह</dayPeriod>
+							<dayPeriod type="afternoon1">अपराह्न</dayPeriod>
+							<dayPeriod type="evening1">शाम</dayPeriod>
+							<dayPeriod type="night1">रात</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">मध्यरात्रि</dayPeriod>
+							<dayPeriod type="am">पू</dayPeriod>
+							<dayPeriod type="pm">अ</dayPeriod>
+							<dayPeriod type="morning1">सुबह</dayPeriod>
+							<dayPeriod type="afternoon1">अपराह्न</dayPeriod>
+							<dayPeriod type="evening1">शाम</dayPeriod>
+							<dayPeriod type="night1">रात</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="midnight">मध्यरात्रि</dayPeriod>
+							<dayPeriod type="am">पूर्वाह्न</dayPeriod>
+							<dayPeriod type="pm">अपराह्न</dayPeriod>
+							<dayPeriod type="morning1">सुबह</dayPeriod>
+							<dayPeriod type="afternoon1">अपराह्न</dayPeriod>
+							<dayPeriod type="evening1">शाम</dayPeriod>
+							<dayPeriod type="night1">रात</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="provisional">पूर्व</dayPeriod>
-							<dayPeriod type="pm" draft="provisional">अपर</dayPeriod>
+							<dayPeriod type="midnight">मध्यरात्रि</dayPeriod>
+							<dayPeriod type="am">पूर्वाह्न</dayPeriod>
+							<dayPeriod type="pm">अपराह्न</dayPeriod>
+							<dayPeriod type="morning1">सुबह</dayPeriod>
+							<dayPeriod type="afternoon1">दोपहर</dayPeriod>
+							<dayPeriod type="evening1">शाम</dayPeriod>
+							<dayPeriod type="night1">रात</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">आधी रात</dayPeriod>
@@ -1587,7 +1646,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">रात</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">आधी रात</dayPeriod>
+							<dayPeriod type="midnight">मध्यरात्रि</dayPeriod>
 							<dayPeriod type="am">पूर्वाह्न</dayPeriod>
 							<dayPeriod type="pm">अपराह्न</dayPeriod>
 							<dayPeriod type="morning1">सुबह</dayPeriod>
@@ -1624,7 +1683,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>dd/MM/y</pattern>
+							<pattern>d MMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1677,8 +1736,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1694,10 +1758,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv" draft="contributed">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv" draft="contributed">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv" draft="contributed">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv" draft="contributed">HH:mm v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
@@ -1707,6 +1771,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMM का सप्ताह W</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMM का सप्ताह W</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -1720,6 +1786,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y का सप्ताह w</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y का सप्ताह w</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -2205,6 +2273,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>युग</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>युग</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>युग</displayName>
+			</field>
 			<field type="year">
 				<displayName>वर्ष</displayName>
 				<relative type="-1">पिछला वर्ष</relative>
@@ -2243,9 +2317,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>तिमाही</displayName>
-				<relative type="-1" draft="contributed">अंतिम तिमाही</relative>
-				<relative type="0" draft="contributed">इस तिमाही</relative>
-				<relative type="1" draft="contributed">अगली तिमाही</relative>
+				<relative type="-1">अंतिम तिमाही</relative>
+				<relative type="0">इस तिमाही</relative>
+				<relative type="1">अगली तिमाही</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} तिमाही में</relativeTimePattern>
 					<relativeTimePattern count="other">{0} तिमाहियों में</relativeTimePattern>
@@ -2275,12 +2349,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0" draft="contributed">इस तिमाही</relative>
 				<relative type="1" draft="contributed">अगली तिमाही</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ति. में</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ति. में</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ति॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ति॰ में</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ति. पहले</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ति. पहले</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ति॰ पहले</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ति॰ पहले</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -2332,6 +2406,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} सप्ताह पहले</relativeTimePattern>
 					<relativeTimePattern count="other">{0} सप्ताह पहले</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} के सप्ताह</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>सप्ताह</displayName>
@@ -2343,6 +2418,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} सप्ताह पहले</relativeTimePattern>
 					<relativeTimePattern count="other">{0} सप्ताह पहले</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} के सप्ताह</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>सप्ताह</displayName>
@@ -2354,10 +2430,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} सप्ताह पहले</relativeTimePattern>
 					<relativeTimePattern count="other">{0} सप्ताह पहले</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} के सप्ताह</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>माह का सप्ताह</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>माह का सप्ताह</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>माह का सप्ताह</displayName>
 			</field>
 			<field type="day">
 				<displayName>दिन</displayName>
-				<relative type="-2">बीता परसों</relative>
+				<relative type="-2">परसों</relative>
 				<relative type="-1">कल</relative>
 				<relative type="0">आज</relative>
 				<relative type="1">कल</relative>
@@ -2393,119 +2479,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} दिन पहले</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>वर्ष का दिन</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>वर्ष का दिन</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>वर्ष का दिन</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>सप्ताह का दिन</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>सप्ताह का दिन</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>सप्ताह का दिन</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>माह के कार्यदिवस</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>माह के कार्यदिवस</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>माह के कार्यदिवस</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">पिछला रविवार</relative>
 				<relative type="0">इस रविवार</relative>
 				<relative type="1">अगला रविवार</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} रविवार में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} रविवार में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} रविवार पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} रविवार पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
-				<relative type="-1">पिछला रवि.</relative>
-				<relative type="0">इस रवि.</relative>
-				<relative type="1">अगला रवि.</relative>
+				<relative type="-1">पिछला रवि॰</relative>
+				<relative type="0">इस रवि॰</relative>
+				<relative type="1">अगला रवि॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} रवि॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} रवि॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} रवि॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} रवि॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
-				<relative type="-1">पिछला रवि.</relative>
-				<relative type="0">इस रवि.</relative>
-				<relative type="1">अगला रवि.</relative>
+				<relative type="-1">पिछला रवि॰</relative>
+				<relative type="0">इस रवि॰</relative>
+				<relative type="1">अगला रवि॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} रवि॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} रवि॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} रवि॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} रवि॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">पिछला सोमवार</relative>
 				<relative type="0">इस सोमवार</relative>
 				<relative type="1">अगला सोमवार</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} सोमवार में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} सोमवार में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} सोमवार पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} सोमवार पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
-				<relative type="-1">पिछला सोम.</relative>
-				<relative type="0">इस सोम.</relative>
-				<relative type="1">अगला सोम.</relative>
+				<relative type="-1">पिछला सोम॰</relative>
+				<relative type="0">इस सोम॰</relative>
+				<relative type="1">अगला सोम॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} सोम॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} सोम॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} सोम॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} सोम॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
-				<relative type="-1">पिछला सोम.</relative>
-				<relative type="0">इस सोम.</relative>
-				<relative type="1">अगला सोम.</relative>
+				<relative type="-1">पिछला सोम॰</relative>
+				<relative type="0">इस सोम॰</relative>
+				<relative type="1">अगला सोम॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} सोम॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} सोम॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} सोम॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} सोम॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">पिछला मंगलवार</relative>
 				<relative type="0">इस मंगलवार</relative>
 				<relative type="1">अगला मंगलवार</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} मंगलवार में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मंगलवार में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} मंगलवार पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मंगलवार पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
-				<relative type="-1">पिछला मंगल.</relative>
-				<relative type="0">इस मंगल.</relative>
-				<relative type="1">अगला मंगल.</relative>
+				<relative type="-1">पिछला मंगल॰</relative>
+				<relative type="0">इस मंगल॰</relative>
+				<relative type="1">अगला मंगल॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} मंगल॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मंगल॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} मंगल॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मंगल॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
-				<relative type="-1">पिछला मंगल.</relative>
-				<relative type="0">इस मंगल.</relative>
-				<relative type="1">अगला मंगल.</relative>
+				<relative type="-1">पिछला मंगल॰</relative>
+				<relative type="0">इस मंगल॰</relative>
+				<relative type="1">अगला मंगल॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} मंगल॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मंगल॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} मंगल॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मंगल॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">पिछला बुधवार</relative>
 				<relative type="0">इस बुधवार</relative>
 				<relative type="1">अगला बुधवार</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} बुधवार में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} बुधवार में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} बुधवार पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} बुधवार पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
-				<relative type="-1">पिछला बुध.</relative>
-				<relative type="0">इस बुध.</relative>
-				<relative type="1">अगला बुध.</relative>
+				<relative type="-1">पिछला बुध॰</relative>
+				<relative type="0">इस बुध॰</relative>
+				<relative type="1">अगला बुध॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} बुध॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} बुध॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} बुध॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} बुध॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
-				<relative type="-1">पिछला बुध.</relative>
-				<relative type="0">इस बुध.</relative>
-				<relative type="1">अगला बुध.</relative>
+				<relative type="-1">पिछला बुध॰</relative>
+				<relative type="0">इस बुध॰</relative>
+				<relative type="1">अगला बुध॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} बुध॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} बुध॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} बुध॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} बुध॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">पिछला गुरुवार</relative>
 				<relative type="0">इस गुरुवार</relative>
 				<relative type="1">अगला गुरुवार</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} गुरुवार में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} गुरुवार में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} गुरुवार पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} गुरुवार पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
-				<relative type="-1">पिछला गुरु.</relative>
-				<relative type="0">इस गुरु.</relative>
-				<relative type="1">अगला गुरु.</relative>
+				<relative type="-1">पिछला गुरु॰</relative>
+				<relative type="0">इस गुरु॰</relative>
+				<relative type="1">अगला गुरु॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} गुरु॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} गुरु॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} गुरु॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} गुरु॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
-				<relative type="-1">पिछला गुरु.</relative>
-				<relative type="0">इस गुरु.</relative>
-				<relative type="1">अगला गुरु.</relative>
+				<relative type="-1">पिछला गुरु॰</relative>
+				<relative type="0">इस गुरु॰</relative>
+				<relative type="1">अगला गुरु॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} गुरु॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} गुरु॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} गुरु॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} गुरु॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">पिछला शुक्रवार</relative>
 				<relative type="0">इस शुक्रवार</relative>
 				<relative type="1">अगला शुक्रवार</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} शुक्रवार में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शुक्रवार में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} शुक्रवार पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शुक्रवार पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1">पिछला शुक्र.</relative>
-				<relative type="0">इस शुक्र.</relative>
-				<relative type="1">अगला शुक्र.</relative>
+				<relative type="-1">पिछला शुक्र॰</relative>
+				<relative type="0">इस शुक्र॰</relative>
+				<relative type="1">अगला शुक्र॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} शुक्र॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शुक्र॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} शुक्र॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शुक्र॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
-				<relative type="-1">पिछला शुक्र.</relative>
-				<relative type="0">इस शुक्र.</relative>
-				<relative type="1">अगला शुक्र.</relative>
+				<relative type="-1">पिछला शुक्र॰</relative>
+				<relative type="0">इस शुक्र॰</relative>
+				<relative type="1">अगला शुक्र॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} शुक्र॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शुक्र॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} शुक्र॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शुक्र॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">पिछला शनिवार</relative>
 				<relative type="0">इस शनिवार</relative>
 				<relative type="1">अगला शनिवार</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} शनिवार में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शनिवार में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} शनिवार पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शनिवार पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
-				<relative type="-1">पिछला शनि.</relative>
-				<relative type="0">इस शनि.</relative>
-				<relative type="1">अगला शनि.</relative>
+				<relative type="-1">पिछला शनि॰</relative>
+				<relative type="0">इस शनि॰</relative>
+				<relative type="1">अगला शनि॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} शनि॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शनि॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} शनि॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शनि॰ पूर्व</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
-				<relative type="-1">पिछला शनि.</relative>
-				<relative type="0">इस शनि.</relative>
-				<relative type="1">अगला शनि.</relative>
+				<relative type="-1">पिछला शनि॰</relative>
+				<relative type="0">इस शनि॰</relative>
+				<relative type="1">अगला शनि॰</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} शनि॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शनि॰ में</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} शनि॰ पूर्व</relativeTimePattern>
+					<relativeTimePattern count="other">{0} शनि॰ पूर्व</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>पू/अ</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>पूर्वाह्न/अपराह्न</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>पू/अ</displayName>
+			</field>
 			<field type="hour">
 				<displayName>घंटा</displayName>
+				<relative type="0">यह घंटा</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} घंटे में</relativeTimePattern>
 					<relativeTimePattern count="other">{0} घंटे में</relativeTimePattern>
@@ -2516,29 +2801,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="hour-short">
-				<displayName>घं.</displayName>
+				<displayName>घं॰</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} घं. में</relativeTimePattern>
-					<relativeTimePattern count="other">{0} घं. में</relativeTimePattern>
+					<relativeTimePattern count="one">{0} घं॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} घं॰ में</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} घं. पहले</relativeTimePattern>
-					<relativeTimePattern count="other">{0} घं. पहले</relativeTimePattern>
+					<relativeTimePattern count="one">{0} घं॰ पहले</relativeTimePattern>
+					<relativeTimePattern count="other">{0} घं॰ पहले</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-narrow">
-				<displayName>घं.</displayName>
+				<displayName>घं॰</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} घं. में</relativeTimePattern>
-					<relativeTimePattern count="other">{0} घं. में</relativeTimePattern>
+					<relativeTimePattern count="one">{0} घं॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} घं॰ में</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} घं. पहले</relativeTimePattern>
-					<relativeTimePattern count="other">{0} घं. पहले</relativeTimePattern>
+					<relativeTimePattern count="one">{0} घं॰ पहले</relativeTimePattern>
+					<relativeTimePattern count="other">{0} घं॰ पहले</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>मिनट</displayName>
+				<relative type="0">यह मिनट</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} मिनट में</relativeTimePattern>
 					<relativeTimePattern count="other">{0} मिनट में</relativeTimePattern>
@@ -2549,25 +2835,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="minute-short">
-				<displayName>मि.</displayName>
+				<displayName>मि॰</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} मि. में</relativeTimePattern>
-					<relativeTimePattern count="other">{0} मि. में</relativeTimePattern>
+					<relativeTimePattern count="one">{0} मि॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मि॰ में</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} मि. पहले</relativeTimePattern>
-					<relativeTimePattern count="other">{0} मि. पहले</relativeTimePattern>
+					<relativeTimePattern count="one">{0} मि॰ पहले</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मि॰ पहले</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute-narrow">
-				<displayName>मि.</displayName>
+				<displayName>मि॰</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} मि. में</relativeTimePattern>
-					<relativeTimePattern count="other">{0} मि. में</relativeTimePattern>
+					<relativeTimePattern count="one">{0} मि॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मि॰ में</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} मि. पहले</relativeTimePattern>
-					<relativeTimePattern count="other">{0} मि. पहले</relativeTimePattern>
+					<relativeTimePattern count="one">{0} मि॰ पहले</relativeTimePattern>
+					<relativeTimePattern count="other">{0} मि॰ पहले</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second">
@@ -2583,29 +2869,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="second-short">
-				<displayName>से.</displayName>
+				<displayName>से॰</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} से. में</relativeTimePattern>
-					<relativeTimePattern count="other">{0} से. में</relativeTimePattern>
+					<relativeTimePattern count="one">{0} से॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} से॰ में</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} से. पहले</relativeTimePattern>
-					<relativeTimePattern count="other">{0} से. पहले</relativeTimePattern>
+					<relativeTimePattern count="one">{0} से॰ पहले</relativeTimePattern>
+					<relativeTimePattern count="other">{0} से॰ पहले</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
-				<displayName>से.</displayName>
+				<displayName>से॰</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} से. में</relativeTimePattern>
-					<relativeTimePattern count="other">{0} से. में</relativeTimePattern>
+					<relativeTimePattern count="one">{0} से॰ में</relativeTimePattern>
+					<relativeTimePattern count="other">{0} से॰ में</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} से. पहले</relativeTimePattern>
-					<relativeTimePattern count="other">{0} से. पहले</relativeTimePattern>
+					<relativeTimePattern count="one">{0} से॰ पहले</relativeTimePattern>
+					<relativeTimePattern count="other">{0} से॰ पहले</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="zone">
 				<displayName>समय क्षेत्र</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>क्षेत्र</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>क्षेत्र</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
@@ -2616,6 +2908,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} डेलाइट समय</regionFormat>
 			<regionFormat type="standard">{0} मानक समय</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>सांता इसाबेल</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>होनोलुलु</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>समन्वित वैश्विक समय</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>अज्ञात शहर</exemplarCity>
 			</zone>
@@ -2680,7 +2983,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>मेंडोज़ा</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/San_Juan">
-				<exemplarCity>सान जुआन</exemplarCity>
+				<exemplarCity>सैन ह्वान</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Ushuaia">
 				<exemplarCity>उशुआइया</exemplarCity>
@@ -2689,7 +2992,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ला रिओजा</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/San_Luis">
-				<exemplarCity>सान लुईस</exemplarCity>
+				<exemplarCity>सैन लूई</exemplarCity>
 			</zone>
 			<zone type="America/Catamarca">
 				<exemplarCity>काटामार्का</exemplarCity>
@@ -2755,7 +3058,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>लॉर्ड होवे</exemplarCity>
 			</zone>
 			<zone type="America/Aruba">
-				<exemplarCity>अरुबा</exemplarCity>
+				<exemplarCity>अरूबा</exemplarCity>
 			</zone>
 			<zone type="Europe/Mariehamn">
 				<exemplarCity>मारियाहैम</exemplarCity>
@@ -2880,6 +3183,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>वैंकूवर</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>फ़ोर्ट नेल्सन</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>डॉसन क्रीक</exemplarCity>
 			</zone>
@@ -2938,10 +3244,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>हेलिफ़ैक्स</exemplarCity>
 			</zone>
 			<zone type="America/Goose_Bay">
-				<exemplarCity>गूस खा़ड़ी</exemplarCity>
+				<exemplarCity>गूस खाड़ी</exemplarCity>
 			</zone>
 			<zone type="America/Glace_Bay">
-				<exemplarCity>ग्लेस खा़ड़ी</exemplarCity>
+				<exemplarCity>ग्लेस खाड़ी</exemplarCity>
 			</zone>
 			<zone type="America/Blanc-Sablon">
 				<exemplarCity>ब्लांक-सेबलोन</exemplarCity>
@@ -2976,6 +3282,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>ईस्टर</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>पुंटा एरिनास</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>सैंटियागो</exemplarCity>
 			</zone>
@@ -3008,6 +3317,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>निकोसिया</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>फ़ामागुस्ता</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>प्राग</exemplarCity>
@@ -3121,7 +3433,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>नुक</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity>इटोकोर्टोरमियाट</exemplarCity>
+				<exemplarCity>इटोकोर्टोरमिट</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
 				<exemplarCity>डेनमार्कशॉन</exemplarCity>
@@ -3267,6 +3579,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>ओरल</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>एतराउ</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>अक्तोब</exemplarCity>
 			</zone>
@@ -3381,9 +3696,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Tijuana">
 				<exemplarCity>तिजुआना</exemplarCity>
 			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>सांता इसाबेल</exemplarCity>
-			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>हर्मोसिल्लो</exemplarCity>
 			</zone>
@@ -3457,7 +3769,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>नीयू</exemplarCity>
 			</zone>
 			<zone type="Pacific/Chatham">
-				<exemplarCity>चाथम</exemplarCity>
+				<exemplarCity>चैथम</exemplarCity>
 			</zone>
 			<zone type="Pacific/Auckland">
 				<exemplarCity>ऑकलैंड</exemplarCity>
@@ -3484,7 +3796,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>पोर्ट मोरेस्बी</exemplarCity>
 			</zone>
 			<zone type="Pacific/Bougainville">
-				<exemplarCity draft="contributed">बोगनविल</exemplarCity>
+				<exemplarCity>बोगनविले</exemplarCity>
 			</zone>
 			<zone type="Asia/Manila">
 				<exemplarCity>मनीला</exemplarCity>
@@ -3520,7 +3832,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>लिस्बन</exemplarCity>
 			</zone>
 			<zone type="Pacific/Palau">
-				<exemplarCity>पालाऊ</exemplarCity>
+				<exemplarCity>पलाऊ</exemplarCity>
 			</zone>
 			<zone type="America/Asuncion">
 				<exemplarCity>एसनशियॉन</exemplarCity>
@@ -3549,6 +3861,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>वोल्गोग्राड</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>सारातोव</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>आस्ट्राखान</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>उल्यानोव्स्क</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>किरोव</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>समारा</exemplarCity>
 			</zone>
@@ -3560,6 +3884,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>नोवोसिबिर्स्क</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>बर्नोल</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>तोम्स्क</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>नोवोकुज़्नेत्स्क</exemplarCity>
@@ -3729,9 +4059,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>मिडवे</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>जॉनस्टन</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>वेक</exemplarCity>
 			</zone>
@@ -3741,8 +4068,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>नोम</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>होनोलुलु</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>जॉनस्टन</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>एंकरेज</exemplarCity>
@@ -3763,7 +4090,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>लॉस एंजिल्स</exemplarCity>
 			</zone>
 			<zone type="America/Boise">
-				<exemplarCity>बॉइस</exemplarCity>
+				<exemplarCity>बॉइसी</exemplarCity>
 			</zone>
 			<zone type="America/Phoenix">
 				<exemplarCity>फ़ीनिक्स</exemplarCity>
@@ -3890,7 +4217,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Africa_Southern">
 				<long>
-					<standard>दक्षिण अफ़्रीका समय</standard>
+					<standard>दक्षिण अफ़्रीका मानक समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Western">
@@ -3951,9 +4278,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic draft="contributed">एपिआ समय</generic>
-					<standard draft="contributed">एपिआ मानक समय</standard>
-					<daylight draft="contributed">एपिआ डेलाइट समय</daylight>
+					<generic>एपिआ समय</generic>
+					<standard>एपिआ मानक समय</standard>
+					<daylight>एपिआ डेलाइट समय</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -4052,14 +4379,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Brasilia">
 				<long>
-					<generic>ब्राजीलिया समय</generic>
-					<standard>ब्राजीलिया मानक समय</standard>
-					<daylight>ब्राजीलिया ग्रीष्मकालीन समय</daylight>
+					<generic>ब्राज़ीलिया समय</generic>
+					<standard>ब्राज़ीलिया मानक समय</standard>
+					<daylight>ब्राज़ीलिया ग्रीष्मकालीन समय</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
 				<long>
-					<standard>ब्रूनेई दारूस्सलाम समय</standard>
+					<standard>ब्रूनेई दारूस्सलम समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
@@ -4140,7 +4467,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
-					<standard>ड्यूमोंट डर्विल समय</standard>
+					<standard>ड्यूमोंट डी अर्विले समय</standard>
 				</long>
 			</metazone>
 			<metazone type="East_Timor">
@@ -4176,7 +4503,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard draft="contributed">अग्र पूर्वी यूरोपीय समय</standard>
+					<standard>अग्र पूर्वी यूरोपीय समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
@@ -4580,9 +4907,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>सेंट पियरे और मिकेलान समय</generic>
-					<standard>सेंट पियरे और मिकेलान मानक समय</standard>
-					<daylight>सेंट पियरे और मिकेलान डेलाइट समय</daylight>
+					<generic>सेंट पिएरे और मिक्वेलान समय</generic>
+					<standard>सेंट पिएरे और मिक्वेलान मानक समय</standard>
+					<daylight>सेंट पिएरे और मिक्वेलान डेलाइट समय</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -4593,6 +4920,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Ponape">
 				<long>
 					<standard>पोनापे समय</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>प्योंगयांग समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -4628,7 +4960,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Seychelles">
 				<long>
-					<standard>सेशल्स समय</standard>
+					<standard>सेशेल्स समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Singapore">
@@ -4687,7 +5019,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Truk">
 				<long>
-					<standard>चूक समय</standard>
+					<standard>चुक समय</standard>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
@@ -4779,6 +5111,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<native>deva</native>
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<symbols numberSystem="deva">
+			<decimal>.</decimal>
+			<group>,</group>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
@@ -4793,6 +5132,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nan>NaN</nan>
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
+		<decimalFormats numberSystem="deva">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
@@ -4837,18 +5183,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="100000" count="other">0 लाख</pattern>
 					<pattern type="1000000" count="one">00 लाख</pattern>
 					<pattern type="1000000" count="other">00 लाख</pattern>
-					<pattern type="10000000" count="one">0 क'.'</pattern>
-					<pattern type="10000000" count="other">0 क'.'</pattern>
-					<pattern type="100000000" count="one">00 क'.'</pattern>
-					<pattern type="100000000" count="other">00 क'.'</pattern>
-					<pattern type="1000000000" count="one">0 अ'.'</pattern>
-					<pattern type="1000000000" count="other">0 अ'.'</pattern>
-					<pattern type="10000000000" count="one">00 अ'.'</pattern>
-					<pattern type="10000000000" count="other">00 अ'.'</pattern>
-					<pattern type="100000000000" count="one">0 ख'.'</pattern>
-					<pattern type="100000000000" count="other">0 ख'.'</pattern>
-					<pattern type="1000000000000" count="one">00 ख'.'</pattern>
-					<pattern type="1000000000000" count="other">00 ख'.'</pattern>
+					<pattern type="10000000" count="one">0 क॰</pattern>
+					<pattern type="10000000" count="other">0 क॰</pattern>
+					<pattern type="100000000" count="one">00 क॰</pattern>
+					<pattern type="100000000" count="other">00 क॰</pattern>
+					<pattern type="1000000000" count="one">0 अ॰</pattern>
+					<pattern type="1000000000" count="other">0 अ॰</pattern>
+					<pattern type="10000000000" count="one">00 अ॰</pattern>
+					<pattern type="10000000000" count="other">00 अ॰</pattern>
+					<pattern type="100000000000" count="one">0 ख॰</pattern>
+					<pattern type="100000000000" count="other">0 ख॰</pattern>
+					<pattern type="1000000000000" count="one">00 ख॰</pattern>
+					<pattern type="1000000000000" count="other">00 ख॰</pattern>
 					<pattern type="10000000000000" count="one">0 नील</pattern>
 					<pattern type="10000000000000" count="other">0 नील</pattern>
 					<pattern type="100000000000000" count="one">00 नील</pattern>
@@ -4856,6 +5202,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<scientificFormats numberSystem="deva">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>[#E0]</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -4863,6 +5216,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
+		<percentFormats numberSystem="deva">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -4870,6 +5230,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -4881,30 +5248,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="contributed">¤0 हज़ार</pattern>
-					<pattern type="1000" count="other" draft="contributed">¤0 हज़ार</pattern>
-					<pattern type="10000" count="one" draft="contributed">¤00 हज़ार</pattern>
-					<pattern type="10000" count="other" draft="contributed">¤00 हज़ार</pattern>
-					<pattern type="100000" count="one" draft="contributed">¤0 लाख</pattern>
-					<pattern type="100000" count="other" draft="contributed">¤0 लाख</pattern>
-					<pattern type="1000000" count="one" draft="contributed">¤00 लाख</pattern>
-					<pattern type="1000000" count="other" draft="contributed">¤00 लाख</pattern>
-					<pattern type="10000000" count="one" draft="contributed">¤0 क'.'</pattern>
-					<pattern type="10000000" count="other" draft="contributed">¤0 क'.'</pattern>
-					<pattern type="100000000" count="one" draft="contributed">¤00 क'.'</pattern>
-					<pattern type="100000000" count="other" draft="contributed">¤00 क'.'</pattern>
-					<pattern type="1000000000" count="one" draft="contributed">¤0 अ'.'</pattern>
-					<pattern type="1000000000" count="other" draft="contributed">¤0 अ'.'</pattern>
-					<pattern type="10000000000" count="one" draft="contributed">¤00 अ'.'</pattern>
-					<pattern type="10000000000" count="other" draft="contributed">¤00 अ'.'</pattern>
-					<pattern type="100000000000" count="one" draft="contributed">¤0 ख'.'</pattern>
-					<pattern type="100000000000" count="other" draft="contributed">¤0 ख'.'</pattern>
-					<pattern type="1000000000000" count="one" draft="contributed">¤00 ख'.'</pattern>
-					<pattern type="1000000000000" count="other" draft="contributed">¤00 ख'.'</pattern>
-					<pattern type="10000000000000" count="one" draft="contributed">¤0 नील</pattern>
-					<pattern type="10000000000000" count="other" draft="contributed">¤0 नील</pattern>
-					<pattern type="100000000000000" count="one" draft="contributed">¤00 नील</pattern>
-					<pattern type="100000000000000" count="other" draft="contributed">¤00 नील</pattern>
+					<pattern type="1000" count="one">¤0 हज़ार</pattern>
+					<pattern type="1000" count="other">¤0 हज़ार</pattern>
+					<pattern type="10000" count="one">¤00 हज़ार</pattern>
+					<pattern type="10000" count="other">¤00 हज़ार</pattern>
+					<pattern type="100000" count="one">¤0 लाख</pattern>
+					<pattern type="100000" count="other">¤0 लाख</pattern>
+					<pattern type="1000000" count="one">¤00 लाख</pattern>
+					<pattern type="1000000" count="other">¤00 लाख</pattern>
+					<pattern type="10000000" count="one">¤0 क॰</pattern>
+					<pattern type="10000000" count="other">¤0 क॰</pattern>
+					<pattern type="100000000" count="one">¤00 क॰</pattern>
+					<pattern type="100000000" count="other">¤00 क॰</pattern>
+					<pattern type="1000000000" count="one">¤0 अ॰</pattern>
+					<pattern type="1000000000" count="other">¤0 अ॰</pattern>
+					<pattern type="10000000000" count="one">¤00 अ॰</pattern>
+					<pattern type="10000000000" count="other">¤00 अ॰</pattern>
+					<pattern type="100000000000" count="one">¤0 ख॰</pattern>
+					<pattern type="100000000000" count="other">¤0 ख॰</pattern>
+					<pattern type="1000000000000" count="one">¤00 ख॰</pattern>
+					<pattern type="1000000000000" count="other">¤00 ख॰</pattern>
+					<pattern type="10000000000000" count="one">¤0 नील</pattern>
+					<pattern type="10000000000000" count="other">¤0 नील</pattern>
+					<pattern type="100000000000000" count="one">¤00 नील</pattern>
+					<pattern type="100000000000000" count="other">¤00 नील</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -5064,12 +5431,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>बेलारूसी रूबल</displayName>
 				<displayName count="one">बेलारूसी रूबल</displayName>
 				<displayName count="other">बेलारूसी रूबल</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>बेलारूसी रूबल (2000–2016)</displayName>
+				<displayName count="one">बेलारूसी रूबल (2000–2016)</displayName>
+				<displayName count="other">बेलारूसी रूबल (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>बेलीज़ डॉलर</displayName>
@@ -5103,6 +5476,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">चिली पेसो</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>चीनी यूआन</displayName>
+				<displayName count="one">चीनी यूआन</displayName>
+				<displayName count="other">चीनी यूआन</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>चीनी युआन</displayName>
@@ -5245,6 +5624,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">जॉर्जियन लारी</displayName>
 				<displayName count="other">जॉर्जियन लारी</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">ლ</symbol>
 			</currency>
 			<currency type="GHS">
@@ -5545,17 +5925,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>मॉरीटेनियन ओगुइया (1973–2017)</displayName>
+				<displayName count="one">मॉरीटेनियन ओगुइया (1973–2017)</displayName>
+				<displayName count="other">मॉरीटेनियन ओगुइया (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>मॉरीटेनियन ओगुइया</displayName>
 				<displayName count="one">मॉरीटेनियन ओगुइया</displayName>
 				<displayName count="other">मॉरीटेनियन ओगुइया</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>मॉरिशियन रुपया</displayName>
 				<displayName count="one">मॉरिशियन रुपया</displayName>
 				<displayName count="other">मॉरिशियन रुपया</displayName>
 				<symbol>MUR</symbol>
-				<symbol alt="narrow" draft="contributed">₨</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>मालदीवी रुफ़िया</displayName>
@@ -5644,9 +6029,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>पेरूवियन नुएवो सोल</displayName>
-				<displayName count="one">पेरूवियन नुएवो सोल</displayName>
-				<displayName count="other">पेरूवियन नुएवो सोल</displayName>
+				<displayName>पेरूवियन सोल</displayName>
+				<displayName count="one">पेरूवियन सोल</displayName>
+				<displayName count="other">पेरूवियन सोल</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
@@ -5667,7 +6052,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">पाकिस्तानी रुपया</displayName>
 				<displayName count="other">पाकिस्तानी रुपए</displayName>
 				<symbol>PKR</symbol>
-				<symbol alt="narrow" draft="contributed">₨</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>पोलिश ज़्लॉटी</displayName>
@@ -5697,6 +6082,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">रोमानियाई ल्यू</displayName>
 				<displayName count="other">रोमानियाई ल्यू</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">लेई</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>सर्बियन दिनार</displayName>
@@ -5806,10 +6192,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>साओ तोम और प्रिंसिपे डोबरा (1977–2017)</displayName>
+				<displayName count="one">साओ तोम और प्रिंसिपे डोबरा (1977–2017)</displayName>
+				<displayName count="other">साओ तोम और प्रिंसिपे डोबरा (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>साओ तोम और प्रिंसिपे डोबरा</displayName>
 				<displayName count="one">साओ तोम और प्रिंसिपे डोबरा</displayName>
 				<displayName count="other">साओ तोम और प्रिंसिपे डोबरा</displayName>
-				<symbol>STD</symbol>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -5963,9 +6355,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
-				<displayName>[CFA] फ़्रैंक [BEAC]</displayName>
-				<displayName count="one">[CFA] फ़्रैंक [BEAC]</displayName>
-				<displayName count="other">[CFA] फ़्रैंक [BEAC]</displayName>
+				<displayName>केंद्रीय अफ़्रीकी CFA फ़्रैंक</displayName>
+				<displayName count="one">केंद्रीय अफ़्रीकी CFA फ़्रैंक</displayName>
+				<displayName count="other">केंद्रीय अफ़्रीकी CFA फ़्रैंक</displayName>
 				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
@@ -5976,9 +6368,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
-				<displayName>पश्चिमी अफ़्रीकी CFA फ्रैंक</displayName>
-				<displayName count="one">[CFA] फ़्रैंक [BCEAO]</displayName>
-				<displayName count="other">[CFA] फ़्रैंक [BCEAO]</displayName>
+				<displayName>पश्चिमी अफ़्रीकी CFA फ़्रैंक</displayName>
+				<displayName count="one">पश्चिमी अफ़्रीकी CFA फ़्रैंक</displayName>
+				<displayName count="other">पश्चिमी अफ़्रीकी CFA फ़्रैंक</displayName>
 				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPF">
@@ -6020,6 +6412,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} घंटा</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} घंटे</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">{0}था दाहिना मोड़ लें॰</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="many">{0}ठा दाहिना मोड़ लें॰</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">{0}ला दाहिना मोड़ लें॰</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}वां दाहिना मोड़ लें॰</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">{0}रा दाहिना मोड़ लें॰</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -6065,6 +6466,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>वर्ग किलोमीटर</displayName>
 				<unitPattern count="one">{0} वर्ग किलोमीटर</unitPattern>
 				<unitPattern count="other">{0} वर्ग किलोमीटर</unitPattern>
+				<perUnitPattern draft="contributed">{0} प्रति वर्ग किलोमीटर</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>हेक्टेयर</displayName>
@@ -6087,6 +6489,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>वर्ग मील</displayName>
 				<unitPattern count="one">{0} वर्ग मील</unitPattern>
 				<unitPattern count="other">{0} वर्ग मील</unitPattern>
+				<perUnitPattern draft="contributed">{0}/वर्ग मील</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>एकड़</displayName>
@@ -6094,9 +6497,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} एकड़</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName>वर्ग यार्ड</displayName>
-				<unitPattern count="one">{0} वर्ग यार्ड</unitPattern>
-				<unitPattern count="other">{0} वर्ग यार्ड</unitPattern>
+				<displayName>वर्ग गज</displayName>
+				<unitPattern count="one">{0} वर्ग गज</unitPattern>
+				<unitPattern count="other">{0} वर्ग गज</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>वर्गफ़ीट</displayName>
@@ -6114,6 +6517,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} कैरट</unitPattern>
 				<unitPattern count="other">{0} कैरट</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>मिलिग्राम प्रति डेसीलीटर</displayName>
+				<unitPattern count="one">{0} मिलिग्राम प्रति डेसीलीटर</unitPattern>
+				<unitPattern count="other">{0} मिलिग्राम प्रति डेसीलीटर</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>मिलीमोल प्रति लीटर</displayName>
+				<unitPattern count="one">{0} मिलीमोल प्रति लीटर</unitPattern>
+				<unitPattern count="other">{0} मिलीमोल प्रति लीटर</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName draft="contributed">ppm</displayName>
+				<unitPattern count="one" draft="contributed">{0} ppm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} हिस्सा प्रति दस लाख</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>लीटर प्रति किलोमीटर</displayName>
 				<unitPattern count="one">{0} लीटर प्रति किलोमीटर</unitPattern>
@@ -6128,6 +6546,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>मील प्रति गैलन</displayName>
 				<unitPattern count="one">{0} मील प्रति गैलन</unitPattern>
 				<unitPattern count="other">{0} मील प्रति गैलन</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>मील प्रति इंपीरियल गैलन</displayName>
+				<unitPattern count="one">{0} मील प्रति इंपीरियल गैलन</unitPattern>
+				<unitPattern count="other">{0} मील प्रति इंपीरियल गैलन</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>टेराबाइट</displayName>
@@ -6180,33 +6603,33 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} बिट</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName draft="contributed">शताब्दियाँ</displayName>
-				<unitPattern count="one" draft="contributed">{0} शताब्दी</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} शताब्दियाँ</unitPattern>
+				<displayName>शताब्दियाँ</displayName>
+				<unitPattern count="one">{0} शताब्दी</unitPattern>
+				<unitPattern count="other">{0} शताब्दियाँ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>वर्ष</displayName>
 				<unitPattern count="one">{0} वर्ष</unitPattern>
 				<unitPattern count="other">{0} वर्ष</unitPattern>
-				<perUnitPattern draft="contributed">{0}/वर्ष</perUnitPattern>
+				<perUnitPattern>{0} प्रति वर्ष</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>माह</displayName>
 				<unitPattern count="one">{0} माह</unitPattern>
 				<unitPattern count="other">{0} माह</unitPattern>
-				<perUnitPattern draft="contributed">{0}/माह</perUnitPattern>
+				<perUnitPattern>{0} प्रति माह</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>सप्ताह</displayName>
 				<unitPattern count="one">{0} सप्ताह</unitPattern>
 				<unitPattern count="other">{0} सप्ताह</unitPattern>
-				<perUnitPattern draft="contributed">{0}/सप्ताह</perUnitPattern>
+				<perUnitPattern>{0} प्रति सप्ताह</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>दिन</displayName>
 				<unitPattern count="one">{0} दिन</unitPattern>
 				<unitPattern count="other">{0} दिन</unitPattern>
-				<perUnitPattern draft="contributed">{0}/दिन</perUnitPattern>
+				<perUnitPattern>{0} प्रति दिन</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>घंटे</displayName>
@@ -6218,7 +6641,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>मिनट</displayName>
 				<unitPattern count="one">{0} मिनट</unitPattern>
 				<unitPattern count="other">{0} मिनट</unitPattern>
-				<perUnitPattern draft="contributed">{0}/मिनट</perUnitPattern>
+				<perUnitPattern>{0} प्रति मिनट</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>सेकंड</displayName>
@@ -6257,9 +6680,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ओम</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName>वोल्ट्स</displayName>
+				<displayName>वोल्ट</displayName>
 				<unitPattern count="one">{0} वोल्ट</unitPattern>
-				<unitPattern count="other">{0} वोल्ट्स</unitPattern>
+				<unitPattern count="other">{0} वोल्ट</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>किलो कैलोरी</displayName>
@@ -6387,7 +6810,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} प्रकाश वर्ष</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName>खगोलीय इकाईयां</displayName>
+				<displayName>खगोलीय इकाइयाँ</displayName>
 				<unitPattern count="one">{0} खगोलीय इकाई</unitPattern>
 				<unitPattern count="other">{0} खगोलीय इकाईयां</unitPattern>
 			</unit>
@@ -6400,6 +6823,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName draft="contributed">मील-स्कैण्डिनेवियन</displayName>
 				<unitPattern count="one" draft="contributed">{0} मील-स्कैण्डिनेवियन</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} मील-स्कैण्डिनेवियन</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>लक्स</displayName>
@@ -6644,6 +7072,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} गैलन</unitPattern>
 				<perUnitPattern draft="contributed">{0}/गैलन</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>इम्पीरियल गैलन</displayName>
+				<unitPattern count="one">{0} इम्पीरियल गैलन</unitPattern>
+				<unitPattern count="other">{0} इम्पीरियल गैलन</unitPattern>
+				<perUnitPattern>{0}/इम्पीरियल गैलन</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>क्वार्ट</displayName>
 				<unitPattern count="one">{0} क्वार्ट</unitPattern>
@@ -6687,13 +7121,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>गु–बल</displayName>
-				<unitPattern count="one">{0} गु.</unitPattern>
-				<unitPattern count="other">{0} गु.</unitPattern>
+				<unitPattern count="one">{0} गु॰</unitPattern>
+				<unitPattern count="other">{0} गु॰</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-second-squared">
 				<displayName>मीटर/से²</displayName>
-				<unitPattern count="one">{0} मीटर/से²</unitPattern>
-				<unitPattern count="other">{0} m/s²</unitPattern>
+				<unitPattern count="one">{0} मी॰/व॰से॰</unitPattern>
+				<unitPattern count="other">{0} मी॰/व॰से॰</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName draft="contributed">घूर्णन</displayName>
@@ -6717,35 +7151,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName>आर्क सेकंड</displayName>
-				<unitPattern count="one">{0} आर्क से.</unitPattern>
-				<unitPattern count="other">{0} आर्क से.</unitPattern>
+				<unitPattern count="one">{0} आर्क से॰</unitPattern>
+				<unitPattern count="other">{0} आर्क से॰</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
-				<displayName>वर्ग कि.मी.</displayName>
-				<unitPattern count="one">{0} वर्ग कि.मी.</unitPattern>
-				<unitPattern count="other">{0} वर्ग कि.मी.</unitPattern>
+				<displayName>वर्ग कि॰मी॰</displayName>
+				<unitPattern count="one">{0} वर्ग कि॰मी॰</unitPattern>
+				<unitPattern count="other">{0} वर्ग कि॰मी॰</unitPattern>
+				<perUnitPattern draft="contributed">{0}/वर्ग कि॰मी॰</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>हेक्टेयर</displayName>
-				<unitPattern count="one">{0} हे.</unitPattern>
-				<unitPattern count="other">{0} हे.</unitPattern>
+				<unitPattern count="one">{0} हे॰</unitPattern>
+				<unitPattern count="other">{0} हे॰</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>वर्ग मीटर</displayName>
-				<unitPattern count="one">{0} वर्ग मी.</unitPattern>
-				<unitPattern count="other">{0} वर्ग मी.</unitPattern>
+				<unitPattern count="one">{0} वर्ग मी॰</unitPattern>
+				<unitPattern count="other">{0} वर्ग मी॰</unitPattern>
 				<perUnitPattern draft="contributed">{0}/वर्ग मीटर</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
-				<displayName>वर्ग सें.</displayName>
-				<unitPattern count="one">{0} व. सें.</unitPattern>
-				<unitPattern count="other">{0} व. सें.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/वर्ग सें. मी.</perUnitPattern>
+				<displayName>वर्ग सें॰</displayName>
+				<unitPattern count="one">{0} व॰ सें॰</unitPattern>
+				<unitPattern count="other">{0} व॰ सें॰</unitPattern>
+				<perUnitPattern draft="contributed">{0}/वर्ग सें॰ मी॰</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>वर्ग मील</displayName>
 				<unitPattern count="one">{0} वर्ग मील</unitPattern>
 				<unitPattern count="other">{0} वर्ग मील</unitPattern>
+				<perUnitPattern draft="contributed">{0}/मील²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>एकड़</displayName>
@@ -6753,19 +7189,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} एकड़</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName>व. या.</displayName>
-				<unitPattern count="one">{0} व. या.</unitPattern>
-				<unitPattern count="other">{0} व. या.</unitPattern>
+				<displayName>व॰ ग॰</displayName>
+				<unitPattern count="one">{0} व॰ ग॰</unitPattern>
+				<unitPattern count="other">{0} व॰ ग॰</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
-				<displayName>व.फ़ी.</displayName>
-				<unitPattern count="one">{0} व.फ़ी.</unitPattern>
-				<unitPattern count="other">{0} व.फ़ी.</unitPattern>
+				<displayName>व॰फ़ी॰</displayName>
+				<unitPattern count="one">{0} व॰फ़ी॰</unitPattern>
+				<unitPattern count="other">{0} व॰फ़ी॰</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
-				<displayName>व. इं.</displayName>
-				<unitPattern count="one">{0} व. इं.</unitPattern>
-				<unitPattern count="other">{0} व. इं.</unitPattern>
+				<displayName>व॰ इं॰</displayName>
+				<unitPattern count="one">{0} व॰ इं॰</unitPattern>
+				<unitPattern count="other">{0} व॰ इं॰</unitPattern>
 				<perUnitPattern draft="contributed">{0}/वर्ग इंच</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
@@ -6773,20 +7209,40 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>मि॰ग्रा॰/डे॰ली॰</displayName>
+				<unitPattern count="one">{0} मि॰ग्रा॰/डे॰ली॰</unitPattern>
+				<unitPattern count="other">{0} मि॰ग्रा॰/डे॰ली॰</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>मिलीमोल/लीटर</displayName>
+				<unitPattern count="one">{0} मिलीमोल/ली॰</unitPattern>
+				<unitPattern count="other">{0} मिलीमोल/ली॰</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName draft="contributed">ppm</displayName>
+				<unitPattern count="one" draft="contributed">{0} ppm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>लीटर/किमी</displayName>
 				<unitPattern count="one">{0} ली/किमी</unitPattern>
 				<unitPattern count="other">{0} ली/किमी</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName draft="contributed">ली./100 कि.मी.</displayName>
-				<unitPattern count="one" draft="contributed">{0} ली./100 कि.मी.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ली./100 कि.मी.</unitPattern>
+				<displayName draft="contributed">ली॰/100 कि॰मी॰</displayName>
+				<unitPattern count="one">{0} ली॰/100 कि॰मी॰</unitPattern>
+				<unitPattern count="other">{0} ली॰/100 कि॰मी॰</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>मील/गैलन</displayName>
 				<unitPattern count="one">{0} mpg</unitPattern>
 				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg इंपीरियल</displayName>
+				<unitPattern count="one">{0} mpg इंपीरियल</unitPattern>
+				<unitPattern count="other">{0} mpg इंपीरियल</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -6839,66 +7295,66 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} बिट</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName draft="contributed">शता</displayName>
-				<unitPattern count="one" draft="contributed">{0} शता</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} शता</unitPattern>
+				<displayName>शता</displayName>
+				<unitPattern count="one">{0} शता</unitPattern>
+				<unitPattern count="other">{0} शता</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>वर्ष</displayName>
 				<unitPattern count="one">{0} वर्ष</unitPattern>
 				<unitPattern count="other">{0} वर्ष</unitPattern>
-				<perUnitPattern draft="contributed">{0}/वर्ष</perUnitPattern>
+				<perUnitPattern>{0}/वर्ष</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>माह</displayName>
 				<unitPattern count="one">{0} माह</unitPattern>
 				<unitPattern count="other">{0} माह</unitPattern>
-				<perUnitPattern draft="contributed">{0}/माह</perUnitPattern>
+				<perUnitPattern>{0}/माह</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>सप्ताह</displayName>
 				<unitPattern count="one">{0} सप्ताह</unitPattern>
 				<unitPattern count="other">{0} सप्ताह</unitPattern>
-				<perUnitPattern draft="contributed">{0}/सप्ताह</perUnitPattern>
+				<perUnitPattern>{0}/सप्ताह</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>दिन</displayName>
 				<unitPattern count="one">{0} दिन</unitPattern>
 				<unitPattern count="other">{0} दिन</unitPattern>
-				<perUnitPattern draft="contributed">{0}/दिन</perUnitPattern>
+				<perUnitPattern>{0}/दिन</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>घंटे</displayName>
-				<unitPattern count="one">{0} घं.</unitPattern>
-				<unitPattern count="other">{0} घं.</unitPattern>
-				<perUnitPattern>{0} प्र. घं.</perUnitPattern>
+				<unitPattern count="one">{0} घं॰</unitPattern>
+				<unitPattern count="other">{0} घं॰</unitPattern>
+				<perUnitPattern>{0}/घं॰</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>मिनट</displayName>
-				<unitPattern count="one">{0} मि.</unitPattern>
-				<unitPattern count="other">{0} मि.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/मिनट</perUnitPattern>
+				<unitPattern count="one">{0} मि॰</unitPattern>
+				<unitPattern count="other">{0} मि॰</unitPattern>
+				<perUnitPattern>{0}/मिनट</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>सेकंड</displayName>
-				<unitPattern count="one">{0} सेक.</unitPattern>
-				<unitPattern count="other">{0} सेक.</unitPattern>
-				<perUnitPattern>{0} प्र. से.</perUnitPattern>
+				<unitPattern count="one">{0} से॰</unitPattern>
+				<unitPattern count="other">{0} से॰</unitPattern>
+				<perUnitPattern>{0}/से॰</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>मिलीसेकंड</displayName>
-				<unitPattern count="one">{0} मि.से.</unitPattern>
-				<unitPattern count="other">{0} मि.से.</unitPattern>
+				<unitPattern count="one">{0} मि॰से॰</unitPattern>
+				<unitPattern count="other">{0} मि॰से॰</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName>मा॰ सेक॰</displayName>
-				<unitPattern count="one">{0} मा॰ से॰</unitPattern>
-				<unitPattern count="other">{0} मा॰ से॰</unitPattern>
+				<displayName>माइक्रोसेकंड</displayName>
+				<unitPattern count="one">{0} μs</unitPattern>
+				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName>नैनो से.</displayName>
-				<unitPattern count="one">{0} नैनो से.</unitPattern>
-				<unitPattern count="other">{0} नैनो से.</unitPattern>
+				<displayName>नैनो से॰</displayName>
+				<unitPattern count="one">{0} नैनो से॰</unitPattern>
+				<unitPattern count="other">{0} नैनो से॰</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>एम्पी॰</displayName>
@@ -6971,10 +7427,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
-				<displayName>कि.मी.</displayName>
-				<unitPattern count="one">{0} कि.मी.</unitPattern>
-				<unitPattern count="other">{0} कि.मी.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/कि.मी.</perUnitPattern>
+				<displayName>कि॰मी॰</displayName>
+				<unitPattern count="one">{0} कि॰मी॰</unitPattern>
+				<unitPattern count="other">{0} कि॰मी॰</unitPattern>
+				<perUnitPattern draft="contributed">{0}/कि॰मी॰</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>मीटर</displayName>
@@ -6983,35 +7439,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern draft="contributed">{0}/मी</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName>डे.मी.</displayName>
-				<unitPattern count="one">{0} डे.मी.</unitPattern>
-				<unitPattern count="other">{0} डे.मी.</unitPattern>
+				<displayName>डे॰मी॰</displayName>
+				<unitPattern count="one">{0} डे॰मी॰</unitPattern>
+				<unitPattern count="other">{0} डे॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName>सें.मी.</displayName>
-				<unitPattern count="one">{0} सें.मी.</unitPattern>
-				<unitPattern count="other">{0} सें.मी.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/सें.मी.</perUnitPattern>
+				<displayName>सें॰मी॰</displayName>
+				<unitPattern count="one">{0} सें॰मी॰</unitPattern>
+				<unitPattern count="other">{0} सें॰मी॰</unitPattern>
+				<perUnitPattern draft="contributed">{0}/सें॰मी॰</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
-				<displayName>मि.मी.</displayName>
-				<unitPattern count="one">{0} मि.मी.</unitPattern>
-				<unitPattern count="other">{0} मि.मी.</unitPattern>
+				<displayName>मि॰मी॰</displayName>
+				<unitPattern count="one">{0} मि॰मी॰</unitPattern>
+				<unitPattern count="other">{0} मि॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<displayName>µ मा.मी.</displayName>
-				<unitPattern count="one">{0} µ मा.मी.</unitPattern>
-				<unitPattern count="other">{0} µ मा.मी.</unitPattern>
+				<displayName>µ मा॰मी॰</displayName>
+				<unitPattern count="one">{0} µ मा॰मी॰</unitPattern>
+				<unitPattern count="other">{0} µ मा॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<displayName>नै.मी.</displayName>
-				<unitPattern count="one">{0} नै.मी.</unitPattern>
-				<unitPattern count="other">{0} नै.मी.</unitPattern>
+				<displayName>नै॰मी॰</displayName>
+				<unitPattern count="one">{0} नै॰मी॰</unitPattern>
+				<unitPattern count="other">{0} नै॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-picometer">
-				<displayName>पि.मी.</displayName>
-				<unitPattern count="one">{0} पि.मी.</unitPattern>
-				<unitPattern count="other">{0} पि.मी.</unitPattern>
+				<displayName>पि॰मी॰</displayName>
+				<unitPattern count="one">{0} पि॰मी॰</unitPattern>
+				<unitPattern count="other">{0} पि॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>मील</displayName>
@@ -7042,23 +7498,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="length-light-year">
 				<displayName>प्रकाश वर्ष</displayName>
-				<unitPattern count="one">{0} प्र.व.</unitPattern>
-				<unitPattern count="other">{0} प्र.व.</unitPattern>
+				<unitPattern count="one">{0} प्र॰व॰</unitPattern>
+				<unitPattern count="other">{0} प्र॰व॰</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName>खगो. इका.</displayName>
-				<unitPattern count="one">{0} खगो. इका.</unitPattern>
-				<unitPattern count="other">{0} खगो. इका.</unitPattern>
+				<displayName>खगो॰ इका॰</displayName>
+				<unitPattern count="one">{0} खगो॰ इका॰</unitPattern>
+				<unitPattern count="other">{0} खगो॰ इका॰</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
-				<displayName>नॉ. मी.</displayName>
-				<unitPattern count="one">{0} नॉ. मी.</unitPattern>
-				<unitPattern count="other">{0} नॉ. मी.</unitPattern>
+				<displayName>नॉ॰ मी॰</displayName>
+				<unitPattern count="one">{0} नॉ॰ मी॰</unitPattern>
+				<unitPattern count="other">{0} नॉ॰ मी॰</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName draft="contributed">smi</displayName>
 				<unitPattern count="one" draft="contributed">{0} smi</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>लक्स</displayName>
@@ -7071,21 +7532,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} मीट्रिक टन</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>कि.ग्रा.</displayName>
-				<unitPattern count="one">{0} कि.ग्रा.</unitPattern>
-				<unitPattern count="other">{0} कि.ग्रा.</unitPattern>
-				<perUnitPattern>{0}/कि.ग्रा.</perUnitPattern>
+				<displayName>कि॰ग्रा॰</displayName>
+				<unitPattern count="one">{0} कि॰ग्रा॰</unitPattern>
+				<unitPattern count="other">{0} कि॰ग्रा॰</unitPattern>
+				<perUnitPattern>{0}/कि॰ग्रा॰</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ग्राम</displayName>
-				<unitPattern count="one">{0} ग्रा.</unitPattern>
-				<unitPattern count="other">{0} ग्रा.</unitPattern>
-				<perUnitPattern>{0}/ग्रा.</perUnitPattern>
+				<unitPattern count="one">{0} ग्रा॰</unitPattern>
+				<unitPattern count="other">{0} ग्रा॰</unitPattern>
+				<perUnitPattern>{0}/ग्रा॰</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
-				<displayName>मि.ग्रा.</displayName>
-				<unitPattern count="one">{0} मि.ग्रा.</unitPattern>
-				<unitPattern count="other">{0} मि.ग्रा.</unitPattern>
+				<displayName>मि॰ग्रा॰</displayName>
+				<unitPattern count="one">{0} मि॰ग्रा॰</unitPattern>
+				<unitPattern count="other">{0} मि॰ग्रा॰</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
 				<displayName>मा॰ग्रा॰</displayName>
@@ -7105,8 +7566,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>औंस</displayName>
-				<unitPattern count="one">{0} औं.</unitPattern>
-				<unitPattern count="other">{0} औं.</unitPattern>
+				<unitPattern count="one">{0} औं॰</unitPattern>
+				<unitPattern count="other">{0} औं॰</unitPattern>
 				<perUnitPattern>{0}/औंस</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
@@ -7116,8 +7577,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="mass-carat">
 				<displayName>कै॰</displayName>
-				<unitPattern count="one">{0} कै.</unitPattern>
-				<unitPattern count="other">{0} कै.</unitPattern>
+				<unitPattern count="one">{0} कै॰</unitPattern>
+				<unitPattern count="other">{0} कै॰</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
@@ -7175,19 +7636,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} mbar</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
-				<displayName>कि.मी./घं.</displayName>
-				<unitPattern count="one">{0} कि.मी. प्रति घं.</unitPattern>
-				<unitPattern count="other">{0} कि.मी. प्रति घं.</unitPattern>
+				<displayName>कि॰मी॰/घं॰</displayName>
+				<unitPattern count="one">{0} कि॰मी॰ प्रति घं॰</unitPattern>
+				<unitPattern count="other">{0} कि॰मी॰ प्रति घं॰</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<displayName>मी./से.</displayName>
-				<unitPattern count="one">{0} मी./से.</unitPattern>
-				<unitPattern count="other">{0} मी./से.</unitPattern>
+				<displayName>मी॰/से॰</displayName>
+				<unitPattern count="one">{0} मी॰/से॰</unitPattern>
+				<unitPattern count="other">{0} मी॰/से॰</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName>मील/घं.</displayName>
-				<unitPattern count="one">{0} मी.प्र.घं.</unitPattern>
-				<unitPattern count="other">{0} मी.प्र.घं.</unitPattern>
+				<displayName>मील/घंटा</displayName>
+				<unitPattern count="one">{0} मी॰प्र॰घं॰</unitPattern>
+				<unitPattern count="other">{0} मी॰प्र॰घं॰</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<displayName draft="contributed">नॉट</displayName>
@@ -7201,13 +7662,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>डिग्री सेल्सियस</displayName>
-				<unitPattern count="one">{0}°से.</unitPattern>
-				<unitPattern count="other">{0}°से.</unitPattern>
+				<unitPattern count="one">{0}°से॰</unitPattern>
+				<unitPattern count="other">{0}°से॰</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>डिग्री फ़ेरनहाइट</displayName>
-				<unitPattern count="one">{0}°फेरन.</unitPattern>
-				<unitPattern count="other">{0}°फेरन.</unitPattern>
+				<unitPattern count="one">{0}°फेरन॰</unitPattern>
+				<unitPattern count="other">{0}°फेरन॰</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
 				<displayName>K</displayName>
@@ -7215,21 +7676,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
-				<displayName>घन कि.मी.</displayName>
-				<unitPattern count="one">{0} घन कि.मी.</unitPattern>
-				<unitPattern count="other">{0} घन कि.मी.</unitPattern>
+				<displayName>घन कि॰मी॰</displayName>
+				<unitPattern count="one">{0} घन कि॰मी॰</unitPattern>
+				<unitPattern count="other">{0} घन कि॰मी॰</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
-				<displayName>घन मी.</displayName>
-				<unitPattern count="one">{0} घन मी.</unitPattern>
-				<unitPattern count="other">{0} घन मी.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/घन मी.</perUnitPattern>
+				<displayName>घन मी॰</displayName>
+				<unitPattern count="one">{0} घन मी॰</unitPattern>
+				<unitPattern count="other">{0} घन मी॰</unitPattern>
+				<perUnitPattern draft="contributed">{0}/घन मी॰</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
-				<displayName>घन सें. मी.</displayName>
-				<unitPattern count="one">{0} घन सें. मी.</unitPattern>
-				<unitPattern count="other">{0} घन सें. मी.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/घन सें. मी.</perUnitPattern>
+				<displayName>घन सें॰ मी॰</displayName>
+				<unitPattern count="one">{0} घन सें॰ मी॰</unitPattern>
+				<unitPattern count="other">{0} घन सें॰ मी॰</unitPattern>
+				<perUnitPattern draft="contributed">{0}/घन सें॰ मी॰</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>घन मील</displayName>
@@ -7237,14 +7698,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} घन मील</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
-				<displayName>घन या.</displayName>
-				<unitPattern count="one">{0} घन या.</unitPattern>
-				<unitPattern count="other">{0} घन या.</unitPattern>
+				<displayName>घन या॰</displayName>
+				<unitPattern count="one">{0} घन या॰</unitPattern>
+				<unitPattern count="other">{0} घन या॰</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
-				<displayName>घ. फ़ी.</displayName>
-				<unitPattern count="one">{0} घ. फ़ी.</unitPattern>
-				<unitPattern count="other">{0} घ. फ़ी.</unitPattern>
+				<displayName>घ॰ फ़ी॰</displayName>
+				<unitPattern count="one">{0} घ॰ फ़ी॰</unitPattern>
+				<unitPattern count="other">{0} घ॰ फ़ी॰</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName>घन इंच</displayName>
@@ -7252,35 +7713,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} घन इंच</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
-				<displayName>मे. ली.</displayName>
-				<unitPattern count="one">{0} मे. ली.</unitPattern>
-				<unitPattern count="other">{0} मे. ली.</unitPattern>
+				<displayName>मे॰ ली॰</displayName>
+				<unitPattern count="one">{0} मे॰ ली॰</unitPattern>
+				<unitPattern count="other">{0} मे॰ ली॰</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
-				<displayName>है.ली.</displayName>
-				<unitPattern count="one">{0} है.ली.</unitPattern>
-				<unitPattern count="other">{0} है.ली.</unitPattern>
+				<displayName>है॰ली॰</displayName>
+				<unitPattern count="one">{0} है॰ली॰</unitPattern>
+				<unitPattern count="other">{0} है॰ली॰</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>लीटर</displayName>
-				<unitPattern count="one">{0} ली.</unitPattern>
-				<unitPattern count="other">{0} ली.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ली.</perUnitPattern>
+				<unitPattern count="one">{0} ली॰</unitPattern>
+				<unitPattern count="other">{0} ली॰</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ली॰</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
-				<displayName>डे.ली.</displayName>
-				<unitPattern count="one">{0} डे.ली.</unitPattern>
-				<unitPattern count="other">{0} डे.ली.</unitPattern>
+				<displayName>डे॰ली॰</displayName>
+				<unitPattern count="one">{0} डे॰ली॰</unitPattern>
+				<unitPattern count="other">{0} डे॰ली॰</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
-				<displayName>सें.ली.</displayName>
-				<unitPattern count="one">{0} सें.ली.</unitPattern>
-				<unitPattern count="other">{0} सें.ली.</unitPattern>
+				<displayName>सें॰ली॰</displayName>
+				<unitPattern count="one">{0} सें॰ली॰</unitPattern>
+				<unitPattern count="other">{0} सें॰ली॰</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
-				<displayName>मि. ली.</displayName>
-				<unitPattern count="one">{0} मि. ली.</unitPattern>
-				<unitPattern count="other">{0} मि. ली.</unitPattern>
+				<displayName>मि॰ ली॰</displayName>
+				<unitPattern count="one">{0} मि॰ ली॰</unitPattern>
+				<unitPattern count="other">{0} मि॰ ली॰</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName draft="contributed">मीट्रिक पिंट</displayName>
@@ -7294,14 +7755,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>एकड़ फ़ीट</displayName>
-				<unitPattern count="one">{0} ए.फ़ी.</unitPattern>
-				<unitPattern count="other">{0} ए.फ़ी.</unitPattern>
+				<unitPattern count="one">{0} ए॰फ़ी॰</unitPattern>
+				<unitPattern count="other">{0} ए॰फ़ी॰</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>गैलन</displayName>
 				<unitPattern count="one">{0} गैलन</unitPattern>
 				<unitPattern count="other">{0} गैलन</unitPattern>
 				<perUnitPattern draft="contributed">{0}/गैलन</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>इम्पी॰ गैलन</displayName>
+				<unitPattern count="one">{0} इम्पी॰ गैलन</unitPattern>
+				<unitPattern count="other">{0} इम्पी॰ गैलन</unitPattern>
+				<perUnitPattern>{0}/इम्पी॰ गैलन</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>क्वार्ट</displayName>
@@ -7324,9 +7791,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} फ़्लूइड आउंस</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
-				<displayName>टे. स्पून</displayName>
-				<unitPattern count="one">{0} टे. स्पून</unitPattern>
-				<unitPattern count="other">{0} टे. स्पून</unitPattern>
+				<displayName>टे॰ स्पून</displayName>
+				<unitPattern count="one">{0} टे॰ स्पून</unitPattern>
+				<unitPattern count="other">{0} टे॰ स्पून</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<displayName>टी स्पून</displayName>
@@ -7346,8 +7813,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>गु–बल</displayName>
-				<unitPattern count="one">{0}गु.</unitPattern>
-				<unitPattern count="other">{0}गु.</unitPattern>
+				<unitPattern count="one">{0}गु॰</unitPattern>
+				<unitPattern count="other">{0}गु॰</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
@@ -7366,12 +7833,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} km²</unitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<unitPattern count="one">{0}हे.</unitPattern>
-				<unitPattern count="other">{0}हे.</unitPattern>
+				<unitPattern count="one">{0}हे॰</unitPattern>
+				<unitPattern count="other">{0}हे॰</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<unitPattern count="one">{0} वर्ग मी.</unitPattern>
-				<unitPattern count="other">{0} वर्ग मी.</unitPattern>
+				<unitPattern count="one">{0} वर्ग मी॰</unitPattern>
+				<unitPattern count="other">{0} वर्ग मी॰</unitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<unitPattern count="one">{0}वर्ग मील</unitPattern>
@@ -7386,7 +7853,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}ft²</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName draft="contributed">ली./100 कि.मी.</displayName>
+				<displayName draft="contributed">ली॰/100 कि॰मी॰</displayName>
 				<unitPattern count="one" draft="contributed">{0}ली/100कि</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}ली/100कि</unitPattern>
 			</unit>
@@ -7412,28 +7879,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="duration-hour">
 				<displayName>घंटा</displayName>
-				<unitPattern count="one">{0}घं.</unitPattern>
-				<unitPattern count="other">{0}घं.</unitPattern>
+				<unitPattern count="one">{0}घं॰</unitPattern>
+				<unitPattern count="other">{0}घं॰</unitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>मिनट</displayName>
-				<unitPattern count="one">{0}मि.</unitPattern>
-				<unitPattern count="other">{0}मि.</unitPattern>
+				<unitPattern count="one">{0}मि॰</unitPattern>
+				<unitPattern count="other">{0}मि॰</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>सेकंड</displayName>
-				<unitPattern count="one">{0}से.</unitPattern>
-				<unitPattern count="other">{0}से.</unitPattern>
+				<unitPattern count="one">{0}से॰</unitPattern>
+				<unitPattern count="other">{0}से॰</unitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName>मि.से.</displayName>
-				<unitPattern count="one">{0} मि.से.</unitPattern>
-				<unitPattern count="other">{0} मि.से.</unitPattern>
+				<displayName>मि॰से॰</displayName>
+				<unitPattern count="one">{0} मि॰से॰</unitPattern>
+				<unitPattern count="other">{0} मि॰से॰</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
-				<displayName>कि.मी.</displayName>
-				<unitPattern count="one">{0} कि.मी.</unitPattern>
-				<unitPattern count="other">{0} कि.मी.</unitPattern>
+				<displayName>कि॰मी॰</displayName>
+				<unitPattern count="one">{0} कि॰मी॰</unitPattern>
+				<unitPattern count="other">{0} कि॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>मीटर</displayName>
@@ -7441,18 +7908,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}मी</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName>सें.मी.</displayName>
-				<unitPattern count="one">{0} सें.मी.</unitPattern>
-				<unitPattern count="other">{0} सें.मी.</unitPattern>
+				<displayName>सें॰मी॰</displayName>
+				<unitPattern count="one">{0} सें॰मी॰</unitPattern>
+				<unitPattern count="other">{0} सें॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-millimeter">
-				<displayName>मि.मी.</displayName>
-				<unitPattern count="one">{0} मि.मी.</unitPattern>
-				<unitPattern count="other">{0} मि.मी.</unitPattern>
+				<displayName>मि॰मी॰</displayName>
+				<unitPattern count="one">{0} मि॰मी॰</unitPattern>
+				<unitPattern count="other">{0} मि॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-picometer">
-				<unitPattern count="one">{0}पि.मी.</unitPattern>
-				<unitPattern count="other">{0}पि.मी.</unitPattern>
+				<unitPattern count="one">{0}पि॰मी॰</unitPattern>
+				<unitPattern count="other">{0}पि॰मी॰</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<unitPattern count="one">{0}मील</unitPattern>
@@ -7471,30 +7938,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<unitPattern count="one">{0}प्र.व.</unitPattern>
-				<unitPattern count="other">{0}प्र.व.</unitPattern>
+				<unitPattern count="one">{0}प्र॰व॰</unitPattern>
+				<unitPattern count="other">{0}प्र॰व॰</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>कि.ग्रा.</displayName>
-				<unitPattern count="one">{0} कि.ग्रा.</unitPattern>
-				<unitPattern count="other">{0} कि.ग्रा.</unitPattern>
+				<displayName>कि॰ग्रा॰</displayName>
+				<unitPattern count="one">{0}कि॰ग्रा॰</unitPattern>
+				<unitPattern count="other">{0} कि॰ग्रा॰</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ग्राम</displayName>
-				<unitPattern count="one">{0} ग्रा.</unitPattern>
-				<unitPattern count="other">{0} ग्रा.</unitPattern>
+				<unitPattern count="one">{0} ग्रा॰</unitPattern>
+				<unitPattern count="other">{0} ग्रा॰</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<unitPattern count="one" draft="contributed">{0}#</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}#</unitPattern>
 			</unit>
 			<unit type="mass-ounce">
-				<unitPattern count="one">{0}औं.</unitPattern>
-				<unitPattern count="other">{0}औं.</unitPattern>
+				<unitPattern count="one">{0}औं॰</unitPattern>
+				<unitPattern count="other">{0}औं॰</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
-				<unitPattern count="one">{0}कि.वॉ.</unitPattern>
-				<unitPattern count="other">{0}कि.वॉ.</unitPattern>
+				<unitPattern count="one">{0}कि॰वॉ॰</unitPattern>
+				<unitPattern count="other">{0}कि॰वॉ॰</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<unitPattern count="one">{0}वॉ</unitPattern>
@@ -7517,22 +7984,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}mb</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
-				<displayName>कि.मी./घं.</displayName>
-				<unitPattern count="one">{0}कि॰/घं॰</unitPattern>
-				<unitPattern count="other">{0}कि॰/घं॰</unitPattern>
+				<displayName>कि॰मी॰/घं॰</displayName>
+				<unitPattern count="one">{0}किमी/घं</unitPattern>
+				<unitPattern count="other">{0}किमी/घं</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<unitPattern count="one">{0}मी./से.</unitPattern>
-				<unitPattern count="other">{0}मी./से.</unitPattern>
+				<unitPattern count="one">{0}मी॰/से॰</unitPattern>
+				<unitPattern count="other">{0}मी॰/से॰</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<unitPattern count="one">{0}mph</unitPattern>
 				<unitPattern count="other">{0}mph</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
-				<displayName>°से.</displayName>
-				<unitPattern count="one">{0}°से.</unitPattern>
-				<unitPattern count="other">{0}°से.</unitPattern>
+				<displayName>°से॰</displayName>
+				<unitPattern count="one">{0}°से॰</unitPattern>
+				<unitPattern count="other">{0}°से॰</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<unitPattern count="one">{0}°F</unitPattern>
@@ -7548,8 +8015,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-liter">
 				<displayName>लीटर</displayName>
-				<unitPattern count="one">{0}ली.</unitPattern>
-				<unitPattern count="other">{0}ली.</unitPattern>
+				<unitPattern count="one">{0}ली॰</unitPattern>
+				<unitPattern count="other">{0}ली॰</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east" draft="contributed">{0}E</coordinateUnitPattern>
@@ -7574,6 +8041,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, और {1}</listPatternPart>
 			<listPatternPart type="2">{0} और {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} या {1}</listPatternPart>
+			<listPatternPart type="2">{0} या {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start" draft="contributed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="contributed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="contributed">{0} और {1}</listPatternPart>
+			<listPatternPart type="2" draft="contributed">{0} और {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -7600,5 +8079,103 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>नहीं</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} - सभी</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — संगतता</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — संलग्न</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — विस्तारित</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — ऐतिहासिक</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — विविध</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — अन्य</characterLabelPattern>
+		<characterLabelPattern type="scripts">स्क्रिप्ट — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} स्ट्रोक</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} स्ट्रोक</characterLabelPattern>
+		<characterLabel type="activities">गतिविधि</characterLabel>
+		<characterLabel type="african_scripts">अफ़्रीकी लिपि</characterLabel>
+		<characterLabel type="american_scripts">अमेरिकी लिपि</characterLabel>
+		<characterLabel type="animal">जानवर</characterLabel>
+		<characterLabel type="animals_nature">पशु और प्रकृति</characterLabel>
+		<characterLabel type="arrows">तीर</characterLabel>
+		<characterLabel type="body">शरीर</characterLabel>
+		<characterLabel type="box_drawing">बॉक्स ड्राइंग</characterLabel>
+		<characterLabel type="braille">ब्रेल</characterLabel>
+		<characterLabel type="building">भवन</characterLabel>
+		<characterLabel type="bullets_stars">बुलेट या तारा</characterLabel>
+		<characterLabel type="consonantal_jamo">व्यंजनात्मक वर्ण</characterLabel>
+		<characterLabel type="currency_symbols">मुद्रा प्रतीक</characterLabel>
+		<characterLabel type="dash_connector">डैश या कनेक्टर</characterLabel>
+		<characterLabel type="digits">अंक</characterLabel>
+		<characterLabel type="dingbats">dingbat</characterLabel>
+		<characterLabel type="divination_symbols" draft="contributed">अनुमान चिह्न</characterLabel>
+		<characterLabel type="downwards_arrows">नीचे की ओर वाला तीर</characterLabel>
+		<characterLabel type="downwards_upwards_arrows" draft="contributed">नीचे की ओर ऊपर की ओर तीर</characterLabel>
+		<characterLabel type="east_asian_scripts">पूर्वी एशियाई लिपि</characterLabel>
+		<characterLabel type="emoji">इमोजी</characterLabel>
+		<characterLabel type="european_scripts">यूरोपीय लिपि</characterLabel>
+		<characterLabel type="female">महिला</characterLabel>
+		<characterLabel type="flag">झंडा</characterLabel>
+		<characterLabel type="flags">झंडे</characterLabel>
+		<characterLabel type="food_drink">खान-पान</characterLabel>
+		<characterLabel type="format">प्रारूप</characterLabel>
+		<characterLabel type="format_whitespace">प्रारूप और श्वेतरिक्ति</characterLabel>
+		<characterLabel type="full_width_form_variant" draft="contributed">पूरी चौड़ाई वाला फार्म वेरिएंट</characterLabel>
+		<characterLabel type="geometric_shapes">ज्यामितीय आकार</characterLabel>
+		<characterLabel type="half_width_form_variant">half-width variant</characterLabel>
+		<characterLabel type="han_characters">Han character</characterLabel>
+		<characterLabel type="han_radicals">Han radical</characterLabel>
+		<characterLabel type="hanja">hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">Hanzi (simplified)</characterLabel>
+		<characterLabel type="hanzi_traditional">Hanzi (traditional)</characterLabel>
+		<characterLabel type="heart">दिल</characterLabel>
+		<characterLabel type="historic_scripts">ऐतिहासिक लिपि</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ideographic desc. character</characterLabel>
+		<characterLabel type="japanese_kana">जापानी काना</characterLabel>
+		<characterLabel type="kanbun">kanbun</characterLabel>
+		<characterLabel type="kanji">कांजी</characterLabel>
+		<characterLabel type="keycap">कीकैप</characterLabel>
+		<characterLabel type="leftwards_arrows">बाईं ओर तीर</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">दाईं व बाईं ओर वाला तीर</characterLabel>
+		<characterLabel type="letterlike_symbols">पत्र-जैसे प्रतीक</characterLabel>
+		<characterLabel type="limited_use">सीमित उपयोग</characterLabel>
+		<characterLabel type="male">पुरुष</characterLabel>
+		<characterLabel type="math_symbols">गणितीय प्रतीक</characterLabel>
+		<characterLabel type="middle_eastern_scripts">मध्य-पूर्वी लिपि</characterLabel>
+		<characterLabel type="miscellaneous">विविध</characterLabel>
+		<characterLabel type="modern_scripts">आधुनिक लिपि</characterLabel>
+		<characterLabel type="modifier">संशोधक</characterLabel>
+		<characterLabel type="musical_symbols">संगीत चिह्न</characterLabel>
+		<characterLabel type="nature">प्रकृति</characterLabel>
+		<characterLabel type="nonspacing">गैर रिक्ति</characterLabel>
+		<characterLabel type="numbers">संख्या</characterLabel>
+		<characterLabel type="objects">वस्तुएं</characterLabel>
+		<characterLabel type="other">अन्य</characterLabel>
+		<characterLabel type="paired">युग्मित</characterLabel>
+		<characterLabel type="person">व्यक्ति</characterLabel>
+		<characterLabel type="phonetic_alphabet">ध्वन्यात्मक वर्णमाला</characterLabel>
+		<characterLabel type="pictographs">पिक्टोग्राफ़</characterLabel>
+		<characterLabel type="place">जगह</characterLabel>
+		<characterLabel type="plant">पौधा</characterLabel>
+		<characterLabel type="punctuation">विराम चिह्न</characterLabel>
+		<characterLabel type="rightwards_arrows">बाईं ओर तीर</characterLabel>
+		<characterLabel type="sign_standard_symbols">चिह्न या प्रतीक</characterLabel>
+		<characterLabel type="small_form_variant">छोटे फार्म वेरिएंट</characterLabel>
+		<characterLabel type="smiley">स्माइली</characterLabel>
+		<characterLabel type="smileys_people">स्माइली या लोग</characterLabel>
+		<characterLabel type="south_asian_scripts">दक्षिण एशियाई लिपि</characterLabel>
+		<characterLabel type="southeast_asian_scripts">दक्षिण-पूर्वी एशियाई लिपि</characterLabel>
+		<characterLabel type="spacing">रिक्ति</characterLabel>
+		<characterLabel type="sport">खेल</characterLabel>
+		<characterLabel type="symbols">चिह्न</characterLabel>
+		<characterLabel type="technical_symbols">तकनीकी प्रतीक</characterLabel>
+		<characterLabel type="tone_marks">टोन चिह्न</characterLabel>
+		<characterLabel type="travel">यात्रा</characterLabel>
+		<characterLabel type="travel_places">यात्रा या स्थान</characterLabel>
+		<characterLabel type="upwards_arrows">ऊपर की ओर तीर</characterLabel>
+		<characterLabel type="variant_forms">विविध रूप</characterLabel>
+		<characterLabel type="vocalic_jamo">vocalic jamo</characterLabel>
+		<characterLabel type="weather">मौसम</characterLabel>
+		<characterLabel type="western_asian_scripts">पश्चिमी एशियाई लिपि</characterLabel>
+		<characterLabel type="whitespace">श्वेतरिक्ति</characterLabel>
+	</characterLabels>
 </ldml>
-

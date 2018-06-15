@@ -22,22 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+ /*
  * @test
- * @bug 8196399
- * @summary test Formatter if any ArithmeticException is thrown while
- *          formatting a number in the locale which does not use any
- *          grouping, but specifies a grouping separator e.g. hy_AM.
- * @modules jdk.localedata
+ * @bug 8196399 8202537
+ * @summary  test Formatter if any ArithmeticException is thrown while
+ * formatting a number in the locale which does not use any
+ * grouping, but specifies a grouping separator.
+ * @library provider
+ * @build provider/module-info provider/test.NumberFormatProviderImpl
+ * @run main/othervm -Djava.locale.providers=SPI,COMPAT NoGroupingUsed
  */
+
 import java.util.Formatter;
 import java.util.Locale;
 
 public class NoGroupingUsed {
 
     public static void main(String[] args) {
-
-        Locale locale = new Locale("hy", "AM");
+        Locale locale = new Locale("xx", "YY");
         String number = "1234567";
         String formatString = "%,d";
 
@@ -49,11 +51,9 @@ public class NoGroupingUsed {
                     + " format string: " + formatString + ", in locale: "
                     + locale, ex);
         }
-
     }
 
     private static void testGrouping(Locale locale, String formatString, String number) {
-
         // test using String.format
         String result = String.format(locale, formatString, Integer.parseInt(number));
         if (!number.equals(result)) {
@@ -74,5 +74,4 @@ public class NoGroupingUsed {
                     + ". Actual: " + sb.toString() + ", Expected: " + number + "]");
         }
     }
-
 }

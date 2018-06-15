@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="fo"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,53 +17,88 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="aa">afar</language>
 			<language type="ab">abkhasiskt</language>
+			<language type="ace">achinese</language>
+			<language type="ada">adangme</language>
+			<language type="ady">adyghe</language>
 			<language type="af">afrikaans</language>
 			<language type="agq">aghem</language>
+			<language type="ain">ainu</language>
 			<language type="ak">akan</language>
+			<language type="ale">aleut</language>
+			<language type="alt">suður altai</language>
 			<language type="am">amhariskt</language>
+			<language type="an">aragoniskt</language>
+			<language type="anp">angika</language>
 			<language type="ar">arabiskt</language>
+			<language type="ar_001">nútíðar vanligt arabiskt</language>
 			<language type="arn">mapuche</language>
+			<language type="arp">arapaho</language>
 			<language type="as">assamesiskt</language>
 			<language type="asa">asu</language>
-			<language type="ay" draft="contributed">aymara</language>
+			<language type="ast">asturianskt</language>
+			<language type="av">avariskt</language>
+			<language type="awa">awadhi</language>
+			<language type="ay">aymara</language>
 			<language type="az">aserbajdsjanskt</language>
 			<language type="az" alt="short">azeri</language>
 			<language type="ba">bashkir</language>
+			<language type="ban">balinesiskt</language>
+			<language type="bas">basaa</language>
 			<language type="be">hvitarussiskt</language>
 			<language type="bem">bemba</language>
 			<language type="bez">bena</language>
 			<language type="bg">bulgarskt</language>
 			<language type="bgn">vestur balochi</language>
+			<language type="bho">bhojpuri</language>
+			<language type="bi">bislama</language>
+			<language type="bin">bini</language>
+			<language type="bla">siksika</language>
 			<language type="bm">bambara</language>
-			<language type="bn">bengalskt</language>
+			<language type="bn">bangla</language>
 			<language type="bo">tibetskt</language>
 			<language type="br">bretonskt</language>
 			<language type="brx">bodo</language>
 			<language type="bs">bosniskt</language>
-			<language type="bss" draft="contributed">bakossi</language>
+			<language type="bss">bakossi</language>
+			<language type="bug">buginesiskt</language>
+			<language type="byn">blin</language>
 			<language type="ca">katalani</language>
 			<language type="ce">tjetjenskt</language>
+			<language type="ceb">cebuano</language>
 			<language type="cgg">chiga</language>
+			<language type="ch">chamorro</language>
+			<language type="chk">chuukese</language>
+			<language type="chm">mari</language>
+			<language type="cho">choctaw</language>
 			<language type="chr">cherokee</language>
+			<language type="chy">cheyenne</language>
 			<language type="ckb">miðkurdiskt</language>
 			<language type="co">korsikanskt</language>
+			<language type="crs">seselwa creole franskt</language>
 			<language type="cs">kekkiskt</language>
+			<language type="cu">kirkju sláviskt</language>
 			<language type="cv">chuvash</language>
 			<language type="cy">walisiskt</language>
 			<language type="da">danskt</language>
+			<language type="dak">dakota</language>
+			<language type="dar">dargwa</language>
 			<language type="dav">taita</language>
 			<language type="de">týskt</language>
 			<language type="de_CH">høgt týskt (Sveis)</language>
+			<language type="dgr">dogrib</language>
 			<language type="dje">sarma</language>
 			<language type="dsb">lágt sorbian</language>
 			<language type="dua">duala</language>
-			<language type="dv" draft="contributed">divehi</language>
+			<language type="dv">divehi</language>
 			<language type="dyo">jola-fonyi</language>
 			<language type="dz">dzongkha</language>
+			<language type="dzg">dazaga</language>
 			<language type="ebu">embu</language>
 			<language type="ee">ewe</language>
-			<language type="efi" draft="contributed">efik</language>
+			<language type="efi">efik</language>
+			<language type="eka">ekajuk</language>
 			<language type="el">grikskt</language>
 			<language type="en">enskt</language>
 			<language type="en_GB" alt="short">enskt (UK)</language>
@@ -71,207 +107,322 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="es">spanskt</language>
 			<language type="et">estiskt</language>
 			<language type="eu">baskiskt</language>
+			<language type="ewo">ewondo</language>
 			<language type="fa">persiskt</language>
+			<language type="ff">fulah</language>
 			<language type="fi">finskt</language>
 			<language type="fil">filipiniskt</language>
 			<language type="fj">fijimál</language>
 			<language type="fo">føroyskt</language>
+			<language type="fon">fon</language>
 			<language type="fr">franskt</language>
+			<language type="fur">friuliskt</language>
 			<language type="fy">vestur frísiskt</language>
 			<language type="ga">írskt</language>
+			<language type="gaa">ga</language>
 			<language type="gag">gagauz</language>
-			<language type="gd" draft="contributed">skotskt gæliskt</language>
+			<language type="gan">gan kinesiskt</language>
+			<language type="gd">skotskt gæliskt</language>
+			<language type="gez">geez</language>
+			<language type="gil">kiribatiskt</language>
 			<language type="gl">galisiskt</language>
 			<language type="gn">guarani</language>
+			<language type="gor">gorontalo</language>
 			<language type="gsw">týskt (Sveis)</language>
 			<language type="gu">gujarati</language>
 			<language type="guz">gusii</language>
 			<language type="gv">manx</language>
+			<language type="gwi">gwich’in</language>
 			<language type="ha">hausa</language>
+			<language type="hak">hakka kinesiskt</language>
 			<language type="haw">hawaiianskt</language>
 			<language type="he">hebraiskt</language>
 			<language type="hi">hindi</language>
+			<language type="hil">hiligaynon</language>
+			<language type="hmn">hmong</language>
 			<language type="hr">kroatiskt</language>
 			<language type="hsb">ovara sorbian</language>
-			<language type="ht">haitiskt</language>
+			<language type="hsn">xiang kinesiskt</language>
+			<language type="ht">haitiskt creole</language>
 			<language type="hu">ungarskt</language>
+			<language type="hup">hupa</language>
 			<language type="hy">armenskt</language>
-			<language type="ia" draft="contributed">interlingua</language>
+			<language type="hz">herero</language>
+			<language type="ia">interlingua</language>
+			<language type="iba">iban</language>
+			<language type="ibb">ibibio</language>
 			<language type="id">indonesiskt</language>
-			<language type="ie" draft="contributed">interlingue</language>
+			<language type="ie">interlingue</language>
 			<language type="ig">igbo</language>
 			<language type="ii">sichuan yi</language>
+			<language type="ilo">iloko</language>
+			<language type="inh">inguish</language>
+			<language type="io">ido</language>
 			<language type="is">íslendskt</language>
 			<language type="it">italskt</language>
 			<language type="iu">inuktitut</language>
 			<language type="ja">japanskt</language>
+			<language type="jbo">lojban</language>
 			<language type="jgo">ngomba</language>
 			<language type="jmc">machame</language>
 			<language type="jv">javanskt</language>
 			<language type="ka">georgiskt</language>
 			<language type="kab">kabyle</language>
+			<language type="kac">kachin</language>
+			<language type="kaj">jju</language>
 			<language type="kam">kamba</language>
+			<language type="kbd">kabardinskt</language>
+			<language type="kcg">tyap</language>
 			<language type="kde">makonde</language>
 			<language type="kea">grønhøvdaoyggjarskt</language>
+			<language type="kfo">koro</language>
+			<language type="kha">khasi</language>
 			<language type="khq">koyra chiini</language>
 			<language type="ki">kikuyu</language>
+			<language type="kj">kuanyama</language>
 			<language type="kk">kazakh</language>
+			<language type="kkj">kako</language>
 			<language type="kl">kalaallisut</language>
 			<language type="kln">kalenjin</language>
 			<language type="km">khmer</language>
+			<language type="kmb">kimbundu</language>
 			<language type="kn">kannada</language>
 			<language type="ko">koreanskt</language>
 			<language type="koi">komi-permyak</language>
 			<language type="kok">konkani</language>
+			<language type="kpe">kpelle</language>
+			<language type="kr">kanuri</language>
+			<language type="krc">karachay-balkar</language>
+			<language type="krl">karelskt</language>
+			<language type="kru">kurukh</language>
 			<language type="ks">kashmiri</language>
 			<language type="ksb">shambala</language>
 			<language type="ksf">bafia</language>
+			<language type="ksh">kølnskt</language>
 			<language type="ku">kurdiskt</language>
+			<language type="kum">kumyk</language>
+			<language type="kv">komi</language>
 			<language type="kw">corniskt</language>
 			<language type="ky">kyrgyz</language>
 			<language type="la">latín</language>
+			<language type="lad">ladino</language>
 			<language type="lag">langi</language>
-			<language type="lah" draft="contributed">lahnda</language>
+			<language type="lah">lahnda</language>
 			<language type="lb">luksemborgskt</language>
+			<language type="lez">lezghian</language>
 			<language type="lg">ganda</language>
+			<language type="li">limburgiskt</language>
 			<language type="lkt">lakota</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laoskt</language>
+			<language type="loz">lozi</language>
 			<language type="lrc">norður luri</language>
 			<language type="lt">litaviskt</language>
 			<language type="lu">luba-katanga</language>
+			<language type="lua">luba-lulua</language>
+			<language type="lun">lunda</language>
 			<language type="luo">luo</language>
+			<language type="lus">mizo</language>
 			<language type="luy">luyia</language>
 			<language type="lv">lettiskt</language>
+			<language type="mad">maduresiskt</language>
+			<language type="mag">magahi</language>
+			<language type="mai">maithili</language>
+			<language type="mak">makasar</language>
 			<language type="mas">masai</language>
+			<language type="mdf">moksha</language>
+			<language type="men">mende</language>
 			<language type="mer">meru</language>
 			<language type="mfe">morisyen</language>
 			<language type="mg">malagassiskt</language>
 			<language type="mgh">makhuwa-meetto</language>
 			<language type="mgo">metaʼ</language>
+			<language type="mh">marshallesiskt</language>
 			<language type="mi">maori</language>
+			<language type="mic">micmac</language>
+			<language type="min">minangkabau</language>
 			<language type="mk">makedónskt</language>
 			<language type="ml">malayalam</language>
 			<language type="mn">mongolskt</language>
+			<language type="mni">manupuri</language>
 			<language type="moh">mohawk</language>
+			<language type="mos">mossi</language>
 			<language type="mr">marathi</language>
 			<language type="ms">malaiiskt</language>
 			<language type="mt">maltiskt</language>
 			<language type="mua">mundang</language>
+			<language type="mul">ymisk mál</language>
+			<language type="mus">creek</language>
+			<language type="mwl">mirandesiskt</language>
 			<language type="my">burmesiskt</language>
+			<language type="myv">erzya</language>
 			<language type="mzn">mazanderani</language>
+			<language type="na">nauru</language>
+			<language type="nan">min nan kinesiskt</language>
+			<language type="nap">napolitanskt</language>
 			<language type="naq">nama</language>
 			<language type="nb">norskt bókmál</language>
 			<language type="nd">norður ndebele</language>
 			<language type="nds">lágt týskt</language>
 			<language type="nds_NL">lágt saksiskt</language>
 			<language type="ne">nepalskt</language>
+			<language type="new">newari</language>
+			<language type="ng">ndonga</language>
+			<language type="nia">nias</language>
+			<language type="niu">niuean</language>
 			<language type="nl">hálendskt</language>
 			<language type="nl_BE">flamskt</language>
 			<language type="nmg">kwasio</language>
 			<language type="nn">nýnorskt</language>
-			<language type="no" draft="contributed">norskt</language>
+			<language type="nnh">ngiemboon</language>
+			<language type="no">norskt</language>
+			<language type="nog">nogai</language>
 			<language type="nqo">nʼko</language>
+			<language type="nr">suður ndebele</language>
+			<language type="nso">norður sotho</language>
 			<language type="nus">nuer</language>
-			<language type="ny" draft="contributed">nyanja</language>
+			<language type="nv">navajo</language>
+			<language type="ny">nyanja</language>
 			<language type="nyn">nyankole</language>
-			<language type="oc" draft="contributed">occitan</language>
+			<language type="oc">occitanskt</language>
 			<language type="om">oromo</language>
-			<language type="or">oriya</language>
-			<language type="os" draft="contributed">ossetiskt</language>
+			<language type="or">odia</language>
+			<language type="os">ossetiskt</language>
 			<language type="pa">punjabi</language>
+			<language type="pag">pangasinan</language>
+			<language type="pam">pampanga</language>
+			<language type="pap">papiamento</language>
+			<language type="pau">palauan</language>
+			<language type="pcm">nigeriskt pidgin</language>
 			<language type="pl">pólskt</language>
+			<language type="prg">prusslanskt</language>
 			<language type="ps">pashto</language>
 			<language type="pt">portugiskiskt</language>
 			<language type="pt_BR">portugiskiskt (Brasilia)</language>
 			<language type="pt_PT">portugiskiskt (Evropa)</language>
 			<language type="qu">quechua</language>
 			<language type="quc">kʼicheʼ</language>
+			<language type="rap">rapanui</language>
+			<language type="rar">rarotongiskt</language>
 			<language type="rm">retoromanskt</language>
 			<language type="rn">rundi</language>
 			<language type="ro">rumenskt</language>
 			<language type="ro_MD">moldaviskt</language>
 			<language type="rof">rombo</language>
+			<language type="root">root</language>
 			<language type="ru">russiskt</language>
+			<language type="rup">aromenskt</language>
 			<language type="rw">kinyarwanda</language>
 			<language type="rwk">rwa</language>
 			<language type="sa">sanskrit</language>
+			<language type="sad">sandawe</language>
+			<language type="sah">sakha</language>
 			<language type="saq">samburu</language>
+			<language type="sat">santali</language>
+			<language type="sba">ngambay</language>
 			<language type="sbp">sangu</language>
+			<language type="sc">sardiskt</language>
+			<language type="scn">sisilanskt</language>
+			<language type="sco">skotskt</language>
 			<language type="sd">sindhi</language>
 			<language type="sdh">suður kurdiskt</language>
 			<language type="se">norður sámiskt</language>
 			<language type="seh">sena</language>
 			<language type="ses">koyraboro senni</language>
 			<language type="sg">sango</language>
-			<language type="sh" draft="contributed">serbokroatiskt</language>
+			<language type="sh">serbokroatiskt</language>
 			<language type="shi">tachelhit</language>
+			<language type="shn">shan</language>
 			<language type="si">singalesiskt</language>
 			<language type="sk">slovakiskt</language>
 			<language type="sl">slovenskt</language>
-			<language type="sm" draft="contributed">samoiskt</language>
+			<language type="sm">sámoiskt</language>
 			<language type="sma">suður sámiskt</language>
 			<language type="smj">lule sámiskt</language>
 			<language type="smn">inari sami</language>
 			<language type="sms">skolt sámiskt</language>
 			<language type="sn">shona</language>
+			<language type="snk">soninke</language>
 			<language type="so">somaliskt</language>
 			<language type="sq">albanskt</language>
 			<language type="sr">serbiskt</language>
-			<language type="ss" draft="contributed">swatiskt</language>
-			<language type="st" draft="contributed">sesotho</language>
+			<language type="srn">sranan tongo</language>
+			<language type="ss">swatiskt</language>
+			<language type="ssy">saho</language>
+			<language type="st">sesotho</language>
 			<language type="su">sundanesiskt</language>
+			<language type="suk">sukuma</language>
 			<language type="sv">svenskt</language>
 			<language type="sw">swahili</language>
 			<language type="sw_CD">kongo svahili</language>
-			<language type="swb" draft="contributed">shimaoré</language>
+			<language type="swb">komoriskt</language>
+			<language type="syr">syriac</language>
 			<language type="ta">tamilskt</language>
 			<language type="te">telugu</language>
+			<language type="tem">timne</language>
 			<language type="teo">teso</language>
-			<language type="tet" draft="contributed">tetum</language>
+			<language type="tet">tetum</language>
 			<language type="tg">tajik</language>
 			<language type="th">tailendskt</language>
 			<language type="ti">tigrinya</language>
+			<language type="tig">tigre</language>
 			<language type="tk">turkmenskt</language>
-			<language type="tl" draft="contributed">tagalog</language>
-			<language type="tlh" draft="contributed">klingonskt</language>
-			<language type="tn" draft="contributed">tswana</language>
+			<language type="tl">tagalog</language>
+			<language type="tlh">klingonskt</language>
+			<language type="tn">tswana</language>
 			<language type="to">tonganskt</language>
-			<language type="tpi" draft="contributed">tok pisin</language>
+			<language type="tpi">tok pisin</language>
 			<language type="tr">turkiskt</language>
-			<language type="ts" draft="contributed">tsonga</language>
+			<language type="trv">taroko</language>
+			<language type="ts">tsonga</language>
 			<language type="tt">tatar</language>
-			<language type="tw" draft="contributed">twi</language>
+			<language type="tum">tumbuka</language>
+			<language type="tvl">tuvalu</language>
+			<language type="tw">twi</language>
 			<language type="twq">tasawaq</language>
-			<language type="ty" draft="contributed">tahitiskt</language>
+			<language type="ty">tahitiskt</language>
+			<language type="tyv">tuvinian</language>
 			<language type="tzm">miðatlasfjøll tamazight</language>
+			<language type="udm">udmurt</language>
 			<language type="ug">uyghur</language>
 			<language type="uk">ukrainskt</language>
+			<language type="umb">umbundu</language>
 			<language type="und">ókent mál</language>
 			<language type="ur">urdu</language>
 			<language type="uz">usbekiskt</language>
 			<language type="vai">vai</language>
-			<language type="ve" draft="contributed">venda</language>
+			<language type="ve">venda</language>
 			<language type="vi">vjetnamesiskt</language>
+			<language type="vo">volapykk</language>
 			<language type="vun">vunjo</language>
+			<language type="wa">walloon</language>
+			<language type="wae">walser</language>
+			<language type="wal">wolaytta</language>
+			<language type="war">waray</language>
 			<language type="wbp">warlpiri</language>
 			<language type="wo">wolof</language>
+			<language type="wuu">wu kinesiskt</language>
+			<language type="xal">kalmyk</language>
 			<language type="xh">xhosa</language>
 			<language type="xog">soga</language>
-			<language type="yi" draft="contributed">jiddiskt</language>
+			<language type="yav">yangben</language>
+			<language type="ybb">yemba</language>
+			<language type="yi">jiddiskt</language>
 			<language type="yo">yoruba</language>
-			<language type="yue" draft="contributed">kantonesískt</language>
+			<language type="yue">kantonesiskt</language>
 			<language type="zgh">vanligt marokanskt tamazight</language>
 			<language type="zh">kinesiskt</language>
 			<language type="zh_Hans">einkult kinesiskt</language>
 			<language type="zh_Hant">vanligt kinesiskt</language>
 			<language type="zu">sulu</language>
+			<language type="zun">zuni</language>
 			<language type="zxx">einki málsligt innihald</language>
+			<language type="zza">zaza</language>
 		</languages>
 		<scripts>
 			<script type="Arab">arabisk</script>
 			<script type="Armn">armenskt</script>
-			<script type="Beng">bengali</script>
+			<script type="Beng">bangla</script>
 			<script type="Bopo">bopomofo</script>
 			<script type="Brai">blindaskrift</script>
 			<script type="Cyrl">kyrilliskt</script>
@@ -281,6 +432,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">grikskt</script>
 			<script type="Gujr">gujarati</script>
 			<script type="Guru">gurmukhi</script>
+			<script type="Hanb">hanb</script>
 			<script type="Hang">hangul</script>
 			<script type="Hani">han</script>
 			<script type="Hans">einkult</script>
@@ -289,6 +441,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hant" alt="stand-alone">vanligt han</script>
 			<script type="Hebr">hebraiskt</script>
 			<script type="Hira">hiragana</script>
+			<script type="Hrkt">japanskir stavir</script>
+			<script type="Jamo">jamo</script>
 			<script type="Jpan">japanskt</script>
 			<script type="Kana">katakana</script>
 			<script type="Khmr">khmer</script>
@@ -299,13 +453,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mlym">malayalam</script>
 			<script type="Mong">mongolsk</script>
 			<script type="Mymr">myanmarskt</script>
-			<script type="Orya">oriya</script>
+			<script type="Orya">odia</script>
 			<script type="Sinh">sinhala</script>
 			<script type="Taml">tamilskt</script>
 			<script type="Telu">telugu</script>
 			<script type="Thaa">thaana</script>
 			<script type="Thai">tailendskt</script>
 			<script type="Tibt">tibetskt</script>
+			<script type="Zinh" draft="unconfirmed">arver skrift</script>
+			<script type="Zmth">støddfrøðilig teknskipan</script>
+			<script type="Zsye">emoji</script>
 			<script type="Zsym">tekin</script>
 			<script type="Zxxx">óskriva</script>
 			<script type="Zyyy">vanlig</script>
@@ -341,6 +498,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Eysturevropa</territory>
 			<territory type="154">Norðurevropa</territory>
 			<territory type="155">Vesturevropa</territory>
+			<territory type="202">Afrika sunnanfyri Sahara</territory>
 			<territory type="419">Latínamerika</territory>
 			<territory type="AC">Ascension</territory>
 			<territory type="AD">Andorra</territory>
@@ -368,7 +526,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BH">Barein</territory>
 			<territory type="BI">Burundi</territory>
 			<territory type="BJ">Benin</territory>
-			<territory type="BL">St-Barthélemy</territory>
+			<territory type="BL">St. Barthélemy</territory>
 			<territory type="BM">Bermuda</territory>
 			<territory type="BN">Brunei</territory>
 			<territory type="BO">Bolivia</territory>
@@ -407,7 +565,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="DM">Dominika</territory>
 			<territory type="DO">Dominikalýðveldið</territory>
 			<territory type="DZ">Algeria</territory>
-			<territory type="EA">Ceuta og Melilla</territory>
+			<territory type="EA">Ceuta &amp; Melilla</territory>
 			<territory type="EC">Ekvador</territory>
 			<territory type="EE">Estland</territory>
 			<territory type="EG">Egyptaland</territory>
@@ -416,9 +574,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Spania</territory>
 			<territory type="ET">Etiopia</territory>
 			<territory type="EU">Evropasamveldið</territory>
+			<territory type="EZ">Evrasona</territory>
 			<territory type="FI">Finnland</territory>
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Falklandsoyggjar</territory>
+			<territory type="FK" alt="variant">Falklandsoyggjar (Islas Malvinas)</territory>
 			<territory type="FM">Mikronesiasamveldið</territory>
 			<territory type="FO">Føroyar</territory>
 			<territory type="FR">Frakland</territory>
@@ -531,7 +691,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PH">Filipsoyggjar</territory>
 			<territory type="PK">Pakistan</territory>
 			<territory type="PL">Pólland</territory>
-			<territory type="PM">Saint Pierre og Miquelon</territory>
+			<territory type="PM">Saint Pierre &amp; Miquelon</territory>
 			<territory type="PN">Pitcairnoyggjar</territory>
 			<territory type="PR">Puerto Riko</territory>
 			<territory type="PS">Palestinskt landøki</territory>
@@ -587,6 +747,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Ukraina</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Sambandsríki Amerikas fjarskotnu oyggjar</territory>
+			<territory type="UN">Sameindu Tjóðir</territory>
 			<territory type="US">Sambandsríki Amerika</territory>
 			<territory type="US" alt="short">USA</territory>
 			<territory type="UY">Uruguai</territory>
@@ -616,6 +777,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">kalendari</key>
+			<key type="cf">gjaldoyra format</key>
 			<key type="collation">raðskipan</key>
 			<key type="currency">gjaldoyra</key>
 			<key type="hc">klokkuskipan (12 ímóti 24)</key>
@@ -628,13 +790,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="chinese">kinesiskur kalendari</type>
 			<type key="calendar" type="dangi">dangi kalendari</type>
 			<type key="calendar" type="ethiopic">etiopiskur kalendari</type>
-			<type key="calendar" type="gregorian">Gregorianskur kalendari</type>
+			<type key="calendar" type="gregorian">gregorianskur kalendari</type>
 			<type key="calendar" type="hebrew">hebraiskur kalendari</type>
 			<type key="calendar" type="islamic">islamiskur kalendari</type>
 			<type key="calendar" type="iso8601">ISO-8601 kalendari</type>
 			<type key="calendar" type="japanese">japanskur kalendari</type>
 			<type key="calendar" type="persian">persiskur kalendari</type>
 			<type key="calendar" type="roc">minguo kalendari</type>
+			<type key="cf" type="account">gjaldoyras roknskaparførsla format</type>
+			<type key="cf" type="standard">vanlig gjaldoyra format</type>
 			<type key="collation" type="ducet">forsett Unicode raðskipan</type>
 			<type key="collation" type="eor" draft="contributed">röðina fyrir fjöltyngi evrópskum skjölum</type>
 			<type key="collation" type="search">vanlig leiting</type>
@@ -647,13 +811,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="normal">vanligur reglubrot stílur</type>
 			<type key="lb" type="strict">strangur reglubrot stílur</type>
 			<type key="ms" type="metric">metralag</type>
-			<type key="ms" type="uksystem">mátingareind (Imperial)</type>
+			<type key="ms" type="uksystem">mátingareind (UK)</type>
 			<type key="ms" type="ussystem">mátingareind (USA)</type>
 			<type key="numbers" type="arab">arabisk tøl</type>
 			<type key="numbers" type="arabext">víðkað arabisk tøl</type>
 			<type key="numbers" type="armn">armensk tøl</type>
 			<type key="numbers" type="armnlow">armensk tøl (smáir bókstavir)</type>
-			<type key="numbers" type="beng">bengalisk tøl</type>
+			<type key="numbers" type="beng">bangla tøl</type>
 			<type key="numbers" type="deva">devanagarik tøl</type>
 			<type key="numbers" type="ethi">etiopisk tøl</type>
 			<type key="numbers" type="fullwide">tøl í fullari longd</type>
@@ -676,7 +840,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="latn">vesturlendsk tøl</type>
 			<type key="numbers" type="mlym">malayalam tøl</type>
 			<type key="numbers" type="mymr">myanmarsk tøl</type>
-			<type key="numbers" type="orya">oriya tøl</type>
+			<type key="numbers" type="orya">odia tøl</type>
 			<type key="numbers" type="roman">rómartøl</type>
 			<type key="numbers" type="romanlow">rómartøl (smáir bókstavir)</type>
 			<type key="numbers" type="taml">vanlig tamilsk tøl</type>
@@ -700,6 +864,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a á b d ð e f g h i í j k l m n o ó p r s t u ú v y ý æ ø]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c q w x z]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A Á B C D Ð E F G H I Í J K L M N O Ó P Q R S T U Ú V W X Y Ý Z Æ Ø]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[, . % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -708,6 +873,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -762,19 +946,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d.</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d.</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d. MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E d. MMM y G</dateFormatItem>
-						<dateFormatItem id="h" draft="contributed">h a</dateFormatItem>
-						<dateFormatItem id="H" draft="contributed">HH</dateFormatItem>
-						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm" draft="contributed">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms" draft="contributed">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM</dateFormatItem>
 						<dateFormatItem id="MEd">E dd.MM</dateFormatItem>
@@ -782,7 +975,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
-						<dateFormatItem id="ms" draft="contributed">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yM">MM.y</dateFormatItem>
 						<dateFormatItem id="yMd">dd.MM.y</dateFormatItem>
@@ -1227,8 +1420,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d.</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d.</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1255,6 +1453,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">W. 'vika' 'í' MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">W. 'vika' 'í' MMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">MM.y</dateFormatItem>
@@ -1266,6 +1466,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ 'í' y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ 'í' y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">w. 'vika' 'í' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">w. 'vika' 'í' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1372,6 +1574,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>tíðarrokning</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>tíðarrokning</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>tíðarrokning</displayName>
+			</field>
 			<field type="year">
 				<displayName>ár</displayName>
 				<relative type="-1">í fjør</relative>
@@ -1410,6 +1618,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>ársfjórðingur</displayName>
+				<relative type="-1">seinasta ársfjórðing</relative>
+				<relative type="0">hendan ársfjórðingin</relative>
+				<relative type="1">næsta ársfjórðing</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} ársfjórðing</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} ársfjórðingar</relativeTimePattern>
@@ -1490,6 +1701,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} vika síðan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} vikur síðan</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>vika nummar {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>vi.</displayName>
@@ -1501,6 +1713,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} vi. síðan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} vi. síðan</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>vika nummar {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>v.</displayName>
@@ -1512,6 +1725,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} v. síðan</relativeTimePattern>
 					<relativeTimePattern count="other">{0} v. síðan</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>vika nummar {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>vika í mánaðinum</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>vi. í mnð.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>vi. í mnð.</displayName>
 			</field>
 			<field type="day">
 				<displayName>dagur</displayName>
@@ -1551,119 +1774,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} d. síðan</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>dagur í árinum</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>dagur í ár.</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>dagur í ár.</displayName>
+			</field>
 			<field type="weekday">
-				<displayName>gerandisdagur</displayName>
+				<displayName>vikudagur</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>vikudagur</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>vikudagur</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>vikudagur í mánaðinum</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>vikudagur í mnð.</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>vikudagur í mnð.</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">seinasta sunnudag</relative>
 				<relative type="0">næsta sunnudag</relative>
 				<relative type="1">sunnudagin í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} sunnudag</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} sunnudagar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} sunnudag síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sunnudagar síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">seinasta sun.</relative>
 				<relative type="0">næsta sun.</relative>
 				<relative type="1">sun. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} sun.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} sun.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} sun. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} sun. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">seinasta su.</relative>
 				<relative type="0">næsta su.</relative>
 				<relative type="1">su. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} su.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} su.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} su. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} su. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">seinasta mánadag</relative>
 				<relative type="0">næsta mánadag</relative>
 				<relative type="1">mánadagin í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} mánadag</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} mánadagar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} mánadag síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mánadagar síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">seinasta mán.</relative>
 				<relative type="0">næsta mán.</relative>
 				<relative type="1">mán. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} mán.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} mán.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} mán. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mán. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">seinasta má.</relative>
 				<relative type="0">næsta má.</relative>
 				<relative type="1">má. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} má.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} má.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} má. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} má. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">seinasta týsdag</relative>
 				<relative type="0">næsta týsdag</relative>
 				<relative type="1">týsdagin í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} týsdag</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} týsdagar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} týsdag síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} týsdagar síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">seinasta týs.</relative>
 				<relative type="0">næsta týs.</relative>
 				<relative type="1">týs. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} týs.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} týs.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} týs. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} týs. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">seinasta tý.</relative>
 				<relative type="0">næsta tý.</relative>
 				<relative type="1">tý. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} tý.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} tý.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} tý. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} tý. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">seinasta mikudag</relative>
 				<relative type="0">næsta mikudag</relative>
 				<relative type="1">mikudagin í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} mikudag</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} mikudagar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} mikudag síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mikudagar síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">seinasta mik.</relative>
 				<relative type="0">næsta mik.</relative>
 				<relative type="1">mik. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} mik.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} mik.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} mik. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mik. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">seinasta mi.</relative>
 				<relative type="0">næsta mi.</relative>
 				<relative type="1">mi. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} mi.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} mi.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} mi. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mi. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">seinasta hósdag</relative>
 				<relative type="0">næsta hósdag</relative>
 				<relative type="1">hósdagin í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} hósdag</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} hósdagar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} hósdag síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hósdagar síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">seinasta hós.</relative>
 				<relative type="0">næsta hós.</relative>
 				<relative type="1">hós. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} hós.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} hós.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} hós. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hós. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">seinasta hó.</relative>
 				<relative type="0">næsta hó.</relative>
 				<relative type="1">hó. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} hó.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} hó.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} hó. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} hó. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">seinasta fríggjadag</relative>
 				<relative type="0">næsta fríggjadag</relative>
 				<relative type="1">fríggjadagin í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} fríggjadag</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} fríggjadagar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} fríggjadag síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} fríggjadagar síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">seinasta frí.</relative>
 				<relative type="0">næsta frí.</relative>
 				<relative type="1">frí. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} frí.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} frí.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} frí. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} frí. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">seinasta fr.</relative>
 				<relative type="0">næsta fr.</relative>
 				<relative type="1">fr. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} fr.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} fr.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} fr. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} fr. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">seinasta leygardag</relative>
 				<relative type="0">næsta leygardag</relative>
 				<relative type="1">leygardagin í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} leygardag</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} leygardagar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} leygardag síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} leygardagar síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">seinasta ley.</relative>
 				<relative type="0">næsta ley.</relative>
 				<relative type="1">ley. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} ley.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} ley.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ley. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ley. síðani</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">seinasta le.</relative>
 				<relative type="0">næsta le.</relative>
 				<relative type="1">le. í næstu viku</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">um {0} le.</relativeTimePattern>
+					<relativeTimePattern count="other">um {0} le.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} le. síðani</relativeTimePattern>
+					<relativeTimePattern count="other">{0} le. síðani</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>AM/PM</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
+			</field>
 			<field type="hour">
 				<displayName>tími</displayName>
+				<relative type="0">hendan tíman</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} tíma</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} tímar</relativeTimePattern>
@@ -1675,6 +2097,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-short">
 				<displayName>t.</displayName>
+				<relative type="0" draft="unconfirmed">hendan tíman</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} t.</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} t.</relativeTimePattern>
@@ -1686,6 +2109,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-narrow">
 				<displayName>t.</displayName>
+				<relative type="0" draft="unconfirmed">hendan tíman</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} t.</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} t.</relativeTimePattern>
@@ -1697,6 +2121,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>minuttur</displayName>
+				<relative type="0">hendan minuttin</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} minutt</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} minuttir</relativeTimePattern>
@@ -1708,6 +2133,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-short">
 				<displayName>min.</displayName>
+				<relative type="0" draft="unconfirmed">hendan minuttin</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} min.</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} min.</relativeTimePattern>
@@ -1719,6 +2145,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-narrow">
 				<displayName>m.</displayName>
+				<relative type="0" draft="unconfirmed">hendan minuttin</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} m.</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} m.</relativeTimePattern>
@@ -1730,6 +2157,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="second">
 				<displayName>sekund</displayName>
+				<relative type="0">nú</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} sekund</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} sekund</relativeTimePattern>
@@ -1741,6 +2169,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="second-short">
 				<displayName>sek.</displayName>
+				<relative type="0" draft="unconfirmed">nú</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} sek.</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} sek.</relativeTimePattern>
@@ -1752,6 +2181,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="second-narrow">
 				<displayName>s.</displayName>
+				<relative type="0" draft="unconfirmed">nú</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">um {0} s.</relativeTimePattern>
 					<relativeTimePattern count="other">um {0} s.</relativeTimePattern>
@@ -1764,6 +2194,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>tíðarøki</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>tíðarøki</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>tíðarøki</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
@@ -1773,6 +2209,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} summartíð</regionFormat>
 			<regionFormat type="standard">{0} vanlig tíð</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Isabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Samskipað heimstíð</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>ókendur býur</exemplarCity>
 			</zone>
@@ -1948,7 +2395,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Porto-Novo</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>St-Barthélemy</exemplarCity>
+				<exemplarCity>St. Barthelemy</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity>Bermuda</exemplarCity>
@@ -2036,6 +2483,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Vancouver">
 				<exemplarCity>Vancouver</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Dawson Creek</exemplarCity>
@@ -2133,6 +2583,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Easter</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santiago</exemplarCity>
 			</zone>
@@ -2165,6 +2618,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nicosia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Prag</exemplarCity>
@@ -2424,6 +2880,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atyrau</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtobe</exemplarCity>
 			</zone>
@@ -2537,9 +2996,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosillo</exemplarCity>
@@ -2706,6 +3162,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrakhan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -2717,6 +3185,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
@@ -2809,7 +3283,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Juba</exemplarCity>
 			</zone>
 			<zone type="Africa/Sao_Tome">
-				<exemplarCity>Sao Tome</exemplarCity>
+				<exemplarCity>São Tomé</exemplarCity>
 			</zone>
 			<zone type="America/El_Salvador">
 				<exemplarCity>El Salvador</exemplarCity>
@@ -2872,7 +3346,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Dar es Salaam</exemplarCity>
 			</zone>
 			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod</exemplarCity>
+				<exemplarCity>Uzhhorod</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
@@ -2886,9 +3360,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midway</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake</exemplarCity>
 			</zone>
@@ -2898,8 +3369,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -3735,6 +4206,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>Ponape tíð</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pyongyang tíð</standard>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Réunion tíð</standard>
@@ -4194,12 +4670,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Hvítarussland ruble</displayName>
 				<displayName count="one">Hvítarussland ruble</displayName>
 				<displayName count="other">Hvítarussland ruble</displayName>
-				<symbol draft="contributed">BYR</symbol>
+				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Hvítarussland ruble (2000–2016)</displayName>
+				<displayName count="one">Hvítarussland ruble (2000–2016)</displayName>
+				<displayName count="other">Hvítarussland ruble (2000–2016)</displayName>
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belis dollari</displayName>
@@ -4233,6 +4715,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Kili peso</displayName>
 				<symbol draft="contributed">CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>kinesiskur yuan (úr landi)</displayName>
+				<displayName count="one">kinesiskur yuan (úr landi)</displayName>
+				<displayName count="other">kinesiskur yuan (úr landi)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>kinesiskur yuan</displayName>
@@ -4360,6 +4848,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Georgia lari</displayName>
 				<displayName count="other">Georgia lari</displayName>
 				<symbol draft="contributed">GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>Gana cedi</displayName>
@@ -4443,9 +4932,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="ILS">
-				<displayName>Ísrael new sheqel</displayName>
-				<displayName count="one">Ísrael new sheqel</displayName>
-				<displayName count="other">Ísrael new sheqel</displayName>
+				<displayName>Ísrael new shekel</displayName>
+				<displayName count="one">Ísrael new shekel</displayName>
+				<displayName count="other">Ísrael new shekel</displayName>
 				<symbol draft="contributed">₪</symbol>
 				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
@@ -4635,10 +5124,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Móritania ouguiya (1973–2017)</displayName>
+				<displayName count="one">Móritania ouguiya (1973–2017)</displayName>
+				<displayName count="other">Móritania ouguiya (1973–2017)</displayName>
+				<symbol draft="contributed">MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Móritania ouguiya</displayName>
 				<displayName count="one">Móritania ouguiya</displayName>
 				<displayName count="other">Móritania ouguiya</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>Móritius rupi</displayName>
@@ -4734,9 +5228,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>Peru nuevo sol</displayName>
-				<displayName count="one">Peru nuevo sol</displayName>
-				<displayName count="other">Peru nuevo sol</displayName>
+				<displayName>Peru sol</displayName>
+				<displayName count="one">Peru sol</displayName>
+				<displayName count="other">Peru sol</displayName>
 				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PGK">
@@ -4782,8 +5276,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="RON">
 				<displayName>Rumenia leu</displayName>
 				<displayName count="one">Rumenia leu</displayName>
-				<displayName count="other">Rumenia leu</displayName>
+				<displayName count="other">Rumenia lei</displayName>
 				<symbol draft="contributed">RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Serbia dinar</displayName>
@@ -4878,10 +5373,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>Sao Tome &amp; Prinsipi dobra (1977–2017)</displayName>
+				<displayName count="one">Sao Tome &amp; Prinsipi dobra (1977–2017)</displayName>
+				<displayName count="other">Sao Tome &amp; Prinsipi dobra (1977–2017)</displayName>
+				<symbol draft="contributed">STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>Sao Tome &amp; Prinsipi dobra</displayName>
 				<displayName count="one">Sao Tome &amp; Prinsipi dobra</displayName>
 				<displayName count="other">Sao Tome &amp; Prinsipi dobra</displayName>
-				<symbol draft="contributed">STD</symbol>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
@@ -5091,11 +5592,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0} ella meira</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} dag</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} dagar</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Tak {0}. vegin til høgru.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
 			<compoundUnit type="per">
-				<compoundUnitPattern>{0} á {1}</compoundUnitPattern>
+				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>G-kreftir</displayName>
@@ -5136,6 +5642,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ferkilometrar</displayName>
 				<unitPattern count="one">{0} ferkilometur</unitPattern>
 				<unitPattern count="other">{0} ferkilometrar</unitPattern>
+				<perUnitPattern>{0} fyri hvønn ferkilometur</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektarar</displayName>
@@ -5158,6 +5665,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>fermíl</displayName>
 				<unitPattern count="one">{0} fermíl</unitPattern>
 				<unitPattern count="other">{0} fermíl</unitPattern>
+				<perUnitPattern>{0} fyri hvørt fermíl</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ekrur</displayName>
@@ -5185,6 +5693,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} karat</unitPattern>
 				<unitPattern count="other">{0} karat</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>milligramm fyri hvønn desilitur</displayName>
+				<unitPattern count="one">{0} milligramm fyri hvønn desilitur</unitPattern>
+				<unitPattern count="other">{0} milligramm fyri hvønn desilitur</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>millimol fyri hvønn litur</displayName>
+				<unitPattern count="one">{0} millimol fyri hvønn litur</unitPattern>
+				<unitPattern count="other">{0} millimol fyri hvønn litur</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>partar fyri hvørja millión</displayName>
+				<unitPattern count="one">{0} partur fyri hvørja millión</unitPattern>
+				<unitPattern count="other">{0} partar fyri hvørja millión</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litrar fyri hvønn kilometrar</displayName>
 				<unitPattern count="one">{0} litur fyri hvønn kilometrar</unitPattern>
@@ -5199,6 +5722,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>míl fyri hvønn gallon</displayName>
 				<unitPattern count="one">{0} míl fyri hvønn gallon</unitPattern>
 				<unitPattern count="other">{0} míl fyri hvønn gallon</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>míl fyri hvønn bretska gallon</displayName>
+				<unitPattern count="one">{0} míl fyri hvønn bretska gallon</unitPattern>
+				<unitPattern count="other">{0} míl fyri hvønn bretska gallon</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabýt</displayName>
@@ -5472,6 +6000,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} skandinaviskt míl</unitPattern>
 				<unitPattern count="other">{0} skandinaviskt míl</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>punkt</displayName>
+				<unitPattern count="one">{0} punkt</unitPattern>
+				<unitPattern count="other">{0} punkt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>luks</displayName>
 				<unitPattern count="one">{0} luks</unitPattern>
@@ -5715,6 +6248,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gallons</unitPattern>
 				<perUnitPattern>{0} fyri hvønn gallon</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>bretskar gallons</displayName>
+				<unitPattern count="one">{0} bretskur gallon</unitPattern>
+				<unitPattern count="other">{0} bretskar gallons</unitPattern>
+				<perUnitPattern>{0} fyri hvønn bretska gallon</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>quarts</displayName>
 				<unitPattern count="one">{0} quart</unitPattern>
@@ -5746,10 +6285,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} teskeiðir</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}V</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} eystur</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} norður</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} suður</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} vestur</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -5795,6 +6334,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
@@ -5817,6 +6357,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>míl²</displayName>
 				<unitPattern count="one">{0} míl²</unitPattern>
 				<unitPattern count="other">{0} míl²</unitPattern>
+				<perUnitPattern>{0}/míl²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ekrur</displayName>
@@ -5844,6 +6385,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} karat</unitPattern>
 				<unitPattern count="other">{0} karat</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dl</displayName>
+				<unitPattern count="one">{0} mg/dl</unitPattern>
+				<unitPattern count="other">{0} mg/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/l</displayName>
+				<unitPattern count="one">{0} mmol/l</unitPattern>
+				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>partar/millión</displayName>
+				<unitPattern count="one">{0} partur/mill.</unitPattern>
+				<unitPattern count="other">{0} partar/mill.</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="one">{0} l/km</unitPattern>
@@ -5858,6 +6414,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>míl/gallon</displayName>
 				<unitPattern count="one">{0} míl/gallon</unitPattern>
 				<unitPattern count="other">{0} míl/gallon</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>míl/UK gallon</displayName>
+				<unitPattern count="one">{0} míl/UK gallon</unitPattern>
+				<unitPattern count="other">{0} míl/UK gallon</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -6131,6 +6692,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} sk. míl</unitPattern>
 				<unitPattern count="other">{0} sk. míl</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>pkt</displayName>
+				<unitPattern count="one">{0} pkt</unitPattern>
+				<unitPattern count="other">{0} pkt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>luks</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
@@ -6374,6 +6940,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gallons</unitPattern>
 				<perUnitPattern>{0}/gallon</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>UK gallons</displayName>
+				<unitPattern count="one">{0} UK gallon</unitPattern>
+				<unitPattern count="other">{0} UK gallons</unitPattern>
+				<perUnitPattern>{0}/UK gallon</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>quarts</displayName>
 				<unitPattern count="one">{0} quart</unitPattern>
@@ -6405,10 +6977,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} tesk.</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}V</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} V</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -6442,6 +7014,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-meter">
 				<unitPattern count="one" draft="contributed">{0}m²</unitPattern>
 				<unitPattern count="other" draft="contributed">{0}m²</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName draft="unconfirmed">mg/dL</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}mg/dL</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName draft="unconfirmed">mmol/L</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0}mmol/L</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0}mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName draft="unconfirmed">ppm</displayName>
+				<unitPattern count="one" draft="unconfirmed">{0} ppm</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} ppm</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>l/100km</displayName>
@@ -6596,6 +7183,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} og {1}</listPatternPart>
 			<listPatternPart type="2">{0} og {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, ella {1}</listPatternPart>
+			<listPatternPart type="2">{0} ella {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} og {1}</listPatternPart>
+			<listPatternPart type="2">{0} og {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
@@ -6617,9 +7216,107 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</listPatterns>
 	<posix>
 		<messages>
-			<yesstr>já:j</yesstr>
+			<yesstr>ja:j</yesstr>
 			<nostr>nei:n</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — Alt</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — Sambæri</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — Girða</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — Víðkað</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — Søguligt</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — ymiskt</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — Annað</characterLabelPattern>
+		<characterLabelPattern type="scripts">Skriftir — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} strok</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} strok</characterLabelPattern>
+		<characterLabel type="activities">Virksemi</characterLabel>
+		<characterLabel type="african_scripts">Afrikanskar skriftir</characterLabel>
+		<characterLabel type="american_scripts">Amerikanskar skriftir</characterLabel>
+		<characterLabel type="animal">Dýr</characterLabel>
+		<characterLabel type="animals_nature">Dýr og náttúra</characterLabel>
+		<characterLabel type="arrows">Pílur</characterLabel>
+		<characterLabel type="body">Kroppur</characterLabel>
+		<characterLabel type="box_drawing">Kassatekning</characterLabel>
+		<characterLabel type="braille">Blindaskrift</characterLabel>
+		<characterLabel type="building">Bygningur</characterLabel>
+		<characterLabel type="bullets_stars">Prikkar/Stjørnur</characterLabel>
+		<characterLabel type="consonantal_jamo">Jamo hjáljóð</characterLabel>
+		<characterLabel type="currency_symbols">Gjaldoyra tekin</characterLabel>
+		<characterLabel type="dash_connector">Bindistrika/sambindari</characterLabel>
+		<characterLabel type="digits">Talstavir</characterLabel>
+		<characterLabel type="dingbats">Dingbats</characterLabel>
+		<characterLabel type="divination_symbols">Spádóms tekin</characterLabel>
+		<characterLabel type="downwards_arrows">Pílar peikandi niðureftir</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">Pílar peikandi niður og uppeftir</characterLabel>
+		<characterLabel type="east_asian_scripts">Eysturasiatiskar skriftir</characterLabel>
+		<characterLabel type="emoji">Emoji</characterLabel>
+		<characterLabel type="european_scripts">Evropeiskar skriftir</characterLabel>
+		<characterLabel type="female">Kvinna</characterLabel>
+		<characterLabel type="flag">Flagg</characterLabel>
+		<characterLabel type="flags">Fløgg</characterLabel>
+		<characterLabel type="food_drink">Matur og drekka</characterLabel>
+		<characterLabel type="format">Forsniða</characterLabel>
+		<characterLabel type="format_whitespace">Forsnið og hvíttglopp</characterLabel>
+		<characterLabel type="full_width_form_variant">Full breidd avbrigdir formur</characterLabel>
+		<characterLabel type="geometric_shapes">Mátingarfrøðiligir formar</characterLabel>
+		<characterLabel type="half_width_form_variant">Hálv breidd avbrigdir formur</characterLabel>
+		<characterLabel type="han_characters">Han bókstavar</characterLabel>
+		<characterLabel type="han_radicals">Han rótmerkir</characterLabel>
+		<characterLabel type="hanja">Hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">Hanzi (einkult)</characterLabel>
+		<characterLabel type="hanzi_traditional">Hanzi (vanligt)</characterLabel>
+		<characterLabel type="heart">Hjarta</characterLabel>
+		<characterLabel type="historic_scripts">Søguligar skriftir</characterLabel>
+		<characterLabel type="ideographic_desc_characters">Hugtaksskrift eftirkomandi bókstavar</characterLabel>
+		<characterLabel type="japanese_kana">Japanskt kana</characterLabel>
+		<characterLabel type="kanbun">Kanbun</characterLabel>
+		<characterLabel type="kanji">Kanji</characterLabel>
+		<characterLabel type="keycap">Knappahetta</characterLabel>
+		<characterLabel type="leftwards_arrows">Pílar peikandi til vinstru</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">Pílar peikandi til vinstru og høgru</characterLabel>
+		<characterLabel type="letterlike_symbols">Bókstavalíknandi tekin</characterLabel>
+		<characterLabel type="limited_use">Avmarkað brúk</characterLabel>
+		<characterLabel type="male">Mannfólk</characterLabel>
+		<characterLabel type="math_symbols">Støddfrøðilig tekin</characterLabel>
+		<characterLabel type="middle_eastern_scripts">Miðeystur skiftir</characterLabel>
+		<characterLabel type="miscellaneous">Ymiskt</characterLabel>
+		<characterLabel type="modern_scripts">Nútíðar skriftir</characterLabel>
+		<characterLabel type="modifier">Laga eftir</characterLabel>
+		<characterLabel type="musical_symbols">Tónleika tekin</characterLabel>
+		<characterLabel type="nature">Natúr</characterLabel>
+		<characterLabel type="nonspacing">Einki glopp</characterLabel>
+		<characterLabel type="numbers">Tøl</characterLabel>
+		<characterLabel type="objects">Lutir</characterLabel>
+		<characterLabel type="other">Annað</characterLabel>
+		<characterLabel type="paired">Greipa saman</characterLabel>
+		<characterLabel type="person">Persónur</characterLabel>
+		<characterLabel type="phonetic_alphabet">Ljóðstavrað</characterLabel>
+		<characterLabel type="pictographs">Myndatekin</characterLabel>
+		<characterLabel type="place">Staður</characterLabel>
+		<characterLabel type="plant">Planta</characterLabel>
+		<characterLabel type="punctuation">Teknseting</characterLabel>
+		<characterLabel type="rightwards_arrows">Pílar peikandi til høgru</characterLabel>
+		<characterLabel type="sign_standard_symbols">Tekn/vanlig tekin</characterLabel>
+		<characterLabel type="small_form_variant">Lítil avbrigdir formur</characterLabel>
+		<characterLabel type="smiley">Brostekn</characterLabel>
+		<characterLabel type="smileys_people">Brostekin og fólk</characterLabel>
+		<characterLabel type="south_asian_scripts">Suðurasiatiskar skriftir</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Útsynningsasiatiskar skriftir</characterLabel>
+		<characterLabel type="spacing">Regluglopp</characterLabel>
+		<characterLabel type="sport">Ítróttur</characterLabel>
+		<characterLabel type="symbols">Tekin</characterLabel>
+		<characterLabel type="technical_symbols">Tøknilig tekin</characterLabel>
+		<characterLabel type="tone_marks">Litdámt merkir</characterLabel>
+		<characterLabel type="travel">Ferðing</characterLabel>
+		<characterLabel type="travel_places">Ferðing og støð</characterLabel>
+		<characterLabel type="upwards_arrows">Pílar peikandi uppeftir</characterLabel>
+		<characterLabel type="variant_forms">Frábrigdi formar</characterLabel>
+		<characterLabel type="vocalic_jamo">Jamo sjálvljóð</characterLabel>
+		<characterLabel type="weather">Veður</characterLabel>
+		<characterLabel type="western_asian_scripts">Vesturasiatiskar skriftir</characterLabel>
+		<characterLabel type="whitespace">Hvíttglopp</characterLabel>
+	</characterLabels>
 </ldml>
-

@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="lt"/>
 	</identity>
 	<localeDisplayNames>
@@ -60,7 +63,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="az" alt="short">azeri</language>
 			<language type="ba">baškirų</language>
 			<language type="bal">baluči</language>
-			<language type="ban">balinezų</language>
+			<language type="ban">baliečių</language>
 			<language type="bar">bavarų</language>
 			<language type="bas">basų</language>
 			<language type="bax">bamunų</language>
@@ -81,11 +84,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bin">bini</language>
 			<language type="bjn">bandžarų</language>
 			<language type="bkm">komų</language>
-			<language type="bla">siksika</language>
+			<language type="bla">siksikų</language>
 			<language type="bm">bambarų</language>
 			<language type="bn">bengalų</language>
 			<language type="bo">tibetiečių</language>
-			<language type="bpy">Bišnuprijos</language>
+			<language type="bpy">bišnuprijos</language>
 			<language type="bqi">bakhtiari</language>
 			<language type="br">bretonų</language>
 			<language type="bra">brajų</language>
@@ -104,13 +107,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="cay">kaijūgų</language>
 			<language type="cch">atsamų</language>
 			<language type="ce">čečėnų</language>
-			<language type="ceb">cebuanų</language>
+			<language type="ceb">sebuanų</language>
 			<language type="cgg">čigų</language>
 			<language type="ch">čamorų</language>
-			<language type="chb">čibča</language>
+			<language type="chb">čibčų</language>
 			<language type="chg">čagatų</language>
 			<language type="chk">čukesų</language>
-			<language type="chm">mari</language>
+			<language type="chm">marių</language>
 			<language type="chn">činuk žargonas</language>
 			<language type="cho">čoktau</language>
 			<language type="chp">čipvėjų</language>
@@ -122,6 +125,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="cps">capiznon</language>
 			<language type="cr">kry</language>
 			<language type="crh">Krymo turkų</language>
+			<language type="crs">Seišelių kreolų ir prancūzų</language>
 			<language type="cs">čekų</language>
 			<language type="csb">kašubų</language>
 			<language type="cu">bažnytinė slavų</language>
@@ -144,7 +148,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="dtp">centrinio Dusuno</language>
 			<language type="dua">dualų</language>
 			<language type="dum">Vidurio Vokietijos</language>
-			<language type="dv">divehi</language>
+			<language type="dv">divehų</language>
 			<language type="dyo">džiola-foni</language>
 			<language type="dyu">dyulų</language>
 			<language type="dz">botijų</language>
@@ -176,7 +180,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ewo">evondo</language>
 			<language type="ext">ispanų kalbos Ekstremadūros tarmė</language>
 			<language type="fa">persų</language>
-			<language type="fan">fang</language>
+			<language type="fan">fangų</language>
 			<language type="fat">fanti</language>
 			<language type="ff">fulahų</language>
 			<language type="fi">suomių</language>
@@ -191,10 +195,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="frc">kadžunų prancūzų</language>
 			<language type="frm">Vidurio Prancūzijos</language>
 			<language type="fro">senoji prancūzų</language>
-			<language type="frp">Arpitano</language>
+			<language type="frp">arpitano</language>
 			<language type="frr">šiaurinių fryzų</language>
 			<language type="frs">rytų fryzų</language>
-			<language type="fur">frulan</language>
+			<language type="fur">friulių</language>
 			<language type="fy">vakarų fryzų</language>
 			<language type="ga">airių</language>
 			<language type="gaa">ga</language>
@@ -210,7 +214,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="glk">gilaki</language>
 			<language type="gmh">Vidurio Aukštosios Vokietijos</language>
 			<language type="gn">gvaranių</language>
-			<language type="goh">Senoji Aukštosios Vokietijos</language>
+			<language type="goh">senoji Aukštosios Vokietijos</language>
 			<language type="gom">Goa konkanių</language>
 			<language type="gon">gondi</language>
 			<language type="gor">gorontalo</language>
@@ -231,7 +235,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="he">hebrajų</language>
 			<language type="hi">hindi</language>
 			<language type="hif">Fidžio hindi</language>
-			<language type="hil">hiligainon</language>
+			<language type="hil">hiligainonų</language>
 			<language type="hit">hititų</language>
 			<language type="hmn">hmong</language>
 			<language type="ho">hiri motu</language>
@@ -242,16 +246,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="hu">vengrų</language>
 			<language type="hup">hupa</language>
 			<language type="hy">armėnų</language>
-			<language type="hz">herero</language>
-			<language type="ia">interlingva</language>
+			<language type="hz">hererų</language>
+			<language type="ia">tarpinė</language>
 			<language type="iba">iban</language>
-			<language type="ibb">ibibio</language>
+			<language type="ibb">ibibijų</language>
 			<language type="id">indoneziečių</language>
 			<language type="ie">interkalba</language>
 			<language type="ig">igbų</language>
 			<language type="ii">sičuan ji</language>
-			<language type="ik">inupiak</language>
-			<language type="ilo">iloko</language>
+			<language type="ik">inupiakų</language>
+			<language type="ilo">ilokų</language>
 			<language type="inh">ingušų</language>
 			<language type="io">ido</language>
 			<language type="is">islandų</language>
@@ -270,10 +274,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ka">gruzinų</language>
 			<language type="kaa">karakalpakų</language>
 			<language type="kab">kebailų</language>
-			<language type="kac">kačin</language>
+			<language type="kac">kačinų</language>
 			<language type="kaj">ju</language>
 			<language type="kam">kembų</language>
-			<language type="kaw">kavi</language>
+			<language type="kaw">kavių</language>
 			<language type="kbd">kabardinų</language>
 			<language type="kbl">kanembų</language>
 			<language type="kcg">tyap</language>
@@ -301,8 +305,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="koi">komių-permių</language>
 			<language type="kok">konkanių</language>
 			<language type="kos">kosreanų</language>
-			<language type="kpe">kpele</language>
-			<language type="kr">kanuri</language>
+			<language type="kpe">kpelių</language>
+			<language type="kr">kanurių</language>
 			<language type="krc">karačiajų balkarijos</language>
 			<language type="kri">krio</language>
 			<language type="krj">kinaray-a</language>
@@ -327,22 +331,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="lez">lezginų</language>
 			<language type="lfn">naujoji frankų kalba</language>
 			<language type="lg">ganda</language>
-			<language type="li">limburgiš</language>
+			<language type="li">limburgiečių</language>
 			<language type="lij">ligūrų</language>
 			<language type="liv">lyvių</language>
 			<language type="lkt">lakotų</language>
 			<language type="lmo">lombardų</language>
 			<language type="ln">ngalų</language>
 			<language type="lo">laosiečių</language>
-			<language type="lol">mongo</language>
-			<language type="loz">lozi</language>
+			<language type="lol">mongų</language>
+			<language type="lou">Luizianos kreolų</language>
+			<language type="loz">lozių</language>
 			<language type="lrc">šiaurės luri</language>
 			<language type="lt">lietuvių</language>
 			<language type="ltg">latgalių</language>
 			<language type="lu">luba katanga</language>
 			<language type="lua">luba lulua</language>
 			<language type="lui">luiseno</language>
-			<language type="lun">lunda</language>
+			<language type="lun">Lundos</language>
 			<language type="luo">luo</language>
 			<language type="lus">mizo</language>
 			<language type="luy">luja</language>
@@ -353,12 +358,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="maf">mafų</language>
 			<language type="mag">magahi</language>
 			<language type="mai">maithili</language>
-			<language type="mak">makasaro</language>
-			<language type="man">mandingo</language>
+			<language type="mak">Makasaro</language>
+			<language type="man">mandingų</language>
 			<language type="mas">masajų</language>
 			<language type="mde">mabų</language>
 			<language type="mdf">mokša</language>
-			<language type="mdr">mandar</language>
+			<language type="mdr">mandarų</language>
 			<language type="men">mende</language>
 			<language type="mer">merų</language>
 			<language type="mfe">morisijų</language>
@@ -368,13 +373,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mgo">meta</language>
 			<language type="mh">Maršalo Salų</language>
 			<language type="mi">maorių</language>
-			<language type="mic">mikmak</language>
-			<language type="min">minankabu</language>
+			<language type="mic">mikmakų</language>
+			<language type="min">minangkabau</language>
 			<language type="mk">makedonų</language>
 			<language type="ml">malajalių</language>
 			<language type="mn">mongolų</language>
 			<language type="mnc">manču</language>
-			<language type="mni">manipuri</language>
+			<language type="mni">manipurių</language>
 			<language type="moh">mohok</language>
 			<language type="mos">mosi</language>
 			<language type="mr">maratų</language>
@@ -395,7 +400,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="nan">kinų kalbos pietų minų tarmė</language>
 			<language type="nap">neapoliečių</language>
 			<language type="naq">nama</language>
-			<language type="nb">Norvegijos rašytinė – būkmolų</language>
+			<language type="nb">norvegų bukmolas</language>
 			<language type="nd">šiaurės ndebelų</language>
 			<language type="nds">Žemutinės Vokietijos</language>
 			<language type="nds_NL">Žemutinės Saksonijos (Nyderlandai)</language>
@@ -403,7 +408,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="new">nevari</language>
 			<language type="ng">ndongų</language>
 			<language type="nia">nias</language>
-			<language type="niu">niuenų</language>
+			<language type="niu">niujiečių</language>
 			<language type="njo">ao naga</language>
 			<language type="nl">olandų</language>
 			<language type="nl_BE">flamandų</language>
@@ -412,33 +417,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="nnh">ngiembūnų</language>
 			<language type="no">norvegų</language>
 			<language type="nog">nogų</language>
-			<language type="non">norsu</language>
+			<language type="non">senoji norsų</language>
 			<language type="nov">novial</language>
 			<language type="nqo">enko</language>
 			<language type="nr">pietų ndebele</language>
-			<language type="nso">šiaurės sothų</language>
+			<language type="nso">šiaurės Soto</language>
 			<language type="nus">nuerų</language>
 			<language type="nv">navajų</language>
 			<language type="nwc">klasikinė nevari</language>
-			<language type="ny">nianja</language>
+			<language type="ny">nianjų</language>
 			<language type="nym">niamvezi</language>
 			<language type="nyn">niankolų</language>
-			<language type="nyo">nioro</language>
+			<language type="nyo">niorų</language>
 			<language type="nzi">nzima</language>
 			<language type="oc">očitarų</language>
 			<language type="oj">ojibva</language>
 			<language type="om">oromų</language>
-			<language type="or">orijų</language>
+			<language type="or">odijų</language>
 			<language type="os">osetinų</language>
 			<language type="osa">osage</language>
 			<language type="ota">osmanų turkų</language>
 			<language type="pa">pendžabų</language>
-			<language type="pag">pangasinan</language>
-			<language type="pal">pahlavi</language>
-			<language type="pam">pampanga</language>
-			<language type="pap">papiemento</language>
-			<language type="pau">palau</language>
+			<language type="pag">pangasinanų</language>
+			<language type="pal">vidurinė persų kalba</language>
+			<language type="pam">pampangų</language>
+			<language type="pap">papiamento</language>
+			<language type="pau">palauliečių</language>
 			<language type="pcd">pikardų</language>
+			<language type="pcm">Nigerijos pidžinų</language>
 			<language type="pdc">Pensilvanijos vokiečių</language>
 			<language type="pdt">vokiečių kalbos žemaičių tarmė</language>
 			<language type="peo">senoji persų</language>
@@ -458,9 +464,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="qu">kečujų</language>
 			<language type="quc">kičių</language>
 			<language type="qug">Čimboraso aukštumų kečujų</language>
-			<language type="raj">radžastano</language>
+			<language type="raj">Radžastano</language>
 			<language type="rap">rapanui</language>
-			<language type="rar">rarotongan</language>
+			<language type="rar">rarotonganų</language>
 			<language type="rgn">italų kalbos Romanijos tarmė</language>
 			<language type="rif">rifų</language>
 			<language type="rm">retoromanų</language>
@@ -478,12 +484,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="rw">kinjaruandų</language>
 			<language type="rwk">rua</language>
 			<language type="sa">sanskritas</language>
-			<language type="sad">sandavi</language>
+			<language type="sad">sandavių</language>
 			<language type="sah">jakutų</language>
 			<language type="sam">samarėjų aramių</language>
 			<language type="saq">sambūrų</language>
 			<language type="sas">sasak</language>
-			<language type="sat">santali</language>
+			<language type="sat">santalių</language>
 			<language type="saz">sauraštrų</language>
 			<language type="sba">ngambajų</language>
 			<language type="sbp">sangų</language>
@@ -507,14 +513,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="shn">šan</language>
 			<language type="shu">chadian arabų</language>
 			<language type="si">sinhalų</language>
-			<language type="sid">sidamo</language>
+			<language type="sid">sidamų</language>
 			<language type="sk">slovakų</language>
 			<language type="sl">slovėnų</language>
 			<language type="sli">sileziečių žemaičių</language>
 			<language type="sly">selajarų</language>
-			<language type="sm">samoa</language>
+			<language type="sm">Samoa</language>
 			<language type="sma">pietų samių</language>
-			<language type="smj">Lulėjo samių</language>
+			<language type="smj">Liuleo samių</language>
 			<language type="smn">Inario samių</language>
 			<language type="sms">Skolto samių</language>
 			<language type="sn">šonų</language>
@@ -525,9 +531,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sr">serbų</language>
 			<language type="srn">sranan tongo</language>
 			<language type="srr">sererų</language>
-			<language type="ss">svati</language>
+			<language type="ss">svatų</language>
 			<language type="ssy">saho</language>
-			<language type="st">pietų sesuto</language>
+			<language type="st">pietų Soto</language>
 			<language type="stq">Saterlendo fryzų</language>
 			<language type="su">sundų</language>
 			<language type="suk">sukuma</language>
@@ -537,7 +543,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sw">suahilių</language>
 			<language type="sw_CD">Kongo suahilių</language>
 			<language type="swb">Komorų</language>
-			<language type="syc">klasikinė siriečių</language>
+			<language type="syc">klasikinė sirų</language>
 			<language type="syr">sirų</language>
 			<language type="szl">sileziečių</language>
 			<language type="ta">tamilų</language>
@@ -545,7 +551,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="te">telugų</language>
 			<language type="tem">timne</language>
 			<language type="teo">teso</language>
-			<language type="ter">tereno</language>
+			<language type="ter">Tereno</language>
 			<language type="tet">tetum</language>
 			<language type="tg">tadžikų</language>
 			<language type="th">tajų</language>
@@ -553,27 +559,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tig">tigre</language>
 			<language type="tiv">tiv</language>
 			<language type="tk">turkmėnų</language>
-			<language type="tkl">tokelau</language>
+			<language type="tkl">Tokelau</language>
 			<language type="tkr">tsakurų</language>
 			<language type="tl">tagalogų</language>
 			<language type="tlh">klingonų</language>
-			<language type="tli">tlingit</language>
+			<language type="tli">tlingitų</language>
 			<language type="tly">talyšų</language>
 			<language type="tmh">tamašek</language>
-			<language type="tn">tsvana</language>
+			<language type="tn">tsvanų</language>
 			<language type="to">tonganų</language>
-			<language type="tog">niasa tongos</language>
-			<language type="tpi">tok pisin</language>
+			<language type="tog">niasa tongų</language>
+			<language type="tpi">Papua pidžinų</language>
 			<language type="tr">turkų</language>
 			<language type="tru">turoyo</language>
-			<language type="trv">taroko</language>
-			<language type="ts">tsonga</language>
+			<language type="trv">Taroko</language>
+			<language type="ts">tsongų</language>
 			<language type="tsd">tsakonų</language>
 			<language type="tsi">tsimšian</language>
 			<language type="tt">totorių</language>
 			<language type="ttt">musulmonų tatų</language>
 			<language type="tum">tumbukų</language>
-			<language type="tvl">tuvalu</language>
+			<language type="tvl">Tuvalu</language>
 			<language type="tw">tvi</language>
 			<language type="twq">tasavakų</language>
 			<language type="ty">taitiečių</language>
@@ -581,28 +587,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tzm">Centrinio Maroko tamazitų</language>
 			<language type="udm">udmurtų</language>
 			<language type="ug">uigūrų</language>
-			<language type="uga">ugaritic</language>
+			<language type="uga">ugaritų</language>
 			<language type="uk">ukrainiečių</language>
 			<language type="umb">umbundu</language>
 			<language type="und">nežinoma kalba</language>
 			<language type="ur">urdų</language>
 			<language type="uz">uzbekų</language>
 			<language type="vai">vai</language>
-			<language type="ve">venda</language>
+			<language type="ve">vendų</language>
 			<language type="vec">venetų</language>
 			<language type="vep">vepsų</language>
 			<language type="vi">vietnamiečių</language>
 			<language type="vls">vakarų flamandų</language>
 			<language type="vmf">pagrindinė frankonų</language>
-			<language type="vo">volapiuk</language>
-			<language type="vot">votik</language>
-			<language type="vro">võro</language>
+			<language type="vo">volapiuko</language>
+			<language type="vot">Votik</language>
+			<language type="vro">veru</language>
 			<language type="vun">vunjo</language>
 			<language type="wa">valonų</language>
 			<language type="wae">valserų</language>
 			<language type="wal">valamo</language>
 			<language type="war">varai</language>
-			<language type="was">vašo</language>
+			<language type="was">Vašo</language>
 			<language type="wbp">valrpiri</language>
 			<language type="wo">volofų</language>
 			<language type="wuu">kinų kalbos vu tarmė</language>
@@ -620,7 +626,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="yue">kinų kalbos Kantono tarmė</language>
 			<language type="za">chuang</language>
 			<language type="zap">zapotekų</language>
-			<language type="zbl">„Bliss“ simbolių</language>
+			<language type="zbl">BLISS simbolių</language>
 			<language type="zea">zelandų</language>
 			<language type="zen">zenaga</language>
 			<language type="zgh">standartinė Maroko tamazigtų</language>
@@ -628,7 +634,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zh_Hans">supaprastintoji kinų</language>
 			<language type="zh_Hant">tradicinė kinų</language>
 			<language type="zu">zulų</language>
-			<language type="zun">zuni</language>
+			<language type="zun">Zuni</language>
 			<language type="zxx">nėra kalbinio turinio</language>
 			<language type="zza">zaza</language>
 		</languages>
@@ -677,6 +683,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">graikų</script>
 			<script type="Gujr">gudžaratų</script>
 			<script type="Guru">gurmuki</script>
+			<script type="Hanb">hanbų</script>
 			<script type="Hang">hangul</script>
 			<script type="Hani">han</script>
 			<script type="Hano">hanuno</script>
@@ -692,6 +699,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hung">senasis vengrų</script>
 			<script type="Inds">indus</script>
 			<script type="Ital">senasis italų</script>
+			<script type="Jamo">Jamo simboliai</script>
 			<script type="Java">javiečių</script>
 			<script type="Jpan">japonų</script>
 			<script type="Jurc">Jurchen</script>
@@ -796,6 +804,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii">ji</script>
 			<script type="Zinh">paveldėtas</script>
 			<script type="Zmth">matematiniai simboliai</script>
+			<script type="Zsye">jaustukai</script>
 			<script type="Zsym">simbolių</script>
 			<script type="Zxxx">neparašyta</script>
 			<script type="Zyyy">bendri</script>
@@ -831,6 +840,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Rytų Europa</territory>
 			<territory type="154">Šiaurės Europa</territory>
 			<territory type="155">Vakarų Europa</territory>
+			<territory type="202">Užsachario Afrika</territory>
 			<territory type="419">Lotynų Amerika</territory>
 			<territory type="AC">Dangun Žengimo sala</territory>
 			<territory type="AD">Andora</territory>
@@ -893,6 +903,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CX">Kalėdų Sala</territory>
 			<territory type="CY">Kipras</territory>
 			<territory type="CZ">Čekija</territory>
+			<territory type="CZ" alt="variant">Čekijos Respublika</territory>
 			<territory type="DE">Vokietija</territory>
 			<territory type="DG">Diego Garsija</territory>
 			<territory type="DJ">Džibutis</territory>
@@ -909,6 +920,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Ispanija</territory>
 			<territory type="ET">Etiopija</territory>
 			<territory type="EU">Europos Sąjunga</territory>
+			<territory type="EZ">euro zona</territory>
 			<territory type="FI">Suomija</territory>
 			<territory type="FJ">Fidžis</territory>
 			<territory type="FK">Folklando Salos</territory>
@@ -917,8 +929,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="FO">Farerų Salos</territory>
 			<territory type="FR">Prancūzija</territory>
 			<territory type="GA">Gabonas</territory>
-			<territory type="GB">Didžioji Britanija</territory>
-			<territory type="GB" alt="short">Didžioji Britanija</territory>
+			<territory type="GB">Jungtinė Karalystė</territory>
+			<territory type="GB" alt="short">JK</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Gruzija</territory>
 			<territory type="GF">Prancūzijos Gviana</territory>
@@ -971,7 +983,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KZ">Kazachstanas</territory>
 			<territory type="LA">Laosas</territory>
 			<territory type="LB">Libanas</territory>
-			<territory type="LC">Šventoji Liucija</territory>
+			<territory type="LC">Sent Lusija</territory>
 			<territory type="LI">Lichtenšteinas</territory>
 			<territory type="LK">Šri Lanka</territory>
 			<territory type="LR">Liberija</territory>
@@ -1020,13 +1032,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="OM">Omanas</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
-			<territory type="PF">Prancūzų Polinezija</territory>
+			<territory type="PF">Prancūzijos Polinezija</territory>
 			<territory type="PG">Papua Naujoji Gvinėja</territory>
 			<territory type="PH">Filipinai</territory>
 			<territory type="PK">Pakistanas</territory>
 			<territory type="PL">Lenkija</territory>
 			<territory type="PM">Sen Pjeras ir Mikelonas</territory>
-			<territory type="PN">Pitkernas</territory>
+			<territory type="PN">Pitkerno salos</territory>
 			<territory type="PR">Puerto Rikas</territory>
 			<territory type="PS">Palestinos teritorija</territory>
 			<territory type="PS" alt="short">Palestina</territory>
@@ -1081,6 +1093,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Ukraina</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Jungtinių Valstijų Mažosios Tolimosios Salos</territory>
+			<territory type="UN">Jungtinės Tautos</territory>
+			<territory type="UN" alt="short">JT</territory>
 			<territory type="US">Jungtinės Valstijos</territory>
 			<territory type="US" alt="short">JAV</territory>
 			<territory type="UY">Urugvajus</territory>
@@ -1092,7 +1106,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="VI">Jungtinių Valstijų Mergelių Salos</territory>
 			<territory type="VN">Vietnamas</territory>
 			<territory type="VU">Vanuatu</territory>
-			<territory type="WF">Volisas ir Futuna</territory>
+			<territory type="WF">Volisas ir Futūna</territory>
 			<territory type="WS">Samoa</territory>
 			<territory type="XK">Kosovas</territory>
 			<territory type="YE">Jemenas</territory>
@@ -1139,11 +1153,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">kalendorius</key>
+			<key type="cf">valiutos formatas</key>
 			<key type="colAlternate">Rikiavimas nepaisant simbolių</key>
 			<key type="colBackwards">Atvirkštinis rikiavimas</key>
 			<key type="colCaseFirst">Didžiųjų / mažųjų raidžių tvarka</key>
 			<key type="colCaseLevel">Rikiavimas skiriant didžiąsias ir mažąsias raides</key>
-			<key type="colHiraganaQuaternary">Rikiavimas pagal kanos ženklus</key>
 			<key type="collation">rikiavimas</key>
 			<key type="colNormalization">Normalizuotas rikiavimas</key>
 			<key type="colNumeric">Skaitinis rikiavimas</key>
@@ -1155,7 +1169,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">skaičiai</key>
 			<key type="timezone">Laiko juosta</key>
 			<key type="va">Lokalės variantas</key>
-			<key type="variableTop">Rikiavimas simbolių principu</key>
 			<key type="x">Naudoti privačiai</key>
 		</keys>
 		<types>
@@ -1177,6 +1190,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">japonų kalendorius</type>
 			<type key="calendar" type="persian">persų kalendorius</type>
 			<type key="calendar" type="roc">Kinijos Respublikos kalendorius</type>
+			<type key="cf" type="account">apskaitos valiutos formatas</type>
+			<type key="cf" type="standard">standartinis valiutos formatas</type>
 			<type key="colAlternate" type="non-ignorable">Rikiuoti simbolius</type>
 			<type key="colAlternate" type="shifted">Rikiuoti nepaisant simbolių</type>
 			<type key="colBackwards" type="no">Rikiuoti diakritinius ženklus įprastai</type>
@@ -1186,12 +1201,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper">Rikiuoti suteikiant pirmumą didžiosioms raidėms</type>
 			<type key="colCaseLevel" type="no">Rikiuoti neskiriant didžiųjų ir mažųjų raidžių</type>
 			<type key="colCaseLevel" type="yes">Rikiuoti skiriant didžiąsias ir mažąsias raides</type>
-			<type key="colHiraganaQuaternary" type="no">Rikiuoti kanos ženklus atskirai</type>
-			<type key="colHiraganaQuaternary" type="yes">Rikiuoti kanos ženklus kitaip</type>
 			<type key="collation" type="big5han">įprasta kiniška rūšiavimo tvarka - Big5</type>
+			<type key="collation" type="compat">ankstesnė rūšiavimo tvarka, skirta suderinamumui</type>
 			<type key="collation" type="dictionary">žodyno rūšiavimo tvarka</type>
 			<type key="collation" type="ducet">numatytasis unikodo rikiavimas</type>
-			<type key="collation" type="eor" draft="unconfirmed">rūšiavimo tvarka daugiakalbės Europos dokumentų</type>
+			<type key="collation" type="eor">rūšiavimo tvarka daugiakalbės Europos dokumentų</type>
 			<type key="collation" type="gb2312han">supaprastinta kiniška rūšiavimo tvarka - GB2312</type>
 			<type key="collation" type="phonebook">telefonų knygos rūšiavimo tvarka</type>
 			<type key="collation" type="phonetic">Fonetinė rikiavimo tvarka</type>
@@ -1213,6 +1227,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary">Rikiuoti pagal didžiąsias ir mažąsias raides / plotį / diakritinius / kanos ženklus</type>
 			<type key="colStrength" type="secondary">Rikiuoti diakritinius ženklus</type>
 			<type key="colStrength" type="tertiary">Rikiuoti pagal diakritinius ženklus / didžiąsias ir mažąsias raides / plotį</type>
+			<type key="d0" type="fwidth">viso pločio</type>
+			<type key="d0" type="hwidth">vidutinio pločio</type>
+			<type key="d0" type="npinyin">Skaitinis</type>
 			<type key="hc" type="h11">12 valandų sistema (0–11)</type>
 			<type key="hc" type="h12">12 valandų sistema (1–12)</type>
 			<type key="hc" type="h23">24 valandų sistema (0–23)</type>
@@ -1220,6 +1237,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">laisvas teksto laužymo stilius</type>
 			<type key="lb" type="normal">įprastas teksto laužymo stilius</type>
 			<type key="lb" type="strict">griežtas teksto laužymo stilius</type>
+			<type key="m0" type="bgn">BGN simboliai</type>
+			<type key="m0" type="ungegn">UNGEGN simboliai</type>
 			<type key="ms" type="metric">metrinė sistema</type>
 			<type key="ms" type="uksystem">angliška matų sistema</type>
 			<type key="ms" type="ussystem">amerikietiška matų sistema</type>
@@ -1285,18 +1304,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional">Tradiciniai skaičiai</type>
 			<type key="numbers" type="vaii" draft="provisional">vai skaitmenys</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN">BGN simboliai</transformName>
-			<transformName type="Numeric">Skaitinis</transformName>
-			<transformName type="Tone">Tonas</transformName>
-			<transformName type="UNGEGN">UNGEGN simboliai</transformName>
-			<transformName type="x-Accents">Kirčiai</transformName>
-			<transformName type="x-Fullwidth">Viso pločio</transformName>
-			<transformName type="x-Halfwidth">Vidutinio pločio</transformName>
-			<transformName type="x-Jamo">Jamo simboliai</transformName>
-			<transformName type="x-Pinyin">Pinjino simboliai</transformName>
-			<transformName type="x-Publishing">Skelbimas</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">metrinė</measurementSystemName>
 			<measurementSystemName type="UK">JK</measurementSystemName>
@@ -1312,6 +1319,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a ą b c č d e ę ė f g h i į y j k l m n o p r s š t u ų ū v z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ã {ą\u0301} {ą\u0303} {ch} {dz} {dž} é è ẽ {ę\u0301} {ę\u0303} {ė\u0301} {ė\u0303} {i\u0307\u0301}í {i\u0307\u0300}ì {i\u0307\u0303}ĩ {į\u0301}{į\u0307\u0301} {į\u0303}{į\u0307\u0303} {j\u0303}{j\u0307\u0303} {l\u0303} {m\u0303} ñ ó ò õ q {r\u0303} ú ù ũ {ų\u0301} {ų\u0303} {ū\u0301} {ū\u0303} w x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A Ą B C Č D E Ę Ė F G H I Į Y J K L M N O P R S Š T U Ų Ū V Z Ž]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … “ „ ( ) \[ \] \{ \}]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1320,6 +1328,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>„</quotationStart>
@@ -1331,9 +1358,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<calendars>
 			<calendar type="buddhist">
 				<eras>
+					<eraNames>
+						<era type="0">BE</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">BE</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">BE</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="chinese">
@@ -1816,6 +1849,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<era type="0">ERA0</era>
 						<era type="1">ERA1</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">ERA0</era>
+						<era type="1">ERA1</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="dangi">
@@ -2298,6 +2335,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<era type="0">ERA0</era>
 						<era type="1">ERA1</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">ERA0</era>
+						<era type="1">ERA1</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="ethiopic-amete-alem">
@@ -2355,18 +2396,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">h:mm B, E</dateFormatItem>
+						<dateFormatItem id="EBhms">h:mm:ss B, E</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Ehm">h:mm a, E</dateFormatItem>
+						<dateFormatItem id="EHm">HH:mm, E</dateFormatItem>
+						<dateFormatItem id="Ehms">h:mm:ss a, E</dateFormatItem>
+						<dateFormatItem id="EHms">HH:mm:ss, E</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">y MMM G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">y MMM d G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">y MMM d G, E</dateFormatItem>
-						<dateFormatItem id="h">hh a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">LL</dateFormatItem>
 						<dateFormatItem id="Md">MM-dd</dateFormatItem>
@@ -2849,8 +2899,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">dd</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">h:mm B, E</dateFormatItem>
+						<dateFormatItem id="EBhms">h:mm:ss B, E</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">hh:mm a, E</dateFormatItem>
 						<dateFormatItem id="EHm">HH:mm, E</dateFormatItem>
@@ -2883,6 +2938,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMM">LLLL</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d 'd'.</dateFormatItem>
 						<dateFormatItem id="MMMMEd">MMMM d 'd'., E</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMM W 'sav'.</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few">MMM W 'sav'.</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="many">MMM W 'sav'.</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMM W 'sav'.</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">y-MM</dateFormatItem>
@@ -2896,6 +2955,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMMEd">y 'm'. MMMM d 'd'., E</dateFormatItem>
 						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y w 'sav'.</dateFormatItem>
+						<dateFormatItem id="yw" count="few">Y w 'sav'.</dateFormatItem>
+						<dateFormatItem id="yw" count="many">Y w 'sav'.</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y w 'sav'.</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -3122,9 +3185,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0">AM</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">AM</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">AM</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -3165,6 +3234,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="10">Pausa</month>
 							<month type="11">Magha</month>
 							<month type="12">Phalguna</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Chaitra</month>
@@ -3227,9 +3310,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0">Saka</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">Saka</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">Saka</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="islamic">
@@ -3324,9 +3413,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0">AH</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">AH</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">AH</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="japanese">
@@ -3663,22 +3758,42 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0">AP</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">AP</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">AP</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="roc">
 				<eras>
+					<eraNames>
+						<era type="0">Prieš R.O.C.</era>
+						<era type="1">R.O.C.</era>
+					</eraNames>
 					<eraAbbr>
 						<era type="0">Prieš R.O.C.</era>
 						<era type="1">R.O.C.</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">Prieš R.O.C.</era>
+						<era type="1">R.O.C.</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
+				<displayName>era</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>era</displayName>
+			</field>
+			<field type="era-narrow">
 				<displayName>era</displayName>
 			</field>
 			<field type="year">
@@ -3701,6 +3816,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="year-short">
 				<displayName>m.</displayName>
+				<relative type="-1" draft="contributed">praėjusiais metais</relative>
+				<relative type="0" draft="contributed">šiais metais</relative>
+				<relative type="1" draft="contributed">kitais metais</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} m.</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} m.</relativeTimePattern>
@@ -3711,11 +3829,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">prieš {0} m.</relativeTimePattern>
 					<relativeTimePattern count="few">prieš {0} m.</relativeTimePattern>
 					<relativeTimePattern count="many">prieš {0} m.</relativeTimePattern>
-					<relativeTimePattern count="other">prieš {0} metų</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} m.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName>m.</displayName>
+				<relative type="-1" draft="contributed">praėjusiais metais</relative>
+				<relative type="0" draft="contributed">šiais metais</relative>
+				<relative type="1" draft="contributed">kitais metais</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} m.</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} m.</relativeTimePattern>
@@ -3731,6 +3852,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>ketvirtis</displayName>
+				<relative type="-1">praėjęs ketvirtis</relative>
+				<relative type="0">šis ketvirtis</relative>
+				<relative type="1">kitas ketvirtis</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} ketvirčio</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} ketvirčių</relativeTimePattern>
@@ -3794,6 +3918,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="month-short">
 				<displayName>mėn.</displayName>
+				<relative type="-1" draft="contributed">praėjusį mėnesį</relative>
+				<relative type="0" draft="contributed">šį mėnesį</relative>
+				<relative type="1" draft="contributed">kitą mėnesį</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} mėn.</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} mėn.</relativeTimePattern>
@@ -3809,6 +3936,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="month-narrow">
 				<displayName>mėn.</displayName>
+				<relative type="-1" draft="contributed">praėjusį mėnesį</relative>
+				<relative type="0" draft="contributed">šį mėnesį</relative>
+				<relative type="1" draft="contributed">kitą mėnesį</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} mėn.</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} mėn.</relativeTimePattern>
@@ -3839,9 +3969,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="many">prieš {0} savaitės</relativeTimePattern>
 					<relativeTimePattern count="other">prieš {0} savaičių</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} savaitę</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>sav.</displayName>
+				<relative type="-1" draft="contributed">praėjusią savaitę</relative>
+				<relative type="0" draft="contributed">šią savaitę</relative>
+				<relative type="1" draft="contributed">kitą savaitę</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} sav.</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} sav.</relativeTimePattern>
@@ -3854,9 +3988,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="many">prieš {0} sav.</relativeTimePattern>
 					<relativeTimePattern count="other">prieš {0} sav.</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} savaitę</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>sav.</displayName>
+				<relative type="-1" draft="contributed">praėjusią savaitę</relative>
+				<relative type="0" draft="contributed">šią savaitę</relative>
+				<relative type="1" draft="contributed">kitą savaitę</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} sav.</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} sav.</relativeTimePattern>
@@ -3869,6 +4007,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="many">prieš {0} sav.</relativeTimePattern>
 					<relativeTimePattern count="other">prieš {0} sav.</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} savaitę</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>mėnesio savaitė</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>mėnesio savaitė</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>mėnesio savaitė</displayName>
 			</field>
 			<field type="day">
 				<displayName>diena</displayName>
@@ -3892,6 +4040,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="day-short">
 				<displayName>d.</displayName>
+				<relative type="-2" draft="contributed">užvakar</relative>
+				<relative type="-1" draft="contributed">vakar</relative>
+				<relative type="0" draft="contributed">šiandien</relative>
+				<relative type="1" draft="contributed">rytoj</relative>
+				<relative type="2" draft="contributed">poryt</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} d.</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} d.</relativeTimePattern>
@@ -3907,6 +4060,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="day-narrow">
 				<displayName>d.</displayName>
+				<relative type="-2" draft="contributed">užvakar</relative>
+				<relative type="-1" draft="contributed">vakar</relative>
+				<relative type="0" draft="contributed">šiandien</relative>
+				<relative type="1" draft="contributed">rytoj</relative>
+				<relative type="2" draft="contributed">poryt</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} d.</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} d.</relativeTimePattern>
@@ -3920,119 +4078,402 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">prieš {0} d.</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>metų diena</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>metų diena</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>metų diena</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>savaitės diena</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>savaitės diena</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>savaitės diena</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>mėnesio šiokiadienis</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>mėnesio šiokiadienis</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>mėnesio šiokiadienis</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">praėjusį sekmadienį</relative>
 				<relative type="0">šį sekmadienį</relative>
 				<relative type="1">kitą sekmadienį</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} sekmadienio</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} sekmadienių</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} sekmadienio</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} sekmadienių</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} sekmadienį</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} sekmadienius</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} sekmadienio</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} sekmadienių</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">praėjusį sekm.</relative>
 				<relative type="0">šį sekm.</relative>
 				<relative type="1">kitą sekm.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} sekm.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} sekm.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">praėjusį sekm.</relative>
 				<relative type="0">šį sekm.</relative>
 				<relative type="1">kitą sekm.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} sekm.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} sekm.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} sekm.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">praėjusį pirmadienį</relative>
 				<relative type="0">šį pirmadienį</relative>
 				<relative type="1">kitą pirmadienį</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} pirmadienio</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} pirmadienių</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} pirmadienio</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} pirmadienių</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} pirmadienį</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} pirmadienius</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} pirmadienio</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} pirmadienių</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">praėjusį pirm.</relative>
 				<relative type="0">šį pirm.</relative>
 				<relative type="1">kitą pirm.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} pirm.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} pirm.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">praėjusį pirm.</relative>
 				<relative type="0">šį pirm.</relative>
 				<relative type="1">kitą pirm.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} pirm.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} pirm.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} pirm.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">praėjusį antradienį</relative>
 				<relative type="0">šį antradienį</relative>
 				<relative type="1">kitą antradienį</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} antradienio</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} antradienių</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} antradienio</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} antradienių</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} antradienį</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} antradienius</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} antradienio</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} antradienių</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">praėjusį antr.</relative>
 				<relative type="0">šį antr.</relative>
 				<relative type="1">kitą antr.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} antr.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} antr.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">praėjusį antr.</relative>
 				<relative type="0">šį antr.</relative>
 				<relative type="1">kitą antr.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} antr.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} antr.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} antr.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">praėjusį trečiadienį</relative>
 				<relative type="0">šį trečiadienį</relative>
 				<relative type="1">kitą trečiadienį</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} trečiadienio</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} trečiadienių</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} trečiadienio</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} trečiadienių</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} trečiadienį</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} trečiadienius</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} trečiadienio</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} trečiadienių</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">praėjusį treč.</relative>
 				<relative type="0">šį treč.</relative>
 				<relative type="1">kitą treč.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} treč.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} treč.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">praėjusį treč.</relative>
 				<relative type="0">šį treč.</relative>
 				<relative type="1">kitą treč.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} treč.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} treč.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} treč.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">praėjusį ketvirtadienį</relative>
 				<relative type="0">šį ketvirtadienį</relative>
 				<relative type="1">kitą ketvirtadienį</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} ketvirtadienio</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} ketvirtadienių</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} ketvirtadienio</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} ketvirtadienių</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} ketvirtadienį</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} ketvirtadienius</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} ketvirtadienio</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} ketvirtadienių</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">praėjusį ketv.</relative>
 				<relative type="0">šį ketv.</relative>
 				<relative type="1">kitą ketv.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} ketv.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} ketv.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">praėjusį ketv.</relative>
 				<relative type="0">šį ketv.</relative>
 				<relative type="1">kitą ketv.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} ketv.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} ketv.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} ketv.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">praėjusį penktadienį</relative>
 				<relative type="0">šį penktadienį</relative>
 				<relative type="1">kitą penktadienį</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} penktadienio</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} penktadienių</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} penktadienio</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} penktadienių</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} penktadienį</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} penktadienius</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} penktadienio</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} penktadienių</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">praėjusį penkt.</relative>
 				<relative type="0">šį penkt.</relative>
 				<relative type="1">kitą penkt.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} penkt.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} penkt.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">praėjusį penkt.</relative>
 				<relative type="0">šį penkt.</relative>
 				<relative type="1">kitą penkt.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} penkt.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} penkt.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} penkt.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">praėjusį šeštadienį</relative>
 				<relative type="0">šį šeštadienį</relative>
 				<relative type="1">kitą šeštadienį</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} šeštadienio</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} šeštadienių</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} šeštadienio</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} šeštadienių</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} šeštadienį</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} šeštadienius</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} šeštadienio</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} šeštadienių</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">praėjusį šešt.</relative>
 				<relative type="0">šį šešt.</relative>
 				<relative type="1">kitą šešt.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} šešt.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} šešt.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">praėjusį šešt.</relative>
 				<relative type="0">šį šešt.</relative>
 				<relative type="1">kitą šešt.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">po {0} šeštadienio</relativeTimePattern>
+					<relativeTimePattern count="few">po {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="many">po {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="other">po {0} šešt.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">prieš {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="few">prieš {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="many">prieš {0} šešt.</relativeTimePattern>
+					<relativeTimePattern count="other">prieš {0} šešt.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>iki pietų / po pietų</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>iki pietų / po pietų</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>iki pietų / po pietų</displayName>
+			</field>
 			<field type="hour">
 				<displayName>valanda</displayName>
+				<relative type="0">šią valandą</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} valandos</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} valandų</relativeTimePattern>
@@ -4078,6 +4519,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>minutė</displayName>
+				<relative type="0">šią minutę</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">po {0} minutės</relativeTimePattern>
 					<relativeTimePattern count="few">po {0} minučių</relativeTimePattern>
@@ -4170,6 +4612,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>laiko juosta</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>laiko juosta</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>laiko juosta</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;−HH:mm</hourFormat>
@@ -4179,6 +4627,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">Vasaros laikas: {0}</regionFormat>
 			<regionFormat type="standard">Žiemos laikas: {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Izabelė</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>pasaulio suderintasis laikas</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>nežinomas miestas</exemplarCity>
 			</zone>
@@ -4443,6 +4902,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>Vankuveris</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelsonas</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Doson Krikas</exemplarCity>
 			</zone>
@@ -4539,6 +5001,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Velykų sala</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenasas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santjagas</exemplarCity>
 			</zone>
@@ -4571,6 +5036,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nikosija</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Praha</exemplarCity>
@@ -4830,6 +5298,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>Uralskas</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atyrau</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aktiubinskas</exemplarCity>
 			</zone>
@@ -4943,9 +5414,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Tichuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Izabelė</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosiljas</exemplarCity>
@@ -5112,6 +5580,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgogradas</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratovas</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrachanė</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Uljanovskas</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirovas</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -5123,6 +5603,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirskas</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaulas</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomskas</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuzneckas</exemplarCity>
@@ -5292,9 +5778,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midvėjus</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Džonstonas</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Veiko sala</exemplarCity>
 			</zone>
@@ -5304,8 +5787,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nomas</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Džonstonas</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankoridžas</exemplarCity>
@@ -6210,6 +6693,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>Ponapės laikas</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pchenjano laikas</standard>
+				</long>
+			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
 					<generic>Kyzylordos laikas</generic>
@@ -7020,14 +7508,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="many">Baltarusijos naujojo rublio (1994–1999)</displayName>
 				<displayName count="other">Baltarusijos naujųjų rublių</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Baltarusijos rublis</displayName>
 				<displayName count="one">Baltarusijos rublis</displayName>
 				<displayName count="few">Baltarusijos rubliai</displayName>
 				<displayName count="many">Baltarusijos rublio</displayName>
 				<displayName count="other">Baltarusijos rublių</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">Br</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Baltarusijos rublis (2000–2016)</displayName>
+				<displayName count="one">Baltarusijos rublis (2000–2016)</displayName>
+				<displayName count="few">Baltarusijos rubliai (2000–2016)</displayName>
+				<displayName count="many">Baltarusijos rublio (2000–2016)</displayName>
+				<displayName count="other">Baltarusijos rublių (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belizo doleris</displayName>
@@ -7099,6 +7595,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Čilės pesų</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>Kinijos Užsienio juanis</displayName>
+				<displayName count="one">Kinijos Užsienio juanis</displayName>
+				<displayName count="few">Kinijos Užsienio juaniai</displayName>
+				<displayName count="many">Kinijos Užsienio juanio</displayName>
+				<displayName count="other">Kinijos Užsienio juanių</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName>Kinijos &quot;People&quot; banko doleris</displayName>
@@ -7376,7 +7880,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="many">Gruzijos lario</displayName>
 				<displayName count="other">Gruzijos larių</displayName>
 				<symbol>GEL</symbol>
-				<symbol alt="variant" draft="provisional">₾</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
+				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Ganos sedis (1979–2007)</displayName>
@@ -7932,12 +8437,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Mauritanijos ugija (1973–2017)</displayName>
+				<displayName count="one">Mauritanijos ugija (1973–2017)</displayName>
+				<displayName count="few">Mauritanijos ugijos (1973–2017)</displayName>
+				<displayName count="many">Mauritanijos ugijos (1973–2017)</displayName>
+				<displayName count="other">Mauritanijos ugijų (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Mauritanijos ugija</displayName>
 				<displayName count="one">Mauritanijos ugija</displayName>
 				<displayName count="few">Mauritanijos ugijos</displayName>
 				<displayName count="many">Mauritanijos ugijos</displayName>
 				<displayName count="other">Mauritanijos ugijų</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Maltos lira</displayName>
@@ -8131,11 +8643,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Peru intis</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>Peru naujasis solis</displayName>
-				<displayName count="one">Peru naujasis solis</displayName>
-				<displayName count="few">Peru naujieji soliai</displayName>
-				<displayName count="many">Peru naujojo solio</displayName>
-				<displayName count="other">Peru naujųjų solių</displayName>
+				<displayName>Peru solis</displayName>
+				<displayName count="one">Peru solis</displayName>
+				<displayName count="few">Peru soliai</displayName>
+				<displayName count="many">Peru solio</displayName>
+				<displayName count="other">Peru solių</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
@@ -8232,6 +8744,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="many">Rumunijos lėjos</displayName>
 				<displayName count="other">Rumunijos lėjų</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Serbijos dinaras</displayName>
@@ -8397,12 +8910,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>San Tomės ir Principės dobra (1977–2017)</displayName>
+				<displayName count="one">San Tomės ir Principės dobra (1977–2017)</displayName>
+				<displayName count="few">San Tomės ir Principės dobros (1977–2017)</displayName>
+				<displayName count="many">San Tomės ir Principės dobros (1977–2017)</displayName>
+				<displayName count="other">Sao Tomės ir Principės dobrų (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>San Tomės ir Principės dobra</displayName>
 				<displayName count="one">San Tomės ir Principės dobra</displayName>
 				<displayName count="few">San Tomės ir Principės dobros</displayName>
 				<displayName count="many">San Tomės ir Principės dobros</displayName>
 				<displayName count="other">Sao Tomės ir Principės dobrų</displayName>
-				<symbol>STD</symbol>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -8938,6 +9459,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">⩾{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} obuolys</pluralMinimalPairs>
+			<pluralMinimalPairs count="few">{0} obuoliai</pluralMinimalPairs>
+			<pluralMinimalPairs count="many">{0} obuolio</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} obuolių</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}-ame posūkyje sukite į dešinę.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -8954,7 +9482,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="acceleration-meter-per-second-squared">
 				<displayName>metrai per kvadratinę sekundę</displayName>
 				<unitPattern count="one">{0} metras per kvadratinę sekundę</unitPattern>
-				<unitPattern count="few">{0} metrai per kvadratinęsekundę</unitPattern>
+				<unitPattern count="few">{0} metrai per kvadratinę sekundę</unitPattern>
 				<unitPattern count="many">{0} metro per kvadratinę sekundę</unitPattern>
 				<unitPattern count="other">{0} metrų per kvadratinę sekundę</unitPattern>
 			</unit>
@@ -8999,6 +9527,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} kvadratiniai kilometrai</unitPattern>
 				<unitPattern count="many">{0} kvadratinio kilometro</unitPattern>
 				<unitPattern count="other">{0} kvadratinių kilometrų</unitPattern>
+				<perUnitPattern>{0} kv. km</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektarai</displayName>
@@ -9029,6 +9558,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} kvadratinės mylios</unitPattern>
 				<unitPattern count="many">{0} kvadratinės mylios</unitPattern>
 				<unitPattern count="other">{0} kvadratinių mylių</unitPattern>
+				<perUnitPattern>{0} kv. my</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akrai</displayName>
@@ -9066,6 +9596,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="many">{0} karato</unitPattern>
 				<unitPattern count="other">{0} karatų</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>miligramai decilitre</displayName>
+				<unitPattern count="one">{0} miligramas decilitre</unitPattern>
+				<unitPattern count="few">{0} miligramai decilitre</unitPattern>
+				<unitPattern count="many">{0} miligramo decilitre</unitPattern>
+				<unitPattern count="other">{0} miligramų decilitre</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>milimoliai litre</displayName>
+				<unitPattern count="one">{0} milimolis litre</unitPattern>
+				<unitPattern count="few">{0} milimoliai litre</unitPattern>
+				<unitPattern count="many">{0} milimoliai litre</unitPattern>
+				<unitPattern count="other">{0} milimolių litre</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>milijoninės dalys</displayName>
+				<unitPattern count="one">{0} milijoninė dalis</unitPattern>
+				<unitPattern count="few">{0} milijoninės dalys</unitPattern>
+				<unitPattern count="many">{0} milijoninės dalies</unitPattern>
+				<unitPattern count="other">{0} milijoninių dalių</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litrai kilometrui</displayName>
 				<unitPattern count="one">{0} litras kilometrui</unitPattern>
@@ -9086,6 +9637,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} mylios už galoną</unitPattern>
 				<unitPattern count="many">{0} mylios už galoną</unitPattern>
 				<unitPattern count="other">{0} mylių už galoną</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mylios už imperinį galoną</displayName>
+				<unitPattern count="one">{0} mylia už imperinį galoną</unitPattern>
+				<unitPattern count="few">{0} mylios už imperinį galoną</unitPattern>
+				<unitPattern count="many">{0} mylios už imperinį galoną</unitPattern>
+				<unitPattern count="other">{0} mylių už imperinį galoną</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabaitai</displayName>
@@ -9477,6 +10035,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="many">{0} ilgosios mylios</unitPattern>
 				<unitPattern count="other">{0} ilgųjų mylių</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>punktai</displayName>
+				<unitPattern count="one">{0} punktas</unitPattern>
+				<unitPattern count="few">{0} punktai</unitPattern>
+				<unitPattern count="many">{0} punktų</unitPattern>
+				<unitPattern count="other">{0} punkto</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>liuksai</displayName>
 				<unitPattern count="one">{0} liuksas</unitPattern>
@@ -9828,6 +10393,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} galonų</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>imperinis galonas</displayName>
+				<unitPattern count="one">{0} imperinis galonas</unitPattern>
+				<unitPattern count="few">{0} imperiniai galonai</unitPattern>
+				<unitPattern count="many">{0} imperinio galono</unitPattern>
+				<unitPattern count="other">{0} imperinių galonų</unitPattern>
+				<perUnitPattern>{0} imperiniame galone</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>kvortos</displayName>
 				<unitPattern count="one">{0} kvorta</unitPattern>
@@ -9871,10 +10444,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} arbatinių šaukštelių</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0} W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} rytų</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} šiaurės</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} pietų</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} vakarų</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -9936,6 +10509,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} kv. km</unitPattern>
 				<unitPattern count="many">{0} kv. km</unitPattern>
 				<unitPattern count="other">{0} kv. km</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektarai</displayName>
@@ -9966,6 +10540,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} kv. my</unitPattern>
 				<unitPattern count="many">{0} kv. my</unitPattern>
 				<unitPattern count="other">{0} kv. my</unitPattern>
+				<perUnitPattern>{0}/my²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akrai</displayName>
@@ -10003,6 +10578,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="many">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dl</displayName>
+				<unitPattern count="one">{0} mg/dl</unitPattern>
+				<unitPattern count="few">{0} mg/dl</unitPattern>
+				<unitPattern count="many">{0} mg/dl</unitPattern>
+				<unitPattern count="other">{0} mg/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/l</displayName>
+				<unitPattern count="one">{0} mmol/l</unitPattern>
+				<unitPattern count="few">{0} mmol/l</unitPattern>
+				<unitPattern count="many">{0} mmol/l</unitPattern>
+				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="few">{0} ppm</unitPattern>
+				<unitPattern count="many">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="one">{0} l/km</unitPattern>
@@ -10018,11 +10614,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>mi/gal</displayName>
-				<unitPattern count="one">{0} mi/gal</unitPattern>
-				<unitPattern count="few">{0} mi/gal</unitPattern>
-				<unitPattern count="many">{0} mi/gal</unitPattern>
-				<unitPattern count="other">{0} mi/gal</unitPattern>
+				<displayName>my/gal</displayName>
+				<unitPattern count="one">{0} my/gal</unitPattern>
+				<unitPattern count="few">{0} my/gal</unitPattern>
+				<unitPattern count="many">{0} my/gal</unitPattern>
+				<unitPattern count="other">{0} my/gal</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>my/imp. g</displayName>
+				<unitPattern count="one">{0} my/imp. g</unitPattern>
+				<unitPattern count="few">{0} my/imp. g</unitPattern>
+				<unitPattern count="many">{0} my/imp. g</unitPattern>
+				<unitPattern count="other">{0} my/imp. g</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -10414,6 +11017,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="many">{0} IM</unitPattern>
 				<unitPattern count="other">{0} IM</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="few">{0} pt</unitPattern>
+				<unitPattern count="many">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
@@ -10765,6 +11375,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>imp. galonas</displayName>
+				<unitPattern count="one">{0} imp. galonas</unitPattern>
+				<unitPattern count="few">{0} imp. galonai</unitPattern>
+				<unitPattern count="many">{0} imp. galono</unitPattern>
+				<unitPattern count="other">{0} imp. galonų</unitPattern>
+				<perUnitPattern>{0}/imp. galone</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>kvortos</displayName>
 				<unitPattern count="one">{0} kvorta</unitPattern>
@@ -10808,10 +11426,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} a. š.</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0} W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} R</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} Š</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} P</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} V</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -10819,10 +11437,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName>G</displayName>
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="few">{0} G</unitPattern>
 				<unitPattern count="many">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-second-squared">
+				<displayName>m/s²</displayName>
+				<unitPattern count="one">{0} m/s²</unitPattern>
+				<unitPattern count="few">{0} m/s²</unitPattern>
+				<unitPattern count="many">{0} m/s²</unitPattern>
+				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<unitPattern count="one">{0}°</unitPattern>
@@ -10891,12 +11517,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="many">{0} mi/gal</unitPattern>
 				<unitPattern count="other">{0} mi/gal</unitPattern>
 			</unit>
+			<unit type="duration-century">
+				<displayName draft="contributed">a.</displayName>
+				<unitPattern count="one" draft="contributed">{0} a.</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} a.</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} a.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} a.</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>metai</displayName>
 				<unitPattern count="one">{0} m.</unitPattern>
 				<unitPattern count="few">{0} m.</unitPattern>
 				<unitPattern count="many">{0} m.</unitPattern>
 				<unitPattern count="other">{0} m.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/m.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mėnuo</displayName>
@@ -10904,6 +11538,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} mėn.</unitPattern>
 				<unitPattern count="many">{0} mėn.</unitPattern>
 				<unitPattern count="other">{0} mėn.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/mėn.</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>sav.</displayName>
@@ -10911,6 +11546,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} sav.</unitPattern>
 				<unitPattern count="many">{0} sav.</unitPattern>
 				<unitPattern count="other">{0} sav.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/sav.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>diena</displayName>
@@ -10918,6 +11554,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} d.</unitPattern>
 				<unitPattern count="many">{0} d.</unitPattern>
 				<unitPattern count="other">{0} d.</unitPattern>
+				<perUnitPattern>{0}/d.</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>valanda</displayName>
@@ -10925,6 +11562,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} h</unitPattern>
 				<unitPattern count="many">{0} h</unitPattern>
 				<unitPattern count="other">{0} h</unitPattern>
+				<perUnitPattern>{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>min.</displayName>
@@ -10932,6 +11570,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} min.</unitPattern>
 				<unitPattern count="many">{0} min.</unitPattern>
 				<unitPattern count="other">{0} min.</unitPattern>
+				<perUnitPattern>{0}/min.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sek.</displayName>
@@ -10939,6 +11578,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} s</unitPattern>
 				<unitPattern count="many">{0} s</unitPattern>
 				<unitPattern count="other">{0} s</unitPattern>
+				<perUnitPattern draft="contributed">{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>milisek.</displayName>
@@ -10947,12 +11587,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="many">{0} ms</unitPattern>
 				<unitPattern count="other">{0} ms</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="contributed">μs</displayName>
+				<unitPattern count="one" draft="contributed">{0} μs</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} μs</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} μs</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="contributed">nanosek.</displayName>
+				<unitPattern count="one" draft="contributed">{0} ns</unitPattern>
+				<unitPattern count="few" draft="contributed">{0} ns</unitPattern>
+				<unitPattern count="many" draft="contributed">{0} ns</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ns</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
 				<unitPattern count="few">{0} km</unitPattern>
 				<unitPattern count="many">{0} km</unitPattern>
 				<unitPattern count="other">{0} km</unitPattern>
+				<perUnitPattern>{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
@@ -10960,6 +11615,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} m</unitPattern>
 				<unitPattern count="many">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>dm</displayName>
+				<unitPattern count="one">{0} dm</unitPattern>
+				<unitPattern count="few">{0} dm</unitPattern>
+				<unitPattern count="many">{0} dm</unitPattern>
+				<unitPattern count="other">{0} dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>cm</displayName>
@@ -10967,6 +11630,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} cm</unitPattern>
 				<unitPattern count="many">{0} cm</unitPattern>
 				<unitPattern count="other">{0} cm</unitPattern>
+				<perUnitPattern>{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
@@ -10982,28 +11646,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<unitPattern count="one">{0} my</unitPattern>
-				<unitPattern count="few">{0} my</unitPattern>
-				<unitPattern count="many">{0} my</unitPattern>
-				<unitPattern count="other">{0} my</unitPattern>
+				<displayName>mi</displayName>
+				<unitPattern count="one">{0} mi</unitPattern>
+				<unitPattern count="few">{0} mi</unitPattern>
+				<unitPattern count="many">{0} mi</unitPattern>
+				<unitPattern count="other">{0} mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName>yd</displayName>
 				<unitPattern count="one">{0} yd</unitPattern>
 				<unitPattern count="few">{0} yd</unitPattern>
 				<unitPattern count="many">{0} yd</unitPattern>
 				<unitPattern count="other">{0} yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName>pėda</displayName>
 				<unitPattern count="one">{0} ft</unitPattern>
 				<unitPattern count="few">{0} ft</unitPattern>
 				<unitPattern count="many">{0} ft</unitPattern>
 				<unitPattern count="other">{0} ft</unitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName>coliai</displayName>
 				<unitPattern count="one">{0} in</unitPattern>
 				<unitPattern count="few">{0} in</unitPattern>
 				<unitPattern count="many">{0} in</unitPattern>
 				<unitPattern count="other">{0} in</unitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="one">{0} šm.</unitPattern>
@@ -11025,12 +11695,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="many">{0} ftm</unitPattern>
 				<unitPattern count="other">{0} ftm</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>IM</displayName>
+				<unitPattern count="one">{0} IM</unitPattern>
+				<unitPattern count="few">{0} IM</unitPattern>
+				<unitPattern count="many">{0} IM</unitPattern>
+				<unitPattern count="other">{0} IM</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
 				<unitPattern count="one">{0} kg</unitPattern>
 				<unitPattern count="few">{0} kg</unitPattern>
 				<unitPattern count="many">{0} kg</unitPattern>
 				<unitPattern count="other">{0} kg</unitPattern>
+				<perUnitPattern>{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>g</displayName>
@@ -11038,6 +11716,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} g</unitPattern>
 				<unitPattern count="many">{0} g</unitPattern>
 				<unitPattern count="other">{0} g</unitPattern>
+				<perUnitPattern>{0}/g</perUnitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>st</displayName>
@@ -11047,16 +11726,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
+				<displayName>lb</displayName>
 				<unitPattern count="one">{0} lb</unitPattern>
 				<unitPattern count="few">{0} lb</unitPattern>
 				<unitPattern count="many">{0} lb</unitPattern>
 				<unitPattern count="other">{0} lb</unitPattern>
+				<perUnitPattern>{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName>oz</displayName>
 				<unitPattern count="one">{0} oz</unitPattern>
 				<unitPattern count="few">{0} oz</unitPattern>
 				<unitPattern count="many">{0} oz</unitPattern>
 				<unitPattern count="other">{0} oz</unitPattern>
+				<perUnitPattern>{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="one">{0} kW</unitPattern>
@@ -11077,24 +11760,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} AG</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="few">{0} hPa</unitPattern>
 				<unitPattern count="many">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-of-mercury">
+				<displayName>mm Hg</displayName>
 				<unitPattern count="one">{0} mm Hg</unitPattern>
 				<unitPattern count="few">{0} mm Hg</unitPattern>
 				<unitPattern count="many">{0} mm Hg</unitPattern>
 				<unitPattern count="other">{0} mm Hg</unitPattern>
 			</unit>
+			<unit type="pressure-pound-per-square-inch">
+				<displayName>lb in²</displayName>
+				<unitPattern count="one">{0} lb in²</unitPattern>
+				<unitPattern count="few">{0} lb in²</unitPattern>
+				<unitPattern count="many">{0} lb in²</unitPattern>
+				<unitPattern count="other">{0} lb in²</unitPattern>
+			</unit>
 			<unit type="pressure-inch-hg">
+				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="few">{0} inHg</unitPattern>
 				<unitPattern count="many">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<displayName>mbar</displayName>
 				<unitPattern count="one">{0} mbar</unitPattern>
 				<unitPattern count="few">{0} mbar</unitPattern>
 				<unitPattern count="many">{0} mbar</unitPattern>
@@ -11108,16 +11802,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName>m/s</displayName>
 				<unitPattern count="one">{0} m/s</unitPattern>
 				<unitPattern count="few">{0} m/s</unitPattern>
 				<unitPattern count="many">{0} m/s</unitPattern>
 				<unitPattern count="other">{0} m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<unitPattern count="one">{0} my/h</unitPattern>
-				<unitPattern count="few">{0} my/h</unitPattern>
-				<unitPattern count="many">{0} my/h</unitPattern>
-				<unitPattern count="other">{0} my/h</unitPattern>
+				<displayName>mi/h</displayName>
+				<unitPattern count="one">{0} mi/h</unitPattern>
+				<unitPattern count="few">{0} mi/h</unitPattern>
+				<unitPattern count="many">{0} mi/h</unitPattern>
+				<unitPattern count="other">{0} mi/h</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>mazgas</displayName>
+				<unitPattern count="one">{0} KN</unitPattern>
+				<unitPattern count="few">{0} KN</unitPattern>
+				<unitPattern count="many">{0} KN</unitPattern>
+				<unitPattern count="other">{0} KN</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="few">{0}°</unitPattern>
+				<unitPattern count="many">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
@@ -11127,6 +11837,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName>°F</displayName>
 				<unitPattern count="one">{0}°F</unitPattern>
 				<unitPattern count="few">{0}°F</unitPattern>
 				<unitPattern count="many">{0}°F</unitPattern>
@@ -11185,10 +11896,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} fl oz</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0} W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} R</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} Š</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} P</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} V</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -11203,6 +11914,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</units>
 	<listPatterns>
 		<listPattern>
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ir {1}</listPatternPart>
+			<listPatternPart type="2">{0} ir {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ar {1}</listPatternPart>
+			<listPatternPart type="2">{0} ar {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} ir {1}</listPatternPart>
@@ -11233,5 +11956,105 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>ne:n</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} – visi</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} – suderinamumas</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} – pridedamas</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} – išplėstas</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} – istorinis</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} – įvairus</characterLabelPattern>
+		<characterLabelPattern type="other">{0} – kitas</characterLabelPattern>
+		<characterLabelPattern type="scripts">raštai – {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} brūkšnys</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="few">{0} brūkšniai</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="many">{0} brūkšnio</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} brūkšnių</characterLabelPattern>
+		<characterLabel type="activities">veikla</characterLabel>
+		<characterLabel type="african_scripts">afrikietiški raštai</characterLabel>
+		<characterLabel type="american_scripts">amerikietiški raštai</characterLabel>
+		<characterLabel type="animal">gyvūnas</characterLabel>
+		<characterLabel type="animals_nature">gyvūnai ir gamta</characterLabel>
+		<characterLabel type="arrows">rodyklės</characterLabel>
+		<characterLabel type="body">kūnas</characterLabel>
+		<characterLabel type="box_drawing">laukelių piešimas</characterLabel>
+		<characterLabel type="braille">Brailis</characterLabel>
+		<characterLabel type="building">statymas</characterLabel>
+		<characterLabel type="bullets_stars">punktuacija / žvaigždutės</characterLabel>
+		<characterLabel type="consonantal_jamo">priebalsė, balsė</characterLabel>
+		<characterLabel type="currency_symbols">valiutos simboliai</characterLabel>
+		<characterLabel type="dash_connector">brūkšnys / jungtukas</characterLabel>
+		<characterLabel type="digits">skaitmenys</characterLabel>
+		<characterLabel type="dingbats">šriftai</characterLabel>
+		<characterLabel type="divination_symbols">vudu simboliai</characterLabel>
+		<characterLabel type="downwards_arrows">rodyklės žemyn</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">rodyklės žemyn ir aukštyn</characterLabel>
+		<characterLabel type="east_asian_scripts">Rytų Azijos raštai</characterLabel>
+		<characterLabel type="emoji">jaustukas</characterLabel>
+		<characterLabel type="european_scripts">europietiški raštai</characterLabel>
+		<characterLabel type="female">moteris</characterLabel>
+		<characterLabel type="flag">vėliava</characterLabel>
+		<characterLabel type="flags">vėliavėlės</characterLabel>
+		<characterLabel type="food_drink">maistas ir gėrimai</characterLabel>
+		<characterLabel type="format">formatas</characterLabel>
+		<characterLabel type="format_whitespace">formatas ir tarpai</characterLabel>
+		<characterLabel type="full_width_form_variant">visapločiai formos variantai</characterLabel>
+		<characterLabel type="geometric_shapes">geometrinės figūros</characterLabel>
+		<characterLabel type="half_width_form_variant">pusės ploto formos variantai</characterLabel>
+		<characterLabel type="han_characters">han simboliai</characterLabel>
+		<characterLabel type="han_radicals">han radikalai</characterLabel>
+		<characterLabel type="hanja">handža</characterLabel>
+		<characterLabel type="hanzi_simplified">hanzi (supaprastinta)</characterLabel>
+		<characterLabel type="hanzi_traditional">hanzi (tradicinė)</characterLabel>
+		<characterLabel type="heart">širdelė</characterLabel>
+		<characterLabel type="historic_scripts">istoriniai raštai</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ideografiniai apr. ženklai</characterLabel>
+		<characterLabel type="japanese_kana">japonų kalba</characterLabel>
+		<characterLabel type="kanbun">kanbun</characterLabel>
+		<characterLabel type="kanji">kanji</characterLabel>
+		<characterLabel type="keycap">mygtukas</characterLabel>
+		<characterLabel type="leftwards_arrows">rodyklės į kairę</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">rodyklės į kairę ir dešinę</characterLabel>
+		<characterLabel type="letterlike_symbols">raidiniai simboliai</characterLabel>
+		<characterLabel type="limited_use">riboto naudojimo</characterLabel>
+		<characterLabel type="male">vyras</characterLabel>
+		<characterLabel type="math_symbols">matematiniai simboliai</characterLabel>
+		<characterLabel type="middle_eastern_scripts">Artimųjų Rytų raštai</characterLabel>
+		<characterLabel type="miscellaneous">įvairūs</characterLabel>
+		<characterLabel type="modern_scripts">modernieji raštai</characterLabel>
+		<characterLabel type="modifier">modifikatorius</characterLabel>
+		<characterLabel type="musical_symbols">muzikiniai simboliai</characterLabel>
+		<characterLabel type="nature">gamta</characterLabel>
+		<characterLabel type="nonspacing">be tarpų</characterLabel>
+		<characterLabel type="numbers">skaičiai</characterLabel>
+		<characterLabel type="objects">objektai</characterLabel>
+		<characterLabel type="other">kita</characterLabel>
+		<characterLabel type="paired">suporuoti</characterLabel>
+		<characterLabel type="person">asmuo</characterLabel>
+		<characterLabel type="phonetic_alphabet">fonetinis alfabetas</characterLabel>
+		<characterLabel type="pictographs">ženklai</characterLabel>
+		<characterLabel type="place">vieta</characterLabel>
+		<characterLabel type="plant">augalas</characterLabel>
+		<characterLabel type="punctuation">skyryba</characterLabel>
+		<characterLabel type="rightwards_arrows">rodyklės į dešinę</characterLabel>
+		<characterLabel type="sign_standard_symbols">ženklas / standartiniai simboliai</characterLabel>
+		<characterLabel type="small_form_variant">mažos formos variantai</characterLabel>
+		<characterLabel type="smiley">šypsenėlė</characterLabel>
+		<characterLabel type="smileys_people">veidukai ir žmonės</characterLabel>
+		<characterLabel type="south_asian_scripts">Pietų Azijos raštai</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Pietryčių Azijos raštai</characterLabel>
+		<characterLabel type="spacing">tarpai</characterLabel>
+		<characterLabel type="sport">sportas</characterLabel>
+		<characterLabel type="symbols">simboliai</characterLabel>
+		<characterLabel type="technical_symbols">techniniai simboliai</characterLabel>
+		<characterLabel type="tone_marks">toniniai ženklai</characterLabel>
+		<characterLabel type="travel">kelionė</characterLabel>
+		<characterLabel type="travel_places">kelionės ir vietovės</characterLabel>
+		<characterLabel type="upwards_arrows">rodyklės į viršų</characterLabel>
+		<characterLabel type="variant_forms">įvairios formos</characterLabel>
+		<characterLabel type="vocalic_jamo">vokalinė balsė</characterLabel>
+		<characterLabel type="weather">oras</characterLabel>
+		<characterLabel type="western_asian_scripts">Vakarų Azijos raštai</characterLabel>
+		<characterLabel type="whitespace">tarpas</characterLabel>
+	</characterLabels>
 </ldml>
-

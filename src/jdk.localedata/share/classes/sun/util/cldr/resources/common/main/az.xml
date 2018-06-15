@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="az"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,43 +19,43 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="aa">afarca</language>
+			<language type="aa">afar</language>
 			<language type="ab">abxaz</language>
 			<language type="ace">akin</language>
 			<language type="ach">akoli</language>
-			<language type="ada">adangme</language>
-			<language type="ady">aduge</language>
-			<language type="ae">avestanca</language>
+			<language type="ada">adanqme</language>
+			<language type="ady">adıgey</language>
+			<language type="ae">avestan</language>
 			<language type="af">afrikaans</language>
 			<language type="afh">afrihili</language>
 			<language type="agq">aqhem</language>
-			<language type="ain">aynuca</language>
-			<language type="ak">akanca</language>
-			<language type="akk">akadianca</language>
-			<language type="ale">aleutca</language>
-			<language type="alt" draft="contributed">cənub altay</language>
+			<language type="ain">aynu</language>
+			<language type="ak">akan</language>
+			<language type="akk">akkad</language>
+			<language type="ale">aleut</language>
+			<language type="alt">cənubi altay</language>
 			<language type="am">amhar</language>
-			<language type="an">aragonca</language>
-			<language type="ang" draft="contributed">qədimi ingiliscə</language>
-			<language type="anp">angikə</language>
+			<language type="an">araqon</language>
+			<language type="ang">qədim ingilis</language>
+			<language type="anp">angika</language>
 			<language type="ar">ərəb</language>
-			<language type="ar_001">Modern Standart Ərəbcə</language>
+			<language type="ar_001">müasir standart ərəb</language>
 			<language type="arc">aramik</language>
-			<language type="arn">araukanca</language>
+			<language type="arn">mapuçe</language>
 			<language type="arp">arapaho</language>
-			<language type="arw">aravakça</language>
+			<language type="arw">aravak</language>
 			<language type="as">assam</language>
 			<language type="asa">asu</language>
-			<language type="ast">asturicə</language>
-			<language type="av">avarikcə</language>
-			<language type="awa">avadicə</language>
-			<language type="ay">aymarca</language>
-			<language type="az">azərbaycan dili</language>
+			<language type="ast">asturiya</language>
+			<language type="av">avar</language>
+			<language type="awa">avadhi</language>
+			<language type="ay">aymara</language>
+			<language type="az">azərbaycan</language>
 			<language type="az" alt="short">azəri</language>
 			<language type="az_Arab">cənubi azərbaycan</language>
 			<language type="ba">başqırd</language>
 			<language type="bal">baluc</language>
-			<language type="ban">balincə</language>
+			<language type="ban">bali</language>
 			<language type="bas">basa</language>
 			<language type="be">belarus</language>
 			<language type="bej">beja</language>
@@ -62,44 +65,45 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bgn">qərbi bəluc</language>
 			<language type="bho">bxoçpuri</language>
 			<language type="bi">bislama</language>
-			<language type="bik">bikolca</language>
+			<language type="bik">bikol</language>
 			<language type="bin">bini</language>
-			<language type="bla" draft="contributed">siksikə</language>
+			<language type="bla">siksikə</language>
 			<language type="bm">bambara</language>
 			<language type="bn">benqal</language>
 			<language type="bo">tibet</language>
-			<language type="br">Bretonca</language>
+			<language type="br">breton</language>
 			<language type="bra">braj</language>
 			<language type="brx">bodo</language>
-			<language type="bs">bosniak</language>
+			<language type="bs">bosniya</language>
 			<language type="bua">buryat</language>
 			<language type="bug">bugin</language>
-			<language type="byn">bilincə</language>
+			<language type="byn">blin</language>
 			<language type="ca">katalan</language>
-			<language type="cad">kado</language>
+			<language type="cad">keddo</language>
 			<language type="car">karib</language>
-			<language type="cch">atsamca</language>
+			<language type="cch">atsam</language>
 			<language type="ce">çeçen</language>
-			<language type="ceb">kebuano</language>
+			<language type="ceb">sebuan</language>
 			<language type="cgg">çiqa</language>
 			<language type="ch">çamoro</language>
-			<language type="chb">çibçə</language>
+			<language type="chb">çibça</language>
 			<language type="chg">çağatay</language>
 			<language type="chk">çukiz</language>
-			<language type="chm" draft="contributed">mari</language>
+			<language type="chm">mari</language>
 			<language type="chn">çinuk ləhçəsi</language>
 			<language type="cho">çoktau</language>
 			<language type="chp">çipevyan</language>
-			<language type="chr">çiroki</language>
+			<language type="chr">çeroki</language>
 			<language type="chy">çeyen</language>
-			<language type="ckb">sorani kürd</language>
+			<language type="ckb">Mərkəzi kürdcə</language>
 			<language type="co">korsika</language>
 			<language type="cop">kopt</language>
-			<language type="cr">kri dili</language>
-			<language type="crh">krım türkçə</language>
+			<language type="cr">kri</language>
+			<language type="crh">krım türkcəsi</language>
+			<language type="crs">Seyşel kreol fransızcası</language>
 			<language type="cs">çex</language>
-			<language type="csb" draft="contributed">kaşubyan</language>
-			<language type="cu">kilsə slav</language>
+			<language type="csb">kaşubyan</language>
+			<language type="cu">slavyan</language>
 			<language type="cv">çuvaş</language>
 			<language type="cy">uels</language>
 			<language type="da">danimarka</language>
@@ -110,22 +114,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="de_AT">Avstriya almancası</language>
 			<language type="de_CH">İsveçrə yüksək almancası</language>
 			<language type="del">delaver</language>
-			<language type="den" draft="contributed">slavey</language>
+			<language type="den">slavey</language>
 			<language type="dgr">doqrib</language>
 			<language type="din">dinka</language>
 			<language type="dje">zarma</language>
 			<language type="doi">doqri</language>
 			<language type="dsb">aşağı sorb</language>
 			<language type="dua">duala</language>
-			<language type="dum" draft="contributed">ortacaq hollandca</language>
-			<language type="dv">diveh</language>
+			<language type="dum">orta holland</language>
+			<language type="dv">maldiv</language>
 			<language type="dyo">diola</language>
 			<language type="dyu">dyula</language>
-			<language type="dz">dzonqa</language>
+			<language type="dz">dzonqxa</language>
+			<language type="dzg">dazaqa</language>
 			<language type="ebu">embu</language>
 			<language type="ee">eve</language>
 			<language type="efi">efik</language>
-			<language type="egy">qədimi misir</language>
+			<language type="egy">qədim misir</language>
 			<language type="eka">ekacuk</language>
 			<language type="el">yunan</language>
 			<language type="elx">elamit</language>
@@ -133,10 +138,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="en_AU">Avstraliya ingiliscəsi</language>
 			<language type="en_CA">Kanada ingiliscəsi</language>
 			<language type="en_GB">Britaniya ingiliscəsi</language>
-			<language type="en_GB" alt="short">ingilis (B.K.)</language>
+			<language type="en_GB" alt="short">ingilis (BK)</language>
 			<language type="en_US">Amerika ingiliscəsi</language>
-			<language type="en_US" alt="short">ingilis (A.B.Ş.)</language>
-			<language type="enm" draft="contributed">ortacaq ingiliscə</language>
+			<language type="en_US" alt="short">ingilis (ABŞ)</language>
+			<language type="enm">orta ingilis</language>
 			<language type="eo">esperanto</language>
 			<language type="es">ispan</language>
 			<language type="es_419">Latın Amerikası ispancası</language>
@@ -157,28 +162,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="fr">fransız</language>
 			<language type="fr_CA">Kanada fransızcası</language>
 			<language type="fr_CH">İsveçrə fransızcası</language>
-			<language type="frm" draft="contributed">ortacaq fransızca</language>
-			<language type="fro" draft="contributed">qədimi fransızca</language>
-			<language type="frr" draft="contributed">şimal fris</language>
+			<language type="frm">orta fransız</language>
+			<language type="fro">qədim fransız</language>
+			<language type="frr">şimali fris</language>
 			<language type="fur">friul</language>
 			<language type="fy">qərbi friz</language>
 			<language type="ga">irland</language>
 			<language type="gaa">qa</language>
 			<language type="gag">qaqauz</language>
+			<language type="gan">qan</language>
 			<language type="gay">qayo</language>
 			<language type="gba">qabaya</language>
-			<language type="gd" draft="contributed">skot gaelik</language>
+			<language type="gd">Şotlandiya keltcəsi</language>
 			<language type="gez">qez</language>
-			<language type="gil">qilbert gili</language>
-			<language type="gl">qalisian</language>
-			<language type="gmh" draft="contributed">ortacaq yüksək almanca</language>
+			<language type="gil">qilbert</language>
+			<language type="gl">qalisiya</language>
+			<language type="gmh">orta yüksək alman</language>
 			<language type="gn">quarani</language>
-			<language type="goh" draft="contributed">qədimi almanca</language>
+			<language type="goh">qədim alman</language>
 			<language type="gon">qondi</language>
 			<language type="gor">qorontalo</language>
-			<language type="got">gotça</language>
+			<language type="got">qotika</language>
 			<language type="grb">qrebo</language>
-			<language type="grc">qədimi yunanca</language>
+			<language type="grc">qədim yunan</language>
 			<language type="gsw">İsveçrə almancası</language>
 			<language type="gu">qucarat</language>
 			<language type="guz">qusi</language>
@@ -186,330 +192,349 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="gwi">qviçin</language>
 			<language type="ha">hausa</language>
 			<language type="hai">hayda</language>
+			<language type="hak">hakka</language>
 			<language type="haw">havay</language>
 			<language type="he">ivrit</language>
-			<language type="hi">hindi</language>
-			<language type="hil" draft="contributed">hiliqaynon</language>
-			<language type="hit" draft="contributed">hittit</language>
-			<language type="hmn" draft="contributed">monq</language>
-			<language type="ho" draft="contributed">hiri motu</language>
+			<language type="hi">hind</language>
+			<language type="hil">hiliqaynon</language>
+			<language type="hit">hittit</language>
+			<language type="hmn">monq</language>
+			<language type="ho">hiri motu</language>
 			<language type="hr">xorvat</language>
 			<language type="hsb">yuxarı sorb</language>
-			<language type="ht">haiti</language>
+			<language type="hsn">syan</language>
+			<language type="ht">haiti kreol</language>
 			<language type="hu">macar</language>
-			<language type="hup" draft="contributed">hupa</language>
+			<language type="hup">hupa</language>
 			<language type="hy">erməni</language>
-			<language type="hz" draft="contributed">Herer</language>
-			<language type="ia" draft="contributed">interlingua</language>
-			<language type="iba" draft="contributed">iban</language>
-			<language type="id">indonez</language>
-			<language type="ie" draft="contributed">interlingue</language>
+			<language type="hz">herero</language>
+			<language type="ia">interlinqua</language>
+			<language type="iba">iban</language>
+			<language type="ibb">ibibio</language>
+			<language type="id">indoneziya</language>
+			<language type="ie">interlinqve</language>
 			<language type="ig">iqbo</language>
 			<language type="ii">siçuan yi</language>
-			<language type="ik" draft="contributed">inupiaq</language>
-			<language type="ilo" draft="contributed">iloko</language>
-			<language type="inh" draft="contributed">inquş</language>
-			<language type="io" draft="contributed">ido</language>
+			<language type="ik">inupiaq</language>
+			<language type="ilo">iloko</language>
+			<language type="inh">inquş</language>
+			<language type="io">ido</language>
 			<language type="is">island</language>
 			<language type="it">italyan</language>
 			<language type="iu">inuktitut</language>
 			<language type="ja">yapon</language>
-			<language type="jbo" draft="contributed">loğban</language>
+			<language type="jbo">loğban</language>
 			<language type="jgo">nqomba</language>
 			<language type="jmc">maçam</language>
-			<language type="jpr" draft="contributed">judo-farsca</language>
-			<language type="jrb" draft="contributed">jude-ərəbcə</language>
+			<language type="jpr">ivrit-fars</language>
+			<language type="jrb">ivrit-ərəb</language>
 			<language type="jv">yava</language>
 			<language type="ka">gürcü</language>
-			<language type="kaa" draft="contributed">qara-qalpaq</language>
+			<language type="kaa">qaraqalpaq</language>
 			<language type="kab">kabile</language>
-			<language type="kac" draft="contributed">kaçinca</language>
-			<language type="kaj" draft="contributed">ju</language>
+			<language type="kac">kaçin</language>
+			<language type="kaj">ju</language>
 			<language type="kam">kamba</language>
-			<language type="kaw" draft="contributed">kavi</language>
-			<language type="kbd" draft="contributed">kabardca</language>
-			<language type="kcg" draft="contributed">tiyap</language>
+			<language type="kaw">kavi</language>
+			<language type="kbd">kabarda-çərkəz</language>
+			<language type="kcg">tiyap</language>
 			<language type="kde">makond</language>
 			<language type="kea">kabuverdian</language>
-			<language type="kfo" draft="contributed">koro</language>
-			<language type="kg" draft="contributed">konqo</language>
-			<language type="kha" draft="contributed">xazi</language>
-			<language type="kho" draft="contributed">xotan</language>
+			<language type="kfo">koro</language>
+			<language type="kg">konqo</language>
+			<language type="kha">xazi</language>
+			<language type="kho">xotan</language>
 			<language type="khq">koyra çiini</language>
 			<language type="ki">kikuyu</language>
-			<language type="kj" draft="contributed">kuanyama</language>
+			<language type="kj">kuanyama</language>
 			<language type="kk">qazax</language>
+			<language type="kkj">kako</language>
 			<language type="kl">kalaallisut</language>
 			<language type="kln">kalencin</language>
 			<language type="km">kxmer</language>
-			<language type="kmb" draft="contributed">kimbundu</language>
+			<language type="kmb">kimbundu</language>
 			<language type="kn">kannada</language>
 			<language type="ko">koreya</language>
 			<language type="koi">komi-permyak</language>
-			<language type="kok">konkan</language>
-			<language type="kos" draft="contributed">kosreyan</language>
-			<language type="kpe" draft="contributed">kpelle</language>
-			<language type="kr" draft="contributed">kanur</language>
-			<language type="krc" draft="contributed">qaraçay-balkar</language>
-			<language type="krl" draft="contributed">karelyan</language>
-			<language type="kru" draft="contributed">kurux</language>
-			<language type="ks">kaşmir</language>
+			<language type="kok">konkani</language>
+			<language type="kos">kosreyan</language>
+			<language type="kpe">kpelle</language>
+			<language type="kr">kanuri</language>
+			<language type="krc">qaraçay-balkar</language>
+			<language type="krl">karel</language>
+			<language type="kru">kurux</language>
+			<language type="ks">kəşmir</language>
 			<language type="ksb">şambala</language>
 			<language type="ksf">bafia</language>
+			<language type="ksh">köln</language>
 			<language type="ku">kürd</language>
-			<language type="kum" draft="contributed">kumuk</language>
-			<language type="kut" draft="contributed">kutenay</language>
-			<language type="kv" draft="contributed">komi</language>
+			<language type="kum">kumık</language>
+			<language type="kut">kutenay</language>
+			<language type="kv">komi</language>
 			<language type="kw">korn</language>
 			<language type="ky">qırğız</language>
 			<language type="la">latın</language>
-			<language type="lad" draft="contributed">ladin</language>
+			<language type="lad">sefard</language>
 			<language type="lag">langi</language>
-			<language type="lah" draft="contributed">laxnda</language>
-			<language type="lam" draft="contributed">lamba</language>
+			<language type="lah">qərbi pəncab</language>
+			<language type="lam">lamba</language>
 			<language type="lb">lüksemburq</language>
-			<language type="lez" draft="contributed">ləzqi</language>
+			<language type="lez">ləzgi</language>
 			<language type="lg">qanda</language>
-			<language type="li" draft="contributed">limburqiş</language>
+			<language type="li">limburq</language>
 			<language type="lkt">lakota</language>
 			<language type="ln">linqala</language>
 			<language type="lo">laos</language>
-			<language type="lol" draft="contributed">monqo</language>
-			<language type="loz" draft="contributed">lozi</language>
+			<language type="lol">monqo</language>
+			<language type="loz">lozi</language>
 			<language type="lrc">şimali luri</language>
 			<language type="lt">litva</language>
 			<language type="lu">luba-katanqa</language>
-			<language type="lua" draft="contributed">luba-lulua</language>
-			<language type="lui" draft="contributed">luyseno</language>
-			<language type="lun" draft="contributed">lunda</language>
+			<language type="lua">luba-lulua</language>
+			<language type="lui">luyseno</language>
+			<language type="lun">lunda</language>
 			<language type="luo">luo</language>
-			<language type="lus" draft="contributed">lushayca</language>
+			<language type="lus">mizo</language>
 			<language type="luy">luyia</language>
 			<language type="lv">latış</language>
-			<language type="mad" draft="contributed">maduriz</language>
-			<language type="mag" draft="contributed">maqahi</language>
-			<language type="mai" draft="contributed">maitili</language>
-			<language type="mak" draft="contributed">makasar</language>
-			<language type="man" draft="contributed">məndinqo</language>
+			<language type="mad">maduriz</language>
+			<language type="mag">maqahi</language>
+			<language type="mai">maitili</language>
+			<language type="mak">makasar</language>
+			<language type="man">məndinqo</language>
 			<language type="mas">masay</language>
-			<language type="mdf" draft="contributed">mokşa</language>
-			<language type="mdr" draft="contributed">mandar</language>
-			<language type="men" draft="contributed">mende</language>
+			<language type="mdf">mokşa</language>
+			<language type="mdr">mandar</language>
+			<language type="men">mende</language>
 			<language type="mer">meru</language>
 			<language type="mfe">morisien</language>
 			<language type="mg">malaqas</language>
-			<language type="mga" draft="contributed">ortacaq irlandca</language>
+			<language type="mga">orta irland</language>
 			<language type="mgh">maxuva-meetto</language>
 			<language type="mgo">meta’</language>
-			<language type="mh" draft="contributed">marşal</language>
+			<language type="mh">marşal</language>
 			<language type="mi">maori</language>
-			<language type="mic" draft="contributed">mikmak</language>
-			<language type="min" draft="contributed">minanqkaban</language>
+			<language type="mic">mikmak</language>
+			<language type="min">minanqkaban</language>
 			<language type="mk">makedon</language>
 			<language type="ml">malayalam</language>
 			<language type="mn">monqol</language>
-			<language type="mnc" draft="contributed">mançu</language>
-			<language type="mni" draft="contributed">manipüri</language>
+			<language type="mnc">mançu</language>
+			<language type="mni">manipüri</language>
 			<language type="moh">mohavk</language>
-			<language type="mos" draft="contributed">mosi</language>
-			<language type="mr">marati</language>
+			<language type="mos">mosi</language>
+			<language type="mr">marathi</language>
 			<language type="ms">malay</language>
 			<language type="mt">malta</language>
 			<language type="mua">mundanq</language>
-			<language type="mul" draft="contributed">digər dillər</language>
+			<language type="mul">çoxsaylı dillər</language>
 			<language type="mus">krik</language>
-			<language type="mwl" draft="contributed">mirand</language>
-			<language type="mwr" draft="contributed">maruari</language>
-			<language type="my">birma</language>
+			<language type="mwl">mirand</language>
+			<language type="mwr">maruari</language>
+			<language type="my">birman</language>
 			<language type="myv">erzya</language>
 			<language type="mzn">mazandaran</language>
-			<language type="na" draft="contributed">nauru</language>
-			<language type="nap" draft="contributed">neapolital</language>
+			<language type="na">nauru</language>
+			<language type="nan">Min Nan</language>
+			<language type="nap">neapolitan</language>
 			<language type="naq">nama</language>
 			<language type="nb">bokmal norveç</language>
 			<language type="nd">şimali ndebele</language>
-			<language type="nds" draft="contributed">aşağı almanca</language>
+			<language type="nds">aşağı alman</language>
 			<language type="nds_NL">aşağı sakson</language>
 			<language type="ne">nepal</language>
-			<language type="new" draft="contributed">nevari</language>
-			<language type="ng" draft="contributed">nqonka</language>
-			<language type="nia" draft="contributed">nyas</language>
-			<language type="niu" draft="contributed">niyuan</language>
+			<language type="new">nevari</language>
+			<language type="ng">ndonqa</language>
+			<language type="nia">nias</language>
+			<language type="niu">niyuan</language>
 			<language type="nl">holland</language>
 			<language type="nl_BE">flamand</language>
 			<language type="nmg">kvasio</language>
 			<language type="nn">nünorsk norveç</language>
-			<language type="no" draft="contributed">norveç</language>
-			<language type="nog" draft="contributed">noqay</language>
-			<language type="non" draft="contributed">qədimi norsca</language>
+			<language type="nnh">ngiemboon</language>
+			<language type="no">norveç</language>
+			<language type="nog">noqay</language>
+			<language type="non">qədim nors</language>
 			<language type="nqo">nqo</language>
-			<language type="nr" draft="contributed">cənub ndebele</language>
-			<language type="nso" draft="contributed">şimal soto</language>
+			<language type="nr">cənubi ndebele</language>
+			<language type="nso">şimal soto</language>
 			<language type="nus">nuer</language>
-			<language type="nv" draft="contributed">navayo</language>
-			<language type="ny" draft="contributed">nyanca</language>
-			<language type="nym" draft="contributed">nyamvezi</language>
+			<language type="nv">navayo</language>
+			<language type="ny">nyanca</language>
+			<language type="nym">nyamvezi</language>
 			<language type="nyn">nyankol</language>
-			<language type="nyo" draft="contributed">niyoro</language>
-			<language type="nzi" draft="contributed">nizima</language>
-			<language type="oc" draft="contributed">oksitanca</language>
-			<language type="oj" draft="contributed">ocibva</language>
+			<language type="nyo">nyoro</language>
+			<language type="nzi">nzima</language>
+			<language type="oc">oksitan</language>
+			<language type="oj">ocibva</language>
 			<language type="om">oromo</language>
-			<language type="or">oriya</language>
-			<language type="os" draft="contributed">osetik</language>
-			<language type="osa" draft="contributed">osage</language>
-			<language type="ota" draft="contributed">osman</language>
+			<language type="or">odiya</language>
+			<language type="os">osetin</language>
+			<language type="osa">osage</language>
+			<language type="ota">osman</language>
 			<language type="pa">pəncab</language>
-			<language type="pag" draft="contributed">panqasinan</language>
-			<language type="pal" draft="contributed">paxlavi</language>
-			<language type="pam" draft="contributed">pampanqa</language>
-			<language type="pap" draft="contributed">papyamento</language>
-			<language type="pau" draft="contributed">palayanca</language>
-			<language type="peo" draft="contributed">qədimi farsca</language>
-			<language type="phn" draft="contributed">foyenik</language>
-			<language type="pi" draft="contributed">pali</language>
+			<language type="pag">panqasinan</language>
+			<language type="pal">pəhləvi</language>
+			<language type="pam">pampanqa</language>
+			<language type="pap">papyamento</language>
+			<language type="pau">palayan</language>
+			<language type="pcm">niger kreol</language>
+			<language type="peo">qədim fars</language>
+			<language type="phn">foyenik</language>
+			<language type="pi">pali</language>
 			<language type="pl">polyak</language>
-			<language type="pon" draft="contributed">ponpeyan</language>
-			<language type="pro" draft="contributed">qədimi provensialca</language>
+			<language type="pon">ponpey</language>
+			<language type="prg">pruss</language>
+			<language type="pro">qədim provansal</language>
 			<language type="ps">puştu</language>
 			<language type="pt">portuqal</language>
 			<language type="pt_BR">Braziliya portuqalcası</language>
 			<language type="pt_PT">Portuqaliya portuqalcası</language>
 			<language type="qu">keçua</language>
 			<language type="quc">kiçe</language>
-			<language type="raj" draft="contributed">racastan</language>
-			<language type="rap" draft="contributed">rapanu</language>
-			<language type="rar" draft="contributed">rarotonqan</language>
-			<language type="rm">retoroman</language>
+			<language type="raj">racastani</language>
+			<language type="rap">rapanui</language>
+			<language type="rar">rarotonqan</language>
+			<language type="rm">romanş</language>
 			<language type="rn">rundi</language>
 			<language type="ro">rumın</language>
 			<language type="ro_MD">moldav</language>
 			<language type="rof">rombo</language>
-			<language type="rom" draft="contributed">roman</language>
-			<language type="root" draft="contributed">rut</language>
+			<language type="rom">roman</language>
+			<language type="root">rut</language>
 			<language type="ru">rus</language>
-			<language type="rup">aromanca</language>
+			<language type="rup">aroman</language>
 			<language type="rw">kinyarvanda</language>
 			<language type="rwk">rua</language>
 			<language type="sa">sanskrit</language>
-			<language type="sad" draft="contributed">sandave</language>
-			<language type="sah" draft="contributed">yakut</language>
-			<language type="sam" draft="contributed">samaritan</language>
+			<language type="sad">sandave</language>
+			<language type="sah">saxa</language>
+			<language type="sam">samaritan</language>
 			<language type="saq">samburu</language>
-			<language type="sas" draft="contributed">sasak</language>
-			<language type="sat" draft="contributed">santal</language>
+			<language type="sas">sasak</language>
+			<language type="sat">santal</language>
+			<language type="sba">nqambay</language>
 			<language type="sbp">sanqu</language>
-			<language type="sc" draft="contributed">sardin</language>
-			<language type="scn" draft="contributed">sisili</language>
-			<language type="sco" draft="contributed">skots</language>
+			<language type="sc">sardin</language>
+			<language type="scn">siciliya</language>
+			<language type="sco">skots</language>
 			<language type="sd">sindhi</language>
 			<language type="sdh">cənubi kürd</language>
 			<language type="se">şimali sami</language>
 			<language type="seh">sena</language>
-			<language type="sel" draft="contributed">selkup</language>
+			<language type="sel">selkup</language>
 			<language type="ses">koyraboro senni</language>
 			<language type="sg">sanqo</language>
-			<language type="sga" draft="contributed">qədimi irlandca</language>
-			<language type="sh" draft="contributed">serb-xorvatca</language>
+			<language type="sga">qədim irland</language>
+			<language type="sh">serb-xorvat</language>
 			<language type="shi">taçelit</language>
-			<language type="shn" draft="contributed">şan</language>
-			<language type="si">sinhal</language>
-			<language type="sid" draft="contributed">sidamo</language>
+			<language type="shn">şan</language>
+			<language type="si">sinhala</language>
+			<language type="sid">sidamo</language>
 			<language type="sk">slovak</language>
 			<language type="sl">sloven</language>
-			<language type="sm" draft="contributed">samoa</language>
+			<language type="sm">samoa</language>
 			<language type="sma">cənubi sami</language>
 			<language type="smj">lule sami</language>
 			<language type="smn">inari sami</language>
-			<language type="sms">skolt</language>
+			<language type="sms">skolt sami</language>
 			<language type="sn">şona</language>
-			<language type="snk" draft="contributed">soninke</language>
+			<language type="snk">soninke</language>
 			<language type="so">somali</language>
-			<language type="sog" draft="contributed">soqdiyen</language>
+			<language type="sog">soqdiyen</language>
 			<language type="sq">alban</language>
 			<language type="sr">serb</language>
-			<language type="srn" draft="contributed">sranan tonqo</language>
-			<language type="srr" draft="contributed">serer dilii</language>
-			<language type="ss" draft="contributed">svati</language>
-			<language type="st" draft="contributed">Sesoto</language>
-			<language type="suk" draft="contributed">sukuma</language>
-			<language type="sus" draft="contributed">susu</language>
-			<language type="sux" draft="contributed">sumeryan</language>
+			<language type="srn">sranan tonqo</language>
+			<language type="srr">serer</language>
+			<language type="ss">svati</language>
+			<language type="ssy">saho</language>
+			<language type="st">sesoto</language>
+			<language type="su">sundan</language>
+			<language type="suk">sukuma</language>
+			<language type="sus">susu</language>
+			<language type="sux">sumeryan</language>
 			<language type="sv">isveç</language>
 			<language type="sw">suahili</language>
 			<language type="sw_CD">Konqo suahilicəsi</language>
-			<language type="syr" draft="contributed">siryak</language>
+			<language type="swb">komor</language>
+			<language type="syr">suriya</language>
 			<language type="ta">tamil</language>
 			<language type="te">teluqu</language>
-			<language type="tem" draft="contributed">timne</language>
+			<language type="tem">timne</language>
 			<language type="teo">teso</language>
-			<language type="ter" draft="contributed">tereno</language>
-			<language type="tet" draft="contributed">tetum</language>
+			<language type="ter">tereno</language>
+			<language type="tet">tetum</language>
 			<language type="tg">tacik</language>
 			<language type="th">tay</language>
 			<language type="ti">tiqrin</language>
-			<language type="tig" draft="contributed">tiqre</language>
-			<language type="tiv" draft="contributed">tiv</language>
+			<language type="tig">tiqre</language>
+			<language type="tiv">tiv</language>
 			<language type="tk">türkmən</language>
-			<language type="tkl" draft="contributed">tokelay</language>
-			<language type="tl" draft="contributed">taqaloq</language>
-			<language type="tlh" draft="contributed">klinqon</language>
-			<language type="tli" draft="contributed">tlinqit</language>
-			<language type="tmh" draft="contributed">tamaşek</language>
-			<language type="tn" draft="contributed">svana</language>
+			<language type="tkl">tokelay</language>
+			<language type="tl">taqaloq</language>
+			<language type="tlh">klinqon</language>
+			<language type="tli">tlinqit</language>
+			<language type="tmh">tamaşek</language>
+			<language type="tn">svana</language>
 			<language type="to">tonqa</language>
-			<language type="tog" draft="contributed">niyasa tonga</language>
-			<language type="tpi" draft="contributed">tok pisin</language>
+			<language type="tog">nyasa tonqa</language>
+			<language type="tpi">tok pisin</language>
 			<language type="tr">türk</language>
-			<language type="ts" draft="contributed">sonqa</language>
-			<language type="tsi" draft="contributed">simşyan</language>
+			<language type="trv">taroko</language>
+			<language type="ts">sonqa</language>
+			<language type="tsi">simşyan</language>
 			<language type="tt">tatar</language>
-			<language type="tum" draft="contributed">tumbuka</language>
-			<language type="tvl" draft="contributed">tuvalu</language>
-			<language type="tw" draft="contributed">Tvi</language>
+			<language type="tum">tumbuka</language>
+			<language type="tvl">tuvalu</language>
+			<language type="tw">tvi</language>
 			<language type="twq">tasavaq</language>
-			<language type="ty" draft="contributed">taxiti</language>
-			<language type="tyv" draft="contributed">tuvinyan</language>
+			<language type="ty">taxiti</language>
+			<language type="tyv">tuvinyan</language>
 			<language type="tzm">Mərkəzi Atlas tamazicəsi</language>
-			<language type="udm" draft="contributed">udmurt</language>
+			<language type="udm">udmurt</language>
 			<language type="ug">uyğur</language>
-			<language type="uga" draft="contributed">uqaritik</language>
+			<language type="uga">uqarit</language>
 			<language type="uk">ukrayna</language>
-			<language type="umb" draft="contributed">umbundu</language>
+			<language type="umb">umbundu</language>
 			<language type="und">naməlum dil</language>
 			<language type="ur">urdu</language>
 			<language type="uz">özbək</language>
 			<language type="vai">vai</language>
-			<language type="ve" draft="contributed">venda</language>
+			<language type="ve">venda</language>
 			<language type="vi">vyetnam</language>
-			<language type="vo" draft="contributed">volapük</language>
-			<language type="vot" draft="contributed">votik</language>
+			<language type="vo">volapük</language>
+			<language type="vot">votik</language>
 			<language type="vun">vunyo</language>
-			<language type="wa" draft="contributed">valun</language>
-			<language type="wal" draft="contributed">valamo</language>
-			<language type="war" draft="contributed">varay</language>
-			<language type="was" draft="contributed">vaşo</language>
-			<language type="wbp">Valpiri</language>
+			<language type="wa">valun</language>
+			<language type="wae">valles</language>
+			<language type="wal">valamo</language>
+			<language type="war">varay</language>
+			<language type="was">vaşo</language>
+			<language type="wbp">valpiri</language>
 			<language type="wo">volof</language>
-			<language type="xal" draft="contributed">kalmıqca</language>
+			<language type="wuu">vu</language>
+			<language type="xal">kalmık</language>
 			<language type="xh">xosa</language>
 			<language type="xog">soqa</language>
-			<language type="yao" draft="contributed">yao</language>
-			<language type="yap" draft="contributed">yapiz</language>
-			<language type="yi" draft="contributed">Yahudi</language>
+			<language type="yao">yao</language>
+			<language type="yap">yapiz</language>
+			<language type="yav">yanqben</language>
+			<language type="ybb">yemba</language>
+			<language type="yi">idiş</language>
 			<language type="yo">yoruba</language>
-			<language type="za" draft="contributed">juənq</language>
-			<language type="zap" draft="contributed">zapotek</language>
+			<language type="yue">kanton</language>
+			<language type="za">çjuan</language>
+			<language type="zap">zapotek</language>
 			<language type="zbl">blisimbols</language>
-			<language type="zen" draft="contributed">zenaqa</language>
+			<language type="zen">zenaqa</language>
 			<language type="zgh">tamazi</language>
 			<language type="zh">çin</language>
 			<language type="zh_Hans">sadələşmiş çin</language>
 			<language type="zh_Hant">ənənəvi çin</language>
 			<language type="zu">zulu</language>
-			<language type="zun" draft="contributed">zuni</language>
+			<language type="zun">zuni</language>
 			<language type="zxx">dil məzmunu yoxdur</language>
-			<language type="zza" draft="contributed">zaza</language>
+			<language type="zza">zaza</language>
 		</languages>
 		<scripts>
 			<script type="Arab">ərəb</script>
@@ -548,20 +573,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">yunan</script>
 			<script type="Gujr">qucarat</script>
 			<script type="Guru">qurmuxi</script>
+			<script type="Hanb">hanb</script>
 			<script type="Hang">hanqıl</script>
 			<script type="Hani">han</script>
 			<script type="Hano" draft="contributed">hanunu</script>
 			<script type="Hans">sadələşmiş</script>
-			<script type="Hans" alt="stand-alone">Sadələşdirilmiş Han</script>
+			<script type="Hans" alt="stand-alone">Sadələşmiş Han</script>
 			<script type="Hant">ənənəvi</script>
 			<script type="Hant" alt="stand-alone">Ənənəvi Han</script>
 			<script type="Hebr">ibrani</script>
 			<script type="Hira">iraqana</script>
 			<script type="Hmng" draft="contributed">pahav monq</script>
-			<script type="Hrkt" draft="contributed">katakana vəya hiraqana</script>
+			<script type="Hrkt">hecalı yapon əlifbası</script>
 			<script type="Hung" draft="contributed">qədimi macar</script>
 			<script type="Inds" draft="contributed">hindistan</script>
 			<script type="Ital" draft="contributed">qədimi italyalı</script>
+			<script type="Jamo">jamo</script>
 			<script type="Java" draft="contributed">cava</script>
 			<script type="Jpan">yapon</script>
 			<script type="Kali" draft="contributed">kayax li</script>
@@ -634,11 +661,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Xpeo" draft="contributed">qədimi fars</script>
 			<script type="Xsux" draft="contributed">sumer-akadyan kuneyform</script>
 			<script type="Yiii" draft="contributed">yi</script>
-			<script type="Zmth" draft="contributed">zmth</script>
+			<script type="Zmth">riyazi notasiya</script>
+			<script type="Zsye">emoji</script>
 			<script type="Zsym">simvollar</script>
 			<script type="Zxxx">yazısız</script>
 			<script type="Zyyy">ümumi yazı</script>
-			<script type="Zzzz">naməlum skript</script>
+			<script type="Zzzz">tanınmayan yazı</script>
 		</scripts>
 		<territories>
 			<territory type="001">Dünya</territory>
@@ -652,7 +680,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="015">Şimali Afrika</territory>
 			<territory type="017">Mərkəzi Afrika</territory>
 			<territory type="018">Cənubi Afrika</territory>
-			<territory type="019">Amerikalar</territory>
+			<territory type="019">Amerika</territory>
 			<territory type="021">Şimal Amerikası</territory>
 			<territory type="029">Karib</territory>
 			<territory type="030">Şərqi Asiya</territory>
@@ -670,13 +698,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Şərqi Avropa</territory>
 			<territory type="154">Şimali Avropa</territory>
 			<territory type="155">Qərbi Avropa</territory>
+			<territory type="202">Saharadan cənub</territory>
 			<territory type="419">Latın Amerikası</territory>
-			<territory type="AC">Yüksəliş Adası</territory>
+			<territory type="AC">Askenson adası</territory>
 			<territory type="AD">Andorra</territory>
 			<territory type="AE">Birləşmiş Ərəb Əmirlikləri</territory>
 			<territory type="AF">Əfqanıstan</territory>
 			<territory type="AG">Antiqua və Barbuda</territory>
-			<territory type="AI">Angila</territory>
+			<territory type="AI">Angilya</territory>
 			<territory type="AL">Albaniya</territory>
 			<territory type="AM">Ermənistan</territory>
 			<territory type="AO">Anqola</territory>
@@ -686,51 +715,53 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="AT">Avstriya</territory>
 			<territory type="AU">Avstraliya</territory>
 			<territory type="AW">Aruba</territory>
-			<territory type="AX">Aland Adaları</territory>
+			<territory type="AX">Aland adaları</territory>
 			<territory type="AZ">Azərbaycan</territory>
-			<territory type="BA">Bosniya və Hersoqovina</territory>
+			<territory type="BA">Bosniya və Herseqovina</territory>
 			<territory type="BB">Barbados</territory>
 			<territory type="BD">Banqladeş</territory>
 			<territory type="BE">Belçika</territory>
 			<territory type="BF">Burkina Faso</territory>
-			<territory type="BG">Bolqariya</territory>
+			<territory type="BG">Bolqarıstan</territory>
 			<territory type="BH">Bəhreyn</territory>
 			<territory type="BI">Burundi</territory>
 			<territory type="BJ">Benin</territory>
-			<territory type="BL">San Bartolomey</territory>
-			<territory type="BM">Bermuda</territory>
+			<territory type="BL">Sent-Bartelemi</territory>
+			<territory type="BM">Bermud adaları</territory>
 			<territory type="BN">Bruney</territory>
 			<territory type="BO">Boliviya</territory>
 			<territory type="BQ">Karib Niderlandı</territory>
 			<territory type="BR">Braziliya</territory>
-			<territory type="BS">Baham Adaları</territory>
+			<territory type="BS">Baham adaları</territory>
 			<territory type="BT">Butan</territory>
-			<territory type="BV">Buve Adası</territory>
+			<territory type="BV">Buve adası</territory>
 			<territory type="BW">Botsvana</territory>
 			<territory type="BY">Belarus</territory>
 			<territory type="BZ">Beliz</territory>
 			<territory type="CA">Kanada</territory>
-			<territory type="CC">Kokos Adaları</territory>
+			<territory type="CC">Kokos (Kilinq) adaları</territory>
 			<territory type="CD">Konqo - Kinşasa</territory>
 			<territory type="CD" alt="variant">Konqo (KDR)</territory>
 			<territory type="CF">Mərkəzi Afrika Respublikası</territory>
 			<territory type="CG">Konqo - Brazzavil</territory>
 			<territory type="CG" alt="variant">Konqo (Respublika)</territory>
 			<territory type="CH">İsveçrə</territory>
-			<territory type="CI">Fil Dişi Sahili</territory>
-			<territory type="CK">Kuk Adaları</territory>
+			<territory type="CI">Kotd’ivuar</territory>
+			<territory type="CI" alt="variant">Fil Dişi Sahili</territory>
+			<territory type="CK">Kuk adaları</territory>
 			<territory type="CL">Çili</territory>
 			<territory type="CM">Kamerun</territory>
 			<territory type="CN">Çin</territory>
 			<territory type="CO">Kolumbiya</territory>
-			<territory type="CP">Klipperton Adası</territory>
+			<territory type="CP">Klipperton adası</territory>
 			<territory type="CR">Kosta Rika</territory>
 			<territory type="CU">Kuba</territory>
-			<territory type="CV">Kape Verde</territory>
+			<territory type="CV">Kabo-Verde</territory>
 			<territory type="CW">Kurasao</territory>
-			<territory type="CX">Milad Adası</territory>
+			<territory type="CX">Milad adası</territory>
 			<territory type="CY">Kipr</territory>
 			<territory type="CZ">Çexiya</territory>
+			<territory type="CZ" alt="variant">Çex Respublikası</territory>
 			<territory type="DE">Almaniya</territory>
 			<territory type="DG">Dieqo Qarsiya</territory>
 			<territory type="DJ">Cibuti</territory>
@@ -742,52 +773,53 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="EC">Ekvador</territory>
 			<territory type="EE">Estoniya</territory>
 			<territory type="EG">Misir</territory>
-			<territory type="EH">Qərbi Sahara</territory>
+			<territory type="EH">Qərbi Saxara</territory>
 			<territory type="ER">Eritreya</territory>
 			<territory type="ES">İspaniya</territory>
 			<territory type="ET">Efiopiya</territory>
 			<territory type="EU">Avropa Birliyi</territory>
+			<territory type="EZ">Avrozona</territory>
 			<territory type="FI">Finlandiya</territory>
 			<territory type="FJ">Fici</territory>
-			<territory type="FK">Folklend Adaları</territory>
-			<territory type="FK" alt="variant">Folklend Adaları (Malvin Adaları)</territory>
+			<territory type="FK">Folklend adaları</territory>
+			<territory type="FK" alt="variant">Folklend adaları (Malvin adaları)</territory>
 			<territory type="FM">Mikroneziya</territory>
-			<territory type="FO">Farer Adaları</territory>
+			<territory type="FO">Farer adaları</territory>
 			<territory type="FR">Fransa</territory>
 			<territory type="GA">Qabon</territory>
 			<territory type="GB">Birləşmiş Krallıq</territory>
-			<territory type="GB" alt="short">B.K.</territory>
+			<territory type="GB" alt="short">BK</territory>
 			<territory type="GD">Qrenada</territory>
 			<territory type="GE">Gürcüstan</territory>
-			<territory type="GF">Fransız Qviyanası</territory>
-			<territory type="GG">Gernsey</territory>
+			<territory type="GF">Fransa Qvianası</territory>
+			<territory type="GG">Gernsi</territory>
 			<territory type="GH">Qana</territory>
-			<territory type="GI">Gibraltar</territory>
+			<territory type="GI">Cəbəllütariq</territory>
 			<territory type="GL">Qrenlandiya</territory>
 			<territory type="GM">Qambiya</territory>
 			<territory type="GN">Qvineya</territory>
 			<territory type="GP">Qvadelupa</territory>
 			<territory type="GQ">Ekvatorial Qvineya</territory>
 			<territory type="GR">Yunanıstan</territory>
-			<territory type="GS">Cənubi Corciya və Cənubi Sendviç Adaları</territory>
+			<territory type="GS">Cənubi Corciya və Cənubi Sendviç adaları</territory>
 			<territory type="GT">Qvatemala</territory>
 			<territory type="GU">Quam</territory>
 			<territory type="GW">Qvineya-Bisau</territory>
-			<territory type="GY">Qviyana</territory>
+			<territory type="GY">Qayana</territory>
 			<territory type="HK">Honq Konq Xüsusi İnzibati Ərazi Çin</territory>
 			<territory type="HK" alt="short">Honq Konq</territory>
-			<territory type="HM">Herd və Mak Donald Adaları</territory>
+			<territory type="HM">Herd və Makdonald adaları</territory>
 			<territory type="HN">Honduras</territory>
 			<territory type="HR">Xorvatiya</territory>
 			<territory type="HT">Haiti</territory>
 			<territory type="HU">Macarıstan</territory>
-			<territory type="IC">Kanar Adaları</territory>
+			<territory type="IC">Kanar adaları</territory>
 			<territory type="ID">İndoneziya</territory>
 			<territory type="IE">İrlandiya</territory>
 			<territory type="IL">İsrail</territory>
-			<territory type="IM">Men Adası</territory>
+			<territory type="IM">Men adası</territory>
 			<territory type="IN">Hindistan</territory>
-			<territory type="IO">Britaniya Hind Okeanı Ərazisi</territory>
+			<territory type="IO">Britaniyanın Hind Okeanı Ərazisi</territory>
 			<territory type="IQ">İraq</territory>
 			<territory type="IR">İran</territory>
 			<territory type="IS">İslandiya</territory>
@@ -800,18 +832,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KG">Qırğızıstan</territory>
 			<territory type="KH">Kamboca</territory>
 			<territory type="KI">Kiribati</territory>
-			<territory type="KM">Komor Adaları</territory>
-			<territory type="KN">San Kits və Nevis</territory>
+			<territory type="KM">Komor adaları</territory>
+			<territory type="KN">Sent-Kits və Nevis</territory>
 			<territory type="KP">Şimali Koreya</territory>
 			<territory type="KR">Cənubi Koreya</territory>
 			<territory type="KW">Küveyt</territory>
-			<territory type="KY">Kayman Adaları</territory>
+			<territory type="KY">Kayman adaları</territory>
 			<territory type="KZ">Qazaxıstan</territory>
 			<territory type="LA">Laos</territory>
 			<territory type="LB">Livan</territory>
-			<territory type="LC">San Lüsiya</territory>
+			<territory type="LC">Sent-Lusiya</territory>
 			<territory type="LI">Lixtenşteyn</territory>
-			<territory type="LK">Şri Lanka</territory>
+			<territory type="LK">Şri-Lanka</territory>
 			<territory type="LR">Liberiya</territory>
 			<territory type="LS">Lesoto</territory>
 			<territory type="LT">Litva</territory>
@@ -822,23 +854,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MC">Monako</territory>
 			<territory type="MD">Moldova</territory>
 			<territory type="ME">Monteneqro</territory>
-			<territory type="MF">San Martin</territory>
+			<territory type="MF">Sent Martin</territory>
 			<territory type="MG">Madaqaskar</territory>
-			<territory type="MH">Marşal Adaları</territory>
+			<territory type="MH">Marşal adaları</territory>
 			<territory type="MK">Makedoniya</territory>
-			<territory type="MK" alt="variant">Makedoniya (FYROM)</territory>
+			<territory type="MK" alt="variant">Makedoniya (KYRM)</territory>
 			<territory type="ML">Mali</territory>
 			<territory type="MM">Myanma</territory>
-			<territory type="MN">Monqoliya</territory>
+			<territory type="MN">Monqolustan</territory>
 			<territory type="MO">Makao Xüsusi İnzibati Ərazi Çin</territory>
 			<territory type="MO" alt="short">Makao</territory>
-			<territory type="MP">Şimali Mariana Adaları</territory>
+			<territory type="MP">Şimali Marian adaları</territory>
 			<territory type="MQ">Martinik</territory>
 			<territory type="MR">Mavritaniya</territory>
 			<territory type="MS">Monserat</territory>
 			<territory type="MT">Malta</territory>
 			<territory type="MU">Mavriki</territory>
-			<territory type="MV">Maldiv Adaları</territory>
+			<territory type="MV">Maldiv adaları</territory>
 			<territory type="MW">Malavi</territory>
 			<territory type="MX">Meksika</territory>
 			<territory type="MY">Malayziya</territory>
@@ -846,7 +878,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="NA">Namibiya</territory>
 			<territory type="NC">Yeni Kaledoniya</territory>
 			<territory type="NE">Niger</territory>
-			<territory type="NF">Norfolk Adası</territory>
+			<territory type="NF">Norfolk adası</territory>
 			<territory type="NG">Nigeriya</territory>
 			<territory type="NI">Nikaraqua</territory>
 			<territory type="NL">Niderland</territory>
@@ -858,53 +890,53 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
-			<territory type="PF">Fransız Polineziyası</territory>
-			<territory type="PG">Papua Yeni Qvineya</territory>
+			<territory type="PF">Fransa Polineziyası</territory>
+			<territory type="PG">Papua-Yeni Qvineya</territory>
 			<territory type="PH">Filippin</territory>
 			<territory type="PK">Pakistan</territory>
 			<territory type="PL">Polşa</territory>
-			<territory type="PM">San Pier və Mikelon</territory>
-			<territory type="PN">Pitkern Adaları</territory>
+			<territory type="PM">Müqəddəs Pyer və Mikelon</territory>
+			<territory type="PN">Pitkern adaları</territory>
 			<territory type="PR">Puerto Riko</territory>
 			<territory type="PS">Fələstin Əraziləri</territory>
 			<territory type="PS" alt="short">Fələstin</territory>
-			<territory type="PT">Portuqal</territory>
+			<territory type="PT">Portuqaliya</territory>
 			<territory type="PW">Palau</territory>
 			<territory type="PY">Paraqvay</territory>
-			<territory type="QA">Qatar</territory>
+			<territory type="QA">Qətər</territory>
 			<territory type="QO">Uzaq Okeaniya</territory>
-			<territory type="RE">Reunion</territory>
+			<territory type="RE">Reyunyon</territory>
 			<territory type="RO">Rumıniya</territory>
 			<territory type="RS">Serbiya</territory>
 			<territory type="RU">Rusiya</territory>
 			<territory type="RW">Ruanda</territory>
 			<territory type="SA">Səudiyyə Ərəbistanı</territory>
-			<territory type="SB">Solomon Adaları</territory>
-			<territory type="SC">Seyşel Adaları</territory>
+			<territory type="SB">Solomon adaları</territory>
+			<territory type="SC">Seyşel adaları</territory>
 			<territory type="SD">Sudan</territory>
 			<territory type="SE">İsveç</territory>
 			<territory type="SG">Sinqapur</territory>
 			<territory type="SH">Müqəddəs Yelena</territory>
 			<territory type="SI">Sloveniya</territory>
-			<territory type="SJ">Svalbard və Yan Mayen</territory>
+			<territory type="SJ">Svalbard və Yan-Mayen</territory>
 			<territory type="SK">Slovakiya</territory>
-			<territory type="SL">Siera Leon</territory>
-			<territory type="SM">San Marino</territory>
+			<territory type="SL">Syerra-Leone</territory>
+			<territory type="SM">San-Marino</territory>
 			<territory type="SN">Seneqal</territory>
 			<territory type="SO">Somali</territory>
 			<territory type="SR">Surinam</territory>
 			<territory type="SS">Cənubi Sudan</territory>
-			<territory type="ST">Sao Tome və Prinsip</territory>
+			<territory type="ST">San-Tome və Prinsipi</territory>
 			<territory type="SV">Salvador</territory>
-			<territory type="SX">Sint Maarten</territory>
+			<territory type="SX">Sint-Marten</territory>
 			<territory type="SY">Suriya</territory>
 			<territory type="SZ">Svazilend</territory>
 			<territory type="TA">Tristan da Kunya</territory>
-			<territory type="TC">Turks və Kaikos Adaları</territory>
+			<territory type="TC">Törks və Kaykos adaları</territory>
 			<territory type="TD">Çad</territory>
-			<territory type="TF">Fransa Cənub Əraziləri</territory>
+			<territory type="TF">Fransanın Cənub Əraziləri</territory>
 			<territory type="TG">Toqo</territory>
-			<territory type="TH">Tayland</territory>
+			<territory type="TH">Tailand</territory>
 			<territory type="TJ">Tacikistan</territory>
 			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Şərqi Timor</territory>
@@ -912,26 +944,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TM">Türkmənistan</territory>
 			<territory type="TN">Tunis</territory>
 			<territory type="TO">Tonqa</territory>
-			<territory type="TR">Türkiya</territory>
+			<territory type="TR">Türkiyə</territory>
 			<territory type="TT">Trinidad və Tobaqo</territory>
 			<territory type="TV">Tuvalu</territory>
 			<territory type="TW">Tayvan</territory>
 			<territory type="TZ">Tanzaniya</territory>
 			<territory type="UA">Ukrayna</territory>
 			<territory type="UG">Uqanda</territory>
-			<territory type="UM">Birləşmiş Ştatlar Uzaq Adalar</territory>
+			<territory type="UM">ABŞ-a bağlı kiçik adacıqlar</territory>
+			<territory type="UN">Birləşmiş Millətlər Təşkilatı</territory>
+			<territory type="UN" alt="short">BMT</territory>
 			<territory type="US">Amerika Birləşmiş Ştatları</territory>
-			<territory type="US" alt="short">A.B.Ş.</territory>
+			<territory type="US" alt="short">ABŞ</territory>
 			<territory type="UY">Uruqvay</territory>
 			<territory type="UZ">Özbəkistan</territory>
 			<territory type="VA">Vatikan</territory>
-			<territory type="VC">San Vinsent və Qrenada</territory>
+			<territory type="VC">Sent-Vinsent və Qrenadinlər</territory>
 			<territory type="VE">Venesuela</territory>
-			<territory type="VG">Britaniya Vircin Adaları</territory>
-			<territory type="VI">ABŞ Vircin Adaları</territory>
+			<territory type="VG">Britaniyanın Virgin adaları</territory>
+			<territory type="VI">ABŞ Virgin adaları</territory>
 			<territory type="VN">Vyetnam</territory>
 			<territory type="VU">Vanuatu</territory>
-			<territory type="WF">Uolis və Futuna</territory>
+			<territory type="WF">Uollis və Futuna</territory>
 			<territory type="WS">Samoa</territory>
 			<territory type="XK">Kosovo</territory>
 			<territory type="YE">Yəmən</territory>
@@ -943,7 +977,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</territories>
 		<keys>
 			<key type="calendar">Təqvim</key>
-			<key type="collation">Çeşidləmə</key>
+			<key type="cf">Valyuta Formatı</key>
+			<key type="collation">Sıralama</key>
 			<key type="currency">Valyuta</key>
 			<key type="hc">Saat Sikli (12 / 24)</key>
 			<key type="lb">Sətirdən sətrə keçirmə üslubu</key>
@@ -964,10 +999,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">Yapon Təqvimi</type>
 			<type key="calendar" type="persian">İran Təqvimi</type>
 			<type key="calendar" type="roc">Minquo Təqvimi</type>
-			<type key="collation" type="ducet">Defolt Unicode Çeşidləmə</type>
+			<type key="cf" type="account">Uçot Valyuta Formatı</type>
+			<type key="cf" type="standard">Standart Valyuta Formatı</type>
+			<type key="collation" type="ducet">Standart Unicode Sıralama</type>
 			<type key="collation" type="pinyin" draft="contributed">Pinyin təqvimi</type>
 			<type key="collation" type="search">Ümumi Məqsədli Axtarış</type>
-			<type key="collation" type="standard">Standart Çeşidləmə</type>
+			<type key="collation" type="standard">Standart Sıralama</type>
 			<type key="hc" type="h11">12 Saatlıq Sistem (0–11)</type>
 			<type key="hc" type="h12">12 Saatlıq Sistem (0–12)</type>
 			<type key="hc" type="h23">24 Saatlıq Sistem (0–23)</type>
@@ -1029,6 +1066,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a b c ç d e ə f g ğ h x ı i İ j k q l m n o ö p r s ş t u ü v y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[w]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A B C Ç D E Ə F G Ğ H X I İ J K Q L M N O Ö P R S Ş T U Ü V Y Z W]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1037,6 +1075,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1091,13 +1148,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">G MMM y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G d MMM y</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G d MMM y, E</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM</dateFormatItem>
 						<dateFormatItem id="MEd">dd.MM, E</dateFormatItem>
@@ -1105,6 +1177,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">d MMM, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">G y</dateFormatItem>
 						<dateFormatItem id="yyyy">G y</dateFormatItem>
 						<dateFormatItem id="yyyyM">GGGGG MM y</dateFormatItem>
@@ -1113,7 +1186,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yyyyMMM">G MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">G d MMM y</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">G d MMM y, E</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">G MMMM y</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">G y QQQ</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
 					</availableFormats>
@@ -1445,6 +1518,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">axşam</dayPeriod>
 							<dayPeriod type="night2">gecə</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">gecəyarı</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="noon">günorta</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="morning1">sübh</dayPeriod>
+							<dayPeriod type="morning2">səhər</dayPeriod>
+							<dayPeriod type="afternoon1">gündüz</dayPeriod>
+							<dayPeriod type="evening1">axşamüstü</dayPeriod>
+							<dayPeriod type="night1">axşam</dayPeriod>
+							<dayPeriod type="night2">gecə</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">gecəyarı</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
@@ -1462,15 +1547,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<eras>
 					<eraNames>
 						<era type="0">eramızdan əvvəl</era>
-						<era type="0" alt="variant">ümumi eradan öncə</era>
-						<era type="1">eramız</era>
-						<era type="1" alt="variant">ümumi era</era>
+						<era type="0" alt="variant">bizim eradan əvvəl</era>
+						<era type="1">yeni era</era>
+						<era type="1" alt="variant">bizim era</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">e.ə.</era>
-						<era type="0" alt="variant">ü.e.ö.</era>
-						<era type="1">b.e.</era>
-						<era type="1" alt="variant">ü.e.</era>
+						<era type="0" alt="variant">b.e.ə.</era>
+						<era type="1">y.e.</era>
+						<era type="1" alt="variant">b.e.</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -1539,8 +1624,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1566,7 +1656,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">d MMM, E</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMM, W 'həftə'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMM, W 'həftə'</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">MM.y</dateFormatItem>
@@ -1575,9 +1667,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">d MMM y, E</dateFormatItem>
-						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y, w 'həftə'</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y, w 'həftə'</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1684,6 +1778,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>Era</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>Era</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>Era</displayName>
+			</field>
 			<field type="year">
 				<displayName>İl</displayName>
 				<relative type="-1">keçən il</relative>
@@ -1722,6 +1822,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>Rüb</displayName>
+				<relative type="-1">keçən rüb</relative>
+				<relative type="0">bu rüb</relative>
+				<relative type="1">gələn rüb</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} rüb ərzində</relativeTimePattern>
 					<relativeTimePattern count="other">{0} rüb ərzində</relativeTimePattern>
@@ -1802,6 +1905,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} həftə öncə</relativeTimePattern>
 					<relativeTimePattern count="other">{0} həftə öncə</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} həftəsi</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>həftə</displayName>
@@ -1813,6 +1917,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} həftə öncə</relativeTimePattern>
 					<relativeTimePattern count="other">{0} həftə öncə</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} həftəsi</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>həftə</displayName>
@@ -1824,6 +1929,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} həftə öncə</relativeTimePattern>
 					<relativeTimePattern count="other">{0} həftə öncə</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} həftəsi</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>Ayın həftəsi</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>ay hft.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>ay hft.</displayName>
 			</field>
 			<field type="day">
 				<displayName>Gün</displayName>
@@ -1861,119 +1976,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} gün öncə</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>ilin günü</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>ilin günü</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>ilin günü</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>Həftənin Günü</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>hft. günü</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>hft. günü</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>ayın həftə günü</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>ay hft. günü</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>ay hft. günü</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">keçən bazar</relative>
 				<relative type="0">bu bazar</relative>
 				<relative type="1">gələn bazar</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} bazar ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} bazar öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">keçən bazar</relative>
 				<relative type="0">bu bazar</relative>
 				<relative type="1">gələn bazar</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} bazar ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} bazar öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">keçən bazar</relative>
 				<relative type="0">bu bazar</relative>
 				<relative type="1">gələn bazar</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} bazar ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} bazar öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">keçən bazar ertəsi</relative>
 				<relative type="0">bu bazar ertəsi</relative>
 				<relative type="1">gələn bazar ertəsi</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} bazar ertəsi ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar ertəsi əzrində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} bazar ertəsi öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar ertəsi öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">keçən bazar ertəsi</relative>
 				<relative type="0">bu bazar ertəsi</relative>
 				<relative type="1">gələn bazar ertəsi</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} bazar ertəsi əzrində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar ertəsi əzrində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} bazar ertəsi öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar ertəsi öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
-				<relative type="-1">keçən bazar ertəsi</relative>
-				<relative type="0">bu bazar ertəsi</relative>
-				<relative type="1">gələn bazar ertəsi</relative>
+				<relative type="-1">keçən BE</relative>
+				<relative type="0">bu BE</relative>
+				<relative type="1">gələn BE</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} bazar ertəsi əzrində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar ertəsi əzrində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} bazar ertəsi öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} bazar ertəsi öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">keçən çərşənbə axşamı</relative>
 				<relative type="0">bu çərşənbə axşamı</relative>
 				<relative type="1">gələn çərşənbə axşamı</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} çərşənbə axşamı ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə axşamı ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} çərşənbə axşamı öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə axşamı öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
-				<relative type="-1">keçən çərşənbə axşamı</relative>
-				<relative type="0">bu çərşənbə axşamı</relative>
-				<relative type="1">gələn çərşənbə axşamı</relative>
+				<relative type="-1">keçən ÇƏ</relative>
+				<relative type="0">bu ÇƏ</relative>
+				<relative type="1">gələn ÇƏ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} çərşənbə axşamı ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə axşamı ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} çərşənbə axşamı öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə axşamı öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
-				<relative type="-1">keçən çərşənbə axşamı</relative>
-				<relative type="0">bu çərşənbə axşamı</relative>
-				<relative type="1">gələn çərşənbə axşamı</relative>
+				<relative type="-1">keçən ÇƏ</relative>
+				<relative type="0">bu ÇƏ</relative>
+				<relative type="1">gələn ÇƏ</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} çərşənbə axşamı ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə axşamı ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} çərşənbə axşamı öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə axşamı öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">keçən çərşənbə</relative>
 				<relative type="0">bu çərşənbə</relative>
 				<relative type="1">gələn çərşənbə</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} çərşənbə ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} çərşənbə öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">keçən çərşənbə</relative>
 				<relative type="0">bu çərşənbə</relative>
 				<relative type="1">gələn çərşənbə</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} çərşənbə ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} çərşənbə öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
-				<relative type="-1">keçən çərşənbə</relative>
-				<relative type="0">bu çərşənbə</relative>
-				<relative type="1">gələn çərşənbə</relative>
+				<relative type="-1">keçən Ç</relative>
+				<relative type="0">bu Ç</relative>
+				<relative type="1">gələn Ç</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} çərşənbə ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} çərşənbə öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} çərşənbə öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">keçən cümə axşamı</relative>
 				<relative type="0">bu cümə axşamı</relative>
 				<relative type="1">gələn cümə axşamı</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} cümə axşamı ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə axşamı ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} cümə axşamı öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə axşamı öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">keçən cümə axşamı</relative>
 				<relative type="0">bu cümə axşamı</relative>
 				<relative type="1">gələn cümə axşamı</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} cümə axşamı ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə axşamı ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} cümə axşamı öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə axşamı öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
-				<relative type="-1">keçən cümə axşamı</relative>
-				<relative type="0">bu cümə axşamı</relative>
-				<relative type="1">gələn cümə axşamı</relative>
+				<relative type="-1">keçən CA</relative>
+				<relative type="0">bu CA</relative>
+				<relative type="1">gələn CA</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} cümə axşamı ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə axşamı ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} cümə axşamı öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə axşamı öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">keçən cümə</relative>
 				<relative type="0">bu cümə</relative>
 				<relative type="1">gələn cümə</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} cümə ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} cümə öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">keçən cümə</relative>
 				<relative type="0">bu cümə</relative>
 				<relative type="1">gələn cümə</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} cümə ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} cümə öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
-				<relative type="-1">keçən cümə</relative>
-				<relative type="0">bu cümə</relative>
-				<relative type="1">gələn cümə</relative>
+				<relative type="-1">keçən C</relative>
+				<relative type="0">bu C</relative>
+				<relative type="1">gələn C</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} cümə ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} cümə öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} cümə öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">keçən şənbə</relative>
 				<relative type="0">bu şənbə</relative>
 				<relative type="1">gələn şənbə</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} şənbə ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} şənbə ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} şənbə öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} şənbə öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">keçən şənbə</relative>
 				<relative type="0">bu şənbə</relative>
 				<relative type="1">gələn şənbə</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} şənbə ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} şənbə ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} şənbə öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} şənbə öncə</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
-				<relative type="-1">keçən şənbə</relative>
-				<relative type="0">bu şənbə</relative>
-				<relative type="1">gələn şənbə</relative>
+				<relative type="-1">keçən Ş</relative>
+				<relative type="0">bu Ş</relative>
+				<relative type="1">gələn Ş</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} şənbə ərzində</relativeTimePattern>
+					<relativeTimePattern count="other">{0} şənbə ərzində</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} şənbə öncə</relativeTimePattern>
+					<relativeTimePattern count="other">{0} şənbə öncə</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>AM/PM</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
+			</field>
 			<field type="hour">
 				<displayName>Saat</displayName>
+				<relative type="0">bu saat</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} saat ərzində</relativeTimePattern>
 					<relativeTimePattern count="other">{0} saat ərzində</relativeTimePattern>
@@ -2007,6 +2321,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>Dəqiqə</displayName>
+				<relative type="0">bu dəqiqə</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} dəqiqə ərzində</relativeTimePattern>
 					<relativeTimePattern count="other">{0} dəqiqə ərzində</relativeTimePattern>
@@ -2075,6 +2390,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>Saat Qurşağı</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>qurşaq</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>qurşaq</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
@@ -2084,6 +2405,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} Yay Vaxtı</regionFormat>
 			<regionFormat type="standard">{0} Standart Vaxtı</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Isabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Koordinasiya edilmiş ümumdünya vaxtı</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Naməlum Şəhər</exemplarCity>
 			</zone>
@@ -2259,10 +2591,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Porto-Novo</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>San Bartolomey</exemplarCity>
+				<exemplarCity>Sent-Bartelemi</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
-				<exemplarCity>Bermuda</exemplarCity>
+				<exemplarCity>Bermud adaları</exemplarCity>
 			</zone>
 			<zone type="Asia/Brunei">
 				<exemplarCity>Brunei</exemplarCity>
@@ -2348,6 +2680,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>Vankuver</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Douson Krik</exemplarCity>
 			</zone>
@@ -2355,7 +2690,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Kreston</exemplarCity>
 			</zone>
 			<zone type="America/Yellowknife">
-				<exemplarCity>Yelounayf</exemplarCity>
+				<exemplarCity>Yellounayf</exemplarCity>
 			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>Edmondton</exemplarCity>
@@ -2444,6 +2779,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Pasxa</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santyaqo</exemplarCity>
 			</zone>
@@ -2476,6 +2814,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nikosia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famaqusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Praqa</exemplarCity>
@@ -2735,6 +3076,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atırau</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtobe</exemplarCity>
 			</zone>
@@ -2848,9 +3192,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Tixuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosilo</exemplarCity>
@@ -3017,6 +3358,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volqoqrad</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Həştərxan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -3028,6 +3381,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
@@ -3168,7 +3527,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Tonqapatu</exemplarCity>
 			</zone>
 			<zone type="Europe/Istanbul">
-				<exemplarCity>Istanbul</exemplarCity>
+				<exemplarCity>İstanbul</exemplarCity>
 			</zone>
 			<zone type="America/Port_of_Spain">
 				<exemplarCity>İspan Limanı</exemplarCity>
@@ -3183,7 +3542,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Dar es Salam</exemplarCity>
 			</zone>
 			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ujgorod</exemplarCity>
+				<exemplarCity>Ujqorod</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiyev</exemplarCity>
@@ -3197,9 +3556,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midvey</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Conston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Veyk</exemplarCity>
 			</zone>
@@ -3209,8 +3565,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nom</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Conston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankorac</exemplarCity>
@@ -4031,9 +4387,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>San Pier və Mikelon Vaxtı</generic>
-					<standard>San Pier və Mikelon Standart Vaxtı</standard>
-					<daylight>San Pier və Mikelon Yay Vaxtı</daylight>
+					<generic>Müqəddəs Pyer və Mikelon Vaxtı</generic>
+					<standard>Müqəddəs Pyer və Mikelon Standart Vaxtı</standard>
+					<daylight>Müqəddəs Pyer və Mikelon Yay Vaxtı</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -4044,6 +4400,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Ponape">
 				<long>
 					<standard>Ponape Vaxtı</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pxenyan Vaxtı</standard>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -4252,30 +4613,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
-					<pattern type="1000" count="one">0K</pattern>
-					<pattern type="1000" count="other">0K</pattern>
-					<pattern type="10000" count="one">00K</pattern>
-					<pattern type="10000" count="other">00K</pattern>
-					<pattern type="100000" count="one">000K</pattern>
-					<pattern type="100000" count="other">000K</pattern>
-					<pattern type="1000000" count="one">0M</pattern>
-					<pattern type="1000000" count="other">0M</pattern>
-					<pattern type="10000000" count="one">00M</pattern>
-					<pattern type="10000000" count="other">00M</pattern>
-					<pattern type="100000000" count="one">000M</pattern>
-					<pattern type="100000000" count="other">000M</pattern>
-					<pattern type="1000000000" count="one">0G</pattern>
-					<pattern type="1000000000" count="other">0G</pattern>
-					<pattern type="10000000000" count="one">00G</pattern>
-					<pattern type="10000000000" count="other">00G</pattern>
-					<pattern type="100000000000" count="one">000G</pattern>
-					<pattern type="100000000000" count="other">000G</pattern>
-					<pattern type="1000000000000" count="one">0T</pattern>
-					<pattern type="1000000000000" count="other">0T</pattern>
-					<pattern type="10000000000000" count="one">00T</pattern>
-					<pattern type="10000000000000" count="other">00T</pattern>
-					<pattern type="100000000000000" count="one">000T</pattern>
-					<pattern type="100000000000000" count="other">000T</pattern>
+					<pattern type="1000" count="one">0 min</pattern>
+					<pattern type="1000" count="other">0 min</pattern>
+					<pattern type="10000" count="one">00 min</pattern>
+					<pattern type="10000" count="other">00 min</pattern>
+					<pattern type="100000" count="one">000 min</pattern>
+					<pattern type="100000" count="other">000 min</pattern>
+					<pattern type="1000000" count="one">0 milyon</pattern>
+					<pattern type="1000000" count="other">0 milyon</pattern>
+					<pattern type="10000000" count="one">00 milyon</pattern>
+					<pattern type="10000000" count="other">00 milyon</pattern>
+					<pattern type="100000000" count="one">000 milyon</pattern>
+					<pattern type="100000000" count="other">000 milyon</pattern>
+					<pattern type="1000000000" count="one">0 milyard</pattern>
+					<pattern type="1000000000" count="other">0 milyard</pattern>
+					<pattern type="10000000000" count="one">00 milyard</pattern>
+					<pattern type="10000000000" count="other">00 milyard</pattern>
+					<pattern type="100000000000" count="one">000 milyard</pattern>
+					<pattern type="100000000000" count="other">000 milyard</pattern>
+					<pattern type="1000000000000" count="one">0 trilyon</pattern>
+					<pattern type="1000000000000" count="other">0 trilyon</pattern>
+					<pattern type="10000000000000" count="one">00 trilyon</pattern>
+					<pattern type="10000000000000" count="other">00 trilyon</pattern>
+					<pattern type="100000000000000" count="one">000 trilyon</pattern>
+					<pattern type="100000000000000" count="other">000 trilyon</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
@@ -4412,6 +4773,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Anqola kvanzasi</displayName>
 				<displayName count="other">Anqola kvanzasi</displayName>
 				<symbol>AOA</symbol>
+				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>Anqola Kvanzasi (1977–1990)</displayName>
@@ -4557,6 +4919,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Boliviya bolivianosu</displayName>
 				<displayName count="other">Boliviya bolivianosu</displayName>
 				<symbol>BOB</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOP">
 				<displayName>Boliviya pesosu</displayName>
@@ -4623,18 +4986,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Botsvana pulası</displayName>
 				<displayName count="other">Botsvana pulası</displayName>
 				<symbol>BWP</symbol>
+				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>Belarus Yeni Rublu (1994–1999)</displayName>
 				<displayName count="one">Belarus yeni rublu (1994–1999)</displayName>
 				<displayName count="other">Belarus yeni rublu (1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Belarus Rublu</displayName>
 				<displayName count="one">Belarus rublu</displayName>
 				<displayName count="other">Belarus rublu</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Belarus Rublu (2000–2016)</displayName>
+				<displayName count="one">Belarus rublu (2000–2016)</displayName>
+				<displayName count="other">Belarus rublu (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Beliz Dolları</displayName>
@@ -4679,6 +5049,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="CNH">
+				<displayName>Çin Yuanı (ofşor)</displayName>
+				<displayName count="one">Çin yuanı (ofşor)</displayName>
+				<displayName count="other">Çin yuanı (ofşor)</displayName>
+				<symbol draft="contributed">CNH</symbol>
+			</currency>
 			<currency type="CNY">
 				<displayName>Çin Yuanı</displayName>
 				<displayName count="one">Çin yuanı</displayName>
@@ -4715,6 +5091,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Kuba çevrilən pesosu</displayName>
 				<displayName count="other">Kuba çevrilən pesosu</displayName>
 				<symbol>CUC</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>Kuba Pesosu</displayName>
@@ -4845,6 +5222,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Folklend Adaları funtu</displayName>
 				<displayName count="other">Folklend Adaları funtu</displayName>
 				<symbol>FKP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>Fransız Markası</displayName>
@@ -4868,6 +5246,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Gürcüstan larisi</displayName>
 				<displayName count="other">Gürcüstan larisi</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
@@ -4899,6 +5278,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Qvineya frankı</displayName>
 				<displayName count="other">Qvineya frankı</displayName>
 				<symbol>GNF</symbol>
+				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>Qvineya Sulisi</displayName>
@@ -4920,6 +5300,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Qvatemala küetzalı</displayName>
 				<displayName count="other">Qvatemala küetzalı</displayName>
 				<symbol>GTQ</symbol>
+				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>Portugal Qvineya Eskudosu</displayName>
@@ -4950,6 +5331,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Honduras lempirası</displayName>
 				<displayName count="other">Honduras lempirası</displayName>
 				<symbol>HNL</symbol>
+				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>Xorvatiya Dinarı</displayName>
@@ -4981,6 +5363,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">İndoneziya rupisi</displayName>
 				<displayName count="other">İndoneziya rupisi</displayName>
 				<symbol>IDR</symbol>
+				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>İrlandiya Paundu</displayName>
@@ -5033,6 +5416,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">İslandiya kronu</displayName>
 				<displayName count="other">İslandiya kronu</displayName>
 				<symbol>ISK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>İtaliya Lirası</displayName>
@@ -5083,12 +5467,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Komor frankı</displayName>
 				<displayName count="other">Komor frankı</displayName>
 				<symbol>KMF</symbol>
+				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>Şimali Koreya Vonu</displayName>
 				<displayName count="one">Şimali Koreya vonu</displayName>
 				<displayName count="other">Şimali Koreya vonu</displayName>
 				<symbol>KPW</symbol>
+				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>Cənubi Koreya Vonu</displayName>
@@ -5136,6 +5522,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Şri Lanka rupisi</displayName>
 				<displayName count="other">Şri Lanka rupisi</displayName>
 				<symbol>LKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>Liberiya Dolları</displayName>
@@ -5214,6 +5601,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Madaqaskar ariarisi</displayName>
 				<displayName count="other">Madaqaskar ariarisi</displayName>
 				<symbol>MGA</symbol>
+				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>Madaqaskar Frankası</displayName>
@@ -5241,6 +5629,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Myanmar kiyatı</displayName>
 				<displayName count="other">Myanmar kiyatı</displayName>
 				<symbol>MMK</symbol>
+				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>Monqoliya Tuqriki</displayName>
@@ -5256,10 +5645,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Mavritaniya Ugiyası (1973–2017)</displayName>
+				<displayName count="one">Mavritaniya ugiyası (1973–2017)</displayName>
+				<displayName count="other">Mavritaniya ugiyası (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Mavritaniya Ugiyası</displayName>
 				<displayName count="one">Mavritaniya ugiyası</displayName>
 				<displayName count="other">Mavritaniya ugiyası</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTP">
 				<displayName>Maltiz Paundu</displayName>
@@ -5271,6 +5665,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Mavriki rupisi</displayName>
 				<displayName count="other">Mavriki rupisi</displayName>
 				<symbol>MUR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>Maldiv Rufiyası</displayName>
@@ -5301,6 +5696,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Malayziya ringiti</displayName>
 				<displayName count="other">Malayziya ringiti</displayName>
 				<symbol>MYR</symbol>
+				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>Mozambik Eskudosu</displayName>
@@ -5342,6 +5738,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Nikaraqua kordobası</displayName>
 				<displayName count="other">Nikaraqua kordobası</displayName>
 				<symbol>NIO</symbol>
+				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>Hollandiya Gilderi</displayName>
@@ -5353,12 +5750,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Norveç kronu</displayName>
 				<displayName count="other">Norveç kronu</displayName>
 				<symbol>NOK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>Nepal Rupisi</displayName>
 				<displayName count="one">Nepal rupisi</displayName>
 				<displayName count="other">Nepal rupisi</displayName>
 				<symbol>NPR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>Yeni Zelandiya Dolları</displayName>
@@ -5385,15 +5784,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Peru inti</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>Peru Nuevo Solu</displayName>
-				<displayName count="one">Peru Nuevo solu</displayName>
-				<displayName count="other">Peru Nuevo solu</displayName>
-				<symbol>PEN</symbol>
-			</currency>
-			<currency type="PES">
 				<displayName>Peru Solu</displayName>
 				<displayName count="one">Peru solu</displayName>
 				<displayName count="other">Peru solu</displayName>
+				<symbol>PEN</symbol>
+			</currency>
+			<currency type="PES">
+				<displayName>Peru Solu (1863–1965)</displayName>
+				<displayName count="one">Peru solu (1863–1965)</displayName>
+				<displayName count="other">Peru solu (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>Papua Yeni Qvineya Kinası</displayName>
@@ -5413,6 +5812,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Pakistan rupisi</displayName>
 				<displayName count="other">Pakistan rupisi</displayName>
 				<symbol>PKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>Polşa Zlotısı</displayName>
@@ -5459,6 +5859,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Rumıniya leyi</displayName>
 				<displayName count="other">Rumıniya leyi</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">ley</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Serbiya Dinarı</displayName>
@@ -5483,6 +5884,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Ruanda frankı</displayName>
 				<displayName count="other">Ruanda frankı</displayName>
 				<symbol>RWF</symbol>
+				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>Səudiyyə Riyalı</displayName>
@@ -5514,6 +5916,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">İsveç kronu</displayName>
 				<displayName count="other">İsveç kronu</displayName>
 				<symbol>SEK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>Sinqapur Dolları</displayName>
@@ -5566,10 +5969,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>San Tom və Prinsip Dobrası (1977–2017)</displayName>
+				<displayName count="one">San Tom və Prinsip dobrası (1977–2017)</displayName>
+				<displayName count="other">San Tom və Prinsip dobrası (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>San Tom və Prinsip Dobrası</displayName>
 				<displayName count="one">San Tom və Prinsip dobrası</displayName>
 				<displayName count="other">San Tom və Prinsip dobrası</displayName>
-				<symbol>STD</symbol>
+				<symbol draft="contributed">STN</symbol>
+				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>Sovet Rublu</displayName>
@@ -5599,6 +6009,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Tayland batı</displayName>
 				<displayName count="other">Tayland batı</displayName>
 				<symbol>฿</symbol>
+				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>Tacikistan Rublu</displayName>
@@ -5633,6 +6044,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Tonqa panqası</displayName>
 				<displayName count="other">Tonqa panqası</displayName>
 				<symbol>TOP</symbol>
+				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>Timor Eskudu</displayName>
@@ -5745,6 +6157,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Venesuela bolivarı</displayName>
 				<displayName count="other">Venesuela bolivarı</displayName>
 				<symbol>VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Vyetnam Donqu</displayName>
@@ -5791,6 +6204,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Şərqi Karib dolları</displayName>
 				<displayName count="other">Şərqi Karib dolları</displayName>
 				<symbol>EC$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XFO">
 				<displayName>Fransız Gızıl Frankı</displayName>
@@ -5865,6 +6279,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Cənubi Afrika randı</displayName>
 				<displayName count="other">Cənubi Afrika randı</displayName>
 				<symbol>ZAR</symbol>
+				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Zambiya Kvaçası (1968–2012)</displayName>
@@ -5876,6 +6291,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Zambiya kvaçası</displayName>
 				<displayName count="other">Zambiya kvaçası</displayName>
 				<symbol>ZMW</symbol>
+				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>Zair Yeni Zairi (1993–1998)</displayName>
@@ -5907,6 +6323,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">Alış-veriş katınızda {0} X var. Almaq istəyirsiniz?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">Alış-veriş kartınızda {0} X var. Almaq istəyirsiniz?</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">{0}-cü sağ döngəni seçin.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="many">{0}-cı sağ döngəni seçin.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">{0}-ci sağ döngəni seçin.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}-cu sağ döngəni seçin.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5952,6 +6376,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kvadrat kilometr</displayName>
 				<unitPattern count="one">{0} kvadrat kilometr</unitPattern>
 				<unitPattern count="other">{0} kvadrat kilometr</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektar</displayName>
@@ -5974,6 +6399,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kvadrat mil</displayName>
 				<unitPattern count="one">{0} kvadrat mil</unitPattern>
 				<unitPattern count="other">{0} kvadrat mil</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akr</displayName>
@@ -6001,20 +6427,40 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} karat</unitPattern>
 				<unitPattern count="other">{0} karat</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>milliqram/desilitr</displayName>
+				<unitPattern count="one">{0} milliqram/desilitr</unitPattern>
+				<unitPattern count="other">{0} milliqram/desilitr</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>millimol/litr</displayName>
+				<unitPattern count="one">{0} millimol/litr</unitPattern>
+				<unitPattern count="other">{0} millimol/litr</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>milyonda hissəcik</displayName>
+				<unitPattern count="one">milyonda {0} hissəcik</unitPattern>
+				<unitPattern count="other">milyonda {0} hissəcik</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litr/kilometr</displayName>
 				<unitPattern count="one">{0} litr/kilometr</unitPattern>
 				<unitPattern count="other">{0} litr/kilometr</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName>L/100km</displayName>
-				<unitPattern count="one">{0} L/100km</unitPattern>
-				<unitPattern count="other">{0} L/100km</unitPattern>
+				<displayName>100 kilometrə litr</displayName>
+				<unitPattern count="one">100 kilometrə {0} litr</unitPattern>
+				<unitPattern count="other">100 kilometrə {0} litr</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>mil/qallon</displayName>
-				<unitPattern count="one">{0} mil/qallon</unitPattern>
-				<unitPattern count="other">{0} mil/qallon</unitPattern>
+				<displayName>qallona mil</displayName>
+				<unitPattern count="one">qallona {0} mil</unitPattern>
+				<unitPattern count="other">qallona {0} mil</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>imp. qallona mil</displayName>
+				<unitPattern count="one">imp. qallona {0} mil</unitPattern>
+				<unitPattern count="other">imp. qallona {0} mil</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabayt</displayName>
@@ -6288,6 +6734,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>xal</displayName>
+				<unitPattern count="one">{0} xal</unitPattern>
+				<unitPattern count="other">{0} xal</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lüks</displayName>
 				<unitPattern count="one">{0} lüks</unitPattern>
@@ -6536,6 +6987,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} qallon</unitPattern>
 				<perUnitPattern>{0}/qal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>İmp. qallon</displayName>
+				<unitPattern count="one">{0} imp. qallon</unitPattern>
+				<unitPattern count="other">{0} imp. qallon</unitPattern>
+				<perUnitPattern>{0}/imp. qallon</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>kvart</displayName>
 				<unitPattern count="one">{0} kvart</unitPattern>
@@ -6616,6 +7073,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kvadrat kilometr</displayName>
 				<unitPattern count="one">{0} kv km</unitPattern>
 				<unitPattern count="other">{0} kv km</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektar</displayName>
@@ -6638,6 +7096,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kvadrat mil</displayName>
 				<unitPattern count="one">{0} kv mil</unitPattern>
 				<unitPattern count="other">{0} kv mil</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akr</displayName>
@@ -6665,20 +7124,40 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mq/dl</displayName>
+				<unitPattern count="one">{0} mq/dl</unitPattern>
+				<unitPattern count="other">{0} mq/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>millimol/litr</displayName>
+				<unitPattern count="one">{0} mmol/l</unitPattern>
+				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>hissəcik/milyon</displayName>
+				<unitPattern count="one">{0} hs/mln</unitPattern>
+				<unitPattern count="other">{0} hs/mln</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName>L/km</displayName>
-				<unitPattern count="one">{0} L/km</unitPattern>
-				<unitPattern count="other">{0} L/km</unitPattern>
+				<displayName>l/km</displayName>
+				<unitPattern count="one">{0} l/km</unitPattern>
+				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName>L/100km</displayName>
-				<unitPattern count="one">{0} L/100km</unitPattern>
-				<unitPattern count="other">{0} L/100km</unitPattern>
+				<displayName>l/100km</displayName>
+				<unitPattern count="one">{0} l/100km</unitPattern>
+				<unitPattern count="other">{0} l/100km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>mpg</displayName>
-				<unitPattern count="one">{0} mpg</unitPattern>
-				<unitPattern count="other">{0} mpg</unitPattern>
+				<displayName>mil/qal</displayName>
+				<unitPattern count="one">{0} mil/qal</unitPattern>
+				<unitPattern count="other">{0} mil/qal</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mil/imp. qal</displayName>
+				<unitPattern count="one">{0} m/q imp</unitPattern>
+				<unitPattern count="other">{0} m/q imp</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -6952,6 +7431,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>xal</displayName>
+				<unitPattern count="one">{0} xal</unitPattern>
+				<unitPattern count="other">{0} xal</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
@@ -7200,6 +7684,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} qal</unitPattern>
 				<perUnitPattern>{0}/qal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>İmp. qal</displayName>
+				<unitPattern count="one">{0} imp. qal</unitPattern>
+				<unitPattern count="other">{0} imp. qal</unitPattern>
+				<perUnitPattern>{0}/imp. qal</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
 				<unitPattern count="one">{0} qt</unitPattern>
@@ -7282,9 +7772,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ft²</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName>L/100km</displayName>
-				<unitPattern count="one">{0} L/100km</unitPattern>
-				<unitPattern count="other">{0} L/100km</unitPattern>
+				<displayName>l/100km</displayName>
+				<unitPattern count="one">{0} l/100km</unitPattern>
+				<unitPattern count="other">{0} l/100km</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>il</displayName>
@@ -7474,11 +7964,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} və {1}</listPatternPart>
 			<listPatternPart type="2">{0} və {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="unit">
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, yaxud {1}</listPatternPart>
+			<listPatternPart type="2">{0} yaxud {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} və {1}</listPatternPart>
 			<listPatternPart type="2">{0} və {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, {1}</listPatternPart>
+			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -7499,5 +8001,103 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>yox:y</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — Bütün</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — Uyğunluq</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — Qapalı</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — Artırılmış</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — Tarixi</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — Qarışıq</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — Digər</characterLabelPattern>
+		<characterLabelPattern type="scripts">Yazılar — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} Vurğu</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} Vurğu</characterLabelPattern>
+		<characterLabel type="activities">Aktivitələr</characterLabel>
+		<characterLabel type="african_scripts">Afrika Yazıları</characterLabel>
+		<characterLabel type="american_scripts">Amerika Yazıları</characterLabel>
+		<characterLabel type="animal">heyvan</characterLabel>
+		<characterLabel type="animals_nature">Heyvanlar və Təbiət</characterLabel>
+		<characterLabel type="arrows">Oxlar</characterLabel>
+		<characterLabel type="body">bədən</characterLabel>
+		<characterLabel type="box_drawing">Qutu Çəkmək</characterLabel>
+		<characterLabel type="braille">Brayl</characterLabel>
+		<characterLabel type="building">bina</characterLabel>
+		<characterLabel type="bullets_stars">Marker/Ulduz</characterLabel>
+		<characterLabel type="consonantal_jamo">Samit Jamo</characterLabel>
+		<characterLabel type="currency_symbols">Valyuta Simvolları</characterLabel>
+		<characterLabel type="dash_connector">Tire/Bağlayıcı</characterLabel>
+		<characterLabel type="digits">Rəqəmlər</characterLabel>
+		<characterLabel type="dingbats">Dinqbatlar</characterLabel>
+		<characterLabel type="divination_symbols">Divinasiya Simvolları</characterLabel>
+		<characterLabel type="downwards_arrows">Aşağıya Oxlar</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">Aşağıya Yuxarıya Oxlar</characterLabel>
+		<characterLabel type="east_asian_scripts">Şərqi Asiya Yazıları</characterLabel>
+		<characterLabel type="emoji">Emoji</characterLabel>
+		<characterLabel type="european_scripts">Avropa Yazıları</characterLabel>
+		<characterLabel type="female">qadın</characterLabel>
+		<characterLabel type="flag">bayraq</characterLabel>
+		<characterLabel type="flags">Bayraqlar</characterLabel>
+		<characterLabel type="food_drink">Yemək-içmək</characterLabel>
+		<characterLabel type="format">Format</characterLabel>
+		<characterLabel type="format_whitespace">Format və Boşluq</characterLabel>
+		<characterLabel type="full_width_form_variant">Tam Genişlik Formalı Variant</characterLabel>
+		<characterLabel type="geometric_shapes">Həndəsi Fiqurlar</characterLabel>
+		<characterLabel type="half_width_form_variant">Genişlik Formalı Variant</characterLabel>
+		<characterLabel type="han_characters">Han Simvolları</characterLabel>
+		<characterLabel type="han_radicals">Han Radikalları</characterLabel>
+		<characterLabel type="hanja">Hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">Hanzi (Sadələşmiş)</characterLabel>
+		<characterLabel type="hanzi_traditional">Hanzi (Ənənəvi)</characterLabel>
+		<characterLabel type="heart">ürək</characterLabel>
+		<characterLabel type="historic_scripts">Tarixi Yazılar</characterLabel>
+		<characterLabel type="ideographic_desc_characters">İdeoqrafik Simvollar</characterLabel>
+		<characterLabel type="japanese_kana">Yapon Kanası</characterLabel>
+		<characterLabel type="kanbun">Kanbun</characterLabel>
+		<characterLabel type="kanji">Kanji</characterLabel>
+		<characterLabel type="keycap">klaviatura qapağı</characterLabel>
+		<characterLabel type="leftwards_arrows">Sola Oxlar</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">Sola Sağa Oxlar</characterLabel>
+		<characterLabel type="letterlike_symbols">Hərfəbənzər Simvollar</characterLabel>
+		<characterLabel type="limited_use">Limitli İstifadə</characterLabel>
+		<characterLabel type="male">kişi</characterLabel>
+		<characterLabel type="math_symbols">Riyazi Simvollar</characterLabel>
+		<characterLabel type="middle_eastern_scripts">Yaxın Şərq Yazıları</characterLabel>
+		<characterLabel type="miscellaneous">Qarışıq</characterLabel>
+		<characterLabel type="modern_scripts">Çağdaş Yazılar</characterLabel>
+		<characterLabel type="modifier">Modifikator</characterLabel>
+		<characterLabel type="musical_symbols">Musiqi Simvolları</characterLabel>
+		<characterLabel type="nature">təbiət</characterLabel>
+		<characterLabel type="nonspacing">Boşluqsuz</characterLabel>
+		<characterLabel type="numbers">Saylar</characterLabel>
+		<characterLabel type="objects">Obyektlər</characterLabel>
+		<characterLabel type="other">Digər</characterLabel>
+		<characterLabel type="paired">Cüt</characterLabel>
+		<characterLabel type="person">şəxs</characterLabel>
+		<characterLabel type="phonetic_alphabet">Fonetik Əlifba</characterLabel>
+		<characterLabel type="pictographs">Piktoqram</characterLabel>
+		<characterLabel type="place">yer</characterLabel>
+		<characterLabel type="plant">bitki</characterLabel>
+		<characterLabel type="punctuation">Durğu</characterLabel>
+		<characterLabel type="rightwards_arrows">Sağa Oxlar</characterLabel>
+		<characterLabel type="sign_standard_symbols">İşarə/Standart Simvollar</characterLabel>
+		<characterLabel type="small_form_variant">Kiçik Forma Variantları</characterLabel>
+		<characterLabel type="smiley">smayli</characterLabel>
+		<characterLabel type="smileys_people">Gülüş və Camaat</characterLabel>
+		<characterLabel type="south_asian_scripts">Cənubi Asiya Yazıları</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Cənub-Şərqi Asiya Yazıları</characterLabel>
+		<characterLabel type="spacing">Boşluq</characterLabel>
+		<characterLabel type="sport">idman</characterLabel>
+		<characterLabel type="symbols">Simvollar</characterLabel>
+		<characterLabel type="technical_symbols">Texniki Simvollar</characterLabel>
+		<characterLabel type="tone_marks">Ton Qeydləri</characterLabel>
+		<characterLabel type="travel">səyahət</characterLabel>
+		<characterLabel type="travel_places">Səyahət və Yerlər</characterLabel>
+		<characterLabel type="upwards_arrows">Yuxarıya Oxlar</characterLabel>
+		<characterLabel type="variant_forms">Variant Formaları</characterLabel>
+		<characterLabel type="vocalic_jamo">Vokal Jamo</characterLabel>
+		<characterLabel type="weather">hava</characterLabel>
+		<characterLabel type="western_asian_scripts">Qərbi Asiya Yazıları</characterLabel>
+		<characterLabel type="whitespace">Boşluq</characterLabel>
+	</characterLabels>
 </ldml>
-

@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc. CLDR data files are interpreted
+<!-- Copyright © 1991-2018 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
 according to the LDML specification (http://unicode.org/reports/tr35/) For
 terms of use, see http://www.unicode.org/copyright.html
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="lb"/>
 	</identity>
 	<localeDisplayNames>
@@ -1031,7 +1035,7 @@ terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Ukrain</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Amerikanesch-Ozeanien</territory>
-			<territory type="US">Vereenegt Staate vun Amerika</territory>
+			<territory type="US">Vereenegt Staaten</territory>
 			<territory type="US" alt="short">US</territory>
 			<territory type="UY">Uruguay</territory>
 			<territory type="UZ">Usbekistan</territory>
@@ -1200,6 +1204,7 @@ terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a ä b c d e é ë f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ã ā æ ç è ĕ ê ē ğ í ì ĭ î ï İ ī ı ñ ó ò ŏ ô ö ø ō œ ş ß ú ù ŭ û ü ū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 		<ellipsis type="final">{0} …</ellipsis>
 		<ellipsis type="initial">… {0}</ellipsis>
@@ -3936,10 +3941,15 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Wäissrussesche Rubel (1994–1999)</displayName>
 				<displayName count="other">Wäissrussesch Rubel (1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Wäissrussesche Rubel</displayName>
 				<displayName count="one">Wäissrussesche Rubel</displayName>
 				<displayName count="other">Wäissrussesch Rubel</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>Wäissrussesche Rubel (2000–2016)</displayName>
+				<displayName count="one">Wäissrussesche Rubel (2000–2016)</displayName>
+				<displayName count="other">Wäissrussesch Rubel (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belize-Dollar</displayName>
@@ -4483,6 +4493,11 @@ terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Mauretaneschen Ouguiya (1973–2017)</displayName>
+				<displayName count="one">Mauretaneschen Ouguiya (1973–2017)</displayName>
+				<displayName count="other">Mauretanesch Ouguiya (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Mauretaneschen Ouguiya</displayName>
 				<displayName count="one">Mauretaneschen Ouguiya</displayName>
 				<displayName count="other">Mauretanesch Ouguiya</displayName>
@@ -4608,13 +4623,13 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Peruanesch Inti</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>Peruaneschen Neie Sol</displayName>
-				<displayName count="one">Peruaneschen Neie Sol</displayName>
-				<displayName count="other">Peruanesch Nei Soles</displayName>
+				<displayName>Peruaneschen Sol</displayName>
+				<displayName count="one">Peruaneschen Sol</displayName>
+				<displayName count="other">Peruanesch Soles</displayName>
 			</currency>
 			<currency type="PES">
-				<displayName>Peruanesche Sol (1863–1965)</displayName>
-				<displayName count="one">Peruanesche Sol (1863–1965)</displayName>
+				<displayName>Peruaneschen Sol (1863–1965)</displayName>
+				<displayName count="one">Peruaneschen Sol (1863–1965)</displayName>
 				<displayName count="other">Peruanesch Soles (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
@@ -4778,6 +4793,11 @@ terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Südsudanesesch Pond</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>São-toméeschen Dobra (1977–2017)</displayName>
+				<displayName count="one">São-toméeschen Dobra (1977–2017)</displayName>
+				<displayName count="other">São-toméesch Dobra (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>São-toméeschen Dobra</displayName>
 				<displayName count="one">São-toméeschen Dobra</displayName>
 				<displayName count="other">São-toméesch Dobra</displayName>
@@ -6747,4 +6767,3 @@ terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

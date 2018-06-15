@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11974 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="pa"/>
 		<script type="Arab"/>
 	</identity>
@@ -19,7 +20,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Guru">گُرمُکھی</script>
 		</scripts>
 		<territories>
-			<territory type="PK">پکستان</territory>
+			<territory type="PK">پاکستان</territory>
 		</territories>
 	</localeDisplayNames>
 	<layout>
@@ -31,6 +32,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[\u064F ء آ ؤ ئ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ه ھ ہ و ی ے]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200E\u200F أ ٻ ة ٺ ټ ٽ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[ء آ ؤ ئ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ه ھ ہ و ی ے]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\u200E \- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -260,4 +262,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-
