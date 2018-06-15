@@ -1149,6 +1149,11 @@ Node* SafePointNode::Identity(PhaseGVN* phase) {
       assert( n0->is_Call(), "expect a call here" );
     }
     if( n0->is_Call() && n0->as_Call()->guaranteed_safepoint() ) {
+      // Don't remove a safepoint belonging to an OuterStripMinedLoopEndNode.
+      // If the loop dies, they will be removed together.
+      if (has_out_with(Op_OuterStripMinedLoopEnd)) {
+        return this;
+      }
       // Useless Safepoint, so remove it
       return in(TypeFunc::Control);
     }
