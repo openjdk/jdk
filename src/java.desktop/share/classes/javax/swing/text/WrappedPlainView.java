@@ -364,8 +364,9 @@ public class WrappedPlainView extends BoxView implements TabExpander {
                                                 this, p0);
         } else {
             p = p0 + Utilities.getTabbedTextOffset(segment, metrics,
-                                                   tabBase, tabBase + currentWidth,
-                                                   this, p0, false);
+                                               (float)tabBase,
+                                               (float)(tabBase + currentWidth),
+                                               this, p0, false);
         }
         SegmentCache.releaseSharedSegment(segment);
         return p;
@@ -847,8 +848,8 @@ public class WrappedPlainView extends BoxView implements TabExpander {
                         Segment segment = SegmentCache.getSharedSegment();
                         loadText(segment, p0, p1);
                         int n = Utilities.getTabbedTextOffset(segment, metrics,
-                                                   alloc.x, x,
-                                                   WrappedPlainView.this, p0);
+                                                   (float)alloc.x, (float)x,
+                                                   WrappedPlainView.this, p0, false);
                         SegmentCache.releaseSharedSegment(segment);
                         return Math.min(p0 + n, p1 - 1);
                     }
