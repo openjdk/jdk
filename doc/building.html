@@ -158,7 +158,7 @@
 <h2 id="operating-system-requirements">Operating System Requirements</h2>
 <p>The mainline OpenJDK project supports Linux, Solaris, macOS, AIX and Windows. Support for other operating system, e.g. BSD, exists in separate &quot;port&quot; projects.</p>
 <p>In general, OpenJDK can be built on a wide range of versions of these operating systems, but the further you deviate from what is tested on a daily basis, the more likely you are to run into problems.</p>
-<p>This table lists the OS versions used by Oracle when building JDK 9. Such information is always subject to change, but this table is up to date at the time of writing.</p>
+<p>This table lists the OS versions used by Oracle when building OpenJDK. Such information is always subject to change, but this table is up to date at the time of writing.</p>
 <table>
 <thead>
 <tr class="header">
@@ -190,7 +190,7 @@
 <h3 id="windows">Windows</h3>
 <p>Windows XP is not a supported platform, but all newer Windows should be able to build OpenJDK.</p>
 <p>On Windows, it is important that you pay attention to the instructions in the <a href="#special-considerations">Special Considerations</a>.</p>
-<p>Windows is the only non-POSIX OS supported by OpenJDK, and as such, requires some extra care. A POSIX support layer is required to build on Windows. For OpenJDK 9, the only supported such layer is Cygwin. (Msys is no longer supported due to a too old bash; msys2 and the new Windows Subsystem for Linux (WSL) would likely be possible to support in a future version but that would require a community effort to implement.)</p>
+<p>Windows is the only non-POSIX OS supported by OpenJDK, and as such, requires some extra care. A POSIX support layer is required to build on Windows. Currently, the only supported such layer is Cygwin. (Msys is no longer supported due to a too old bash; msys2 and the new Windows Subsystem for Linux (WSL) would likely be possible to support in a future version but that would require a community effort to implement.)</p>
 <p>Internally in the build system, all paths are represented as Unix-style paths, e.g. <code>/cygdrive/c/hg/jdk9/Makefile</code> rather than <code>C:\hg\jdk9\Makefile</code>. This rule also applies to input to the build system, e.g. in arguments to <code>configure</code>. So, use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
 <h4 id="cygwin">Cygwin</h4>
 <p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment is thus required for building OpenJDK on Windows. If you have a 64-bit OS, we strongly recommend using the 64-bit version of Cygwin.</p>
@@ -265,7 +265,7 @@
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Linux</td>
-<td style="text-align: left;">gcc 4.9.2</td>
+<td style="text-align: left;">gcc 7.3.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">macOS</td>
@@ -282,8 +282,8 @@
 </tbody>
 </table>
 <h3 id="gcc">gcc</h3>
-<p>The minimum accepted version of gcc is 4.7. Older versions will generate a warning by <code>configure</code> and are unlikely to work.</p>
-<p>OpenJDK 9 includes patches that should allow gcc 6 to compile, but this should be considered experimental.</p>
+<p>The minimum accepted version of gcc is 4.8. Older versions will generate a warning by <code>configure</code> and are unlikely to work.</p>
+<p>OpenJDK is currently known to be able to compile with at least version 7.4 of gcc.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
 <p>The minimum accepted version of clang is 3.2. Older versions will not be accepted by <code>configure</code>.</p>
@@ -788,7 +788,7 @@ sudo mv /tmp/configure /usr/local/bin</code></pre>
 <p>The default behavior for make is to create consistent and correct output, at the expense of build speed, if necessary.</p>
 <p>If you are prepared to take some risk of an incorrect build, and know enough of the system to understand how things build and interact, you can speed up the build process considerably by instructing make to only build a portion of the product.</p>
 <h4 id="building-individual-modules">Building Individual Modules</h4>
-<p>The safe way to use fine-grained make targets is to use the module specific make targets. All source code in JDK 9 is organized so it belongs to a module, e.g. <code>java.base</code> or <code>jdk.jdwp.agent</code>. You can build only a specific module, by giving it as make target: <code>make jdk.jdwp.agent</code>. If the specified module depends on other modules (e.g. <code>java.base</code>), those modules will be built first.</p>
+<p>The safe way to use fine-grained make targets is to use the module specific make targets. All source code in OpenJDK is organized so it belongs to a module, e.g. <code>java.base</code> or <code>jdk.jdwp.agent</code>. You can build only a specific module, by giving it as make target: <code>make jdk.jdwp.agent</code>. If the specified module depends on other modules (e.g. <code>java.base</code>), those modules will be built first.</p>
 <p>You can also specify a set of modules, just as you can always specify a set of make targets: <code>make jdk.crypto.cryptoki jdk.crypto.ec jdk.crypto.mscapi jdk.crypto.ucrypto</code></p>
 <h4 id="building-individual-module-phases">Building Individual Module Phases</h4>
 <p>The build process for each module is divided into separate phases. Not all modules need all phases. Which are needed depends on what kind of source code and other artifact the module consists of. The phases are:</p>
