@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="ky"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,234 +19,403 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="aa">афарча</language>
 			<language type="ab">абхазча</language>
+			<language type="ace">ачехче</language>
+			<language type="ada">адаңмече</language>
+			<language type="ady">адыгейче</language>
 			<language type="af">африкаанча</language>
 			<language type="agq">агемче</language>
+			<language type="ain">айнуча</language>
 			<language type="ak">аканча</language>
+			<language type="ale">алеутча</language>
+			<language type="alt">түштүк алтайча</language>
 			<language type="am">амхарча</language>
+			<language type="an">арагончо</language>
+			<language type="anp">ангикача</language>
 			<language type="ar">арабча</language>
 			<language type="ar_001">азыркы адабий араб тилинде</language>
-			<language type="arn">мапучеде</language>
+			<language type="arn">мапучече</language>
+			<language type="arp">арапахочо</language>
 			<language type="as">ассамча</language>
 			<language type="asa">асуча</language>
+			<language type="ast">астурийче</language>
+			<language type="av">аварикче</language>
+			<language type="awa">авадхиче</language>
+			<language type="ay">аймарача</language>
 			<language type="az">азербайжанча</language>
-			<language type="az" alt="short">азер</language>
+			<language type="az" alt="short">азерче</language>
 			<language type="ba">башкырча</language>
+			<language type="ban">баличе</language>
+			<language type="bas">басаача</language>
 			<language type="be">беларусча</language>
 			<language type="bem">бембача</language>
 			<language type="bez">бенача</language>
 			<language type="bg">болгарча</language>
 			<language type="bgn">чыгыш балучиче</language>
-			<language type="bm">бамбарада</language>
+			<language type="bho">бхожпуриче</language>
+			<language type="bi">бисламача</language>
+			<language type="bin">биниче</language>
+			<language type="bla">сиксикача</language>
+			<language type="bm">бамбарача</language>
 			<language type="bn">бангладешче</language>
 			<language type="bo">тибетче</language>
 			<language type="br">бретончо</language>
-			<language type="brx">бододо</language>
+			<language type="brx">бодочо</language>
 			<language type="bs">боснийче</language>
-			<language type="ca">каталанча</language>
+			<language type="bug">бугийче</language>
+			<language type="byn">блинче</language>
+			<language type="ca">каталонча</language>
 			<language type="ce">чеченче</language>
+			<language type="ceb">себуанча</language>
 			<language type="cgg">чигача</language>
+			<language type="ch">чаморрочо</language>
+			<language type="chk">чуукиче</language>
+			<language type="chm">мариче</language>
+			<language type="cho">чокточо</language>
 			<language type="chr">черокиче</language>
-			<language type="ckb">сорани курд</language>
+			<language type="chy">шайеннче</language>
+			<language type="ckb">борбордук курдча</language>
 			<language type="co">корсиканча</language>
+			<language type="crs">сеселва креол французча</language>
 			<language type="cs">чехче</language>
+			<language type="cu">чиркөө славянча</language>
 			<language type="cv">чувашча</language>
 			<language type="cy">уелшче</language>
 			<language type="da">датча</language>
+			<language type="dak">дакотача</language>
+			<language type="dar">даргинче</language>
 			<language type="dav">таитача</language>
 			<language type="de">немисче</language>
-			<language type="dje">замрача</language>
+			<language type="de_CH">адабий немисче (Швейцария)</language>
+			<language type="dgr">догрибче</language>
+			<language type="dje">зармача</language>
 			<language type="dsb">төмөнкү сорбианча</language>
 			<language type="dua">дуалача</language>
+			<language type="dv">дивехиче</language>
 			<language type="dyo">жола-фониче</language>
 			<language type="dz">жонгуча</language>
+			<language type="dzg">дазагача</language>
 			<language type="ebu">эмбуча</language>
 			<language type="ee">эбече</language>
+			<language type="efi">эфикче</language>
+			<language type="eka">экажукча</language>
 			<language type="el">грекче</language>
 			<language type="en">англисче</language>
+			<language type="en_GB" alt="short">англисче (УБ)</language>
 			<language type="en_US" alt="short">англисче (АКШ)</language>
 			<language type="eo">эсперанто</language>
 			<language type="es">испанча</language>
 			<language type="es_ES">испанча (Европа)</language>
 			<language type="et">эстончо</language>
 			<language type="eu">баскча</language>
+			<language type="ewo">эвондочо</language>
 			<language type="fa">фарсча</language>
+			<language type="ff">фулача</language>
 			<language type="fi">финче</language>
-			<language type="fil">филипино</language>
+			<language type="fil">филипинче</language>
 			<language type="fj">фижиче</language>
-			<language type="fo">фароэче</language>
+			<language type="fo">фарерче</language>
+			<language type="fon">фончо</language>
 			<language type="fr">французча</language>
+			<language type="fur">фриулча</language>
 			<language type="fy">батыш фризче</language>
 			<language type="ga">ирландча</language>
+			<language type="gaa">гача</language>
 			<language type="gag">гагаузча</language>
+			<language type="gan">Гань Кытайча</language>
+			<language type="gd">шотладиялык гелча</language>
+			<language type="gez">гиизче</language>
+			<language type="gil">гилбертче</language>
 			<language type="gl">галисияча</language>
-			<language type="gn">гуараш</language>
+			<language type="gn">гуараниче</language>
+			<language type="gor">горонталочо</language>
 			<language type="gsw">немисче (Швейцария)</language>
 			<language type="gu">гужаратча</language>
 			<language type="guz">гусиче</language>
-			<language type="gv">манксыча</language>
+			<language type="gv">мэнксыча</language>
+			<language type="gwi">гвичинче</language>
 			<language type="ha">хаусача</language>
+			<language type="hak">Хакка кытайча</language>
 			<language type="haw">гавайча</language>
-			<language type="he">ивритте</language>
+			<language type="he">ивритче</language>
 			<language type="hi">хиндиче</language>
+			<language type="hil">хилигайнончо</language>
+			<language type="hmn">хмонгчо</language>
 			<language type="hr">хорватча</language>
 			<language type="hsb">жогорку сорбианча</language>
+			<language type="hsn">Сянь Кытайча</language>
 			<language type="ht">гаитиче</language>
-			<language type="hu">мажарча</language>
+			<language type="hu">венгерче</language>
+			<language type="hup">хупача</language>
 			<language type="hy">армянча</language>
-			<language type="id">индонезче</language>
+			<language type="hz">герерочо</language>
+			<language type="ia">интерлингва</language>
+			<language type="iba">ибанча</language>
+			<language type="ibb">ибибиочо</language>
+			<language type="id">индонезияча</language>
 			<language type="ig">игбочо</language>
-			<language type="ii">носуча</language>
+			<language type="ii">сычуань йиче</language>
+			<language type="ilo">илокочо</language>
+			<language type="inh">ингушча</language>
+			<language type="io">идочо</language>
 			<language type="is">исландча</language>
 			<language type="it">италиянча</language>
-			<language type="iu">инуктитутта</language>
-			<language type="ja">япончо</language>
+			<language type="iu">инуктитутча</language>
+			<language type="ja">жапончо</language>
+			<language type="jbo">ложбанча</language>
 			<language type="jgo">нгомбача</language>
 			<language type="jmc">мачамече</language>
 			<language type="jv">жаванизче</language>
 			<language type="ka">грузинче</language>
 			<language type="kab">кабылча</language>
+			<language type="kac">кахинче</language>
+			<language type="kaj">джуча</language>
 			<language type="kam">камбача</language>
+			<language type="kbd">кабардинче</language>
+			<language type="kcg">тяпча</language>
 			<language type="kde">макондече</language>
 			<language type="kea">кабувердиче</language>
+			<language type="kfo">корочо</language>
+			<language type="kha">хасиче</language>
 			<language type="khq">койра чиниче</language>
 			<language type="ki">кикуйиче</language>
+			<language type="kj">куаньямача</language>
 			<language type="kk">казакча</language>
+			<language type="kkj">какочо</language>
 			<language type="kl">калаалисутча</language>
 			<language type="kln">каленжиче</language>
 			<language type="km">кмерче</language>
+			<language type="kmb">кимбундуча</language>
 			<language type="kn">каннадача</language>
 			<language type="ko">корейче</language>
 			<language type="koi">коми-пермякча</language>
 			<language type="kok">конканиче</language>
+			<language type="kpe">кпеллече</language>
+			<language type="kr">кануриче</language>
+			<language type="krc">карачай-балкарча</language>
+			<language type="krl">карелче</language>
+			<language type="kru">курухча</language>
 			<language type="ks">кашмирче</language>
 			<language type="ksb">шамабалача</language>
 			<language type="ksf">бафияча</language>
+			<language type="ksh">колоньяча</language>
 			<language type="ku">курдча</language>
+			<language type="kum">кумыкча</language>
+			<language type="kv">комиче</language>
 			<language type="kw">корнишче</language>
 			<language type="ky">кыргызча</language>
 			<language type="la">латынча</language>
+			<language type="lad">ладиночо</language>
 			<language type="lag">лангиче</language>
 			<language type="lb">люксембургча</language>
+			<language type="lez">лезгинче</language>
 			<language type="lg">гандача</language>
+			<language type="li">лимбургиче</language>
 			<language type="lkt">лакотача</language>
 			<language type="ln">лингалача</language>
 			<language type="lo">лаочо</language>
+			<language type="loz">лозиче</language>
 			<language type="lrc">түндүк луриче</language>
 			<language type="lt">литовчо</language>
 			<language type="lu">луба-катангача</language>
+			<language type="lua">луба-лулуача</language>
+			<language type="lun">лундача</language>
 			<language type="luo">луочо</language>
+			<language type="lus">мизочо</language>
 			<language type="luy">лухияча</language>
 			<language type="lv">латышча</language>
+			<language type="mad">мадурисче</language>
+			<language type="mag">магахиче</language>
+			<language type="mai">маитиличе</language>
+			<language type="mak">макасарча</language>
 			<language type="mas">масайча</language>
+			<language type="mdf">мокшача</language>
+			<language type="men">мендече</language>
 			<language type="mer">меруча</language>
 			<language type="mfe">морисианча</language>
 			<language type="mg">малагасча</language>
 			<language type="mgh">макуача</language>
-			<language type="mgo">метөчө</language>
+			<language type="mgo">метача</language>
+			<language type="mh">маршаллча</language>
 			<language type="mi">маориче</language>
+			<language type="mic">микмакча</language>
+			<language type="min">минанкабауча</language>
 			<language type="mk">македончо</language>
 			<language type="ml">малайаламча</language>
-			<language type="mn">моңголчо</language>
+			<language type="mn">монголчо</language>
+			<language type="mni">манипуриче</language>
 			<language type="moh">мохаукча</language>
+			<language type="mos">моссиче</language>
 			<language type="mr">маратиче</language>
 			<language type="ms">малайча</language>
 			<language type="mt">малтизче</language>
 			<language type="mua">мундангча</language>
+			<language type="mul">бир нече тилде</language>
+			<language type="mus">крикче</language>
+			<language type="mwl">мирандизче</language>
 			<language type="my">бурмача</language>
+			<language type="myv">эрзянча</language>
 			<language type="mzn">мазандераниче</language>
+			<language type="na">науруча</language>
+			<language type="nan">nan</language>
+			<language type="nap">неополитанча</language>
 			<language type="naq">намача</language>
 			<language type="nb">норвежче (Букмал)</language>
 			<language type="nd">түндүк ндыбелче</language>
 			<language type="nds">төмөнкү немисче</language>
 			<language type="nds_NL">төмөнкү саксончо</language>
 			<language type="ne">непалча</language>
+			<language type="new">невариче</language>
+			<language type="ng">ндонгача</language>
+			<language type="nia">ниасча</language>
+			<language type="niu">ньюанча</language>
 			<language type="nl">голландча</language>
 			<language type="nl_BE">фламандча</language>
 			<language type="nmg">квасиочо</language>
-			<language type="nn">норвежче (Нинорск)</language>
+			<language type="nn">норвежче (нинорск)</language>
+			<language type="nnh">нгимбунча</language>
 			<language type="no">норвежче</language>
+			<language type="nog">ногайча</language>
 			<language type="nqo">нкочо</language>
+			<language type="nr">түштүк ндебелече</language>
+			<language type="nso">түндүк соточо</language>
 			<language type="nus">нуерче</language>
+			<language type="nv">наваджочо</language>
+			<language type="ny">ньянджача</language>
 			<language type="nyn">ныйанколчо</language>
+			<language type="oc">окситанча</language>
 			<language type="om">оромочо</language>
 			<language type="or">орияча</language>
+			<language type="os">осетинче</language>
 			<language type="pa">пунжабиче</language>
+			<language type="pag">пангасиче</language>
+			<language type="pam">пампангача</language>
+			<language type="pap">папиаменточо</language>
+			<language type="pau">палауанча</language>
+			<language type="pcm">аргындашкан тил (Нигерия)</language>
 			<language type="pl">полякча</language>
-			<language type="ps">пашточо</language>
+			<language type="prg">пруссча</language>
+			<language type="ps">пуштуча</language>
 			<language type="pt">португалча</language>
 			<language type="pt_PT">португалча (Европа)</language>
 			<language type="qu">кечуача</language>
 			<language type="quc">кичече</language>
+			<language type="rap">рапаньюча</language>
+			<language type="rar">раротонгача</language>
 			<language type="rm">романшча</language>
 			<language type="rn">рундиче</language>
 			<language type="ro">румынча</language>
 			<language type="ro_MD">молдованча</language>
 			<language type="rof">ромбочо</language>
+			<language type="root">түпкү</language>
 			<language type="ru">орусча</language>
+			<language type="rup">аромунча</language>
 			<language type="rw">руандача</language>
 			<language type="rwk">руача</language>
 			<language type="sa">санскритче</language>
+			<language type="sad">сандавече</language>
+			<language type="sah">сахача</language>
 			<language type="saq">самбуруча</language>
+			<language type="sat">санталиче</language>
+			<language type="sba">нгамбайча</language>
 			<language type="sbp">сангуча</language>
+			<language type="sc">сардинче</language>
+			<language type="scn">сицилийче</language>
+			<language type="sco">шотландча</language>
 			<language type="sd">синдхиче</language>
 			<language type="sdh">түштүк курдча</language>
-			<language type="se">түндүк самиче</language>
+			<language type="se">түндүк саамиче</language>
 			<language type="seh">сенача</language>
 			<language type="ses">койраборо сенниче</language>
 			<language type="sg">сангочо</language>
 			<language type="sh">серб-хорват</language>
 			<language type="shi">ташелитче</language>
+			<language type="shn">шанча</language>
 			<language type="si">сингалача</language>
 			<language type="sk">словакча</language>
 			<language type="sl">словенче</language>
+			<language type="sm">самоанча</language>
 			<language type="sma">түштүк саамиче</language>
-			<language type="smj">лөлө саамиче</language>
+			<language type="smj">луле саамиче</language>
 			<language type="smn">инари саамиче</language>
 			<language type="sms">сколт саамиче</language>
 			<language type="sn">шонача</language>
+			<language type="snk">сонинкече</language>
 			<language type="so">сомаличе</language>
 			<language type="sq">албанча</language>
 			<language type="sr">сербче</language>
-			<language type="st">сесото</language>
+			<language type="srn">сранан тонгочо</language>
+			<language type="ss">сватиче</language>
+			<language type="ssy">сахочо</language>
+			<language type="st">сесоточо</language>
 			<language type="su">сунданча</language>
+			<language type="suk">сукумача</language>
 			<language type="sv">шведче</language>
 			<language type="sw">суахиличе</language>
 			<language type="sw_CD">конго суахаличе</language>
+			<language type="swb">коморчо</language>
+			<language type="syr">сирияча</language>
 			<language type="ta">тамилче</language>
 			<language type="te">телугуча</language>
+			<language type="tem">тимнече</language>
 			<language type="teo">тесочо</language>
+			<language type="tet">тетумча</language>
 			<language type="tg">тажикче</language>
 			<language type="th">тайча</language>
 			<language type="ti">тигриниача</language>
+			<language type="tig">тигрече</language>
 			<language type="tk">түркмөнчө</language>
 			<language type="tlh">клингончо</language>
+			<language type="tn">тсванача</language>
 			<language type="to">тонгача</language>
+			<language type="tpi">ток-писинче</language>
 			<language type="tr">түркчө</language>
+			<language type="trv">тарокочо</language>
+			<language type="ts">тсонгача</language>
 			<language type="tt">татарча</language>
+			<language type="tum">тумбукача</language>
+			<language type="tvl">тувалуча</language>
 			<language type="tw">тви</language>
 			<language type="twq">тасабакча</language>
-			<language type="tzm">борбордук Атлас тамазитче</language>
+			<language type="ty">таитиче</language>
+			<language type="tyv">тувинче</language>
+			<language type="tzm">борбордук Атлас тамазигтче</language>
+			<language type="udm">удмуртча</language>
 			<language type="ug">уйгурча</language>
 			<language type="uk">украинче</language>
+			<language type="umb">умбундуча</language>
 			<language type="und">белгисиз тилде</language>
 			<language type="ur">урдуча</language>
 			<language type="uz">өзбекче</language>
 			<language type="vai">вайиче</language>
+			<language type="ve">вендача</language>
 			<language type="vi">вьетнамча</language>
+			<language type="vo">волапюкча</language>
 			<language type="vun">вунжочо</language>
+			<language type="wa">валлончо</language>
+			<language type="wae">валцерче</language>
+			<language type="wal">вольяттача</language>
+			<language type="war">варайча</language>
 			<language type="wbp">ворлпириче</language>
 			<language type="wo">уолофчо</language>
+			<language type="wuu">wuu</language>
+			<language type="xal">калмыкча</language>
 			<language type="xh">косача</language>
 			<language type="xog">согача</language>
+			<language type="yav">янгбенче</language>
+			<language type="ybb">йембача</language>
 			<language type="yi">идишче</language>
 			<language type="yo">йорубача</language>
+			<language type="yue">кантончо</language>
 			<language type="zgh">марокко тамазигт адабий тилинде</language>
 			<language type="zh">кытайча</language>
 			<language type="zh_Hans">кытайча (жөнөкөйлөштүрүлгөн)</language>
 			<language type="zh_Hant">кытайча (салттуу)</language>
 			<language type="zu">зулуча</language>
+			<language type="zun">зуниче</language>
 			<language type="zxx">тилдик мазмун жок</language>
+			<language type="zza">зазача</language>
 		</languages>
 		<scripts>
 			<script type="Arab">Араб</script>
@@ -258,14 +430,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">Грек</script>
 			<script type="Gujr">Гужарати</script>
 			<script type="Guru">Гурмухи</script>
+			<script type="Hanb">Ханб</script>
 			<script type="Hang">Хангул</script>
 			<script type="Hani">Хань</script>
-			<script type="Hans">Жөн. Кытай</script>
-			<script type="Hans" alt="stand-alone">Жөн. Кытай</script>
-			<script type="Hant">Салт. Кытай</script>
-			<script type="Hant" alt="stand-alone">Салт. Кытай</script>
+			<script type="Hans">Жөнөкөйлөштүрүлгөн</script>
+			<script type="Hans" alt="stand-alone">Жөнөк. Хань</script>
+			<script type="Hant">Салттуу</script>
+			<script type="Hant" alt="stand-alone">Салттуу Хань</script>
 			<script type="Hebr">Иврит</script>
 			<script type="Hira">Хирагана</script>
+			<script type="Hrkt">Жапон силлабографиясы</script>
+			<script type="Jamo">Джамо</script>
 			<script type="Jpan">Жапан</script>
 			<script type="Kana">Катакана</script>
 			<script type="Khmr">Кмер</script>
@@ -274,7 +449,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Laoo">Лао</script>
 			<script type="Latn">Латын</script>
 			<script type="Mlym">Малайалам</script>
-			<script type="Mong">Моңгол</script>
+			<script type="Mong">Монгол</script>
 			<script type="Mymr">Мйанмар</script>
 			<script type="Orya">Орийа</script>
 			<script type="Sinh">Сингала</script>
@@ -283,6 +458,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Thaa">Таана</script>
 			<script type="Thai">Тай</script>
 			<script type="Tibt">Тибет</script>
+			<script type="Zmth">Математикалык маани</script>
+			<script type="Zsye">Быйтыкча</script>
 			<script type="Zsym">Белгилер</script>
 			<script type="Zxxx">Жазылбаган</script>
 			<script type="Zyyy">Жалпы</script>
@@ -301,7 +478,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="017">Борбордук Африка</territory>
 			<territory type="018">Түштүк Африка</territory>
 			<territory type="019">Америка</territory>
-			<territory type="021">Түндүк Америка (регион)</territory>
+			<territory type="021">Түндүк Америка (чөлкөм)</territory>
 			<territory type="029">Кариб аралдары</territory>
 			<territory type="030">Чыгыш Азия</territory>
 			<territory type="034">Түштүк Азия</territory>
@@ -309,7 +486,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="039">Түштүк Европа</territory>
 			<territory type="053">Австралазия</territory>
 			<territory type="054">Меланезия</territory>
-			<territory type="057">Микронезия Региону</territory>
+			<territory type="057">Микронезия чөлкөмү</territory>
 			<territory type="061">Полинезия</territory>
 			<territory type="142">Азия</territory>
 			<territory type="143">Борбор Азия</territory>
@@ -319,18 +496,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="154">Түндүк Европа</territory>
 			<territory type="155">Батыш Европа</territory>
 			<territory type="419">Латын Америкасы</territory>
-			<territory type="AC">Ассеншин аралы</territory>
+			<territory type="AC">Вознесение аралы</territory>
 			<territory type="AD">Андорра</territory>
 			<territory type="AE">Бириккен Араб Эмираттары</territory>
 			<territory type="AF">Афганистан</territory>
 			<territory type="AG">Антигуа жана Барбуда</territory>
-			<territory type="AI">Ангуила</territory>
+			<territory type="AI">Ангилья</territory>
 			<territory type="AL">Албания</territory>
 			<territory type="AM">Армения</territory>
 			<territory type="AO">Ангола</territory>
-			<territory type="AQ">Антарктика</territory>
+			<territory type="AQ">Антарктида</territory>
 			<territory type="AR">Аргентина</territory>
-			<territory type="AS">Америка Самоасы</territory>
+			<territory type="AS">Америкалык Самоа</territory>
 			<territory type="AT">Австрия</territory>
 			<territory type="AU">Австралия</territory>
 			<territory type="AW">Аруба</territory>
@@ -351,14 +528,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BO">Боливия</territory>
 			<territory type="BQ">Кариб Нидерланддары</territory>
 			<territory type="BR">Бразилия</territory>
-			<territory type="BS">Багам аралдары</territory>
+			<territory type="BS">Багама аралдары</territory>
 			<territory type="BT">Бутан</territory>
-			<territory type="BV">Буве аралдары</territory>
+			<territory type="BV">Буве аралы</territory>
 			<territory type="BW">Ботсвана</territory>
 			<territory type="BY">Беларусь</territory>
 			<territory type="BZ">Белиз</territory>
 			<territory type="CA">Канада</territory>
-			<territory type="CC">Кокос (Килиӊ) аралдары</territory>
+			<territory type="CC">Кокос (Килинг) аралдары</territory>
 			<territory type="CD">Конго-Киншаса</territory>
 			<territory type="CD" alt="variant">Конго (КДР)</territory>
 			<territory type="CF">Борбордук Африка Республикасы</territory>
@@ -366,7 +543,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CG" alt="variant">Конго (Республикасы)</territory>
 			<territory type="CH">Швейцария</territory>
 			<territory type="CI">Кот-д’Ивуар</territory>
-			<territory type="CI" alt="variant">Кот-д’Ивуар (вариант)</territory>
+			<territory type="CI" alt="variant">Пил сөөктүү жээк</territory>
 			<territory type="CK">Кук аралдары</territory>
 			<territory type="CL">Чили</territory>
 			<territory type="CM">Камерун</territory>
@@ -377,9 +554,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CU">Куба</territory>
 			<territory type="CV">Капе Верде</territory>
 			<territory type="CW">Кюрасао</territory>
-			<territory type="CX">Крисмас аралы</territory>
+			<territory type="CX">Рождество аралы</territory>
 			<territory type="CY">Кипр</territory>
 			<territory type="CZ">Чехия</territory>
+			<territory type="CZ" alt="variant">Чех Республикасы</territory>
 			<territory type="DE">Германия</territory>
 			<territory type="DG">Диего Гарсия</territory>
 			<territory type="DJ">Джибути</territory>
@@ -396,10 +574,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Испания</territory>
 			<territory type="ET">Эфиопия</territory>
 			<territory type="EU">Европа Биримдиги</territory>
+			<territory type="EZ">Еврозона</territory>
 			<territory type="FI">Финляндия</territory>
 			<territory type="FJ">Фиджи</territory>
-			<territory type="FK">Фолклэнд аралдары</territory>
-			<territory type="FK" alt="variant">Фолклэнд (Малвина) аралдары</territory>
+			<territory type="FK">Фолкленд аралдары</territory>
+			<territory type="FK" alt="variant">Фолкленд (Мальвина) аралдары</territory>
 			<territory type="FM">Микронезия</territory>
 			<territory type="FO">Фарер аралдары</territory>
 			<territory type="FR">Франция</territory>
@@ -408,7 +587,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GB" alt="short">УБ</territory>
 			<territory type="GD">Гренада</territory>
 			<territory type="GE">Грузия</territory>
-			<territory type="GF">Гвиана (Франция)</territory>
+			<territory type="GF">Француздук Гвиана</territory>
 			<territory type="GG">Гернси</territory>
 			<territory type="GH">Гана</territory>
 			<territory type="GI">Гибралтар</territory>
@@ -416,7 +595,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GM">Гамбия</territory>
 			<territory type="GN">Гвинея</territory>
 			<territory type="GP">Гваделупа</territory>
-			<territory type="GQ">Экваториалдык Гвинея</territory>
+			<territory type="GQ">Экватордук Гвинея</territory>
 			<territory type="GR">Греция</territory>
 			<territory type="GS">Түштүк Жоржия жана Түштүк Сэндвич аралдары</territory>
 			<territory type="GT">Гватемала</territory>
@@ -425,7 +604,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GY">Гайана</territory>
 			<territory type="HK">Гонконг Кытай ААА</territory>
 			<territory type="HK" alt="short">Гонконг</territory>
-			<territory type="HM">Херд жана Макдоналд аралдары</territory>
+			<territory type="HM">Херд жана Макдональд аралдары</territory>
 			<territory type="HN">Гондурас</territory>
 			<territory type="HR">Хорватия</territory>
 			<territory type="HT">Гаити</territory>
@@ -436,7 +615,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="IL">Израиль</territory>
 			<territory type="IM">Мэн аралы</territory>
 			<territory type="IN">Индия</territory>
-			<territory type="IO">Британиянын Индия океанындагы аймагы</territory>
+			<territory type="IO">Инди океанындагы Британ территориясы</territory>
 			<territory type="IQ">Ирак</territory>
 			<territory type="IR">Иран</territory>
 			<territory type="IS">Исландия</territory>
@@ -454,7 +633,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KP">Түндүк Корея</territory>
 			<territory type="KR">Түштүк Корея</territory>
 			<territory type="KW">Кувейт</territory>
-			<territory type="KY">Кайман Аралдары</territory>
+			<territory type="KY">Кайман аралдары</territory>
 			<territory type="KZ">Казакстан</territory>
 			<territory type="LA">Лаос</territory>
 			<territory type="LB">Ливан</territory>
@@ -484,10 +663,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MP">Түндүк Мариана аралдары</territory>
 			<territory type="MQ">Мартиника</territory>
 			<territory type="MR">Мавритания</territory>
-			<territory type="MS">Монсеррат</territory>
+			<territory type="MS">Монтсеррат</territory>
 			<territory type="MT">Мальта</territory>
 			<territory type="MU">Маврикий</territory>
-			<territory type="MV">Малдив аралдары</territory>
+			<territory type="MV">Мальдив</territory>
 			<territory type="MW">Малави</territory>
 			<territory type="MX">Мексика</territory>
 			<territory type="MY">Малайзия</territory>
@@ -498,7 +677,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="NF">Норфолк аралы</territory>
 			<territory type="NG">Нигерия</territory>
 			<territory type="NI">Никарагуа</territory>
-			<territory type="NL">Нидерланддар</territory>
+			<territory type="NL">Нидерланд</territory>
 			<territory type="NO">Норвегия</territory>
 			<territory type="NP">Непал</territory>
 			<territory type="NR">Науру</territory>
@@ -507,8 +686,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="OM">Оман</territory>
 			<territory type="PA">Панама</territory>
 			<territory type="PE">Перу</territory>
-			<territory type="PF">Француз Полинезиясы</territory>
-			<territory type="PG">Папуа Жаңы-Гвинея</territory>
+			<territory type="PF">Полинезия (франциялык)</territory>
+			<territory type="PG">Папуа-Жаңы Гвинея</territory>
 			<territory type="PH">Филлипин</territory>
 			<territory type="PK">Пакистан</territory>
 			<territory type="PL">Польша</territory>
@@ -522,38 +701,38 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PY">Парагвай</territory>
 			<territory type="QA">Катар</territory>
 			<territory type="QO">Алыскы Океания</territory>
-			<territory type="RE">Реюнион</territory>
+			<territory type="RE">Реюньон</territory>
 			<territory type="RO">Румыния</territory>
 			<territory type="RS">Сербия</territory>
 			<territory type="RU">Россия</territory>
 			<territory type="RW">Руанда</territory>
 			<territory type="SA">Сауд Арабиясы</territory>
 			<territory type="SB">Соломон аралдары</territory>
-			<territory type="SC">Сейшелдер</territory>
+			<territory type="SC">Сейшел аралдары</territory>
 			<territory type="SD">Судан</territory>
 			<territory type="SE">Швеция</territory>
 			<territory type="SG">Сингапур</territory>
 			<territory type="SH">Ыйык Елена</territory>
 			<territory type="SI">Словения</territory>
-			<territory type="SJ">Свалбард жана Жан Майен</territory>
+			<territory type="SJ">Шпицберген жана Ян-Майен</territory>
 			<territory type="SK">Словакия</territory>
 			<territory type="SL">Сьерра-Леоне</territory>
 			<territory type="SM">Сан Марино</territory>
 			<territory type="SN">Сенегал</territory>
 			<territory type="SO">Сомали</territory>
-			<territory type="SR">Суринаме</territory>
+			<territory type="SR">Суринам</territory>
 			<territory type="SS">Түштүк Судан</territory>
 			<territory type="ST">Сан-Томе жана Принсипи</territory>
-			<territory type="SV">Эл Салвадор</territory>
-			<territory type="SX">Синт Маартен</territory>
+			<territory type="SV">Эль-Сальвадор</territory>
+			<territory type="SX">Синт-Мартен</territory>
 			<territory type="SY">Сирия</territory>
 			<territory type="SZ">Свазиленд</territory>
-			<territory type="TA">Тристан да Кунья</territory>
+			<territory type="TA">Тристан-да-Кунья</territory>
 			<territory type="TC">Түркс жана Кайкос аралдары</territory>
 			<territory type="TD">Чад</territory>
 			<territory type="TF">Франциянын Түштүктөгү аймактары</territory>
 			<territory type="TG">Того</territory>
-			<territory type="TH">Таиланд</territory>
+			<territory type="TH">Тайланд</territory>
 			<territory type="TJ">Тажикстан</territory>
 			<territory type="TK">Токелау</territory>
 			<territory type="TL">Тимор-Лесте</territory>
@@ -569,12 +748,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Украина</territory>
 			<territory type="UG">Уганда</territory>
 			<territory type="UM">АКШнын сырткы аралдары</territory>
+			<territory type="UN">БУ</territory>
 			<territory type="US">Америка Кошмо Штаттары</territory>
 			<territory type="US" alt="short">АКШ</territory>
 			<territory type="UY">Уругвай</territory>
 			<territory type="UZ">Өзбекстан</territory>
 			<territory type="VA">Ватикан</territory>
-			<territory type="VC">Сент-Винсент жана Гренадиналар</territory>
+			<territory type="VC">Сент-Винсент жана Гренадиндер</territory>
 			<territory type="VE">Венесуэла</territory>
 			<territory type="VG">Виргин аралдары (Британия)</territory>
 			<territory type="VI">Виргин аралдары (АКШ)</territory>
@@ -585,19 +765,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="XK">Косово</territory>
 			<territory type="YE">Йемен</territory>
 			<territory type="YT">Майотта</territory>
-			<territory type="ZA">Түштүк Африка Республикасы</territory>
+			<territory type="ZA">Түштүк-Африка Республикасы</territory>
 			<territory type="ZM">Замбия</territory>
 			<territory type="ZW">Зимбабве</territory>
-			<territory type="ZZ">Белгисиз регион</territory>
+			<territory type="ZZ">Белгисиз чөлкөм</territory>
 		</territories>
 		<keys>
 			<key type="calendar">Жылнаама</key>
+			<key type="cf">Валюта форматы</key>
 			<key type="collation">Иргөө тартиби</key>
 			<key type="currency">Валюта</key>
 			<key type="hc">Саат мерчеми (12/24)</key>
 			<key type="lb">Саптарды ажыратуу стили</key>
 			<key type="ms">Өлчөө тутуму</key>
-			<key type="numbers">сандар</key>
+			<key type="numbers">Сандар</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Будда жылнаамасы</type>
@@ -611,9 +792,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">Жапон жылнаамасы</type>
 			<type key="calendar" type="persian">Перс жылнаамасы</type>
 			<type key="calendar" type="roc">Мингуо жылнаамасы</type>
+			<type key="cf" type="account">Эсептешүү валютасынын форматы</type>
+			<type key="cf" type="standard">Стандарттык валюта форматы</type>
 			<type key="collation" type="ducet">Демейки Unicode иргөө тартиби</type>
 			<type key="collation" type="search">Жалпы издөө</type>
-			<type key="collation" type="standard">Стандарттуу иргөө тартиби</type>
+			<type key="collation" type="standard">Стандарттык иргөө тартиби</type>
+			<type key="d0" type="fwidth" draft="unconfirmed">Кең формат</type>
+			<type key="d0" type="hwidth" draft="unconfirmed">Кыска формат</type>
+			<type key="d0" type="npinyin" draft="unconfirmed">Сандык</type>
 			<type key="hc" type="h11">12 сааттык тутум (0–11)</type>
 			<type key="hc" type="h12">12 сааттык тутум (1–12)</type>
 			<type key="hc" type="h23">24 сааттык тутум (0–23)</type>
@@ -623,68 +809,59 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="strict">Саптардын арасы тыкыс</type>
 			<type key="ms" type="metric">Метрикалык тутум</type>
 			<type key="ms" type="uksystem">Британ империясынын өлчөө тутуму</type>
-			<type key="ms" type="ussystem">АКШнын өлчөө тутуму</type>
-			<type key="numbers" type="arab">араб-индус сандары</type>
-			<type key="numbers" type="arabext">кеңейтилген араб-индус сандары</type>
-			<type key="numbers" type="armn">армян сандары</type>
-			<type key="numbers" type="armnlow">армян сандары (саптык жазылыш)</type>
-			<type key="numbers" type="beng">бенгали сандары</type>
-			<type key="numbers" type="deva">деванагари сандары</type>
-			<type key="numbers" type="ethi">эфиоп сандары</type>
-			<type key="numbers" type="fullwide">толук эндүү сандар</type>
-			<type key="numbers" type="geor">грузин сандары</type>
-			<type key="numbers" type="grek">грек сандары</type>
-			<type key="numbers" type="greklow">грек сандары (саптык жазылыш)</type>
-			<type key="numbers" type="gujr">гужарати сандары</type>
-			<type key="numbers" type="guru">гурмухи сандары</type>
-			<type key="numbers" type="hanidec">кытай ондук сандары</type>
-			<type key="numbers" type="hans">жөнөкөйлөштүрүлгөн кытай сандары</type>
-			<type key="numbers" type="hansfin">жөнөкөйлөштүрүлгөн кытай финансы сандары</type>
-			<type key="numbers" type="hant">салттуу кытай сандары</type>
-			<type key="numbers" type="hantfin">салттуу кытай финансы сандары</type>
-			<type key="numbers" type="hebr">иврит сандары</type>
-			<type key="numbers" type="jpan">япон сандары</type>
-			<type key="numbers" type="jpanfin">япон финансы сандары</type>
-			<type key="numbers" type="khmr">кмер сандары</type>
-			<type key="numbers" type="knda">каннада сандары</type>
-			<type key="numbers" type="laoo">лао сандары</type>
-			<type key="numbers" type="latn">батыш сандары</type>
-			<type key="numbers" type="mlym">малайалам сандары</type>
-			<type key="numbers" type="mymr">мйанмар сандары</type>
-			<type key="numbers" type="orya">ория сандары</type>
-			<type key="numbers" type="roman">роман сандары</type>
-			<type key="numbers" type="romanlow">роман сандары (саптык жазылыш)</type>
-			<type key="numbers" type="taml">салттуу тамил сандары</type>
-			<type key="numbers" type="tamldec">тамил сандары</type>
-			<type key="numbers" type="telu">телугу сандары</type>
-			<type key="numbers" type="thai">тай сандары</type>
-			<type key="numbers" type="tibt">тибет сандары</type>
+			<type key="ms" type="ussystem">АКШ өлчөө тутуму</type>
+			<type key="numbers" type="arab">Араб-индус сандары</type>
+			<type key="numbers" type="arabext">Кеңейтилген араб-индус сандары</type>
+			<type key="numbers" type="armn">Армян сандары</type>
+			<type key="numbers" type="armnlow">Армян сандары (кичинекей арип менен)</type>
+			<type key="numbers" type="beng">Бенгали сандары</type>
+			<type key="numbers" type="deva">Деванагари сандары</type>
+			<type key="numbers" type="ethi">Эфиоп сандары</type>
+			<type key="numbers" type="fullwide">Толук эндүү сандар</type>
+			<type key="numbers" type="geor">Грузин сандары</type>
+			<type key="numbers" type="grek">Грек сандары</type>
+			<type key="numbers" type="greklow">Грек сандары (кичинекей арип менен)</type>
+			<type key="numbers" type="gujr">Гужарати сандары</type>
+			<type key="numbers" type="guru">Гужарати сандары</type>
+			<type key="numbers" type="hanidec">Кытай ондук сандары</type>
+			<type key="numbers" type="hans">Жөнөкөйлөштүрүлгөн кытай сандары</type>
+			<type key="numbers" type="hansfin">Жөнөкөйлөштүрүлгөн кытай каржы сандары</type>
+			<type key="numbers" type="hant">Салттуу кытай сандары</type>
+			<type key="numbers" type="hantfin">Салттуу кытай каржы сандары</type>
+			<type key="numbers" type="hebr">Иврит сандары</type>
+			<type key="numbers" type="jpan">Жапон сандары</type>
+			<type key="numbers" type="jpanfin">Жапон каржы сандары</type>
+			<type key="numbers" type="khmr">Кмер сандары</type>
+			<type key="numbers" type="knda">Каннада сандары</type>
+			<type key="numbers" type="laoo">Лао сандары</type>
+			<type key="numbers" type="latn">Батыш сандары</type>
+			<type key="numbers" type="mlym">Малайалам сандары</type>
+			<type key="numbers" type="mymr">Мйанмар сандары</type>
+			<type key="numbers" type="orya">Ория сандары</type>
+			<type key="numbers" type="roman">Роман сандары</type>
+			<type key="numbers" type="romanlow">Роман сандары (кичинекей арип менен)</type>
+			<type key="numbers" type="taml">Салттуу тамил сандары</type>
+			<type key="numbers" type="tamldec">Тамил сандары</type>
+			<type key="numbers" type="telu">Телугу сандары</type>
+			<type key="numbers" type="thai">Тай сандары</type>
+			<type key="numbers" type="tibt">Тибет сандары</type>
 		</types>
-		<transformNames>
-			<transformName type="Numeric" draft="unconfirmed">Сандык</transformName>
-			<transformName type="Tone" draft="unconfirmed">Тондук</transformName>
-			<transformName type="x-Accents" draft="unconfirmed">Диакриттик белгилер</transformName>
-			<transformName type="x-Fullwidth" draft="unconfirmed">Кең формат</transformName>
-			<transformName type="x-Halfwidth" draft="unconfirmed">Кыска формат</transformName>
-			<transformName type="x-Jamo" draft="unconfirmed">Джамо</transformName>
-			<transformName type="x-Pinyin" draft="unconfirmed">Пиньин</transformName>
-			<transformName type="x-Publishing" draft="unconfirmed">Басмаканалык</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Метрикалык өлчөө тутуму</measurementSystemName>
 			<measurementSystemName type="UK">Британия</measurementSystemName>
 			<measurementSystemName type="US">АКШ</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language">тили: {0}</codePattern>
-			<codePattern type="script">жазуусу: {0}</codePattern>
-			<codePattern type="territory">региону:{0}</codePattern>
+			<codePattern type="language">Тили: {0}</codePattern>
+			<codePattern type="script">Жазуусу: {0}</codePattern>
+			<codePattern type="territory">Аймагы: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[а б г д е ё ж з и й к л м н ӊ о ө п р с т у ү х ч ш ъ ы э ю я]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[в ф ц щ ь]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б В Г Д Е Ё Ж З И Й К Л М Н Ң О Ө П Р С Т У Ү Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -747,29 +924,45 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y-'ж'. d-MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y-'ж'. d-MMM, E</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">MM-dd</dateFormatItem>
-						<dateFormatItem id="MEd">MM-dd, E</dateFormatItem>
+						<dateFormatItem id="Md">dd/MM</dateFormatItem>
+						<dateFormatItem id="MEd">dd/MM, E</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">d-MMM, E</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y-G</dateFormatItem>
 						<dateFormatItem id="yyyy">y-G</dateFormatItem>
 						<dateFormatItem id="yyyyM">GGGGG y-MM</dateFormatItem>
-						<dateFormatItem id="yyyyMd">GGGGG y-MM-dd</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">GGGGG y-MM-dd, E</dateFormatItem>
+						<dateFormatItem id="yyyyMd">GGGGG y-dd-MM</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">GGGGG y-dd-MM, E</dateFormatItem>
 						<dateFormatItem id="yyyyMMM">G y-'ж'. MMM</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">G y-'ж'. d-MMM</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">G y-'ж'. d-MMM, E</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">G y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">G y-'ж'., MMMM</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">G y-'ж'. QQQ</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">G y-'ж'. QQQQ</dateFormatItem>
 					</availableFormats>
@@ -829,7 +1022,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">y–y G</greatestDifference>
+							<greatestDifference id="y">y-'ж'.–y-'ж'. G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">MM.y – MM.y G</greatestDifference>
@@ -1146,6 +1339,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<eras>
 					<eraNames>
 						<era type="0">биздин заманга чейин</era>
+						<era type="0" alt="variant">б.з.ч.</era>
 						<era type="1">биздин заман</era>
 					</eraNames>
 					<eraAbbr>
@@ -1160,22 +1354,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d-MMMM, y-'ж'.</pattern>
+							<pattern>y-'ж'., d-MMMM, EEEE</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>y MMMM d</pattern>
+							<pattern>y-'ж'., d-MMMM</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>y MMM d</pattern>
+							<pattern>y-'ж'., d-MMM</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>dd.MM.yy</pattern>
+							<pattern>d/M/yy</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1223,8 +1417,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1250,18 +1449,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">d-MMM, E</dateFormatItem>
-						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">d-MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMM 'айынын' W-'аптасы'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMM 'айынын' W-'аптасы'</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">y-MM</dateFormatItem>
-						<dateFormatItem id="yMd">y-MM-dd</dateFormatItem>
-						<dateFormatItem id="yMEd">y-MM-dd, E</dateFormatItem>
+						<dateFormatItem id="yMd">y-dd-MM</dateFormatItem>
+						<dateFormatItem id="yMEd">y-dd-MM, E</dateFormatItem>
 						<dateFormatItem id="yMMM">y-'ж'. MMM</dateFormatItem>
 						<dateFormatItem id="yMMMd">y-'ж'. d-MMM</dateFormatItem>
 						<dateFormatItem id="yMMMEd">y-'ж'. d-MMM, E</dateFormatItem>
-						<dateFormatItem id="yMMMM">y MMMM</dateFormatItem>
+						<dateFormatItem id="yMMMM">y-'ж'., MMMM</dateFormatItem>
 						<dateFormatItem id="yQQQ">y-'ж'., QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y-'ж'., QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y-'жылдын' w-'аптасы'</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y-'жылдын' w-'аптасы'</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1311,8 +1514,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">dd.MM – dd.MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
-							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="d">dd-MM, E – dd-MM, E</greatestDifference>
+							<greatestDifference id="M">dd-MM, E – dd-MM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -1322,8 +1525,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">d-MMM – d-MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="d">d-MMM, E – d-MMM, E</greatestDifference>
+							<greatestDifference id="M">d-MMM, E – d-MMM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
@@ -1339,8 +1542,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
 							<greatestDifference id="d">E, dd.MM.y – E, dd.MM.y</greatestDifference>
-							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
-							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">y-dd-MM, E – y-dd-MM, E</greatestDifference>
+							<greatestDifference id="y">y-dd-MM, E – y-dd-MM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y-'ж'.</greatestDifference>
@@ -1352,13 +1555,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">d-MMM y-'ж'. - d-MMM y-'ж'.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="M">y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="y">y MMM d, E – y MMM d, E</greatestDifference>
+							<greatestDifference id="d">y-'ж'., d-MMM, E – d-MMM, E</greatestDifference>
+							<greatestDifference id="M">y-'ж'., d-MMM, E – d-MMM E</greatestDifference>
+							<greatestDifference id="y">y-'ж'., d-MMM, E – y-'ж'., d-MMM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
-							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM, y-'ж'.</greatestDifference>
+							<greatestDifference id="y">MMMM, y-'ж'. – MMMM, y-'ж'.</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1366,6 +1569,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</calendars>
 		<fields>
 			<field type="era">
+				<displayName>заман</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>заман</displayName>
+			</field>
+			<field type="era-narrow">
 				<displayName>заман</displayName>
 			</field>
 			<field type="year">
@@ -1416,8 +1625,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">бул чейрек</relative>
 				<relative type="1">кийинки чейрек</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">кийинки {0} чейректе</relativeTimePattern>
-					<relativeTimePattern count="other">кийинки {0} чейректе</relativeTimePattern>
+					<relativeTimePattern count="one">{0} чейректен кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} чейректен кийин</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} чейрек мурун</relativeTimePattern>
@@ -1430,8 +1639,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">бул чейр.</relative>
 				<relative type="1">кийинки чейр.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">кийинки {0} чейр.</relativeTimePattern>
-					<relativeTimePattern count="other">кийинки {0} чейр.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} чейректен кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} чейректен кийин</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} чейр. мурун</relativeTimePattern>
@@ -1444,12 +1653,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">бул чейр.</relative>
 				<relative type="1">кийинки чейр.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} чейр.</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} чейр.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} чейр. кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} чейр. кийин</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} чейр.</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} чейр.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} чейр. мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} чейр. мурун</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -1472,8 +1681,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">бул айда</relative>
 				<relative type="1">эмдиги айда</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} айдан кийин</relativeTimePattern>
-					<relativeTimePattern count="other">{0} айдан кийин</relativeTimePattern>
+					<relativeTimePattern count="one">{0} айд. кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} айд. кийин</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} ай мурун</relativeTimePattern>
@@ -1486,12 +1695,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">бул айда</relative>
 				<relative type="1">эмдиги айда</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} ай</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} ай</relativeTimePattern>
+					<relativeTimePattern count="one">{0} айд. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} айд. кийн</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} ай</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} ай</relativeTimePattern>
+					<relativeTimePattern count="one">{0} ай мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ай мурн</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="week">
@@ -1507,9 +1716,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} апта мурун</relativeTimePattern>
 					<relativeTimePattern count="other">{0} апта мурун</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} апта ичинде</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>апта</displayName>
+				<displayName>апт</displayName>
 				<relative type="-1">өткөн апт.</relative>
 				<relative type="0">ушул апт.</relative>
 				<relative type="1">келерки апт.</relative>
@@ -1521,20 +1731,31 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} апт. мурун</relativeTimePattern>
 					<relativeTimePattern count="other">{0} апт. мурун</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} апта ичинде</relativePeriod>
 			</field>
 			<field type="week-narrow">
-				<displayName>апта</displayName>
+				<displayName>апт</displayName>
 				<relative type="-1">өткөн апт.</relative>
 				<relative type="0">ушул апт.</relative>
 				<relative type="1">келерки апт.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} апт.</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} апт.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} апт. кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} апт. кийин</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} апт.</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} апт.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} апт. мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} апт. мурун</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} апта ичинде</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>айдын жумасы</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>айдын жумасы</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>айдын жумасы</displayName>
 			</field>
 			<field type="day">
 				<displayName>күн</displayName>
@@ -1560,8 +1781,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="1">эртеӊ</relative>
 				<relative type="2">бүрсүгүнү</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} күндөн кийин</relativeTimePattern>
-					<relativeTimePattern count="other">{0} күндөн кийин</relativeTimePattern>
+					<relativeTimePattern count="one">{0} күн. кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} күн. кийин</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} күн мурун</relativeTimePattern>
@@ -1576,127 +1797,326 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="1">эртеӊ</relative>
 				<relative type="2">бүрсүгүнү</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} күн</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} күн</relativeTimePattern>
+					<relativeTimePattern count="one">{0} күн. кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} күн. кийин</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} күн</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} күн</relativeTimePattern>
+					<relativeTimePattern count="one">{0} күн мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} күн мурун</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>жылдын күнү</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>жылдын күнү</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>жылдын күнү</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>аптанын күнү</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>аптанын күнү</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>аптанын күнү</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>айдын жумуш күнү</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>айдын жумуш күнү</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>айдын жумуш күнү</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">өткөн жекшембиде</relative>
 				<relative type="0">ушул жекшембиде</relative>
 				<relative type="1">келерки жекшембиде</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} жекшембиден кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жекшембиден кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} жекшемби мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жекшемби мурун</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">өткөн жекш.</relative>
 				<relative type="0">ушул жекш.</relative>
 				<relative type="1">келерки жекш.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} жекшемб. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жекшемб. кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} жекшемб. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жекшемб. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">өткөн жекш.</relative>
 				<relative type="0">ушул жекш.</relative>
 				<relative type="1">келерки жекш.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} жекшемб. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жекшемб. кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} жекшемб. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жекшемб. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">өткөн дүйшөмбүдө</relative>
 				<relative type="0">ушул дүйшөмбүдө</relative>
 				<relative type="1">келерки дүйшөмбүдө</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} дүйшөмбүдөн кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} дүйшөмбүдөн кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} дүйшөмбү мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} дүйшөмбү мурун</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">өткөн дүйш.</relative>
 				<relative type="0">ушул дүйш.</relative>
 				<relative type="1">келерки дүйш.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} дүйш. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} дүйш. кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} дүйш. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} дүйш. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">өткөн дш.</relative>
 				<relative type="0">ушул дш.</relative>
 				<relative type="1">келерки дш.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} дш. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} дш. кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} дш. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} дш. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">өткөн шейшембиде</relative>
 				<relative type="0">ушул шейшембиде</relative>
 				<relative type="1">келерки шейшембиде</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} шейшембиден кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шейшембиден кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} шейшемби мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шейшемби мурун</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">өткөн шейш.</relative>
 				<relative type="0">ушул шейш.</relative>
 				<relative type="1">келерки шейш.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} шейш. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шейш. кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} шейш. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шейш. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
-				<relative type="-1">өткөн шш.</relative>
-				<relative type="0">ушул шш.</relative>
+				<relative type="-1">өткөн шейш.</relative>
+				<relative type="0">ушул шейш.</relative>
 				<relative type="1">келерки шейш.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} шейш. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шейш. кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} шейш. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шейш. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">өткөн шаршембиде</relative>
 				<relative type="0">ушул шаршембиде</relative>
 				<relative type="1">келерки шаршембиде</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} шаршембиден кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шаршембиден кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} шаршемби мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шаршемби мурун</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">өткөн шарш.</relative>
 				<relative type="0">ушул шарш.</relative>
 				<relative type="1">келерки шарш.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} шарш. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шарш. кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} шарш. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шарш. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">өткөн шр.</relative>
 				<relative type="0">ушул шр.</relative>
 				<relative type="1">келерки шр.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} шр. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шр. кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} шр. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} шр. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">өткөн бейшембиде</relative>
 				<relative type="0">ушул бейшембиде</relative>
 				<relative type="1">келерки бейшембиде</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} бейшембиден кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} бейшембиден кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} бейшемби мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} бейшемби мурун</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">өткөн бейш.</relative>
 				<relative type="0">ушул бейш.</relative>
 				<relative type="1">келерки бейш.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} бейш. кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} бейш. кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} бейш. мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} бейш. мурун</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">өткөн бш.</relative>
 				<relative type="0">ушул бш.</relative>
 				<relative type="1">келерки бш.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} бш. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} бш. кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} бш. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} бш. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">өткөн жума күнү</relative>
 				<relative type="0">ушул жума күнү</relative>
 				<relative type="1">келерки жума күнү</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} жумадан кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жумадан кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} жума мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жума мурун</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1">өткөн жума күнү</relative>
-				<relative type="0">ушул жума күнү</relative>
-				<relative type="1">келерки жума күнү</relative>
+				<relative type="-1">өткөн жм.</relative>
+				<relative type="0">өткөн жм.</relative>
+				<relative type="1">келерки жм.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} жм кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жм кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} жм мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жм мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
-				<relative type="-1">өткөн жума күнү</relative>
-				<relative type="0">ушул жума күнү</relative>
-				<relative type="1">келерки жума күнү</relative>
+				<relative type="-1">өткөн жм</relative>
+				<relative type="0">ушул жм</relative>
+				<relative type="1">келерки жм</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} жм кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жм кийн</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} жм мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} жм мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">өткөн ишембиде</relative>
 				<relative type="0">ушул ишембиде</relative>
 				<relative type="1">келерки ишембиде</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ишембиден кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ишембиден кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ишемби мурун</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ишемби мурун</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">өткөн ишм.</relative>
 				<relative type="0">ушул ишм.</relative>
 				<relative type="1">келерки ишм.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ишм. кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ишм. кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ишм. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ишм. мурн</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">өткөн ишм.</relative>
 				<relative type="0">ушул ишм.</relative>
 				<relative type="1">келерки ишм.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ишм. кийин</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ишм. кийин</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ишм. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ишм. мурн</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>ТЧ/ТК</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>ТЧ/ТК</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>ТЧ/ТК</displayName>
+			</field>
 			<field type="hour">
 				<displayName>саат</displayName>
+				<relative type="0">ушул саатта</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} сааттан кийин</relativeTimePattern>
 					<relativeTimePattern count="other">{0} сааттан кийин</relativeTimePattern>
@@ -1720,16 +2140,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="hour-narrow">
 				<displayName>ст</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} с.</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} с.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} с. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} с. кийн</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} с.</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} с.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} с. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} с. мурн</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>мүнөт</displayName>
+				<relative type="0">ушул мүнөттө</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} мүнөттөн кийин</relativeTimePattern>
 					<relativeTimePattern count="other">{0} мүнөттөн кийин</relativeTimePattern>
@@ -1753,12 +2174,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="minute-narrow">
 				<displayName>м.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} м.</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} м.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} мүн. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} мүн. кийн</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} м.</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} м.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} мүн. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} мүн. мурн</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second">
@@ -1787,15 +2208,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="second-narrow">
 				<displayName>сек.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} сек.</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} сек.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} сек. кийн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} сек. кийн</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} сек. мурун</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} сек. мурун</relativeTimePattern>
+					<relativeTimePattern count="one">{0} сек. мурн</relativeTimePattern>
+					<relativeTimePattern count="other">{0} сек. мурн</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="zone">
+				<displayName>убакыт алкагы</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>убакыт алкагы</displayName>
+			</field>
+			<field type="zone-narrow">
 				<displayName>убакыт алкагы</displayName>
 			</field>
 		</fields>
@@ -1807,8 +2234,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} (+1)</regionFormat>
 			<regionFormat type="standard">{0} (+0)</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Санта Изабел</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Гонолулу</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Бирдиктүү дүйнөлүк убакыт</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>белгисиз шаар</exemplarCity>
+				<exemplarCity>Белгисиз шаар</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity>Андорра</exemplarCity>
@@ -1847,7 +2285,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Саоа</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Mawson">
-				<exemplarCity>Моосон</exemplarCity>
+				<exemplarCity>Моусон</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Davis">
 				<exemplarCity>Дэвис</exemplarCity>
@@ -1859,10 +2297,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Кейси</exemplarCity>
 			</zone>
 			<zone type="Antarctica/DumontDUrville">
-				<exemplarCity>Дүмон д-Өрвил</exemplarCity>
+				<exemplarCity>Дюмон д-Урвил</exemplarCity>
 			</zone>
 			<zone type="Antarctica/McMurdo">
-				<exemplarCity>МакМөрдо</exemplarCity>
+				<exemplarCity>МакМёрдо</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
 				<exemplarCity>Рио Галлегос</exemplarCity>
@@ -1964,7 +2402,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Дакка</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
-				<exemplarCity>Брюсель</exemplarCity>
+				<exemplarCity>Брюссель</exemplarCity>
 			</zone>
 			<zone type="Africa/Ouagadougou">
 				<exemplarCity>Уагадугу</exemplarCity>
@@ -2071,6 +2509,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>Ванкувер</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Форт Нельсон</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Доусон Грек</exemplarCity>
 			</zone>
@@ -2167,6 +2608,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Истер</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Пунта-Аренас</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Сантиаго</exemplarCity>
 			</zone>
@@ -2199,6 +2643,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Никосия</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Фамагуста</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Прага</exemplarCity>
@@ -2376,7 +2823,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
-					<daylight>Ирландия стандарттык убакыты</daylight>
+					<daylight>Ирландия кышкы убакыты</daylight>
 				</long>
 				<exemplarCity>Дублин</exemplarCity>
 			</zone>
@@ -2441,7 +2888,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Сент-Китс</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
-				<exemplarCity>Пхенйан</exemplarCity>
+				<exemplarCity>Пхеньян</exemplarCity>
 			</zone>
 			<zone type="Asia/Seoul">
 				<exemplarCity>Сеул</exemplarCity>
@@ -2457,6 +2904,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Oral">
 				<exemplarCity>Орал</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Атырау</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Актобе</exemplarCity>
@@ -2571,9 +3021,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Тихуана</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Санта Изабел</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Эрмосилло</exemplarCity>
@@ -2702,7 +3149,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Хеброн</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Azores">
-				<exemplarCity>Азорс</exemplarCity>
+				<exemplarCity>Азор</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Madeira">
 				<exemplarCity>Мадейра</exemplarCity>
@@ -2740,6 +3187,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Волгоград</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Саратов</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Астрахань</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ульяновск</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Киров</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Самара</exemplarCity>
 			</zone>
@@ -2751,6 +3210,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Новосибирск</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Барнаул</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Томск</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Новокузнецк</exemplarCity>
@@ -2920,9 +3385,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Мидуэй</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Жонстон</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Уейк</exemplarCity>
 			</zone>
@@ -2932,8 +3394,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Гонолулу</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Жонстон</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Анкориж</exemplarCity>
@@ -2969,7 +3431,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Нью-Салем, Түндүк Дакота</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
-				<exemplarCity>Сентер, Түндүк Дакота</exemplarCity>
+				<exemplarCity>Түндүк Дакотанын борбору</exemplarCity>
 			</zone>
 			<zone type="America/Chicago">
 				<exemplarCity>Чикаго</exemplarCity>
@@ -3087,140 +3549,140 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Africa_Western">
 				<long>
 					<generic>Батыш Африка убактысы</generic>
-					<standard>Батыш Африка стандарт убактысы</standard>
+					<standard>Батыш Африка кышкы убакыты</standard>
 					<daylight>Батыш Африка жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
 				<long>
 					<generic>Аляска убактысы</generic>
-					<standard>Аляска стандарт убактысы</standard>
+					<standard>Аляска кышкы убактысы</standard>
 					<daylight>Аляска жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Amazon">
 				<long>
 					<generic>Амазон убактысы</generic>
-					<standard>Амазон стандарт убактысы</standard>
+					<standard>Амазон кышкы убактысы</standard>
 					<daylight>Амазон жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>Түндүк Америка, борбордук убактысы</generic>
-					<standard>Түндүк Америка, борбордук стандарт убактысы</standard>
-					<daylight>Түндүк Америка, борбордук жайкы убактысы</daylight>
+					<generic>Түндүк Америка, борбордук убакыт</generic>
+					<standard>Түндүк Америка, борбордук кышкы убактысы</standard>
+					<daylight>Түндүк Америка, борбордук жайкы убакыт</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
 					<generic>Түндүк Америка, чыгыш убактысы</generic>
-					<standard>Түндүк Америка, чыгыш стандарт убактысы</standard>
+					<standard>Түндүк Америка, чыгыш кышкы убактысы</standard>
 					<daylight>Түндүк Америка, чыгыш жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
 					<generic>Түндүк Америка, тоо убактысы</generic>
-					<standard>Түндүк Америка, тоо стандарт убактысы</standard>
+					<standard>Түндүк Америка, тоо кышкы убактысы</standard>
 					<daylight>Түндүк Америка, тоо жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
 					<generic>Түндүк Америка, Тынч океан убактысы</generic>
-					<standard>Түндүк Америка, Тынч океан стандарт убактысы</standard>
+					<standard>Түндүк Америка, Тынч океан кышкы убактысы</standard>
 					<daylight>Түндүк Америка, Тынч океан жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Apia">
 				<long>
 					<generic>Апиа убактысы</generic>
-					<standard>Апиа стандарт убактысы</standard>
-					<daylight>Апиа күндүзгү убактысы</daylight>
+					<standard>Апиа кышкы убакыты</standard>
+					<daylight>Апиа жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
 				<long>
 					<generic>Арабия убактысы</generic>
-					<standard>Арабия стандарт убактысы</standard>
-					<daylight>Арабия үнөмдөө убактысы</daylight>
+					<standard>Арабия кышкы убакыты</standard>
+					<daylight>Арабия жайкы убакыты</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
 					<generic>Аргентина убактысы</generic>
-					<standard>Аргентина стандарт убактысы</standard>
+					<standard>Аргентина кышкы убактысы</standard>
 					<daylight>Аргентина жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
 					<generic>Батыш Аргентина убактысы</generic>
-					<standard>Батыш Аргентина стандарт убактысы</standard>
+					<standard>Батыш Аргентина кышкы убактысы</standard>
 					<daylight>Батыш Аргентина жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
 				<long>
 					<generic>Армения убактысы</generic>
-					<standard>Армения стандарт убактысы</standard>
+					<standard>Армения кышкы убакыты</standard>
 					<daylight>Армения жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>Атлантика убактысы</generic>
-					<standard>Атлантика стандарт убактысы</standard>
+					<standard>Атлантика кышкы убактысы</standard>
 					<daylight>Атлантика жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
 					<generic>Австралия борбордук убактысы</generic>
-					<standard>Австралия борбордук стандарт убактысы</standard>
-					<daylight>Австралия борбордук күндүзгү убактысы</daylight>
+					<standard>Австралия борбордук кышкы убакыты</standard>
+					<daylight>Австралия борбордук жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
 					<generic>Австралия борбордук батыш убактысы</generic>
-					<standard>Австралия борбордук батыш стандарт убактысы</standard>
-					<daylight>Австралия борбордук чыгыш күндүзгү убактысы</daylight>
+					<standard>Австралия борбордук батыш кышкы убакыты</standard>
+					<daylight>Австралия борбордук чыгыш жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
 					<generic>Австралия чыгыш убактысы</generic>
-					<standard>Австралия чыгыш стандарт убактысы</standard>
-					<daylight>Австралия чыгыш күндүзгү убактысы</daylight>
+					<standard>Австралия чыгыш кышкы убакыты</standard>
+					<daylight>Австралия чыгыш жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
 					<generic>Австралия батыш убактысы</generic>
-					<standard>Австралия батыш стандарт убактысы</standard>
-					<daylight>Австралия батыш күндүзгү убактысы</daylight>
+					<standard>Австралия батыш кышкы убакыты</standard>
+					<daylight>Австралия батыш жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
 					<generic>Азербайжан убактысы</generic>
-					<standard>Азербайжан стандарт убактысы</standard>
+					<standard>Азербайжан кышкы убакыты</standard>
 					<daylight>Азербайжан жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azores">
 				<long>
-					<generic>Азорс убактысы</generic>
-					<standard>Азорс стандарт убактысы</standard>
+					<generic>Азор убактысы</generic>
+					<standard>Азор кышкы убакыты</standard>
 					<daylight>Азорс жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
 					<generic>Бангладеш убактысы</generic>
-					<standard>Бангладеш стандарт убактысы</standard>
+					<standard>Бангладеш кышкы убакыты</standard>
 					<daylight>Бангладеш жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3237,7 +3699,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Brasilia">
 				<long>
 					<generic>Бразилия убактысы</generic>
-					<standard>Бразилия стандарт убактысы</standard>
+					<standard>Бразилия кышкы убактысы</standard>
 					<daylight>Бразилия жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3249,7 +3711,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Cape_Verde">
 				<long>
 					<generic>Капе Верде убактысы</generic>
-					<standard>Капе Верде стандарт убактысы</standard>
+					<standard>Капе Верде кышкы убакыты</standard>
 					<daylight>Капе Верде жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3261,59 +3723,59 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Chatham">
 				<long>
 					<generic>Чатам убактысы</generic>
-					<standard>Чатам стандарт убактысы</standard>
-					<daylight>Чатам күндүзгү убактысы</daylight>
+					<standard>Чатам кышкы убакыт</standard>
+					<daylight>Чатам жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
 				<long>
 					<generic>Чили убактысы</generic>
-					<standard>Чили стандарт убактысы</standard>
+					<standard>Чили кышкы убактысы</standard>
 					<daylight>Чили жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
 				<long>
 					<generic>Кытай убактысы</generic>
-					<standard>Кытай стандарт убактысы</standard>
-					<daylight>Кытай күндүзгү убактысы</daylight>
+					<standard>Кытай кышкы убакыты</standard>
+					<daylight>Кытай жайкы убакыты</daylight>
 				</long>
 			</metazone>
 			<metazone type="Choibalsan">
 				<long>
 					<generic>Чойбалсан убактысы</generic>
-					<standard>Чойбалсан стандарт убактысы</standard>
+					<standard>Чойбалсан кышкы убакыты</standard>
 					<daylight>Чойбалсан жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
 				<long>
-					<standard>Крисмас убактысы</standard>
+					<standard>Крисмас аралынын убактысы</standard>
 				</long>
 			</metazone>
 			<metazone type="Cocos">
 				<long>
-					<standard>Кокос убактысы</standard>
+					<standard>Кокос аралдарынын убактысы</standard>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
 				<long>
 					<generic>Колумбия убактысы</generic>
-					<standard>Колумбия стандарт убактысы</standard>
+					<standard>Колумбия кышкы убактысы</standard>
 					<daylight>Колумбия жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
 				<long>
 					<generic>Кук аралдарынын убактысы</generic>
-					<standard>Кук аралдарынын стандарт убактысы</standard>
-					<daylight>Кук аралдарынын жарым жай убактысы</daylight>
+					<standard>Кук аралдарынын кышкы убакыты</standard>
+					<daylight>Кук аралдарынын жарым жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
 					<generic>Куба убактысы</generic>
-					<standard>Куба стандарт убактысы</standard>
+					<standard>Куба кышкы убактысы</standard>
 					<daylight>Куба жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3324,7 +3786,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
-					<standard>Дүмон-д-Өрвил убактысы</standard>
+					<standard>Дюмон-д-Урвил убактысы</standard>
 				</long>
 			</metazone>
 			<metazone type="East_Timor">
@@ -3334,9 +3796,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Easter">
 				<long>
-					<generic>Истер убактысы</generic>
-					<standard>Истер стандарт убактысы</standard>
-					<daylight>Истер жайкы убактысы</daylight>
+					<generic>Истер аралынын убактысы</generic>
+					<standard>Истер аралынын кышкы убакыты</standard>
+					<daylight>Истер аралынын жайкы убакыты</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
@@ -3347,14 +3809,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Europe_Central">
 				<long>
 					<generic>Борбордук Европа убактысы</generic>
-					<standard>Борбордук Европа стандарт убактысы</standard>
+					<standard>Борбордук Европа кышкы убакыты</standard>
 					<daylight>Борбордук Европа жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
 					<generic>Чыгыш Европа убактысы</generic>
-					<standard>Чыгыш Европа стандарт убактысы</standard>
+					<standard>Чыгыш Европа кышкы убакыты</standard>
 					<daylight>Чыгыш Европа жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3366,21 +3828,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Europe_Western">
 				<long>
 					<generic>Батыш Европа убактысы</generic>
-					<standard>Батыш Европа стандарт убактысы</standard>
+					<standard>Батыш Европа кышкы убакыты</standard>
 					<daylight>Батыш Европа жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>Фолкленд убактысы</generic>
-					<standard>Фолкленд стандарт убактысы</standard>
-					<daylight>Фолкленд жайкы убактысы</daylight>
+					<generic>Фолкленд аралдарынын убактысы</generic>
+					<standard>Фолкленд аралдарынын кышкы убакыты</standard>
+					<daylight>Фолкленд аралдарынын жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
 				<long>
 					<generic>Фижи убактысы</generic>
-					<standard>Фижи стандарт убактысы</standard>
+					<standard>Фижи кышкы убакыты</standard>
 					<daylight>Фижи жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3407,7 +3869,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Georgia">
 				<long>
 					<generic>Грузия убактысы</generic>
-					<standard>Грузия стандарт убактысы</standard>
+					<standard>Грузия кышкы убакыты</standard>
 					<daylight>Грузия жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3418,26 +3880,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Гринвич универсалдуу убактысы</standard>
+					<standard>GMT, кышкы убакыты</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Чыгыш Гренландия убактысы</generic>
-					<standard>Чыгыш Гренландия стандарт убактысы</standard>
+					<standard>Чыгыш Гренландия кышкы убактысы</standard>
 					<daylight>Чыгыш Гренландия жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
 					<generic>Батыш Гренландия убактысы</generic>
-					<standard>Батыш Гренландия стандарт убактысы</standard>
+					<standard>Батыш Гренландия кышкы убактысы</standard>
 					<daylight>Батыш Гренландия жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
 				<long>
-					<standard>Булуӊ убактысы</standard>
+					<standard>Персия булуңунун жайкы убакыты</standard>
 				</long>
 			</metazone>
 			<metazone type="Guyana">
@@ -3448,21 +3910,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Hawaii_Aleutian">
 				<long>
 					<generic>Гавайи-Алеут убактысы</generic>
-					<standard>Гавайи-Алеут стандарт убактысы</standard>
+					<standard>Гавайи-Алеут кышкы убактысы</standard>
 					<daylight>Гавайи-Алеут жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
 					<generic>Гонконг убактысы</generic>
-					<standard>Гонконг стандарт убактысы</standard>
+					<standard>Гонконг кышкы убакыты</standard>
 					<daylight>Гонконг жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hovd">
 				<long>
 					<generic>Ховд убактысы</generic>
-					<standard>Ховд стандарт убактысы</standard>
+					<standard>Ховд кышкы убакыты</standard>
 					<daylight>Ховд жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3499,29 +3961,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Iran">
 				<long>
 					<generic>Иран убактысы</generic>
-					<standard>Иран стандарт убактысы</standard>
+					<standard>Иран кышкы убакыты</standard>
 					<daylight>Иран күндүзгү убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Иркутск убактысы</generic>
-					<standard>Иркутск стандарт убактысы</standard>
-					<daylight>Иркутск жайкы убактысы</daylight>
+					<standard>Иркутск кышкы убакыты</standard>
+					<daylight>Иркутск жайкы убакыты</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
 				<long>
-					<generic>Израил убактысы</generic>
-					<standard>Израил стандарт убактысы</standard>
-					<daylight>Израил күндүзгү убакыты</daylight>
+					<generic>Израиль убакыты</generic>
+					<standard>Израиль кышкы убакыты</standard>
+					<daylight>Израиль жайкы убакыты</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
 				<long>
-					<generic>Жапан убактысы</generic>
-					<standard>Жапан стандарт убактысы</standard>
-					<daylight>Жапан күндүзгү убактысы</daylight>
+					<generic>Жапон убактысы</generic>
+					<standard>Жапон кышкы убакыты</standard>
+					<daylight>Жапон жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3537,8 +3999,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Korea">
 				<long>
 					<generic>Корея убактысы</generic>
-					<standard>Корея стандарт убактысы</standard>
-					<daylight>Корея күндүзгү убактысы</daylight>
+					<standard>Корея кышкы убакыты</standard>
+					<daylight>Корея жайкы убакыты</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kosrae">
@@ -3549,7 +4011,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Krasnoyarsk">
 				<long>
 					<generic>Красноярск убактысы</generic>
-					<standard>Красноярск стандарт убактысы</standard>
+					<standard>Красноярск кышкы убакыты</standard>
 					<daylight>Красноярск жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3560,14 +4022,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Line_Islands">
 				<long>
-					<standard>Лайн убактысы</standard>
+					<standard>Лайн аралдарынын убактысы</standard>
 				</long>
 			</metazone>
 			<metazone type="Lord_Howe">
 				<long>
 					<generic>Лорд Хау убактысы</generic>
-					<standard>Лорд Хау стандарт убактысы</standard>
-					<daylight>Лорд Хау күндүзгү убактысы</daylight>
+					<standard>Лорд Хау кышкы убакыты</standard>
+					<daylight>Лорд Хау жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macquarie">
@@ -3578,7 +4040,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Magadan">
 				<long>
 					<generic>Магадан убактысы</generic>
-					<standard>Магадан стандарт убактысы</standard>
+					<standard>Магадан кышкы убакыты</standard>
 					<daylight>Магадан жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3599,13 +4061,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Marshall_Islands">
 				<long>
-					<standard>Маршалл убактысы</standard>
+					<standard>Маршалл аралдарынын убактысы</standard>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">
 				<long>
 					<generic>Маврикий убактысы</generic>
-					<standard>Маврикий стандарт убактысы</standard>
+					<standard>Маврикий кышкы убакыты</standard>
 					<daylight>Маврикий жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3617,28 +4079,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Mexico_Northwest">
 				<long>
 					<generic>Түндүк-чыгыш Мексика убактысы</generic>
-					<standard>Түндүк-чыгыш Мексика стандарт убактысы</standard>
+					<standard>Түндүк-чыгыш Мексика кышкы убактысы</standard>
 					<daylight>Түндүк-чыгыш Мексика жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
-					<generic>Мексика, тынч океан убактысы</generic>
-					<standard>Мексика, тынч океан стандарт убактысы</standard>
-					<daylight>Мексика, тынч океан жайкы убактысы</daylight>
+					<generic>Мексика, Тынч океан убактысы</generic>
+					<standard>Мексика, Тынч океан кышкы убактысы</standard>
+					<daylight>Мексика, Тынч океан жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
 					<generic>Улан Батор убактысы</generic>
-					<standard>Улан Батор стандарт убактысы</standard>
+					<standard>Улан Батор кышкы убакыты</standard>
 					<daylight>Улан Батор жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
 				<long>
 					<generic>Москва убактысы</generic>
-					<standard>Москва стандарт убактысы</standard>
+					<standard>Москва кышкы убакыты</standard>
 					<daylight>Москва жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3660,21 +4122,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="New_Caledonia">
 				<long>
 					<generic>Жаӊы Каледония убактысы</generic>
-					<standard>Жаӊы Каледония стандарт убактысы</standard>
+					<standard>Жаӊы Каледония кышкы убакыты</standard>
 					<daylight>Жаӊы Каледония жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="New_Zealand">
 				<long>
 					<generic>Жаӊы Зеландия убактысы</generic>
-					<standard>Жаӊы Зеландия стандарт убактысы</standard>
-					<daylight>Жаңы Зеландия күндүзгү убактысы</daylight>
+					<standard>Жаӊы Зеландия кышкы убакыты</standard>
+					<daylight>Жаңы Зеландия жайкы убакыты</daylight>
 				</long>
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
 					<generic>Нюфаундлэнд убактысы</generic>
-					<standard>Нюфаундлэнд стандарт убактысы</standard>
+					<standard>Нюфаундлэнд кышкы убактысы</standard>
 					<daylight>Нюфаундлэнд жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3691,28 +4153,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Noronha">
 				<long>
 					<generic>Фернандо де Норонья убактысы</generic>
-					<standard>Фернандо де Норонья стандарт убактысы</standard>
+					<standard>Фернандо де Норонья кышкы убактысы</standard>
 					<daylight>Фернандо де Норонья жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
 					<generic>Новосибирск убактысы</generic>
-					<standard>Новосибирск стандарт убактысы</standard>
+					<standard>Новосибирск кышкы убакыты</standard>
 					<daylight>Новосибирск жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
 					<generic>Омск убактысы</generic>
-					<standard>Омск стандарт убактысы</standard>
+					<standard>Омск кышкы убакыты</standard>
 					<daylight>Омск жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
 					<generic>Пакистан убактысы</generic>
-					<standard>Пакистан стандарт убактысы</standard>
+					<standard>Пакистан кышкы убакыты</standard>
 					<daylight>Пакистан жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3729,21 +4191,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Paraguay">
 				<long>
 					<generic>Парагвай убактысы</generic>
-					<standard>Парагвай стандарт убактысы</standard>
+					<standard>Парагвай кышкы убактысы</standard>
 					<daylight>Парагвай жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
 					<generic>Перу убактысы</generic>
-					<standard>Перу стандарт убактысы</standard>
+					<standard>Перу кышкы убактысы</standard>
 					<daylight>Перу жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Philippines">
 				<long>
 					<generic>Филиппин аралдарынын убактысы</generic>
-					<standard>Филиппин аралдарынын стандарт убактысы</standard>
+					<standard>Филиппин аралдарынын кышкы убактысы</standard>
 					<daylight>Филиппин аралдарынын жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3755,7 +4217,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Pierre_Miquelon">
 				<long>
 					<generic>Сен Пьер жана Микелон убактысы</generic>
-					<standard>Сен Пьер жана Микелон стандарт убактысы</standard>
+					<standard>Сен Пьер жана Микелон кышкы убактысы</standard>
 					<daylight>Сен Пьер жана Микелон жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3767,6 +4229,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Ponape">
 				<long>
 					<standard>Понапе убактысы</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Пхеньян убакыты</standard>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -3782,15 +4249,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Sakhalin">
 				<long>
 					<generic>Сахалин убактысы</generic>
-					<standard>Сахалин стандарт убактысы</standard>
+					<standard>Сахалин кышкы убакыты</standard>
 					<daylight>Сахалин жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samoa">
 				<long>
 					<generic>Самоа убактысы</generic>
-					<standard>Самоа стандарт убактысы</standard>
-					<daylight>Самоа күндүзгү убактысы</daylight>
+					<standard>Самоа кышкы убакыты</standard>
+					<daylight>Самоа жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -3831,8 +4298,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Taipei">
 				<long>
 					<generic>Тайпей убактысы</generic>
-					<standard>Тайпей стандарт убактысы</standard>
-					<daylight>Тайпей күндүзгү убактысы</daylight>
+					<standard>Тайпей кышкы убакыты</standard>
+					<daylight>Тайпей жайкы убакыты</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -3848,7 +4315,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Tonga">
 				<long>
 					<generic>Тонга убактысы</generic>
-					<standard>Тонга стандарт убактысы</standard>
+					<standard>Тонга кышкы убакыты</standard>
 					<daylight>Тонга жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3860,7 +4327,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Turkmenistan">
 				<long>
 					<generic>Түркмөнстан убактысы</generic>
-					<standard>Түркмөнстан стандарт убактысы</standard>
+					<standard>Түркмөнстан кышкы убакыты</standard>
 					<daylight>Түркмөнстан жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3872,21 +4339,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Uruguay">
 				<long>
 					<generic>Уругвай убактысы</generic>
-					<standard>Уругвай стандарт убактысы</standard>
+					<standard>Уругвай кышкы убактысы</standard>
 					<daylight>Уругвай жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
 					<generic>Өзбекстан убактысы</generic>
-					<standard>Өзбекстан стандарт убактысы</standard>
+					<standard>Өзбекстан кышкы убакыты</standard>
 					<daylight>Өзбекстан жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
 					<generic>Вануату убактысы</generic>
-					<standard>Вануату стандарт убактысы</standard>
+					<standard>Вануату кышкы убакыты</standard>
 					<daylight>Вануату жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3898,14 +4365,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Vladivostok">
 				<long>
 					<generic>Владивосток убактысы</generic>
-					<standard>Владивосток стандарт убактысы</standard>
+					<standard>Владивосток кышкы убакыты</standard>
 					<daylight>Владивосток жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
 					<generic>Волгоград убактысы</generic>
-					<standard>Волгоград стандарт убактысы</standard>
+					<standard>Волгоград кышкы убакыты</standard>
 					<daylight>Волгоград жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -3916,7 +4383,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Wake">
 				<long>
-					<standard>Уейк убактысы</standard>
+					<standard>Уейк аралдарынын убактысы</standard>
 				</long>
 			</metazone>
 			<metazone type="Wallis">
@@ -3927,14 +4394,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Yakutsk">
 				<long>
 					<generic>Якутск убактысы</generic>
-					<standard>Якутск стандарт убактысы</standard>
+					<standard>Якутск кышкы убакыты</standard>
 					<daylight>Якутск жайкы убактысы</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
 					<generic>Екатеринбург убактысы</generic>
-					<standard>Екатеринбург стандарт убактысы</standard>
+					<standard>Екатеринбург кышкы убакыты</standard>
 					<daylight>Екатеринбург жайкы убактысы</daylight>
 				</long>
 			</metazone>
@@ -4013,12 +4480,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="10000000000" count="other">00 млд</pattern>
 					<pattern type="100000000000" count="one">000 млд</pattern>
 					<pattern type="100000000000" count="other">000 млд</pattern>
-					<pattern type="1000000000000" count="one">0 трн</pattern>
-					<pattern type="1000000000000" count="other">0 трн</pattern>
-					<pattern type="10000000000000" count="one">00 трн</pattern>
-					<pattern type="10000000000000" count="other">00 трн</pattern>
-					<pattern type="100000000000000" count="one">000 трн</pattern>
-					<pattern type="100000000000000" count="other">000 трн</pattern>
+					<pattern type="1000000000000" count="one">0 трлн</pattern>
+					<pattern type="1000000000000" count="other">0 трлн</pattern>
+					<pattern type="10000000000000" count="one">00 трлн</pattern>
+					<pattern type="10000000000000" count="other">00 трлн</pattern>
+					<pattern type="100000000000000" count="one">000 трлн</pattern>
+					<pattern type="100000000000000" count="other">000 трлн</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -4065,12 +4532,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern type="10000000000" count="other">00 млд ¤</pattern>
 					<pattern type="100000000000" count="one">000 млд ¤</pattern>
 					<pattern type="100000000000" count="other">000 млд ¤</pattern>
-					<pattern type="1000000000000" count="one">0 трн ¤</pattern>
-					<pattern type="1000000000000" count="other">0 трн ¤</pattern>
-					<pattern type="10000000000000" count="one">00 трн ¤</pattern>
-					<pattern type="10000000000000" count="other">00 трн ¤</pattern>
-					<pattern type="100000000000000" count="one">000 трн ¤</pattern>
-					<pattern type="100000000000000" count="other">000 трн ¤</pattern>
+					<pattern type="1000000000000" count="one">0 трлн ¤</pattern>
+					<pattern type="1000000000000" count="other">0 трлн ¤</pattern>
+					<pattern type="10000000000000" count="one">00 трлн ¤</pattern>
+					<pattern type="10000000000000" count="other">00 трлн ¤</pattern>
+					<pattern type="100000000000000" count="one">000 трлн ¤</pattern>
+					<pattern type="100000000000000" count="other">000 трлн ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -4078,7 +4545,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
-				<displayName>Бириккен Араб Эмираттары дирхамы</displayName>
+				<displayName>Бириккен Араб Эмираттарынын дирхамы</displayName>
 				<displayName count="one">БАЭ дирхамы</displayName>
 				<displayName count="other">БАЭ дирхамы</displayName>
 				<symbol draft="contributed">AED</symbol>
@@ -4141,9 +4608,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAM">
-				<displayName>босния-герцоговина жүгүртөлмөлүү маркасы</displayName>
-				<displayName count="one">босния-герцоговина жүгүртөлмөлүү маркасы</displayName>
-				<displayName count="other">босния-герцоговина жүгүртөлмөлүү маркасы</displayName>
+				<displayName>босния-герцоговина конвертациялануучу маркасы</displayName>
+				<displayName count="one">босния-герцоговина конвертациялануучу маркасы</displayName>
+				<displayName count="other">босния-герцоговина конвертациялануучу маркалары</displayName>
 				<symbol>BAM</symbol>
 				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
@@ -4227,12 +4694,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>беларусь рублу</displayName>
 				<displayName count="one">беларусь рублу</displayName>
 				<displayName count="other">беларусь рублу</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>беларусь рублу (2000–2016)</displayName>
+				<displayName count="one">беларусь рублу (2000–2016)</displayName>
+				<displayName count="other">беларусь рублу (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>белиз доллары</displayName>
@@ -4267,6 +4740,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="CNH">
+				<displayName>CNH</displayName>
+				<displayName count="one">CNH</displayName>
+				<displayName count="other">CNH</displayName>
+			</currency>
 			<currency type="CNY">
 				<displayName>Кытай юаны</displayName>
 				<displayName count="one">Кытай юаны</displayName>
@@ -4289,9 +4767,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CUC">
-				<displayName>куба жүгүртүлмөлүү песосу</displayName>
-				<displayName count="one">куба жүгүртүлмөлүү песосу</displayName>
-				<displayName count="other">куба жүгүртүлмөлүү песосу</displayName>
+				<displayName>кубанын конвертациялануучу песосу</displayName>
+				<displayName count="one">кубанын конвертациялануучу песосу</displayName>
+				<displayName count="other">кубанын конвертациялануучу песолору</displayName>
 				<symbol draft="contributed">CUC</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -4363,7 +4841,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="EUR">
 				<displayName>Евро</displayName>
 				<displayName count="one">евро</displayName>
-				<displayName count="other">евро</displayName>
+				<displayName count="other">евролор</displayName>
 				<symbol>€</symbol>
 				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
@@ -4393,6 +4871,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Грузия лариси</displayName>
 				<displayName count="other">Грузия лариси</displayName>
 				<symbol draft="contributed">GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
@@ -4477,9 +4956,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="ILS">
-				<displayName>Израил жаӊы шегели</displayName>
-				<displayName count="one">Израил жаӊы шегели</displayName>
-				<displayName count="other">Израил жаӊы шегели</displayName>
+				<displayName>Израилдин жаңы шекели</displayName>
+				<displayName count="one">Израилдин жаңы шекели</displayName>
+				<displayName count="other">Израилдин жаңы шекели</displayName>
 				<symbol>ILS</symbol>
 				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
@@ -4681,10 +5160,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Мавритания угиясы (1973–2017)</displayName>
+				<displayName count="one">Мавритания угиясы (1973–2017)</displayName>
+				<displayName count="other">Мавритания угиясы (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Мавритания угиясы</displayName>
 				<displayName count="one">Мавритания угиясы</displayName>
 				<displayName count="other">Мавритания угиясы</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>Мавританий руписи</displayName>
@@ -4780,15 +5264,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>перу нуэво солу</displayName>
-				<displayName count="one">перу нуэво солу</displayName>
-				<displayName count="other">перу нуэво солу</displayName>
+				<displayName>перу солу</displayName>
+				<displayName count="one">перу солу</displayName>
+				<displayName count="other">перу солу</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
-				<displayName>Папуа Жаӊы Гине кинасы</displayName>
-				<displayName count="one">Папуа Жаӊы Гине кинасы</displayName>
-				<displayName count="other">Папуа Жаӊы Гине кинасы</displayName>
+				<displayName>Папуа Жаӊы Гвинея кинасы</displayName>
+				<displayName count="one">Папуа Жаӊы Гвинея кинасы</displayName>
+				<displayName count="other">Папуа Жаӊы Гвинея кинасы</displayName>
 				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
@@ -4830,6 +5314,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">румын лейи</displayName>
 				<displayName count="other">румын лейи</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>серб динары</displayName>
@@ -4858,9 +5343,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
-				<displayName>Соломон доллары</displayName>
-				<displayName count="one">Соломон доллары</displayName>
-				<displayName count="other">Соломон доллары</displayName>
+				<displayName>Соломон аралдарынын доллары</displayName>
+				<displayName count="one">Соломон аралдарынын доллары</displayName>
+				<displayName count="other">Соломон аралдарынын долларлары</displayName>
 				<symbol>SBD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -4891,9 +5376,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
-				<displayName>Ыйык Елена фунту</displayName>
-				<displayName count="one">Ыйык Елена фунту</displayName>
-				<displayName count="other">Ыйык Елена фунту</displayName>
+				<displayName>Ыйык Елена аралынын фунту</displayName>
+				<displayName count="one">Ыйык Елена аралынын фунту</displayName>
+				<displayName count="other">Ыйык Елена аралынын фунту</displayName>
 				<symbol>SHP</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
@@ -4924,10 +5409,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>Сао Томе жана Принсипе добрасы (1977–2017)</displayName>
+				<displayName count="one">Сао Томе жана Принсипе добрасы (1977–2017)</displayName>
+				<displayName count="other">Сао Томе жана Принсипе добрасы (1977–2017)</displayName>
+				<symbol draft="contributed">STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>Сао Томе жана Принсипе добрасы</displayName>
 				<displayName count="one">Сао Томе жана Принсипе добрасы</displayName>
 				<displayName count="other">Сао Томе жана Принсипе добрасы</displayName>
-				<symbol draft="contributed">STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
@@ -5031,9 +5521,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
-				<displayName>Өзбекстан сому</displayName>
-				<displayName count="one">Өзбекстан сому</displayName>
-				<displayName count="other">Өзбекстан сому</displayName>
+				<displayName>Өзбекстан суму</displayName>
+				<displayName count="one">Өзбекстан суму</displayName>
+				<displayName count="other">Өзбекстан суму</displayName>
 				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEF">
@@ -5063,9 +5553,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
-				<displayName>КФА ВЕАС франкы</displayName>
-				<displayName count="one">КФА ВЕАС франкы</displayName>
-				<displayName count="other">КФА ВЕАС франкы</displayName>
+				<displayName>Борбордук Африка КФА франкы</displayName>
+				<displayName count="one">Борбордук Африка КФА франкы</displayName>
+				<displayName count="other">Борбордук Африка КФА франкы</displayName>
 				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
@@ -5076,9 +5566,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
-				<displayName>КФА ВСЕАО франкы</displayName>
-				<displayName count="one">КФА ВСЕАО франкы</displayName>
-				<displayName count="other">КФА ВСЕАО франкы</displayName>
+				<displayName>КФА франкы</displayName>
+				<displayName count="one">КФА франкы</displayName>
+				<displayName count="other">КФА франкы</displayName>
 				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPF">
@@ -5117,6 +5607,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">Себетте {0} Х бар. Аны аласызбы?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">Себетте {0} Х бар. Аларды аласызбы?</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}-бурулуштан оңго бурулуңуз.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5162,6 +5657,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>чарчы километр</displayName>
 				<unitPattern count="one">{0} чарчы километр</unitPattern>
 				<unitPattern count="other">{0} чарчы километр</unitPattern>
+				<perUnitPattern>чарчы километрине {0}</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>гектар</displayName>
@@ -5181,9 +5677,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>чарчы сантиметрине {0}</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>чарчы мил</displayName>
-				<unitPattern count="one">{0} чарчы мил</unitPattern>
-				<unitPattern count="other">{0} чарчы мил</unitPattern>
+				<displayName>чарчы миля</displayName>
+				<unitPattern count="one">{0} чарчы миля</unitPattern>
+				<unitPattern count="other">{0} чарчы миля</unitPattern>
+				<perUnitPattern>чарчы милясына {0}</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>акр</displayName>
@@ -5211,6 +5708,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} карат</unitPattern>
 				<unitPattern count="other">{0} карат</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>децилитрга миллиграмм</displayName>
+				<unitPattern count="one">децилитрга {0} миллиграмм</unitPattern>
+				<unitPattern count="other">децилитрга {0} миллиграмм</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>литрине миллимоль</displayName>
+				<unitPattern count="one">литрине {0} миллимоль</unitPattern>
+				<unitPattern count="other">литрине {0} миллимоль</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>миллионго бөлүктөр</displayName>
+				<unitPattern count="one">миллионго {0} бөлүк</unitPattern>
+				<unitPattern count="other">миллионго {0} бөлүк</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>километрине литр</displayName>
 				<unitPattern count="one">километрине {0} литр</unitPattern>
@@ -5222,9 +5734,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">100 километрге {0} литр</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>милге/галон</displayName>
-				<unitPattern count="one">{0} милге/галон</unitPattern>
-				<unitPattern count="other">{0} милге/галон</unitPattern>
+				<displayName>миляга/галлон</displayName>
+				<unitPattern count="one">{0} миляга/галлон</unitPattern>
+				<unitPattern count="other">{0} миляга/галлон</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>англ. галлонуна миля</displayName>
+				<unitPattern count="one">англ. галлонуна {0} миля</unitPattern>
+				<unitPattern count="other">англ. галлонуна {0} миля</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>терабайт</displayName>
@@ -5421,9 +5938,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>метрине {0}</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<displayName>дм</displayName>
-				<unitPattern count="one">{0} дм</unitPattern>
-				<unitPattern count="other">{0} дм</unitPattern>
+				<displayName>дециметр</displayName>
+				<unitPattern count="one">{0} дециметр</unitPattern>
+				<unitPattern count="other">{0} дециметр</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>сантиметр</displayName>
@@ -5452,9 +5969,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} пикометр</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName>мил</displayName>
-				<unitPattern count="one">{0} мил</unitPattern>
-				<unitPattern count="other">{0} мил</unitPattern>
+				<displayName>миля</displayName>
+				<unitPattern count="one">{0} миля</unitPattern>
+				<unitPattern count="other">{0} миля</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>ярд</displayName>
@@ -5484,19 +6001,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} жарык жыл</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName>астрономикалык бирдик</displayName>
-				<unitPattern count="one">{0} астрономикалык бирдик</unitPattern>
-				<unitPattern count="other">{0} астрономикалык бирдик</unitPattern>
+				<displayName>астрономиялык бирдик</displayName>
+				<unitPattern count="one">{0} астрономиялык бирдик</unitPattern>
+				<unitPattern count="other">{0} астрономиялык бирдик</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
-				<displayName>деңиз мили</displayName>
-				<unitPattern count="one">{0} деңиз мили</unitPattern>
-				<unitPattern count="other">{0} деңиз мили</unitPattern>
+				<displayName>деңиз милясы</displayName>
+				<unitPattern count="one">{0} деңиз милясы</unitPattern>
+				<unitPattern count="other">{0} деңиз милясы</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName>smi</displayName>
 				<unitPattern count="one">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>чекиттер</displayName>
+				<unitPattern count="one">{0} чекит</unitPattern>
+				<unitPattern count="other">{0} чекит</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>люкс</displayName>
@@ -5623,9 +6145,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">секундасына {0} метр</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName>милине саат</displayName>
-				<unitPattern count="one">саатына {0} миль</unitPattern>
-				<unitPattern count="other">саатына {0} миль</unitPattern>
+				<displayName>саатына миля</displayName>
+				<unitPattern count="one">саатына {0} миля</unitPattern>
+				<unitPattern count="other">саатына {0} миля</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<displayName>түйүн</displayName>
@@ -5670,9 +6192,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>куб сантиметрине {0}</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
-				<displayName>куб мил</displayName>
-				<unitPattern count="one">{0} куб мил</unitPattern>
-				<unitPattern count="other">{0} куб мил</unitPattern>
+				<displayName>куб миля</displayName>
+				<unitPattern count="one">{0} куб миля</unitPattern>
+				<unitPattern count="other">{0} куб миля</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>куб ярд</displayName>
@@ -5736,10 +6258,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} акр-фут</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
-				<displayName>галон</displayName>
-				<unitPattern count="one">{0} галон</unitPattern>
-				<unitPattern count="other">{0} гал</unitPattern>
-				<perUnitPattern>галонуна {0}</perUnitPattern>
+				<displayName>галлон</displayName>
+				<unitPattern count="one">{0} галлон</unitPattern>
+				<unitPattern count="other">{0} галлон</unitPattern>
+				<perUnitPattern>галлонуна {0}</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>англ. галлону</displayName>
+				<unitPattern count="one">{0} англ. галлону</unitPattern>
+				<unitPattern count="other">{0} англ. галлону</unitPattern>
+				<perUnitPattern>англ. галлонуна {0}</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>кварта</displayName>
@@ -5821,6 +6349,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>км²</displayName>
 				<unitPattern count="one">{0} км²</unitPattern>
 				<unitPattern count="other">{0} км²</unitPattern>
+				<perUnitPattern>km²/{0}</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>гектар</displayName>
@@ -5840,9 +6369,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>см²/{0}</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>чарчы мил</displayName>
+				<displayName>чарчы миля</displayName>
 				<unitPattern count="one">{0} мл²</unitPattern>
 				<unitPattern count="other">{0} мл²</unitPattern>
+				<perUnitPattern>mi²/{0}</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>акр</displayName>
@@ -5870,6 +6400,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} кт</unitPattern>
 				<unitPattern count="other">{0} кт</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>мг/Дл</displayName>
+				<unitPattern count="one">{0} мг/Дл</unitPattern>
+				<unitPattern count="other">{0} мг/Дл</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ммоль/л</displayName>
+				<unitPattern count="one">{0} ммоль/л</unitPattern>
+				<unitPattern count="other">{0} ммоль/л</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>миллионго/бөлүк</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>км/литр</displayName>
 				<unitPattern count="one">{0} л/км</unitPattern>
@@ -5877,13 +6422,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>100 км/л</displayName>
-				<unitPattern count="one">100 км/{0} л</unitPattern>
-				<unitPattern count="other">100 км/{0} л</unitPattern>
+				<unitPattern count="one">{0} л/100км</unitPattern>
+				<unitPattern count="other">{0} л/100км</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>мил/гал</displayName>
 				<unitPattern count="one">{0} мил/гал</unitPattern>
 				<unitPattern count="other">{0} мил/гал</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>миля/англ. галлонуна</displayName>
+				<unitPattern count="one">{0} мил/англ.гал</unitPattern>
+				<unitPattern count="other">{0} мил/англ.гал</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ТБайт</displayName>
@@ -5984,8 +6534,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>миллисекунд</displayName>
-				<unitPattern count="one">{0} мс</unitPattern>
-				<unitPattern count="other">{0} мс</unitPattern>
+				<unitPattern count="one">{0} мсек</unitPattern>
+				<unitPattern count="other">{0} мсек</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μсек</displayName>
@@ -6014,8 +6564,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="electric-volt">
 				<displayName>вольт</displayName>
-				<unitPattern count="one">{0} V</unitPattern>
-				<unitPattern count="other">{0} V</unitPattern>
+				<unitPattern count="one">{0} В</unitPattern>
+				<unitPattern count="other">{0} В</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>ккал</displayName>
@@ -6111,9 +6661,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} пм</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName>мил</displayName>
-				<unitPattern count="one">{0} мил</unitPattern>
-				<unitPattern count="other">{0} мил</unitPattern>
+				<displayName>миля</displayName>
+				<unitPattern count="one">{0} миля</unitPattern>
+				<unitPattern count="other">{0} миля</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>ярд</displayName>
@@ -6156,6 +6706,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>smi</displayName>
 				<unitPattern count="one">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>чекиттер</displayName>
+				<unitPattern count="one">{0} чкт</unitPattern>
+				<unitPattern count="other">{0} чкт</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>люкс</displayName>
@@ -6247,7 +6802,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} а.к.</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<displayName>hPa</displayName>
+				<displayName>гПа</displayName>
 				<unitPattern count="one">{0} гПа</unitPattern>
 				<unitPattern count="other">{0} гПа</unitPattern>
 			</unit>
@@ -6282,9 +6837,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} м/сек.</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName>миль/саат</displayName>
-				<unitPattern count="one">{0} мил/с</unitPattern>
-				<unitPattern count="other">{0} мил/с</unitPattern>
+				<displayName>миля/саатына</displayName>
+				<unitPattern count="one">{0} миля/с</unitPattern>
+				<unitPattern count="other">{0} миля/с</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<displayName>тн</displayName>
@@ -6400,6 +6955,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} гал</unitPattern>
 				<perUnitPattern>гал/{0}</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>англ. гал</displayName>
+				<unitPattern count="one">{0} англ. гал</unitPattern>
+				<unitPattern count="other">{0} англ. гал</unitPattern>
+				<perUnitPattern>англ. гал/{0}</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>квр</displayName>
 				<unitPattern count="one">{0} квр</unitPattern>
@@ -6483,8 +7044,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>100 км/л</displayName>
-				<unitPattern count="one">100 км/{0}л</unitPattern>
-				<unitPattern count="other">100 км/{0}л</unitPattern>
+				<unitPattern count="one">{0} л/100км</unitPattern>
+				<unitPattern count="other">{0} л/100км</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>жыл</displayName>
@@ -6523,8 +7084,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>миллисек</displayName>
-				<unitPattern count="one">{0} мс</unitPattern>
-				<unitPattern count="other">{0} мс</unitPattern>
+				<unitPattern count="one">{0} мсек</unitPattern>
+				<unitPattern count="other">{0} мсек</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>км</displayName>
@@ -6671,6 +7232,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} жана {1}</listPatternPart>
 			<listPatternPart type="2">{0} жана {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, же {1}</listPatternPart>
+			<listPatternPart type="2">{0} же {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} жана {1}</listPatternPart>
+			<listPatternPart type="2">{0} жана {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
@@ -6696,5 +7269,103 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>жок:ж</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — баары</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — ылайыктуулук</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — кашаага/тырмакчага алынган</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — кеңейтилген</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — тарыхый</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — башка</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — башкалар</characterLabelPattern>
+		<characterLabelPattern type="scripts">Жазуулар — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} штрих</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} штрих</characterLabelPattern>
+		<characterLabel type="activities">аракеттер</characterLabel>
+		<characterLabel type="african_scripts">африка жазуулары</characterLabel>
+		<characterLabel type="american_scripts">америка жазуулары</characterLabel>
+		<characterLabel type="animal">жаныбар</characterLabel>
+		<characterLabel type="animals_nature">жаныбарлар же жаратылыш</characterLabel>
+		<characterLabel type="arrows">жебелер</characterLabel>
+		<characterLabel type="body">дене</characterLabel>
+		<characterLabel type="box_drawing">кутуча чийүү</characterLabel>
+		<characterLabel type="braille">Брайль</characterLabel>
+		<characterLabel type="building">имарат</characterLabel>
+		<characterLabel type="bullets_stars">маркерлер/жылдызчалар</characterLabel>
+		<characterLabel type="consonantal_jamo">үнсүз жамо</characterLabel>
+		<characterLabel type="currency_symbols">валюта белгилери</characterLabel>
+		<characterLabel type="dash_connector">тире/байламта</characterLabel>
+		<characterLabel type="digits">сандар</characterLabel>
+		<characterLabel type="dingbats">полиграфиялык белгилер</characterLabel>
+		<characterLabel type="divination_symbols">төлгө белгиси</characterLabel>
+		<characterLabel type="downwards_arrows">төмөн караган жебе</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">төмөн жана жогору караган жебе</characterLabel>
+		<characterLabel type="east_asian_scripts">Чыгыш Азия өлкөлөрүнүн жазуулары</characterLabel>
+		<characterLabel type="emoji">быйтыкча</characterLabel>
+		<characterLabel type="european_scripts">Европа өлкөлөрүнүн жазуулары</characterLabel>
+		<characterLabel type="female">аял</characterLabel>
+		<characterLabel type="flag">желек</characterLabel>
+		<characterLabel type="flags">желектер</characterLabel>
+		<characterLabel type="food_drink">тамак-аш жана суусундуктар</characterLabel>
+		<characterLabel type="format">формат</characterLabel>
+		<characterLabel type="format_whitespace">формат жана боштук</characterLabel>
+		<characterLabel type="full_width_form_variant">Толук жазы формасынын варианттары</characterLabel>
+		<characterLabel type="geometric_shapes">геометриялык фигуралар</characterLabel>
+		<characterLabel type="half_width_form_variant">Жарым жазы формасынын варианттары</characterLabel>
+		<characterLabel type="han_characters">Хань белгилери</characterLabel>
+		<characterLabel type="han_radicals">Хань уңгулары</characterLabel>
+		<characterLabel type="hanja">Ханья</characterLabel>
+		<characterLabel type="hanzi_simplified">Ханьзи (Жөнөкөйлөштүрүлгөн)</characterLabel>
+		<characterLabel type="hanzi_traditional">Ханьзи (Салттуу)</characterLabel>
+		<characterLabel type="heart">жүрөк</characterLabel>
+		<characterLabel type="historic_scripts">тарыхый жазуулар</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ideographic desc. character</characterLabel>
+		<characterLabel type="japanese_kana">Жапон Канасы</characterLabel>
+		<characterLabel type="kanbun">Канбун</characterLabel>
+		<characterLabel type="kanji">Кандзи</characterLabel>
+		<characterLabel type="keycap">клавиатура калпакчасы</characterLabel>
+		<characterLabel type="leftwards_arrows">Солго караган жебелер</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">Солго жана оңго караган жебелер</characterLabel>
+		<characterLabel type="letterlike_symbols">Тамга сымал белгилер</characterLabel>
+		<characterLabel type="limited_use">Колдонулушу чектелген</characterLabel>
+		<characterLabel type="male">эркек</characterLabel>
+		<characterLabel type="math_symbols">Математикалык белгилер</characterLabel>
+		<characterLabel type="middle_eastern_scripts">Жакынкы Чыгыш өлкөлөрүнүн жазуулары</characterLabel>
+		<characterLabel type="miscellaneous">Башка</characterLabel>
+		<characterLabel type="modern_scripts">Заманбап жазуулар</characterLabel>
+		<characterLabel type="modifier">Өзгөрткүч</characterLabel>
+		<characterLabel type="musical_symbols">Музыкалык белгилер</characterLabel>
+		<characterLabel type="nature">жаратылыш</characterLabel>
+		<characterLabel type="nonspacing">Боштугу жок</characterLabel>
+		<characterLabel type="numbers">Сандар</characterLabel>
+		<characterLabel type="objects">Объекттер</characterLabel>
+		<characterLabel type="other">Башкалар</characterLabel>
+		<characterLabel type="paired">Жупташкан</characterLabel>
+		<characterLabel type="person">адам</characterLabel>
+		<characterLabel type="phonetic_alphabet">Фонетикалык алфавит</characterLabel>
+		<characterLabel type="pictographs">Пиктограмма</characterLabel>
+		<characterLabel type="place">жер</characterLabel>
+		<characterLabel type="plant">өсүмдүк</characterLabel>
+		<characterLabel type="punctuation">Пунктуация</characterLabel>
+		<characterLabel type="rightwards_arrows">Оңго караган жебелер</characterLabel>
+		<characterLabel type="sign_standard_symbols">Белги/Стандарттык символдор</characterLabel>
+		<characterLabel type="small_form_variant">Кичинекей формадагы варианттар</characterLabel>
+		<characterLabel type="smiley">быйтыкча</characterLabel>
+		<characterLabel type="smileys_people">Быйтыкчалар жана адамдар</characterLabel>
+		<characterLabel type="south_asian_scripts">Түштүк Азия өлкөлөрүнүн жазуулары</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Түштүк-Чыгыш Азия өлкөлөрүнүн жазуулары</characterLabel>
+		<characterLabel type="spacing">Боштук калтыруу</characterLabel>
+		<characterLabel type="sport">спорт</characterLabel>
+		<characterLabel type="symbols">Символдор</characterLabel>
+		<characterLabel type="technical_symbols">Техникалык символдор</characterLabel>
+		<characterLabel type="tone_marks">Интонация белгилери</characterLabel>
+		<characterLabel type="travel">саякат</characterLabel>
+		<characterLabel type="travel_places">Саякаттоо</characterLabel>
+		<characterLabel type="upwards_arrows">Жогору караган жебелер</characterLabel>
+		<characterLabel type="variant_forms">Кош формалар</characterLabel>
+		<characterLabel type="vocalic_jamo">Үндүү Жамо</characterLabel>
+		<characterLabel type="weather">аба-ырайы</characterLabel>
+		<characterLabel type="western_asian_scripts">Батыш Азия өлкөлөрүнүн жазуулары</characterLabel>
+		<characterLabel type="whitespace">Боштук</characterLabel>
+	</characterLabels>
 </ldml>
-

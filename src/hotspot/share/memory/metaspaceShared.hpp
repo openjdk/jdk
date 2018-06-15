@@ -111,6 +111,7 @@ class MetaspaceShared : AllStatic {
   }
   static oop find_archived_heap_object(oop obj);
   static oop archive_heap_object(oop obj, Thread* THREAD);
+  static oop materialize_archived_object(oop obj);
   static void archive_klass_objects(Thread* THREAD);
 #endif
 

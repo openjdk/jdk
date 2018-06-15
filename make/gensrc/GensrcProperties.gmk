@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ endef
 # EXCLUDE   Exclude files matching this pattern.
 # CLASS   The super class for the generated classes.
 # MODULE_PATH_ROOT   Module path root, defaults to $(TOPDIR)/src.
+# KEEP_ALL_TRANSLATIONS Set to true to skip filtering of excluded translations.
 SetupCompileProperties = $(NamedParamsMacroTemplate)
 define SetupCompilePropertiesBody
   # Set default value unless overridden
@@ -73,10 +74,13 @@ define SetupCompilePropertiesBody
     $1_SRC_FILES := $$(filter-out $$($1_EXCLUDE), $$($1_SRC_FILES))
   endif
 
+  # Filter out any excluded translations
+  ifneq ($$($1_KEEP_ALL_TRANSLATIONS), true)
+    $1_SRC_FILES := $$(call FilterExcludedTranslations, $$($1_SRC_FILES), .properties)
+  endif
+
   # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
   # to .../support/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
-  # Strip away prefix and suffix, leaving for example only:
-  # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
   $1_JAVAS := $$(patsubst $$($1_MODULE_PATH_ROOT)/%, \
       $(SUPPORT_OUTPUTDIR)/gensrc/%, \
       $$(patsubst %.properties, %.java, \
@@ -99,7 +103,7 @@ define SetupCompilePropertiesBody
   $1_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.marker
   $1_CMDLINE_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.cmdline
 
-# Now setup the rule for the generation of the resource bundles.
+  # Now setup the rule for the generation of the resource bundles.
   $$($1_TARGET): $$($1_SRC_FILES) $$($1_JAVAS) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $$(@D) $$($1_DIRS)
 	$(ECHO) Compiling $$(words $$($1_SRC_FILES)) properties into resource bundles for $(MODULE)

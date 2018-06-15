@@ -67,11 +67,15 @@ public class Settings extends TestHelper {
     private static final String VM_SETTINGS = "VM settings:";
     private static final String PROP_SETTINGS = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
+    private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
 
     static void containsAllOptions(TestResult tr) {
         checkContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
+        if (System.getProperty("os.name").contains("Linux")) {
+            checkContains(tr, SYSTEM_SETTINGS);
+        }
     }
 
     static void runTestOptionDefault() throws IOException {
@@ -123,6 +127,20 @@ public class Settings extends TestHelper {
         checkContains(tr, LOCALE_SETTINGS);
     }
 
+    static void runTestOptionSystem() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:system");
+        if (System.getProperty("os.name").contains("Linux")) {
+            checkNotContains(tr, VM_SETTINGS);
+            checkNotContains(tr, PROP_SETTINGS);
+            checkNotContains(tr, LOCALE_SETTINGS);
+            checkContains(tr, SYSTEM_SETTINGS);
+        } else {
+            // -XshowSettings prints all available settings when
+            // settings argument is not recognized.
+            containsAllOptions(tr);
+        }
+    }
+
     static void runTestBadOptions() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettingsBadOption");
         checkNotContains(tr, VM_SETTINGS);
@@ -146,6 +164,7 @@ public class Settings extends TestHelper {
         runTestOptionVM();
         runTestOptionProperty();
         runTestOptionLocale();
+        runTestOptionSystem();
         runTestBadOptions();
         runTest7123582();
         if (testExitValue != 0) {

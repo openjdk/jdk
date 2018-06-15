@@ -1,45 +1,109 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12217 $"/>
+		<version number="$Revision: 13873 $"/>
 		<language type="en"/>
 		<territory type="GB"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="nds_NL">West Low German</language>
+			<language type="nds_NL" draft="contributed">West Low German</language>
 		</languages>
+		<scripts>
+			<script type="Thai">Thai</script>
+		</scripts>
+		<territories>
+			<territory type="BL">St Barthélemy</territory>
+			<territory type="KN">St Kitts &amp; Nevis</territory>
+			<territory type="LC">St Lucia</territory>
+			<territory type="MF">St Martin</territory>
+			<territory type="PM">St Pierre &amp; Miquelon</territory>
+			<territory type="SH">St Helena</territory>
+			<territory type="UM">US Outlying Islands</territory>
+			<territory type="US" alt="short">US</territory>
+			<territory type="VC">St Vincent &amp; Grenadines</territory>
+			<territory type="VI">US Virgin Islands</territory>
+		</territories>
 		<keys>
-			<key type="colNormalization">Normalised Sorting</key>
+			<key type="colCaseLevel" draft="contributed">Case-Sensitive Sorting</key>
 		</keys>
 		<types>
-			<type key="colNormalization" type="no">Sort Without Normalisation</type>
-			<type key="colNormalization" type="yes">Sort Unicode Normalised</type>
+			<type key="hc" type="h11">12-Hour System (0–11)</type>
+			<type key="hc" type="h12">12-Hour System (1–12)</type>
+			<type key="hc" type="h23">24-Hour System (0–23)</type>
+			<type key="hc" type="h24">24-Hour System (1–24)</type>
 		</types>
 	</localeDisplayNames>
 	<dates>
 		<calendars>
+			<calendar type="generic">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Bhm">h.mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h.mm.ss B</dateFormatItem>
+						<dateFormatItem id="EBhm">E, h.mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E, h.mm.ss B</dateFormatItem>
+						<dateFormatItem id="Ehm">E, h.mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E, h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hm">h.mm a</dateFormatItem>
+						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">dd/MM–dd/MM</greatestDifference>
+							<greatestDifference id="M">dd/MM–dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d MMM y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="gregorian">
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="noon">noon</dayPeriod>
 							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="noon">n</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="noon">noon</dayPeriod>
 							<dayPeriod type="pm">pm</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">am</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a</dayPeriod>
-							<dayPeriod type="pm">p</dayPeriod>
+							<dayPeriod type="pm">pm</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">am</dayPeriod>
@@ -69,169 +133,308 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Bhm">h.mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h.mm.ss B</dateFormatItem>
+						<dateFormatItem id="EBhm">E, h.mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E, h.mm.ss B</dateFormatItem>
+						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d–d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="h">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH–HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="h">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH–HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M–M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y–y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d MMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MEd">E dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
-			<field type="year-short">
-				<displayName>yr</displayName>
+			<field type="weekOfMonth-short">
+				<displayName>wk of mo</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>wk of mo</displayName>
+			</field>
+			<field type="day">
+				<relative type="-1">yesterday</relative>
+				<relative type="0">today</relative>
+				<relative type="1">tomorrow</relative>
+			</field>
+			<field type="day-short">
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} yr</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} yr</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} days</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} yr ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} yr ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} days ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="year-narrow">
+			<field type="dayOfYear-short">
+				<displayName>day of yr</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>day of yr</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>day of wk</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>day of wk</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>wkday of mo</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>wkday of mo</displayName>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">last Sun</relative>
+				<relative type="0">this Sun</relative>
+				<relative type="1">next Sun</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} yr</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} yr</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Sun</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Sun</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} yr ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} yr ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Sun ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sun ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="quarter-short">
-				<displayName>qtr</displayName>
+			<field type="sun-narrow">
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} qtr</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} qtr</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Su</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Su</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} qtr ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} qtr ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Su ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Su ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="quarter-narrow">
-				<displayName>qtr</displayName>
+			<field type="mon-short">
+				<relative type="-1">last Mon</relative>
+				<relative type="0">this Mon</relative>
+				<relative type="1">next Mon</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} qtr</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} qtr</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Mon</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Mon</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} qtr ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} qtr ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Mon ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Mon ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="month-short">
-				<displayName>mo</displayName>
+			<field type="mon-narrow">
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} mo</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} mo</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} M</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} M</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} mo ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mo ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} M ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} M ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="month-narrow">
-				<displayName>mo</displayName>
+			<field type="tue-short">
+				<relative type="-1">last Tue</relative>
+				<relative type="0">this Tue</relative>
+				<relative type="1">next Tue</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} mo</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} mo</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Tue</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Tue</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} mo ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} mo ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Tue ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tue ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="week-short">
-				<displayName>wk</displayName>
+			<field type="tue-narrow">
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} wk</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} wk</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Tu</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Tu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} wk ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} wk ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Tu ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tu ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="week-narrow">
-				<displayName>wk</displayName>
+			<field type="wed-short">
+				<relative type="-1">last Wed</relative>
+				<relative type="0">this Wed</relative>
+				<relative type="1">next Wed</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} wk</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} wk</relativeTimePattern>
+					<relativeTimePattern count="one">in {0} Wed</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Wed</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} wk ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} wk ago</relativeTimePattern>
+					<relativeTimePattern count="one">{0} Wed ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Wed ago</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="dayperiod">
+			<field type="wed-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} W</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} W</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} W ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} W ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">last Thu</relative>
+				<relative type="0">this Thu</relative>
+				<relative type="1">next Thu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Thu</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Thu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Thu ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Thu ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Th</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Th</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Th ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Th ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">last Fri</relative>
+				<relative type="0">this Fri</relative>
+				<relative type="1">next Fri</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Fri</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Fri</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Fri ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Fri ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} F</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} F</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} F ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} F ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">last Sat</relative>
+				<relative type="0">this Sat</relative>
+				<relative type="1">next Sat</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Sat</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Sat</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sat ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sat ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Sa</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Sa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sa ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sa ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
 				<displayName>am/pm</displayName>
 			</field>
-			<field type="hour-short">
-				<displayName>hr</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} hr</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} hr</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} hr ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} hr ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} hr</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} hr</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} hr ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} hr ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute-short">
-				<displayName>min</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} min</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} min</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} min ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} min ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} min</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} min</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} min ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} min ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-short">
-				<displayName>sec</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} sec</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} sec</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} sec ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sec ago</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">in {0} sec</relativeTimePattern>
-					<relativeTimePattern count="other">in {0} sec</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} sec ago</relativeTimePattern>
-					<relativeTimePattern count="other">{0} sec ago</relativeTimePattern>
-				</relativeTime>
+			<field type="dayperiod-narrow">
+				<displayName>am/pm</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>St Barthélemy</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>St John’s</exemplarCity>
+			</zone>
 			<zone type="Europe/London">
 				<short>
 					<daylight>BST</daylight>
 				</short>
 			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>St Kitts</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>St Lucia</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity>Rangoon</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>St Helena</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>St Vincent</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>St Thomas</exemplarCity>
+			</zone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Central Australia Time</generic>
+					<standard>Australian Central Standard Time</standard>
+				</long>
+			</metazone>
 			<metazone type="Europe_Central">
 				<short>
 					<generic>CET</generic>
@@ -253,44 +456,62 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<daylight>WEST</daylight>
 				</short>
 			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Kyrgystan Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Ulan Bator Time</generic>
+					<standard>Ulan Bator Standard Time</standard>
+					<daylight>Ulan Bator Summer Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>St Pierre &amp; Miquelon Time</generic>
+					<standard>St Pierre &amp; Miquelon Standard Time</standard>
+					<daylight>St Pierre &amp; Miquelon Daylight Time</daylight>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
 		<currencies>
-			<currency type="ILR">
-				<displayName>Israeli Shekel (1980–1985)</displayName>
-				<displayName count="one">Israeli shekel (1980–1985)</displayName>
-				<displayName count="other">Israeli shekels (1980–1985)</displayName>
+			<currency type="MKD">
+				<displayName count="other">Macedonian denari</displayName>
 			</currency>
-			<currency type="ILS">
-				<displayName>Israeli New Shekel</displayName>
-				<displayName count="one">Israeli new shekel</displayName>
-				<displayName count="other">Israeli new shekels</displayName>
+			<currency type="SHP">
+				<displayName>St Helena Pound</displayName>
+				<displayName count="one">St Helena pound</displayName>
+				<displayName count="other">St Helena pounds</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName count="other">West African CFA francs</displayName>
 			</currency>
 		</currencies>
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="mass-stone">
-				<displayName>stone</displayName>
-				<unitPattern count="one">{0} stone</unitPattern>
-				<unitPattern count="other">{0} stone</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<displayName>kelvin</displayName>
-				<unitPattern count="one">{0} kelvin</unitPattern>
-				<unitPattern count="other">{0} kelvin</unitPattern>
+			<unit type="speed-kilometer-per-hour">
+				<unitPattern count="one">{0} kilometre per hour</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="mass-stone">
+				<unitPattern count="other">{0} st</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<unitPattern count="other">{0} Ml</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
 			<unit type="duration-hour">
-				<perUnitPattern>{0}ph</perUnitPattern>
+				<perUnitPattern draft="contributed">{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<perUnitPattern>{0}ps</perUnitPattern>
-			</unit>
-			<unit type="mass-stone">
-				<displayName>stone</displayName>
+				<perUnitPattern draft="contributed">{0}/s</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>
@@ -298,6 +519,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<listPattern>
 			<listPatternPart type="end">{0} and {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end">{0} or {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end">{0} and {1}</listPatternPart>
+		</listPattern>
 	</listPatterns>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} – all</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} – compatibility</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} – enclosed</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} – extended</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} – historic</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} – miscellaneous</characterLabelPattern>
+		<characterLabelPattern type="other">{0} – other</characterLabelPattern>
+		<characterLabelPattern type="scripts">scripts – {0}</characterLabelPattern>
+		<characterLabel type="math_symbols">maths symbol</characterLabel>
+	</characterLabels>
 </ldml>
-

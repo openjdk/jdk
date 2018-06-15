@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11914 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="lkt"/>
 	</identity>
 	<localeDisplayNames>
@@ -183,6 +184,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a á {aŋ} b č {čh} {čʼ} e é g ǧ h ȟ i í {iŋ} k {kh} {kȟ} {kʼ} l m n ŋ o ó p {ph} {pȟ} {pʼ} s š t {th} {tȟ} {tʼ} u ú {uŋ} w y z ž ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c d f {ȟʼ} j q r {sʼ} {šʼ} v x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B Č E G Ǧ H Ȟ I K L M N Ŋ O P S Š T U W Y Z Ž]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . &quot; “ ” ( ) \[ \] @ * / \&amp; #]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -315,7 +317,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Wí</displayName>
 				<relative type="-1">Wí kʼuŋ héhaŋ</relative>
 				<relative type="0">Lé wí kiŋ</relative>
-				<relative type="1">Wí kiŋháŋ</relative>
+				<relative type="1">Tȟokáta wí kiŋháŋ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">Letáŋhaŋ wíyawapi {0} kiŋháŋ</relativeTimePattern>
 				</relativeTime>
@@ -337,7 +339,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="day">
 				<displayName>Aŋpétu</displayName>
-				<relative type="-1">Lé aŋpétu kiŋ</relative>
+				<relative type="-1">Ȟtálehaŋ</relative>
 				<relative type="0">Lé aŋpétu kiŋ</relative>
 				<relative type="1">Híŋhaŋni kiŋháŋ</relative>
 				<relativeTime type="future">
@@ -396,6 +398,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>Owápȟe oȟʼáŋkȟo</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">Letáŋhaŋ oȟ’áŋkȟo {0} kiŋháŋ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">Hékta oȟ’áŋkȟo {0} k’uŋ héhaŋ</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second">
 				<displayName>Okpí</displayName>
@@ -581,4 +589,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</unitLength>
 	</units>
 </ldml>
-

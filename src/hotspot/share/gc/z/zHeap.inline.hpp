@@ -89,6 +89,10 @@ inline void ZHeap::undo_alloc_object_for_relocation(uintptr_t addr, size_t size)
   _object_allocator.undo_alloc_object_for_relocation(page, addr, size);
 }
 
+inline bool ZHeap::is_alloc_stalled() const {
+  return _page_allocator.is_alloc_stalled();
+}
+
 inline void ZHeap::check_out_of_memory() {
   _page_allocator.check_out_of_memory();
 }

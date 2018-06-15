@@ -69,8 +69,6 @@ import java.util.stream.Stream;
 
 import javax.lang.model.element.ElementVisitor;
 
-import com.sun.tools.javac.comp.Infer.InferenceException;
-
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Flags.STATIC;
@@ -818,8 +816,28 @@ public class Resolve {
             String key = inferDiag ? diag.inferKey : diag.basicKey;
             throw inferDiag ?
                 infer.error(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args)) :
-                new InapplicableMethodException(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
+                methodCheckFailure.setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
         }
+
+        /**
+         * To eliminate the overhead associated with allocating an exception object in such an
+         * hot execution path, we use flyweight pattern - and share the same exception instance
+         * across multiple method check failures.
+         */
+        class SharedInapplicableMethodException extends InapplicableMethodException {
+            private static final long serialVersionUID = 0;
+
+            SharedInapplicableMethodException() {
+                super(null);
+            }
+
+            SharedInapplicableMethodException setMessage(JCDiagnostic details) {
+                this.diagnostic = details;
+                return this;
+            }
+        }
+
+        SharedInapplicableMethodException methodCheckFailure = new SharedInapplicableMethodException();
 
         public MethodCheck mostSpecificCheck(List<Type> actuals) {
             return nilMethodCheck;
@@ -2012,7 +2030,7 @@ public class Resolve {
                     }
                 }
                 return null;
-            }, sym -> sym.kind == Kind.TYP, false, typeNotFound);
+            }, sym -> sym.kind == Kind.TYP, typeNotFound);
         }
     };
 
@@ -2049,18 +2067,11 @@ public class Resolve {
         PackageSymbol pack = syms.lookupPackage(env.toplevel.modle, name);
 
         if (allowModules && isImportOnDemand(env, name)) {
-            pack.complete();
-            if (!pack.exists()) {
-                Name nameAndDot = name.append('.', names.empty);
-                boolean prefixOfKnown =
-                        env.toplevel.modle.visiblePackages.values()
-                                                          .stream()
-                                                          .anyMatch(p -> p.fullname.startsWith(nameAndDot));
-
+            if (pack.members().isEmpty()) {
                 return lookupInvisibleSymbol(env, name, syms::getPackagesForName, syms::enterPackage, sym -> {
                     sym.complete();
-                    return sym.exists();
-                }, prefixOfKnown, pack);
+                    return !sym.members().isEmpty();
+                }, pack);
             }
         }
 
@@ -2087,7 +2098,6 @@ public class Resolve {
                                                             Function<Name, Iterable<S>> get,
                                                             BiFunction<ModuleSymbol, Name, S> load,
                                                             Predicate<S> validate,
-                                                            boolean suppressError,
                                                             Symbol defaultResult) {
         //even if a class/package cannot be found in the current module and among packages in modules
         //it depends on that are exported for any or this module, the class/package may exist internally
@@ -2097,7 +2107,7 @@ public class Resolve {
 
         for (S sym : candidates) {
             if (validate.test(sym))
-                return createInvisibleSymbolError(env, suppressError, sym);
+                return createInvisibleSymbolError(env, sym);
         }
 
         Set<ModuleSymbol> recoverableModules = new HashSet<>(syms.getAllModules());
@@ -2117,7 +2127,7 @@ public class Resolve {
                     S sym = load.apply(ms, name);
 
                     if (sym != null && validate.test(sym)) {
-                        return createInvisibleSymbolError(env, suppressError, sym);
+                        return createInvisibleSymbolError(env, sym);
                     }
                 }
             }
@@ -2126,11 +2136,11 @@ public class Resolve {
         return defaultResult;
     }
 
-    private Symbol createInvisibleSymbolError(Env<AttrContext> env, boolean suppressError, Symbol sym) {
+    private Symbol createInvisibleSymbolError(Env<AttrContext> env, Symbol sym) {
         if (symbolPackageVisible(env, sym)) {
             return new AccessError(env, null, sym);
         } else {
-            return new InvisibleSymbolError(env, suppressError, sym);
+            return new InvisibleSymbolError(env, false, sym);
         }
     }
 

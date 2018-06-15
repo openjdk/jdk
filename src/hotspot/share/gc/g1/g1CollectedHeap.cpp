@@ -78,6 +78,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
+#include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -821,6 +822,18 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
                               HeapRegion::GrainWords * HeapWordSize * uncommitted_regions);
   }
   decrease_used(size_used);
+}
+
+oop G1CollectedHeap::materialize_archived_object(oop obj) {
+  assert(obj != NULL, "archived obj is NULL");
+  assert(MetaspaceShared::is_archive_object(obj), "must be archived object");
+
+  // Loading an archived object makes it strongly reachable. If it is
+  // loaded during concurrent marking, it must be enqueued to the SATB
+  // queue, shading the previously white object gray.
+  G1BarrierSet::enqueue(obj);
+
+  return obj;
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
@@ -3249,6 +3262,9 @@ public:
     if (process_symbols) {
       SymbolTable::clear_parallel_claimed_index();
     }
+    if (process_strings) {
+      StringTable::reset_dead_counter();
+    }
   }
 
   ~G1StringAndSymbolCleaningTask() {
@@ -3262,6 +3278,9 @@ public:
         "symbols: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
         strings_processed(), strings_removed(),
         symbols_processed(), symbols_removed());
+    if (_process_strings) {
+      StringTable::finish_dead_counter();
+    }
   }
 
   void work(uint worker_id) {

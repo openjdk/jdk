@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,8 @@ public class CCE_module_msg {
     public static void main(String[] args) throws Throwable {
         // Should not display version
         invalidObjectToDerived();
+        invalidTimeToDerived();
+        invalidHeadersToDerived();
         // Should display version
         invalidClassToString();
         // Should display customer class loader
@@ -66,6 +68,42 @@ public class CCE_module_msg {
         } catch (ClassCastException cce) {
             System.out.println(cce.getMessage());
             if (!cce.getMessage().contains("java.base/java.lang.Object cannot be cast to Derived")) {
+                throw new RuntimeException("Wrong message: " + cce.getMessage());
+            }
+        }
+    }
+
+    // Test with a non-upgradeable 'java.' module other than java.base.
+    public static void invalidTimeToDerived() {
+        java.sql.Time instance = new java.sql.Time(10000);
+        int left = 23;
+        int right = 42;
+        try {
+            for (int i = 0; i < 1; i += 1) {
+                left = ((Derived) (java.lang.Object)instance).method(left, right);
+            }
+            throw new RuntimeException("ClassCastException wasn't thrown, test failed.");
+        } catch (ClassCastException cce) {
+            System.out.println(cce.getMessage());
+            if (!cce.getMessage().contains("java.sql/java.sql.Time cannot be cast to Derived")) {
+                throw new RuntimeException("Wrong message: " + cce.getMessage());
+            }
+        }
+    }
+
+    // Test with a non-upgradeable 'jdk.' module.
+    public static void invalidHeadersToDerived() {
+        com.sun.net.httpserver.Headers instance = new com.sun.net.httpserver.Headers();
+        int left = 23;
+        int right = 42;
+        try {
+            for (int i = 0; i < 1; i += 1) {
+                left = ((Derived) (java.lang.Object)instance).method(left, right);
+            }
+            throw new RuntimeException("ClassCastException wasn't thrown, test failed.");
+        } catch (ClassCastException cce) {
+            System.out.println(cce.getMessage());
+            if (!cce.getMessage().contains("jdk.httpserver/com.sun.net.httpserver.Headers cannot be cast to Derived")) {
                 throw new RuntimeException("Wrong message: " + cce.getMessage());
             }
         }

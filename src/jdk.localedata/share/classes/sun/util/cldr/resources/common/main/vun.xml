@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="vun"/>
 	</identity>
 	<localeDisplayNames>
@@ -701,6 +702,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Faranga ya Bukini</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ugwiya ya Moritania (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ugwiya ya Moritania</displayName>
 			</currency>
 			<currency type="MUR">
@@ -743,6 +747,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Shilingi ya Somalia</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobra ya Sao Tome na Principe (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobra ya Sao Tome na Principe</displayName>
 			</currency>
 			<currency type="SZL">
@@ -788,4 +795,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

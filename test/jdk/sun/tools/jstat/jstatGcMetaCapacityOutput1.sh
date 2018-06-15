@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,4 +33,4 @@ verify_os
 
 JSTAT="${TESTJAVA}/bin/jstat"
 
-${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcmetacapacity 0 2>&1 | awk -f ${TESTSRC}/gcMetaCapacityOutput1.awk
+${JSTAT} ${COMMON_JSTAT_FLAGS} -gcmetacapacity 0 2>&1 | awk -f ${TESTSRC}/gcMetaCapacityOutput1.awk

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12379 $"/>
+		<version number="$Revision: 13839 $"/>
 		<language type="to"/>
 	</identity>
 	<localeDisplayNames>
@@ -83,7 +84,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bkm">lea fakakome</language>
 			<language type="bla">lea fakasikesikā</language>
 			<language type="bm">lea fakapamipala</language>
-			<language type="bn">lea fakapengikali</language>
+			<language type="bn">lea fakapāngilā</language>
 			<language type="bo">lea fakatipeti</language>
 			<language type="bpy">lea fakapisinupilia</language>
 			<language type="bqi">lea fakapakitiāli</language>
@@ -122,6 +123,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="cps">lea fakakapiseno</language>
 			<language type="cr">lea fakakelī</language>
 			<language type="crh">lea fakatoake-kilimea</language>
+			<language type="crs">lea fakaseselua-falanisē</language>
 			<language type="cs">lea fakaseki</language>
 			<language type="csb">lea fakakasiupia</language>
 			<language type="cu">lea fakasilavia-fakasiasi</language>
@@ -147,7 +149,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="dv">lea fakativehi</language>
 			<language type="dyo">lea fakaiola-fonī</language>
 			<language type="dyu">lea fakatiula</language>
-			<language type="dz">lea fakaputeni</language>
+			<language type="dz">lea fakatisōngika</language>
 			<language type="dzg">lea fakatasaka</language>
 			<language type="ebu">lea fakaʻemipū</language>
 			<language type="ee">lea fakaʻeue</language>
@@ -163,7 +165,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="en_GB">lea fakapilitānia</language>
 			<language type="en_GB" alt="short">lea fakapilitānia</language>
 			<language type="en_US">lea fakapālangi-ʻamelika</language>
-			<language type="en_US" alt="short">lea fakapālangi (ʻAmelika)</language>
+			<language type="en_US" alt="short">lea fakapālangi-ʻAmelika</language>
 			<language type="enm">lea fakapālangi-lotoloto</language>
 			<language type="eo">lea fakaʻesipulanito</language>
 			<language type="es">lea fakasipēnisi</language>
@@ -365,7 +367,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mg">lea fakamalakasi</language>
 			<language type="mga">lea fakaʻaelani-lotoloto</language>
 			<language type="mgh">lea fakamakūa-meʻeto</language>
-			<language type="mgo">lea fakameta</language>
+			<language type="mgo">lea fakametā</language>
 			<language type="mh">lea fakamāsolo</language>
 			<language type="mi">lea fakamauli</language>
 			<language type="mic">lea fakamikemaki</language>
@@ -428,7 +430,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="oc">lea fakaʻokitane</language>
 			<language type="oj">lea fakaʻosipiuā</language>
 			<language type="om">lea fakaʻolomo</language>
-			<language type="or">lea fakaʻinitia-ʻolāea</language>
+			<language type="or">lea faka-ʻotia</language>
 			<language type="os">lea fakaʻosetiki</language>
 			<language type="osa">lea fakaʻosēse</language>
 			<language type="ota">lea fakatoake-ʻotomani</language>
@@ -439,6 +441,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pap">lea fakapapiamēnito</language>
 			<language type="pau">lea fakapalau</language>
 			<language type="pcd">lea fakapikāti</language>
+			<language type="pcm">lea fakanaisilia</language>
 			<language type="pdc">lea fakasiamane-penisilivania</language>
 			<language type="pdt">lea fakasiamane-lafalafa</language>
 			<language type="peo">lea fakapēsia-motuʻa</language>
@@ -523,7 +526,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sog">lea fakasokitiana</language>
 			<language type="sq">lea fakaʻalapēnia</language>
 			<language type="sr">lea fakasēpia</language>
-			<language type="srn">lea fakasuranane-tongikō</language>
+			<language type="srn">lea fakasulanane-tongikō</language>
 			<language type="srr">lea fakasēlēle</language>
 			<language type="ss">lea fakasuati</language>
 			<language type="ssy">lea fakasaho</language>
@@ -560,7 +563,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tli">lea fakatilingikīte</language>
 			<language type="tly">lea fakatalisi</language>
 			<language type="tmh">lea fakatamasieki</language>
-			<language type="tn">lea suana</language>
+			<language type="tn">lea fakatisuana</language>
 			<language type="to">lea fakatonga</language>
 			<language type="tog">lea fakaniasa-tonga</language>
 			<language type="tpi">lea fakatoki-pisini</language>
@@ -633,6 +636,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zza">lea fakasāsā</language>
 		</languages>
 		<scripts>
+			<script type="Adlm" draft="unconfirmed">tohinima fakaʻatilami</script>
 			<script type="Afak">tohinima fakaʻafaka</script>
 			<script type="Aghb">tohinima fakaʻalapēnia-kaukasia</script>
 			<script type="Ahom" draft="unconfirmed">tohinima fakaʻahomi</script>
@@ -644,7 +648,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Bamu">tohinima fakapamumi</script>
 			<script type="Bass">tohinima fakapasa-vā</script>
 			<script type="Batk">tohinima fakapātaki</script>
-			<script type="Beng">tohinima fakapengikali</script>
+			<script type="Beng">tohinima fakapāngilā</script>
+			<script type="Bhks" draft="unconfirmed">tohinima fakapaikisuki</script>
 			<script type="Blis">tohinima fakaʻilonga-pilisi</script>
 			<script type="Bopo">tohinima fakapopomofo</script>
 			<script type="Brah">tohinima fakapalāmī</script>
@@ -672,11 +677,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Geok">tohinima fakakutusuli-seōsia</script>
 			<script type="Geor">tohinima fakaseōsia</script>
 			<script type="Glag">tohinima fakakalakoliti</script>
+			<script type="Gonm" draft="unconfirmed">tohinima fakakōniti-masalami</script>
 			<script type="Goth">tohinima fakakotika</script>
 			<script type="Gran">tohinima fakasilanitā</script>
 			<script type="Grek">tohinima fakakalisi</script>
 			<script type="Gujr">tohinima fakaʻinitia-kutalati</script>
 			<script type="Guru">tohinima fakakūmuki</script>
+			<script type="Hanb">tohinima fakahānipi</script>
 			<script type="Hang">tohinima fakakōlea-hāngūlu</script>
 			<script type="Hani">tohinima fakasiaina</script>
 			<script type="Hano">tohinima fakahanunōʻo</script>
@@ -693,6 +700,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hung">tohinima fakahungakalia-motuʻa</script>
 			<script type="Inds">tohinima fakaʻinitusi</script>
 			<script type="Ital">tohinima fakaʻītali-motuʻa</script>
+			<script type="Jamo">tohinima fakasamo</script>
 			<script type="Java">tohinima fakasava</script>
 			<script type="Jpan">tohinima fakasiapani</script>
 			<script type="Jurc">tohinima fakaiūkeni</script>
@@ -721,6 +729,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mahj">tohinima fakamahasani</script>
 			<script type="Mand">tohinima fakamanitaea</script>
 			<script type="Mani">tohinima fakamanikaea</script>
+			<script type="Marc" draft="unconfirmed">tohinima fakamaʻake</script>
 			<script type="Maya">tohinima tongitapu fakamaia</script>
 			<script type="Mend">tohinima fakamēniti</script>
 			<script type="Merc">tohinima fakameloue-heihei</script>
@@ -735,13 +744,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mymr">tohinima fakapema</script>
 			<script type="Narb">tohinima fakaʻalepea-tokelau-motuʻa</script>
 			<script type="Nbat">tohinima fakanapatea</script>
+			<script type="Newa" draft="unconfirmed">tohinima fakaneua</script>
 			<script type="Nkgb">tohinima fakanati-sepa</script>
 			<script type="Nkoo">tohinima fakanikō</script>
 			<script type="Nshu">tohinima fakanasiū</script>
 			<script type="Ogam">tohinima fakaʻokami</script>
 			<script type="Olck">tohinima fakaʻolisiki</script>
 			<script type="Orkh">tohinima fakaʻolikoni</script>
-			<script type="Orya">tohinima fakaʻinitia-ʻolāea</script>
+			<script type="Orya">tohinima fakaʻotia</script>
+			<script type="Osge" draft="unconfirmed">tohinima fakaʻosase</script>
 			<script type="Osma">tohinima fakaʻosimānia</script>
 			<script type="Palm">tohinima fakapalamilene</script>
 			<script type="Pauc">tohinima fakapausinihau</script>
@@ -815,6 +826,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Sind">tohinima fakakutauāti</script>
 			<script type="Sinh">tohinima fakasingihala</script>
 			<script type="Sora">tohinima fakasolasomipengi</script>
+			<script type="Soyo" draft="unconfirmed">tohinima fakasoiōmipo</script>
 			<script type="Sund">tohinima fakasunitā</script>
 			<script type="Sylo">tohinima fakasailoti-nakili</script>
 			<script type="Syrc">tohinima fakasuliāiā</script>
@@ -844,8 +856,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Xpeo">tohinima fakapēsiamuʻa</script>
 			<script type="Xsux">tohinima fakamataʻingahau-sumelo-akatia</script>
 			<script type="Yiii">tohinima fakaīī</script>
+			<script type="Zanb" draft="unconfirmed">tohinima fakasanapasā-tapafā</script>
 			<script type="Zinh">tohinima hokosi</script>
 			<script type="Zmth">tohinima fakamatematika</script>
+			<script type="Zsye">tohinima fakatātā</script>
 			<script type="Zsym">tohinima fakaʻilonga</script>
 			<script type="Zxxx">tohinima taʻetohitohiʻi</script>
 			<script type="Zyyy">tohinima fakatatau</script>
@@ -869,7 +883,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="030">ʻĒsia fakahahake</territory>
 			<territory type="034">ʻĒsia fakatonga</territory>
 			<territory type="035">ʻĒsia fakatongahahake</territory>
-			<territory type="039">ʻIulope fakatonga</territory>
+			<territory type="039">ʻEulope fakatonga</territory>
 			<territory type="053">ʻAositelēlēsia</territory>
 			<territory type="054">Melanīsia</territory>
 			<territory type="057">Potu fonua Mikolonīsia</territory>
@@ -877,10 +891,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="142">ʻĒsia</territory>
 			<territory type="143">ʻĒsia lotoloto</territory>
 			<territory type="145">ʻĒsia fakahihifo</territory>
-			<territory type="150">ʻIulope</territory>
-			<territory type="151">ʻIulope fakahahake</territory>
-			<territory type="154">ʻIulope fakatokelau</territory>
-			<territory type="155">ʻIulope fakahihifo</territory>
+			<territory type="150">ʻEulope</territory>
+			<territory type="151">ʻEulope fakahahake</territory>
+			<territory type="154">ʻEulope fakatokelau</territory>
+			<territory type="155">ʻEulope fakahihifo</territory>
 			<territory type="419">ʻAmelika fakalatina</territory>
 			<territory type="AC">Motu ʻAsenisini</territory>
 			<territory type="AD">ʻAnitola</territory>
@@ -924,9 +938,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CC">ʻOtumotu Koko</territory>
 			<territory type="CD">Kongo - Kinisasa</territory>
 			<territory type="CD" alt="variant">Kongo (LTK)</territory>
-			<territory type="CF">Lipapilika ʻAfilika Lotoloto</territory>
+			<territory type="CF">Lepupelika ʻAfilika Lotoloto</territory>
 			<territory type="CG">Kongo - Palasavila</territory>
-			<territory type="CG" alt="variant">Kongo (Lipapilika)</territory>
+			<territory type="CG" alt="variant">Kongo (Lepupelika)</territory>
 			<territory type="CH">Suisilani</territory>
 			<territory type="CI">Matafonua ʻAivolī</territory>
 			<territory type="CK">ʻOtumotu Kuki</territory>
@@ -941,14 +955,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">Kulasao</territory>
 			<territory type="CX">Motu Kilisimasi</territory>
 			<territory type="CY">Saipalesi</territory>
-			<territory type="CZ">Lipapilika Seki</territory>
+			<territory type="CZ">Sēkia</territory>
+			<territory type="CZ" alt="variant">Lepupelika Seki</territory>
 			<territory type="DE">Siamane</territory>
 			<territory type="DG">Tieko Kāsia</territory>
 			<territory type="DJ">Siputi</territory>
 			<territory type="DK">Tenimaʻake</territory>
 			<territory type="DM">Tominika</territory>
-			<territory type="DO">Lipapilika Tominika</territory>
-			<territory type="DZ">ʻAisilia</territory>
+			<territory type="DO">Lepupelika Tominika</territory>
+			<territory type="DZ">ʻAlisilia</territory>
 			<territory type="EA">Siuta mo Melila</territory>
 			<territory type="EC">ʻEkuetoa</territory>
 			<territory type="EE">ʻEsitōnia</territory>
@@ -957,7 +972,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ER">ʻElitulia</territory>
 			<territory type="ES">Sipeini</territory>
 			<territory type="ET">ʻĪtiōpia</territory>
-			<territory type="EU">ʻIulope fakatahataha</territory>
+			<territory type="EU">ʻEulope fakatahataha</territory>
+			<territory type="EZ">ʻEulope fekauʻaki-paʻanga</territory>
 			<territory type="FI">Finilani</territory>
 			<territory type="FJ">Fisi</territory>
 			<territory type="FK">ʻOtumotu Fokulani</territory>
@@ -1043,7 +1059,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MO">Makau SAR Siaina</territory>
 			<territory type="MO" alt="short">Makau</territory>
 			<territory type="MP">ʻOtumotu Maliana tokelau</territory>
-			<territory type="MQ">Māteniki</territory>
+			<territory type="MQ">Mātiniki</territory>
 			<territory type="MR">Maulitenia</territory>
 			<territory type="MS">Moʻungaselati</territory>
 			<territory type="MT">Malita</territory>
@@ -1075,7 +1091,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PL">Polani</territory>
 			<territory type="PM">Sā Piea mo Mikeloni</territory>
 			<territory type="PN">ʻOtumotu Pitikeni</territory>
-			<territory type="PR">Pueto Liko</territory>
+			<territory type="PR">Puēto Liko</territory>
 			<territory type="PS">Potu Palesitaine</territory>
 			<territory type="PS" alt="short">Palesitaine</territory>
 			<territory type="PT">Potukali</territory>
@@ -1109,7 +1125,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SX">Sā Mātini (fakahōlani)</territory>
 			<territory type="SY">Sīlia</territory>
 			<territory type="SZ">Suasilani</territory>
-			<territory type="TA">Tulisiteni ta Kunuha</territory>
+			<territory type="TA">Tulisitani ta Kunuha</territory>
 			<territory type="TC">ʻOtumotu Tuki mo Kaikosi</territory>
 			<territory type="TD">Sāti</territory>
 			<territory type="TF">Potu fonua tonga fakafalanisē</territory>
@@ -1129,6 +1145,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">ʻŪkalaʻine</territory>
 			<territory type="UG">ʻIukanitā</territory>
 			<territory type="UM">ʻOtumotu siʻi ʻo ʻAmelika</territory>
+			<territory type="UN">ʻŪ fonua fakatahataha</territory>
 			<territory type="US">Puleʻanga fakatahataha ʻAmelika</territory>
 			<territory type="US" alt="short">ʻAmelika</territory>
 			<territory type="UY">ʻUlukuai</territory>
@@ -1150,8 +1167,63 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ZW">Simipapuei</territory>
 			<territory type="ZZ">Potu fonua taʻeʻiloa pe hala</territory>
 		</territories>
+		<variants>
+			<variant type="1901" draft="unconfirmed">sipelatotonu ʻoe lea fakasiamane tukufakaholo</variant>
+			<variant type="1994" draft="unconfirmed">sipelatotonu fakasīpinga ʻo Lesia</variant>
+			<variant type="1996" draft="unconfirmed">sipelatotonu ʻoe lea fakasiamane 1996</variant>
+			<variant type="1606NICT" draft="unconfirmed">lea fakafalanisē fakaloto-tōmui</variant>
+			<variant type="1694ACAD" draft="unconfirmed">lea fakafalanisē fakaonopooni-tōmuʻa</variant>
+			<variant type="1959ACAD" draft="unconfirmed">fakaako</variant>
+			<variant type="ABL1943" draft="unconfirmed">sipelatotonu fokotuʻu 1943</variant>
+			<variant type="ALUKU" draft="unconfirmed">lea fakafeituʻu fakaʻaluku</variant>
+			<variant type="AO1990" draft="unconfirmed">sipelatotonu ʻoe lea fakapotukali he 1990</variant>
+			<variant type="AREVELA" draft="unconfirmed">lea fakaʻāmenia-hahake</variant>
+			<variant type="AREVMDA" draft="unconfirmed">lea fakaʻāmenia-hihifo</variant>
+			<variant type="BAKU1926" draft="unconfirmed">motuʻalea fakalatina fakatahataha ki Toake</variant>
+			<variant type="BALANKA" draft="unconfirmed">lea fakafeituʻu fakapalanika ʻo Anii</variant>
+			<variant type="BARLA" draft="unconfirmed">lea fakafeituʻu fakapālavenito-pupunga</variant>
+			<variant type="BISKE" draft="unconfirmed">lea fakafeituʻu fakapila mo fakasā-siōsio</variant>
+			<variant type="BOHORIC" draft="unconfirmed">motuʻalea fakapoholisi</variant>
+			<variant type="BOONT" draft="unconfirmed">lea fakapunavila</variant>
+			<variant type="COLB1945" draft="unconfirmed">sipelatotonu ʻoe lea fakapotukali-palāsili he 1945</variant>
+			<variant type="DAJNKO" draft="unconfirmed">motuʻalea fakatainikō</variant>
+			<variant type="EKAVSK" draft="unconfirmed">lea fakasēpia (puʻaki fakaʻekavia)</variant>
+			<variant type="EMODENG" draft="unconfirmed">lea fakapilitānia fakonopooni-tōmuʻa</variant>
+			<variant type="FONIPA" draft="unconfirmed">fonētiki IPA</variant>
+			<variant type="FONUPA" draft="unconfirmed">fonētiki UPA</variant>
+			<variant type="HEPBURN" draft="unconfirmed">mataʻitohi liliu fakahepipūnu</variant>
+			<variant type="IJEKAVSK" draft="unconfirmed">lea fakasēpia (puʻaki fakaʻisekavia)</variant>
+			<variant type="KKCOR" draft="unconfirmed">sipelatotonu fakatatau</variant>
+			<variant type="KSCOR" draft="unconfirmed">sipelatotonu fakasīpinga</variant>
+			<variant type="LIPAW" draft="unconfirmed">lea fakafeituʻu fakalipovasi ʻo Lesia</variant>
+			<variant type="METELKO" draft="unconfirmed">motuʻalea fakametēliko</variant>
+			<variant type="MONOTON" draft="unconfirmed">fasiʻalea taha</variant>
+			<variant type="NDYUKA" draft="unconfirmed">lea fakafeituʻu fakanitiuka</variant>
+			<variant type="NEDIS" draft="unconfirmed">lea fakafeituʻu fakanatisone</variant>
+			<variant type="NJIVA" draft="unconfirmed">lea fakafeituʻu fakangiva</variant>
+			<variant type="NULIK" draft="unconfirmed">lea fakavolapuki fakaonopooni</variant>
+			<variant type="OSOJS" draft="unconfirmed">lea fakafeituʻu fakaʻoseako</variant>
+			<variant type="OXENDICT" draft="unconfirmed">sipelatotonu fakapilitānia tikisinale fakaʻokisifooti</variant>
+			<variant type="PAMAKA" draft="unconfirmed">lea fakafeituʻu fakapamaka</variant>
+			<variant type="PINYIN" draft="unconfirmed">mataʻitohi liliu fakapīnīni</variant>
+			<variant type="POLYTON" draft="unconfirmed">fasiʻalea lahi</variant>
+			<variant type="POSIX" draft="unconfirmed">fakakomipiuta</variant>
+			<variant type="REVISED" draft="unconfirmed">sipelatotonu kuo sivi</variant>
+			<variant type="RIGIK" draft="unconfirmed">lea fakavolapuki motuʻa</variant>
+			<variant type="ROZAJ" draft="unconfirmed">lea fakafeituʻu fakalesia</variant>
+			<variant type="SCOTLAND" draft="unconfirmed">lea fakasikotilani fakasīpinga</variant>
+			<variant type="SOLBA" draft="unconfirmed">lea fakafeituʻu fakasolipika</variant>
+			<variant type="SOTAV" draft="unconfirmed">lea fakafeituʻu fakasotavenito-pupunga</variant>
+			<variant type="TARASK" draft="unconfirmed">sipelatotunu fakatalasikievika</variant>
+			<variant type="UCCOR" draft="unconfirmed">sipelatotonu fakatahataha</variant>
+			<variant type="UCRCOR" draft="unconfirmed">sipelatotonu fakatahataha kuo sivi</variant>
+			<variant type="UNIFON" draft="unconfirmed">motuʻalea fonētiki ʻo Unifoni</variant>
+			<variant type="VALENCIA" draft="unconfirmed">lea fakavalenisia</variant>
+			<variant type="WADEGILE" draft="unconfirmed">mataʻitohi liliu fakauate-kilesi</variant>
+		</variants>
 		<keys>
 			<key type="calendar">tohi māhina</key>
+			<key type="cf">anga paʻanga</key>
 			<key type="collation">tohi hokohoko</key>
 			<key type="currency">paʻanga</key>
 			<key type="hc">takai houa</key>
@@ -1177,12 +1249,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="iso8601">faka-iso8601</type>
 			<type key="calendar" type="japanese">fakasiapani</type>
 			<type key="calendar" type="persian">fakapēsia</type>
-			<type key="calendar" type="roc">fakalēpupelika siaina</type>
+			<type key="calendar" type="roc">fakalepupelika siaina</type>
+			<type key="cf" type="account">anga paʻanga-kalake</type>
+			<type key="cf" type="standard">anga paʻanga-sīpinga</type>
 			<type key="collation" type="big5han" draft="unconfirmed">siaina-nimalahi</type>
+			<type key="collation" type="compat" draft="unconfirmed">ki muʻa, hoa</type>
 			<type key="collation" type="dictionary" draft="unconfirmed">tikisinale</type>
 			<type key="collation" type="ducet">ʻunikōti</type>
-			<type key="collation" type="emoji" draft="unconfirmed">ʻemosi</type>
-			<type key="collation" type="eor" draft="unconfirmed">fakaʻiulope</type>
+			<type key="collation" type="emoji" draft="unconfirmed">ngaahi ongo</type>
+			<type key="collation" type="eor" draft="unconfirmed">fakaʻeulope</type>
 			<type key="collation" type="gb2312han" draft="unconfirmed">siaina-fakafaingofua</type>
 			<type key="collation" type="phonebook">fika telefoni</type>
 			<type key="collation" type="pinyin" draft="unconfirmed">piniini</type>
@@ -1197,22 +1272,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="hc" type="h11">takai houa 0–11</type>
 			<type key="hc" type="h12">takai houa 1–12</type>
 			<type key="hc" type="h23">takai houa 0–23</type>
-			<type key="hc" type="h24">taki houa 1–24</type>
+			<type key="hc" type="h24">takai houa 1–24</type>
 			<type key="lb" type="loose">fesiʻilaine ngaloku</type>
 			<type key="lb" type="normal">fesiʻilaine faʻafai</type>
 			<type key="lb" type="strict">fesiʻilaine mafao</type>
 			<type key="ms" type="metric">founga fakamita</type>
 			<type key="ms" type="uksystem">founga fakapilitānia</type>
 			<type key="ms" type="ussystem">founga fakaʻamelika</type>
+			<type key="numbers" type="ahom" draft="unconfirmed">fika fakaʻahomi</type>
 			<type key="numbers" type="arab">fika fakaʻalepea</type>
 			<type key="numbers" type="arabext">fika fakaʻalepea fakalahi</type>
 			<type key="numbers" type="armn">fika fakaʻāmenia</type>
 			<type key="numbers" type="armnlow">fika fakaʻāmenia fakalalo</type>
 			<type key="numbers" type="bali" draft="unconfirmed">fika fakapali</type>
-			<type key="numbers" type="beng">fika fakapengikali</type>
+			<type key="numbers" type="beng">faka fakapāngilā</type>
 			<type key="numbers" type="brah" draft="unconfirmed">fika fakapalami</type>
 			<type key="numbers" type="cakm" draft="unconfirmed">fika fakakakema</type>
 			<type key="numbers" type="cham" draft="unconfirmed">fika fakakami</type>
+			<type key="numbers" type="cyrl" draft="unconfirmed">fika fakalūsia</type>
 			<type key="numbers" type="deva">fika fakatevanākalī</type>
 			<type key="numbers" type="ethi">fika fakaʻītiōpia</type>
 			<type key="numbers" type="fullwide">fika laulahi</type>
@@ -1227,6 +1304,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="hant">fika fakasiaina tukufakaholo</type>
 			<type key="numbers" type="hantfin">fika fakasiaina tukufakaholo fakapaʻanga</type>
 			<type key="numbers" type="hebr">fika fakahepelū</type>
+			<type key="numbers" type="hmng" draft="unconfirmed">fika fakapahaumongi</type>
 			<type key="numbers" type="java" draft="unconfirmed">fika fakasava</type>
 			<type key="numbers" type="jpan">fika fakasiapani</type>
 			<type key="numbers" type="jpanfin">fika fakasiapani fakapaʻanga</type>
@@ -1239,19 +1317,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="latn">fika fakalatina</type>
 			<type key="numbers" type="lepc" draft="unconfirmed">fika fakalepasā</type>
 			<type key="numbers" type="limb" draft="unconfirmed">fika fakalimipū</type>
+			<type key="numbers" type="mathbold" draft="unconfirmed">fika fakamatematika-lotolahi</type>
+			<type key="numbers" type="mathdbl" draft="unconfirmed">fika fakamatematika-tukiua</type>
+			<type key="numbers" type="mathmono" draft="unconfirmed">fika fakamatematika-vahataha</type>
+			<type key="numbers" type="mathsanb" draft="unconfirmed">fika fakamatematika-taʻehiku-lotolahi</type>
+			<type key="numbers" type="mathsans" draft="unconfirmed">fika fakamatematika-taʻehiku</type>
 			<type key="numbers" type="mlym">fika fakamalāialami</type>
+			<type key="numbers" type="modi" draft="unconfirmed">fika fakamotī</type>
 			<type key="numbers" type="mong" draft="unconfirmed">fika fakamongokōlia</type>
+			<type key="numbers" type="mroo" draft="unconfirmed">fika fakamolō</type>
 			<type key="numbers" type="mtei" draft="unconfirmed">fika fakametei-maieki</type>
 			<type key="numbers" type="mymr">fika fakapema</type>
 			<type key="numbers" type="mymrshan" draft="unconfirmed">fika fakapema-siani</type>
-			<type key="numbers" type="nkoo" draft="unconfirmed">fika fakanikō</type>
+			<type key="numbers" type="mymrtlng" draft="unconfirmed">fika fakapema-tai</type>
+			<type key="numbers" type="nkoo">fika fakanikō</type>
 			<type key="numbers" type="olck" draft="unconfirmed">fika fakaʻolisiki</type>
-			<type key="numbers" type="orya">fika fakaʻolia</type>
+			<type key="numbers" type="orya">fika fakaʻotia</type>
 			<type key="numbers" type="osma" draft="unconfirmed">fika fakaʻosimania</type>
 			<type key="numbers" type="roman">fika fakaloma</type>
 			<type key="numbers" type="romanlow">fika fakaloma fakalalo</type>
 			<type key="numbers" type="saur" draft="unconfirmed">fika fakasaulasitā</type>
 			<type key="numbers" type="shrd" draft="unconfirmed">fika fakasalata</type>
+			<type key="numbers" type="sind" draft="unconfirmed">fika fakakutasuāti</type>
+			<type key="numbers" type="sinh" draft="unconfirmed">fika fakasingihala</type>
 			<type key="numbers" type="sora" draft="unconfirmed">fika fakasola-somipenga</type>
 			<type key="numbers" type="sund" draft="unconfirmed">fika fakasunitā</type>
 			<type key="numbers" type="takr" draft="unconfirmed">fika fakatakili</type>
@@ -1261,7 +1349,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="telu">fika fakateluku</type>
 			<type key="numbers" type="thai">fika fakatailani</type>
 			<type key="numbers" type="tibt">fika fakatipeti</type>
+			<type key="numbers" type="tirh" draft="unconfirmed">fika fakatīhuta</type>
 			<type key="numbers" type="vaii" draft="unconfirmed">fika fakavai</type>
+			<type key="numbers" type="wara" draft="unconfirmed">fika fakavalangi</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">fakamita</measurementSystemName>
@@ -1278,6 +1368,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a á ā e é ē f h i í ī k l m n {ng} o ó ō p s t u ú ū v ʻ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[à ă â å ä æ b c ç d è ĕ ê ë g ì ĭ î ï j ñ ò ŏ ô ö ø œ q r ù ŭ û ü w x y ÿ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A E F H I K L M N {NG} O P S T U V ʻ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1286,6 +1377,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="unconfirmed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="unconfirmed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="unconfirmed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="unconfirmed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="unconfirmed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="unconfirmed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="unconfirmed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="unconfirmed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="unconfirmed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="unconfirmed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="unconfirmed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1340,9 +1450,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
@@ -1394,7 +1513,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
@@ -1402,8 +1521,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
@@ -1411,15 +1530,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
 							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M – M</greatestDifference>
@@ -1703,8 +1822,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="am">hengihengi</dayPeriod>
+							<dayPeriod type="pm">efiafi</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
@@ -1717,8 +1836,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="pm">PM</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="am">HH</dayPeriod>
+							<dayPeriod type="pm">EA</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1733,6 +1852,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<era type="0">KM</era>
 						<era type="1">TS</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="unconfirmed">KM</era>
+						<era type="1" draft="unconfirmed">TS</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1800,9 +1923,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh" draft="unconfirmed">h B</dateFormatItem>
+						<dateFormatItem id="Bhm" draft="unconfirmed">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms" draft="unconfirmed">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="EBhm" draft="unconfirmed">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms" draft="unconfirmed">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
@@ -1829,6 +1957,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">'uike' 'hono' W ʻ'o' MMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -1841,6 +1970,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="other" draft="unconfirmed">'uike' 'hono' w ʻ'o' y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1946,6 +2076,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<fields>
 			<field type="era">
 				<displayName>kuonga</displayName>
+			</field>
+			<field type="era-short">
+				<displayName draft="unconfirmed">kuonga</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName draft="unconfirmed">kuonga</displayName>
 			</field>
 			<field type="year">
 				<displayName>taʻu</displayName>
@@ -2066,6 +2202,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">uike ʻe {0} kuoʻosi</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod draft="unconfirmed">ʻi he uike ʻo e {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>uike</displayName>
@@ -2078,6 +2215,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">uike ʻe {0} kuoʻosi</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod draft="unconfirmed">ʻi he uike ʻo e {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>uike</displayName>
@@ -2090,6 +2228,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">uike ʻe {0} kuoʻosi</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod draft="unconfirmed">ʻi he uike ʻo e {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>uike ʻo e māhina</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>uike ʻoe māhina</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>uk ʻoe mh</displayName>
 			</field>
 			<field type="day">
 				<displayName>ʻaho</displayName>
@@ -2133,119 +2281,276 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">ʻaho ʻe {0} kuoʻosi</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>ʻaho ʻo e taʻu</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>ʻaho ʻoe taʻu</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>ʻaho ʻoe taʻu</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>ʻaho ʻo e uike</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>ʻaho ʻoe uike</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>ʻaho ʻoe uike</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>ʻaho ʻo e mahina</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>ʻaho ʻo e mahina</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>ʻaho ʻo e mahina</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">Sāpate kuoʻosi</relative>
 				<relative type="0">Sāpaté ni</relative>
 				<relative type="1">Sāpate kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Sāpate ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Sāpate ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">Sāpate kuoʻosi</relative>
 				<relative type="0">Sāpaté ni</relative>
 				<relative type="1">Sāpate kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Sāpate ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Sāpate ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">Sāpate kuoʻosi</relative>
 				<relative type="0">Sāpaté ni</relative>
 				<relative type="1">Sāpate kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Sāpate ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Sāpate ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">Mōnite kuoʻosi</relative>
 				<relative type="0">Mōnité ni</relative>
 				<relative type="1">Mōnite kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Mōnite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Mōnite ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">Mōnite kuoʻosi</relative>
 				<relative type="0">Mōnité ni</relative>
 				<relative type="1">Mōnite kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Mōnite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Mōnite ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">Mōnite kuoʻosi</relative>
 				<relative type="0">Mōnité ni</relative>
 				<relative type="1">Mōnite kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Mōnite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Mōnite ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">Tūsite kuoʻosi</relative>
 				<relative type="0">Tūsité ni</relative>
 				<relative type="1">Tūsite kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tūsite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tūsite ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">Tūsite kuoʻosi</relative>
 				<relative type="0">Tūsité ni</relative>
 				<relative type="1">Tūsite kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Tūsite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Tūsite ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">Tūsite kuoʻosi</relative>
 				<relative type="0">Tūsité ni</relative>
 				<relative type="1">Tūsite kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Tūsite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Tūsite ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">Pulelulu kuoʻosi</relative>
 				<relative type="0">Pulelulú ni</relative>
 				<relative type="1">Pulelulu kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Pulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Pulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">Pulelulu kuoʻosi</relative>
 				<relative type="0">Pulelulú ni</relative>
 				<relative type="1">Pulelulu kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Pulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Pulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">Pulelulu kuoʻosi</relative>
 				<relative type="0">Pulelulú ni</relative>
 				<relative type="1">Pulelulu kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Pulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Pulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">Tuʻapulelulu kuoʻosi</relative>
 				<relative type="0">Tuʻapulelulú ni</relative>
 				<relative type="1">Tuʻapulelulu kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tuʻapulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tuʻapulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">Tuʻapulelulu kuoʻosi</relative>
 				<relative type="0">Tuʻapulelulú ni</relative>
 				<relative type="1">Tuʻapulelulu kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Tuʻapulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Tuʻapulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">Tuʻapulelulu kuoʻosi</relative>
 				<relative type="0">Tuʻapulelulú ni</relative>
 				<relative type="1">Tuʻapulelulu kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Tuʻapulelulu ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Tuʻapulelulu ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">Falaite kuoʻosi</relative>
 				<relative type="0">Falaité ni</relative>
 				<relative type="1">Falaite kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Falaite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Falaite ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">Falaite kuoʻosi</relative>
 				<relative type="0">Falaité ni</relative>
 				<relative type="1">Falaite kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Falaite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Falaite ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">Falaite kuoʻosi</relative>
 				<relative type="0">Falaité ni</relative>
 				<relative type="1">Falaite kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Falaite ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Falaite ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">Tokonaki kuoʻosi</relative>
 				<relative type="0">Tokonakí ni</relative>
 				<relative type="1">Tokonaki kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tokonaki ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Ngaahi Tokonaki ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">Tokonaki kuoʻosi</relative>
 				<relative type="0">Tokonakí ni</relative>
 				<relative type="1">Tokonaki kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Tokonaki ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Tokonaki ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">Tokonaki kuoʻosi</relative>
 				<relative type="0">Tokonakí ni</relative>
 				<relative type="1">Tokonaki kahaʻu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">Tokonaki ʻe {0} ʻi he kahaʻu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">Tokonaki ʻe {0} ʻi he kuohili</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName draft="unconfirmed">HH/EA</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>AM/PM</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName draft="unconfirmed">HH/EA</displayName>
+			</field>
 			<field type="hour">
 				<displayName>houa</displayName>
+				<relative type="0" draft="unconfirmed">ko e houa ʻeni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he houa ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2255,6 +2560,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-short">
 				<displayName>houa</displayName>
+				<relative type="0" draft="unconfirmed">ko e houa ʻeni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he houa ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2264,6 +2570,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-narrow">
 				<displayName>houa</displayName>
+				<relative type="0" draft="unconfirmed">ko e houa ʻeni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he houa ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2273,6 +2580,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>miniti</displayName>
+				<relative type="0" draft="unconfirmed">ko e miniti ʻeni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he miniti ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2282,6 +2590,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-short">
 				<displayName>miniti</displayName>
+				<relative type="0" draft="unconfirmed">ko e miniti ʻeni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he miniti ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2291,6 +2600,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-narrow">
 				<displayName>miniti</displayName>
+				<relative type="0" draft="unconfirmed">ko e miniti ʻeni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he miniti ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2300,7 +2610,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="second">
 				<displayName>sekoni</displayName>
-				<relative type="0">taimiʻni</relative>
+				<relative type="0">taimí ni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he sekoni ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2310,6 +2620,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="second-short">
 				<displayName>sekoni</displayName>
+				<relative type="0" draft="unconfirmed">taimí ni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he sekoni ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2319,6 +2630,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="second-narrow">
 				<displayName>sekoni</displayName>
+				<relative type="0" draft="unconfirmed">taimí ni</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ʻi he sekoni ʻe {0}</relativeTimePattern>
 				</relativeTime>
@@ -2329,17 +2641,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>taimi fakavahe</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName draft="unconfirmed">taimi fakavahe</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName draft="unconfirmed">taimi fakavahe</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>Taimi {0}</regionFormat>
-			<regionFormat type="daylight">{0} Taimi Liliu</regionFormat>
+			<regionFormat type="daylight">{0} Taimi liliu</regionFormat>
 			<regionFormat type="standard">{0} Taimi totonu</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Isabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard draft="unconfirmed">taimi fakaemāmani</standard>
+				</long>
+				<short>
+					<standard draft="unconfirmed">UTC</standard>
+				</short>
+			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Halaʻata</exemplarCity>
+				<exemplarCity>Feituʻu taʻeʻiloa</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity>Andorra</exemplarCity>
@@ -2602,6 +2934,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>Vancouver</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity draft="unconfirmed">Fort Nelson</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Dawson Creek</exemplarCity>
 			</zone>
@@ -2698,6 +3033,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Lapanui</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity draft="unconfirmed">Punta Arenas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santiago</exemplarCity>
 			</zone>
@@ -2723,13 +3061,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Cape Verde</exemplarCity>
 			</zone>
 			<zone type="America/Curacao">
-				<exemplarCity>Curacao</exemplarCity>
+				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Christmas</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nicosia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity draft="unconfirmed">Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Prague</exemplarCity>
@@ -2989,6 +3330,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity draft="unconfirmed">Atyrau</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtobe</exemplarCity>
 			</zone>
@@ -3102,9 +3446,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosillo</exemplarCity>
@@ -3271,6 +3612,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity draft="unconfirmed">Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity draft="unconfirmed">Astrakhan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity draft="unconfirmed">Ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity draft="unconfirmed">Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -3282,6 +3635,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity draft="unconfirmed">Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity draft="unconfirmed">Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
@@ -3374,7 +3733,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Juba</exemplarCity>
 			</zone>
 			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
+				<exemplarCity>Sao Tomé</exemplarCity>
 			</zone>
 			<zone type="America/El_Salvador">
 				<exemplarCity>El Salvador</exemplarCity>
@@ -3451,9 +3810,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midway</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake</exemplarCity>
 			</zone>
@@ -3463,8 +3819,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -3599,7 +3955,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>houa fakaʻakelī</generic>
 					<standard>houa fakaʻakelī taimi totonu</standard>
-					<daylight>houa fakaʻakelī taimi fakaliliu</daylight>
+					<daylight>houa fakaʻakelī taimi liliu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Afghanistan">
@@ -3785,9 +4141,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
-					<generic>houa fakapengilātesi</generic>
-					<standard>houa fakapengilātesi taimi totonu</standard>
-					<daylight>houa fakapengilātesi taimi liliu</daylight>
+					<generic>houa fakapāngilātesi</generic>
+					<standard>houa fakapāngilātesi taimi totonu</standard>
+					<daylight>houa fakapāngilātesi taimi liliu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bhutan">
@@ -4369,6 +4725,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>houa fakapōnapē</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard draft="unconfirmed">houa fakapiongiangi</standard>
+				</long>
+			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
 					<generic>houa fakakisilōta</generic>
@@ -4560,6 +4921,286 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<native draft="contributed">latn</native>
 		</otherNumberingSystems>
 		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<symbols numberSystem="arab">
+			<decimal draft="unconfirmed">٫</decimal>
+			<group draft="unconfirmed">٬</group>
+			<list draft="unconfirmed">؛</list>
+			<percentSign draft="unconfirmed">٪؜</percentSign>
+			<plusSign draft="contributed">‏+</plusSign>
+			<minusSign draft="contributed">‏-</minusSign>
+			<exponential draft="unconfirmed">اس</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">؉</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="arabext">
+			<decimal draft="unconfirmed">٫</decimal>
+			<group draft="unconfirmed">٬</group>
+			<list draft="unconfirmed">؛</list>
+			<percentSign draft="unconfirmed">٪</percentSign>
+			<plusSign draft="unconfirmed">‎+‎</plusSign>
+			<minusSign draft="unconfirmed">‎-‎</minusSign>
+			<exponential draft="unconfirmed">×۱۰^</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">؉</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">٫</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="beng">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="brah">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cham">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="deva">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="guru">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="java">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="kali">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="knda">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lana">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
@@ -4574,6 +5215,454 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nan>TF</nan>
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
+		<symbols numberSystem="lepc">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="limb">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mong">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="nkoo">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="olck">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="orya">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="osma">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="saur">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="shrd">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sora">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sund">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="takr">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="talu">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="telu">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="thai">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<decimal draft="unconfirmed">.</decimal>
+			<group draft="unconfirmed">,</group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">TF</nan>
+			<timeSeparator draft="unconfirmed">:</timeSeparator>
+		</symbols>
+		<decimalFormats numberSystem="arab">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="arabext">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="bali">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="beng">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="brah">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="cakm">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="cham">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="deva">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="fullwide">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="gonm">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="gujr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="guru">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="hanidec">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="java">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="kali">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="khmr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="knda">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="lana">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="lanatham">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="laoo">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
@@ -4598,21 +5687,315 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
-					<pattern type="1000" count="other">0k</pattern>
-					<pattern type="10000" count="other">00k</pattern>
-					<pattern type="100000" count="other">000k</pattern>
+					<pattern type="1000" count="other">0a</pattern>
+					<pattern type="10000" count="other">0m</pattern>
+					<pattern type="100000" count="other">0k</pattern>
 					<pattern type="1000000" count="other">0M</pattern>
 					<pattern type="10000000" count="other">00M</pattern>
 					<pattern type="100000000" count="other">000M</pattern>
-					<pattern type="1000000000" count="other">0Ki</pattern>
-					<pattern type="10000000000" count="other">00Ki</pattern>
-					<pattern type="100000000000" count="other">000Ki</pattern>
+					<pattern type="1000000000" count="other">0P</pattern>
+					<pattern type="10000000000" count="other">00P</pattern>
+					<pattern type="100000000000" count="other">000P</pattern>
 					<pattern type="1000000000000" count="other">0T</pattern>
 					<pattern type="10000000000000" count="other">00T</pattern>
 					<pattern type="100000000000000" count="other">000T</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<decimalFormats numberSystem="lepc">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="limb">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mlym">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mong">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mtei">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mymr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mymrshan">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="nkoo">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="olck">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="orya">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="osma">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="saur">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="shrd">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="sora">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="sund">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="takr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="talu">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="tamldec">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="telu">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="thai">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="tibt">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="vaii">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="arab">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="arabext">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="bali">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="beng">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="brah">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="cakm">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="cham">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="deva">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="fullwide">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="gonm">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="gujr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="guru">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="hanidec">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="java">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="kali">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="khmr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="knda">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="lana">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="lanatham">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="laoo">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -4620,6 +6003,300 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
+		<scientificFormats numberSystem="lepc">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="limb">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mlym">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mong">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mtei">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mymr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mymrshan">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="nkoo">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="olck">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="orya">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="osma">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="saur">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="shrd">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="sora">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="sund">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="takr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="talu">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="tamldec">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="telu">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="thai">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="tibt">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="vaii">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="arab">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="arabext">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="bali">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="beng">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="brah">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="cakm">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="cham">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="deva">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="fullwide">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="gonm">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="gujr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="guru">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="hanidec">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="java">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="kali">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="khmr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="knda">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="lana">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="lanatham">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="laoo">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -4627,6 +6304,379 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<percentFormats numberSystem="lepc">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="limb">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mlym">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mong">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mtei">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mymr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mymrshan">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="nkoo">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="olck">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="orya">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="osma">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="saur">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="shrd">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="sora">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="sund">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="takr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="talu">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="tamldec">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="telu">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="thai">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="tibt">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="vaii">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="arab">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="bali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="beng">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="brah">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="cakm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="cham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="fullwide">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gonm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gujr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="guru">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="hanidec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="java">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="kali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="khmr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="knda">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lana">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lanatham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="laoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -4638,15 +6688,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="other" draft="provisional">¤ 0k</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤ 00k</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤ 000k</pattern>
+					<pattern type="1000" count="other">¤ 0a</pattern>
+					<pattern type="10000" count="other">¤ 0m</pattern>
+					<pattern type="100000" count="other">¤ 0k</pattern>
 					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
 					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
 					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤ 0Ki</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤ 00Ki</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤ 000Ki</pattern>
+					<pattern type="1000000000" count="other">¤ 0P</pattern>
+					<pattern type="10000000000" count="other">¤ 00P</pattern>
+					<pattern type="100000000000" count="other">¤ 000P</pattern>
 					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
 					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
 					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
@@ -4654,8 +6704,252 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<unitPattern count="other">{1} {0}</unitPattern>
 		</currencyFormats>
+		<currencyFormats numberSystem="lepc">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="limb">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mlym">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mong">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mtei">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymrshan">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="nkoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="olck">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="orya">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="osma">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="saur">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="shrd">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="sora">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="sund">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="takr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="talu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="tamldec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="telu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="thai">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="tibt">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="vaii">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{1} {0}</unitPattern>
+		</currencyFormats>
 		<currencies>
 			<currency type="AUD">
+				<displayName>Australian Dollar</displayName>
+				<displayName count="other">Australian Dollar</displayName>
 				<symbol>AUD$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -4704,10 +6998,182 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Pa’anga Ta’e’ilo</displayName>
 			</currency>
 		</currencies>
+		<miscPatterns numberSystem="arab">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="arabext">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="bali">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="beng">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="brah">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cakm">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cham">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="deva">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="fullwide">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gonm">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gujr">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="guru">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="hanidec">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="java">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="kali">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="khmr">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="knda">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lana">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lanatham">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="laoo">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}—{1}</pattern>
 		</miscPatterns>
+		<miscPatterns numberSystem="lepc">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="limb">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mlym">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mong">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mtei">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymr">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymrshan">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="nkoo">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="olck">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="orya">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="osma">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="saur">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="shrd">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sora">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sund">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="takr">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="talu">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tamldec">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="telu">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="thai">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tibt">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="vaii">
+			<pattern type="atLeast" draft="unconfirmed">{0}+</pattern>
+			<pattern type="range" draft="unconfirmed">{0}—{1}</pattern>
+		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other">Ngaahi ʻaho ʻe {0}</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">afe mataʻu he hala hono {0}</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -4745,6 +7211,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-kilometer">
 				<displayName>kilomita sikuea</displayName>
 				<unitPattern count="other">kilomita sikuea ʻe {0}</unitPattern>
+				<perUnitPattern>{0} ki he kilomita sikuea</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hekitale</displayName>
@@ -4763,9 +7230,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-mile">
 				<displayName>maile sikuea</displayName>
 				<unitPattern count="other">maile sikuea ʻe {0}</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName>ʻeka ʻe</displayName>
+				<displayName>ʻeka</displayName>
 				<unitPattern count="other">ʻeka ʻe {0}</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
@@ -4785,6 +7253,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kalati</displayName>
 				<unitPattern count="other">kalati ʻe {0}</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>milikalami he tesilita</displayName>
+				<unitPattern count="other">milikalami ʻe {0} he tesilita</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>milimole he lita</displayName>
+				<unitPattern count="other">milimole ʻe {0} he lita</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>konga he miliona</displayName>
+				<unitPattern count="other">konga ʻe {0} he miliona</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>lita he kilomita</displayName>
 				<unitPattern count="other">lita ʻe {0} he kilomita</unitPattern>
@@ -4796,6 +7276,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="consumption-mile-per-gallon">
 				<displayName>maile he kālani</displayName>
 				<unitPattern count="other">maile ʻe {0} he kālani</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>maile he kālani fakaʻemipaea</displayName>
+				<unitPattern count="other">maile ʻe {0} he kālani fakaʻemipaea</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>telapaiti</displayName>
@@ -4834,7 +7318,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">paiti ʻe {0}</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<displayName>ʻū piti</displayName>
+				<displayName>piti</displayName>
 				<unitPattern count="other">piti ʻe {0}</unitPattern>
 			</unit>
 			<unit type="duration-century">
@@ -4909,11 +7393,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">kilokaloli ʻe {0}</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<displayName>ʻū kaloli</displayName>
+				<displayName>kaloli</displayName>
 				<unitPattern count="other">kaloli ʻe {0}</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ʻū kaloli-kai</displayName>
+				<displayName>kaloli-kai</displayName>
 				<unitPattern count="other">kaloli-kai ʻe {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
@@ -5020,6 +7504,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-nautical-mile">
 				<displayName>maile ʻi tahi</displayName>
 				<unitPattern count="other">maile ʻi tahi ʻe {0}</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">smi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="unconfirmed">pt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lukisi</displayName>
@@ -5134,8 +7626,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other" draft="unconfirmed">fakapona ʻe {0}</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
-				<displayName draft="unconfirmed">°</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
+				<displayName>tikili</displayName>
+				<unitPattern count="other">tikili ʻe {0}</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>tikili selisiasi</displayName>
@@ -5225,6 +7717,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">kālani ʻe {0}</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} ki he kālani</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>kālani fakaʻemipaea</displayName>
+				<unitPattern count="other">kālani fakaʻemipaea ʻe {0}</unitPattern>
+				<perUnitPattern>{0} ki he kālani fakaʻemipaea</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>kuata</displayName>
 				<unitPattern count="other">kuata ʻe {0}</unitPattern>
@@ -5250,10 +7747,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">sēpuni tī ʻe {0}</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="unconfirmed">hahake ʻe {0}</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="unconfirmed">tokelau ʻe {0}</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="unconfirmed">tonga ʻe {0}</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="unconfirmed">hihifo ʻe {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">hahake ʻe {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">tokelau ʻe {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">tonga ʻe {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">hihifo ʻe {0}</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -5291,13 +7788,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-kilometer">
 				<displayName>km²</displayName>
 				<unitPattern count="other">km² ʻe {0}</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
 				<unitPattern count="other">ha ʻe {0}</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<displayName>mita sikuea ʻe</displayName>
+				<displayName>m²</displayName>
 				<unitPattern count="other">m² ʻe {0}</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} /m²</perUnitPattern>
 			</unit>
@@ -5307,11 +7805,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern draft="unconfirmed">{0} /sm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>maile sikuea ʻe</displayName>
+				<displayName>mi²</displayName>
 				<unitPattern count="other">mi² ʻe {0}</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} /mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName>ʻeka ʻe</displayName>
+				<displayName>ʻek</displayName>
 				<unitPattern count="other">ʻek ʻe {0}</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
@@ -5331,6 +7830,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kt</displayName>
 				<unitPattern count="other">kt ʻe {0}</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mk/tl</displayName>
+				<unitPattern count="other">mk ʻe {0}/tl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/l</displayName>
+				<unitPattern count="other">mmol ʻe {0}/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>khm</displayName>
+				<unitPattern count="other">khm ʻe {0}</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="other">l ʻe {0}/km</unitPattern>
@@ -5342,6 +7853,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mi/kā</displayName>
 				<unitPattern count="other">mi ʻe {0}/kā</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mi/kāʻem</displayName>
+				<unitPattern count="other">mi ʻe {0}/kāʻem</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>telapaiti</displayName>
@@ -5376,7 +7891,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">kb ʻe {0}</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName>ʻū paiti</displayName>
+				<displayName>paiti</displayName>
 				<unitPattern count="other">paiti ʻe {0}</unitPattern>
 			</unit>
 			<unit type="digital-bit">
@@ -5567,6 +8082,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mt</displayName>
 				<unitPattern count="other">mt ʻe {0}</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">mis</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="unconfirmed">pt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="other">lx ʻe {0}</unitPattern>
@@ -5736,7 +8259,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="volume-liter">
 				<displayName>l</displayName>
 				<unitPattern count="other">l ʻe {0}</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /l</perUnitPattern>
+				<perUnitPattern>{0}/l</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>tl</displayName>
@@ -5771,6 +8294,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">kā ʻe {0}</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} /kā</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>kāʻem</displayName>
+				<unitPattern count="other">kāʻem ʻe {0}</unitPattern>
+				<perUnitPattern>{0} / kāʻem</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>ku</displayName>
 				<unitPattern count="other">ku ʻe {0}</unitPattern>
@@ -5796,10 +8324,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">sētī ʻe {0}</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="unconfirmed">ha ʻe {0}</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="unconfirmed">tk ʻe {0}</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="unconfirmed">to ʻe {0}</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="unconfirmed">hi ʻe {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">ha ʻe {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">tk ʻe {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">to ʻe {0}</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">hi ʻe {0}</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -5837,6 +8365,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-kilometer">
 				<displayName>km²</displayName>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
@@ -5845,16 +8374,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-meter">
 				<displayName>m²</displayName>
 				<unitPattern count="other">{0} m²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /m²</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>sm²</displayName>
 				<unitPattern count="other">{0} sm²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /sm²</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/sm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>mi²</displayName>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ʻek</displayName>
@@ -5871,11 +8401,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-inch">
 				<displayName>in²</displayName>
 				<unitPattern count="other">{0} in²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /in²</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>kt</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName draft="unconfirmed">mk/tl</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mk/tl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName draft="unconfirmed">mmol/l</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName draft="unconfirmed">khm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} khm</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
@@ -5888,6 +8430,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mi/kā</displayName>
 				<unitPattern count="other">{0} mi/kā</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName draft="unconfirmed">mi/kāʻem</displayName>
+				<unitPattern count="other">{0}m/kāʻe</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -5936,22 +8482,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-year">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /t</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/t</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>m</displayName>
 				<unitPattern count="other">{0} m</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /m</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>u</displayName>
 				<unitPattern count="other">{0} u</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /u</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/u</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ʻa</displayName>
 				<unitPattern count="other">{0} ʻa</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /ʻa</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ʻa</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>h</displayName>
@@ -5961,7 +8507,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-minute">
 				<displayName>m</displayName>
 				<unitPattern count="other">{0} m</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /m</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>s</displayName>
@@ -6039,12 +8585,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="other">{0} km</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /km</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
 				<unitPattern count="other">{0} m</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /m</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>tm</displayName>
@@ -6053,7 +8599,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-centimeter">
 				<displayName>sm</displayName>
 				<unitPattern count="other">{0} sm</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /sm</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/sm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
@@ -6082,12 +8628,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-foot">
 				<displayName>ft</displayName>
 				<unitPattern count="other">{0} ft</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /ft</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>in</displayName>
 				<unitPattern count="other">{0} in</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /in</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>ngs</displayName>
@@ -6113,6 +8659,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mt</displayName>
 				<unitPattern count="other">{0} mt</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">mis</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="unconfirmed">pt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lx</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
@@ -6124,11 +8678,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="mass-kilogram">
 				<displayName>kk</displayName>
 				<unitPattern count="other">{0} kk</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /kk</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/kk</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>k</displayName>
 				<unitPattern count="other">{0} k</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/k</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>mk</displayName>
@@ -6149,12 +8704,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="mass-pound">
 				<displayName>pā</displayName>
 				<unitPattern count="other">{0} pā</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /pā</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/pā</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>ʻau</displayName>
 				<unitPattern count="other">{0} ʻau</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /ʻau</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ʻau</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>ʻau-k</displayName>
@@ -6247,12 +8802,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="volume-cubic-meter">
 				<displayName>m³</displayName>
 				<unitPattern count="other">{0} m³</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /m³</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>sm³</displayName>
 				<unitPattern count="other">{0} sm³</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /sm³</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/sm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>mi³</displayName>
@@ -6314,7 +8869,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="volume-gallon">
 				<displayName>kā</displayName>
 				<unitPattern count="other">{0} kā</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} /kā</perUnitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/kā</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName draft="unconfirmed">kāʻem</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kāʻem</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/kāʻem</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>ku</displayName>
@@ -6341,10 +8901,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} sētī</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="unconfirmed">{0} ha</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="unconfirmed">{0} tk</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="unconfirmed">{0} to</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="unconfirmed">{0} hi</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} ha</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} tk</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} to</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} hi</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -6359,6 +8919,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</units>
 	<listPatterns>
 		<listPattern>
+			<listPatternPart type="start">{0} mo {1}</listPatternPart>
+			<listPatternPart type="middle">{0} mo {1}</listPatternPart>
+			<listPatternPart type="end">{0} mo {1}</listPatternPart>
+			<listPatternPart type="2">{0} mo {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, pē {1}</listPatternPart>
+			<listPatternPart type="2">{0} pē {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
 			<listPatternPart type="start">{0} mo {1}</listPatternPart>
 			<listPatternPart type="middle">{0} mo {1}</listPatternPart>
 			<listPatternPart type="end">{0} mo {1}</listPatternPart>
@@ -6389,5 +8961,102 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>ʻikai</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all" draft="unconfirmed">{0} — kotoa</characterLabelPattern>
+		<characterLabelPattern type="category-list" draft="unconfirmed">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility" draft="unconfirmed">{0} — hoa</characterLabelPattern>
+		<characterLabelPattern type="enclosed" draft="unconfirmed">{0} — kāpui</characterLabelPattern>
+		<characterLabelPattern type="extended" draft="unconfirmed">{0} — toloi</characterLabelPattern>
+		<characterLabelPattern type="historic" draft="unconfirmed">{0} — tupuʻa</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous" draft="unconfirmed">{0} — kehekehe</characterLabelPattern>
+		<characterLabelPattern type="other" draft="unconfirmed">{0} — kehe</characterLabelPattern>
+		<characterLabelPattern type="scripts" draft="unconfirmed">ngaahi tohinima — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other" draft="unconfirmed">kohi ʻe {0}</characterLabelPattern>
+		<characterLabel type="activities" draft="unconfirmed">vaʻinga</characterLabel>
+		<characterLabel type="african_scripts" draft="unconfirmed">tohinima fakaʻafilika</characterLabel>
+		<characterLabel type="american_scripts" draft="unconfirmed">tohinima fakaʻamelika</characterLabel>
+		<characterLabel type="animal">manu</characterLabel>
+		<characterLabel type="animals_nature" draft="unconfirmed">manu &amp; natula</characterLabel>
+		<characterLabel type="arrows" draft="unconfirmed">ngahau</characterLabel>
+		<characterLabel type="body">sino</characterLabel>
+		<characterLabel type="box_drawing" draft="unconfirmed">tā puha</characterLabel>
+		<characterLabel type="braille" draft="unconfirmed">mataʻitohi maʻae kakai kui</characterLabel>
+		<characterLabel type="building">fale</characterLabel>
+		<characterLabel type="bullets_stars" draft="unconfirmed">pulu &amp; fetuʻu</characterLabel>
+		<characterLabel type="consonantal_jamo" draft="unconfirmed">samo fakakonisinanite</characterLabel>
+		<characterLabel type="currency_symbols" draft="unconfirmed">fakaʻilonga paʻanga</characterLabel>
+		<characterLabel type="dash_connector" draft="unconfirmed">kohi</characterLabel>
+		<characterLabel type="digits" draft="unconfirmed">mataʻifika</characterLabel>
+		<characterLabel type="dingbats" draft="unconfirmed">nikonikoʻi</characterLabel>
+		<characterLabel type="divination_symbols" draft="unconfirmed">fakaʻilonga tongafisi</characterLabel>
+		<characterLabel type="downwards_arrows" draft="unconfirmed">ngahau hifo</characterLabel>
+		<characterLabel type="downwards_upwards_arrows" draft="unconfirmed">ngahau hake-hifo</characterLabel>
+		<characterLabel type="east_asian_scripts" draft="unconfirmed">tohinima fakaʻēsia-hahake</characterLabel>
+		<characterLabel type="emoji" draft="unconfirmed">ngaahi ongo</characterLabel>
+		<characterLabel type="european_scripts" draft="unconfirmed">tohinima fakaʻeulope</characterLabel>
+		<characterLabel type="female">fakafefine</characterLabel>
+		<characterLabel type="flag">fuka</characterLabel>
+		<characterLabel type="flags">ngaahi fuka</characterLabel>
+		<characterLabel type="food_drink" draft="unconfirmed">inu &amp; kai</characterLabel>
+		<characterLabel type="format" draft="unconfirmed">anga</characterLabel>
+		<characterLabel type="format_whitespace" draft="unconfirmed">anga &amp; vā hinehina</characterLabel>
+		<characterLabel type="full_width_form_variant" draft="unconfirmed">fuo faikeheʻi fakalaulahiloa</characterLabel>
+		<characterLabel type="geometric_shapes" draft="unconfirmed">fuo fakasiomita</characterLabel>
+		<characterLabel type="half_width_form_variant" draft="unconfirmed">fuo faikeheʻi fakalaulahi</characterLabel>
+		<characterLabel type="han_characters" draft="unconfirmed">mataʻitohi hana</characterLabel>
+		<characterLabel type="han_radicals" draft="unconfirmed">ʻelitoʻi hana</characterLabel>
+		<characterLabel type="hanja" draft="unconfirmed">hanisa</characterLabel>
+		<characterLabel type="hanzi_simplified" draft="unconfirmed">hanisī fakafaingofua</characterLabel>
+		<characterLabel type="hanzi_traditional" draft="unconfirmed">hanisī tukufakaholo</characterLabel>
+		<characterLabel type="heart">mafu</characterLabel>
+		<characterLabel type="historic_scripts" draft="unconfirmed">tohinima fakatupuʻanga</characterLabel>
+		<characterLabel type="ideographic_desc_characters" draft="unconfirmed">fakaʻilonga fakakaukau</characterLabel>
+		<characterLabel type="japanese_kana" draft="unconfirmed">kana fakasiapani</characterLabel>
+		<characterLabel type="kanbun" draft="unconfirmed">kanipuni</characterLabel>
+		<characterLabel type="kanji" draft="unconfirmed">kanisī</characterLabel>
+		<characterLabel type="keycap">tatā foʻi kī</characterLabel>
+		<characterLabel type="leftwards_arrows" draft="unconfirmed">ngahau hema</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows" draft="unconfirmed">ngahau hema-mataʻu</characterLabel>
+		<characterLabel type="letterlike_symbols" draft="unconfirmed">fakaʻilonga vāofi mataʻitohi</characterLabel>
+		<characterLabel type="limited_use" draft="unconfirmed">ngāueʻaki fakangatangata</characterLabel>
+		<characterLabel type="male">fakatangata</characterLabel>
+		<characterLabel type="math_symbols" draft="unconfirmed">fakaʻilonga matematika</characterLabel>
+		<characterLabel type="middle_eastern_scripts" draft="unconfirmed">tohinima fakahahake-lotoloto</characterLabel>
+		<characterLabel type="miscellaneous" draft="unconfirmed">kehekehe</characterLabel>
+		<characterLabel type="modern_scripts" draft="unconfirmed">tohinima fakaonopooni</characterLabel>
+		<characterLabel type="modifier" draft="unconfirmed">fakaliliu</characterLabel>
+		<characterLabel type="musical_symbols" draft="unconfirmed">fakaʻilonga fasi</characterLabel>
+		<characterLabel type="nature">natula</characterLabel>
+		<characterLabel type="nonspacing" draft="unconfirmed">taʻevā</characterLabel>
+		<characterLabel type="numbers" draft="unconfirmed">fika</characterLabel>
+		<characterLabel type="objects" draft="unconfirmed">foʻi meʻa</characterLabel>
+		<characterLabel type="other" draft="unconfirmed">kehe</characterLabel>
+		<characterLabel type="paired" draft="unconfirmed">tauhoa</characterLabel>
+		<characterLabel type="person">kakai</characterLabel>
+		<characterLabel type="phonetic_alphabet" draft="unconfirmed">motuʻalea fakafonētiki</characterLabel>
+		<characterLabel type="pictographs" draft="unconfirmed">foʻi ʻata</characterLabel>
+		<characterLabel type="place">feituʻu</characterLabel>
+		<characterLabel type="plant">ʻakau</characterLabel>
+		<characterLabel type="punctuation" draft="unconfirmed">fakaʻilonga mālōlō</characterLabel>
+		<characterLabel type="rightwards_arrows" draft="unconfirmed">ngahau mataʻu</characterLabel>
+		<characterLabel type="sign_standard_symbols" draft="unconfirmed">fakaʻilonga sīpinga</characterLabel>
+		<characterLabel type="small_form_variant" draft="unconfirmed">fuo faikeheʻi iiki</characterLabel>
+		<characterLabel type="smiley">malimali</characterLabel>
+		<characterLabel type="smileys_people" draft="unconfirmed">malimali &amp; kakai</characterLabel>
+		<characterLabel type="south_asian_scripts" draft="unconfirmed">tohinima fakaʻēsia-tonga</characterLabel>
+		<characterLabel type="southeast_asian_scripts" draft="unconfirmed">tohinima fakaʻēsia-tongahahake</characterLabel>
+		<characterLabel type="spacing" draft="unconfirmed">vā</characterLabel>
+		<characterLabel type="sport">vāʻinga</characterLabel>
+		<characterLabel type="symbols" draft="unconfirmed">fakaʻilonga</characterLabel>
+		<characterLabel type="technical_symbols" draft="unconfirmed">fakaʻilonga tekinikale</characterLabel>
+		<characterLabel type="tone_marks" draft="unconfirmed">fakaʻilonga fasiʻalea</characterLabel>
+		<characterLabel type="travel">folau</characterLabel>
+		<characterLabel type="travel_places" draft="unconfirmed">folau &amp; feituʻu</characterLabel>
+		<characterLabel type="upwards_arrows" draft="unconfirmed">ngahau hake</characterLabel>
+		<characterLabel type="variant_forms" draft="unconfirmed">fuo faikeheʻi</characterLabel>
+		<characterLabel type="vocalic_jamo" draft="unconfirmed">samo fakavauele</characterLabel>
+		<characterLabel type="weather">ʻea</characterLabel>
+		<characterLabel type="western_asian_scripts" draft="unconfirmed">tohinima fakaʻēsia-hihifo</characterLabel>
+		<characterLabel type="whitespace" draft="unconfirmed">vā hinehina</characterLabel>
+	</characterLabels>
 </ldml>
-

@@ -30,7 +30,7 @@
 #include "runtime/safepoint.hpp"
 
 bool G1RemSetTrackingPolicy::is_interesting_humongous_region(HeapRegion* r) const {
-  return r->is_starts_humongous() && oop(r->bottom())->is_typeArray();
+  return r->is_humongous() && oop(r->humongous_start_region()->bottom())->is_typeArray();
 }
 
 bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
@@ -119,13 +119,21 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
     if (r->rem_set()->is_updating()) {
       r->rem_set()->set_state_complete();
     }
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
     // We can drop remembered sets of humongous regions that have a too large remembered set:
     // We will never try to eagerly reclaim or move them anyway until the next concurrent
     // cycle as e.g. remembered set entries will always be added.
-    if (r->is_humongous() && !G1CollectedHeap::heap()->is_potential_eager_reclaim_candidate(r)) {
-      r->rem_set()->clear_locked(true /* only_cardset */);
+    if (r->is_starts_humongous() && !g1h->is_potential_eager_reclaim_candidate(r)) {
+      // Handle HC regions with the HS region.
+      uint const size_in_regions = (uint)g1h->humongous_obj_size_in_regions(oop(r->bottom())->size());
+      uint const region_idx = r->hrm_index();
+      for (uint j = region_idx; j < (region_idx + size_in_regions); j++) {
+        HeapRegion* const cur = g1h->region_at(j);
+        assert(!cur->is_continues_humongous() || cur->rem_set()->is_empty(),
+               "Continues humongous region %u remset should be empty", j);
+        cur->rem_set()->clear_locked(true /* only_cardset */);
+      }
     }
-    assert(!r->is_continues_humongous() || r->rem_set()->is_empty(), "Continues humongous object remsets should be empty");
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     log_trace(gc, remset, tracking)("After rebuild region %u "
                                     "(ntams " PTR_FORMAT " "

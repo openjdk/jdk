@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="gsw"/>
 	</identity>
 	<localeDisplayNames>
@@ -942,6 +943,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a ä b c d e f g h i j k l m n o ö p q r s t u ü v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ā æ ç é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ø ō œ ú ù ŭ û ū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[. ’ % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -1229,18 +1231,36 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">v.m.</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">n.m.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
+							<dayPeriod type="midnight">Mitternacht</dayPeriod>
 							<dayPeriod type="am">vorm.</dayPeriod>
 							<dayPeriod type="pm">nam.</dayPeriod>
+							<dayPeriod type="morning1">am Morge</dayPeriod>
+							<dayPeriod type="afternoon1">zmittag</dayPeriod>
+							<dayPeriod type="afternoon2">am Namittag</dayPeriod>
+							<dayPeriod type="evening1">zaabig</dayPeriod>
+							<dayPeriod type="night1">znacht</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="midnight">Mitternacht</dayPeriod>
+							<dayPeriod type="am">am Vormittag</dayPeriod>
+							<dayPeriod type="pm">am Namittag</dayPeriod>
+							<dayPeriod type="morning1">am Morge</dayPeriod>
+							<dayPeriod type="afternoon1">zmittag</dayPeriod>
+							<dayPeriod type="afternoon2">am Namittag</dayPeriod>
+							<dayPeriod type="evening1">zaabig</dayPeriod>
+							<dayPeriod type="night1">znacht</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">Vormittag</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">Namittag</dayPeriod>
+							<dayPeriod type="midnight">Mitternacht</dayPeriod>
+							<dayPeriod type="am">Vormittag</dayPeriod>
+							<dayPeriod type="pm">Namittag</dayPeriod>
+							<dayPeriod type="morning1">Morge</dayPeriod>
+							<dayPeriod type="afternoon1">Mittag</dayPeriod>
+							<dayPeriod type="afternoon2">Namittag</dayPeriod>
+							<dayPeriod type="evening1">Aabig</dayPeriod>
+							<dayPeriod type="night1">Nacht</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1910,58 +1930,58 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
-					<pattern type="1000" count="one" draft="unconfirmed">0 tausend</pattern>
-					<pattern type="1000" count="other" draft="unconfirmed">0 tausend</pattern>
-					<pattern type="10000" count="one" draft="unconfirmed">00 tausend</pattern>
-					<pattern type="10000" count="other" draft="unconfirmed">00 tausend</pattern>
-					<pattern type="100000" count="one" draft="unconfirmed">000 tausend</pattern>
-					<pattern type="100000" count="other" draft="unconfirmed">000 tausend</pattern>
-					<pattern type="1000000" count="one" draft="unconfirmed">0 Million</pattern>
-					<pattern type="1000000" count="other" draft="unconfirmed">0 Millionen</pattern>
-					<pattern type="10000000" count="one" draft="unconfirmed">00 Million</pattern>
-					<pattern type="10000000" count="other" draft="unconfirmed">00 Millionen</pattern>
-					<pattern type="100000000" count="one" draft="unconfirmed">000 Million</pattern>
-					<pattern type="100000000" count="other" draft="unconfirmed">000 Millionen</pattern>
-					<pattern type="1000000000" count="one" draft="unconfirmed">0 Milliarde</pattern>
-					<pattern type="1000000000" count="other" draft="unconfirmed">0 Milliarden</pattern>
-					<pattern type="10000000000" count="one" draft="unconfirmed">00 Milliarde</pattern>
-					<pattern type="10000000000" count="other" draft="unconfirmed">00 Milliarden</pattern>
-					<pattern type="100000000000" count="one" draft="unconfirmed">000 Milliarde</pattern>
-					<pattern type="100000000000" count="other" draft="unconfirmed">000 Milliarden</pattern>
-					<pattern type="1000000000000" count="one" draft="unconfirmed">0 Billion</pattern>
-					<pattern type="1000000000000" count="other" draft="unconfirmed">0 Billionen</pattern>
-					<pattern type="10000000000000" count="one" draft="unconfirmed">00 Billion</pattern>
-					<pattern type="10000000000000" count="other" draft="unconfirmed">00 Billionen</pattern>
-					<pattern type="100000000000000" count="one" draft="unconfirmed">000 Billion</pattern>
-					<pattern type="100000000000000" count="other" draft="unconfirmed">000 Billionen</pattern>
+					<pattern type="1000" count="one">0 Tuusig</pattern>
+					<pattern type="1000" count="other">0 Tuusig</pattern>
+					<pattern type="10000" count="one">00 Tuusig</pattern>
+					<pattern type="10000" count="other">00 Tuusig</pattern>
+					<pattern type="100000" count="one">000 Tuusig</pattern>
+					<pattern type="100000" count="other">000 Tuusig</pattern>
+					<pattern type="1000000" count="one">0 Millioon</pattern>
+					<pattern type="1000000" count="other">0 Millioone</pattern>
+					<pattern type="10000000" count="one">00 Millioon</pattern>
+					<pattern type="10000000" count="other">00 Millioone</pattern>
+					<pattern type="100000000" count="one">000 Millioon</pattern>
+					<pattern type="100000000" count="other">000 Millioone</pattern>
+					<pattern type="1000000000" count="one">0 Milliarde</pattern>
+					<pattern type="1000000000" count="other">0 Milliarde</pattern>
+					<pattern type="10000000000" count="one">00 Milliarde</pattern>
+					<pattern type="10000000000" count="other">00 Milliarde</pattern>
+					<pattern type="100000000000" count="one">000 Milliarde</pattern>
+					<pattern type="100000000000" count="other">000 Milliarde</pattern>
+					<pattern type="1000000000000" count="one">0 Billioon</pattern>
+					<pattern type="1000000000000" count="other">0 Billioone</pattern>
+					<pattern type="10000000000000" count="one">00 Billioon</pattern>
+					<pattern type="10000000000000" count="other">00 Billioone</pattern>
+					<pattern type="100000000000000" count="one">000 Billioon</pattern>
+					<pattern type="100000000000000" count="other">000 Billioone</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
-					<pattern type="1000" count="one" draft="unconfirmed">0 tsd</pattern>
-					<pattern type="1000" count="other" draft="unconfirmed">0 tsd</pattern>
-					<pattern type="10000" count="one" draft="unconfirmed">00 tsd</pattern>
-					<pattern type="10000" count="other" draft="unconfirmed">00 tsd</pattern>
-					<pattern type="100000" count="one" draft="unconfirmed">000 tsd</pattern>
-					<pattern type="100000" count="other" draft="unconfirmed">000 tsd</pattern>
-					<pattern type="1000000" count="one" draft="unconfirmed">0 Mio</pattern>
-					<pattern type="1000000" count="other" draft="unconfirmed">0 Mio</pattern>
-					<pattern type="10000000" count="one" draft="unconfirmed">00 Mio</pattern>
-					<pattern type="10000000" count="other" draft="unconfirmed">00 Mio</pattern>
-					<pattern type="100000000" count="one" draft="unconfirmed">000 Mio</pattern>
-					<pattern type="100000000" count="other" draft="unconfirmed">000 Mio</pattern>
-					<pattern type="1000000000" count="one" draft="unconfirmed">0 Mrd</pattern>
-					<pattern type="1000000000" count="other" draft="unconfirmed">0 Mrd</pattern>
-					<pattern type="10000000000" count="one" draft="unconfirmed">00 Mrd</pattern>
-					<pattern type="10000000000" count="other" draft="unconfirmed">00 Mrd</pattern>
-					<pattern type="100000000000" count="one" draft="unconfirmed">000 Mrd</pattern>
-					<pattern type="100000000000" count="other" draft="unconfirmed">000 Mrd</pattern>
-					<pattern type="1000000000000" count="one" draft="unconfirmed">0 Bio</pattern>
-					<pattern type="1000000000000" count="other" draft="unconfirmed">0 Bio</pattern>
-					<pattern type="10000000000000" count="one" draft="unconfirmed">00 Bio</pattern>
-					<pattern type="10000000000000" count="other" draft="unconfirmed">00 Bio</pattern>
-					<pattern type="100000000000000" count="one" draft="unconfirmed">000 Bio</pattern>
-					<pattern type="100000000000000" count="other" draft="unconfirmed">000 Bio</pattern>
+					<pattern type="1000" count="one">0 Tsg'.'</pattern>
+					<pattern type="1000" count="other">0 Tsg'.'</pattern>
+					<pattern type="10000" count="one">00 Tsg'.'</pattern>
+					<pattern type="10000" count="other">00 Tsg'.'</pattern>
+					<pattern type="100000" count="one">000 Tsg'.'</pattern>
+					<pattern type="100000" count="other">000 Tsg'.'</pattern>
+					<pattern type="1000000" count="one">0 Mio'.'</pattern>
+					<pattern type="1000000" count="other">0 Mio'.'</pattern>
+					<pattern type="10000000" count="one">00 Mio'.'</pattern>
+					<pattern type="10000000" count="other">00 Mio'.'</pattern>
+					<pattern type="100000000" count="one">000 Mio'.'</pattern>
+					<pattern type="100000000" count="other">000 Mio'.'</pattern>
+					<pattern type="1000000000" count="one">0 Mrd'.'</pattern>
+					<pattern type="1000000000" count="other">0 Mrd'.'</pattern>
+					<pattern type="10000000000" count="one">00 Mrd'.'</pattern>
+					<pattern type="10000000000" count="other">00 Mrd'.'</pattern>
+					<pattern type="100000000000" count="one">000 Mrd'.'</pattern>
+					<pattern type="100000000000" count="other">000 Mrd'.'</pattern>
+					<pattern type="1000000000000" count="one">0 Bio'.'</pattern>
+					<pattern type="1000000000000" count="other">0 Bio'.'</pattern>
+					<pattern type="10000000000000" count="one">00 Bio'.'</pattern>
+					<pattern type="10000000000000" count="other">00 Bio'.'</pattern>
+					<pattern type="100000000000000" count="one">000 Bio'.'</pattern>
+					<pattern type="100000000000000" count="other">000 Bio'.'</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -1987,30 +2007,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">0 tsd ¤</pattern>
-					<pattern type="1000" count="other" draft="provisional">0 tsd ¤</pattern>
-					<pattern type="10000" count="one" draft="provisional">00 tsd ¤</pattern>
-					<pattern type="10000" count="other" draft="provisional">00 tsd ¤</pattern>
-					<pattern type="100000" count="one" draft="provisional">000 tsd ¤</pattern>
-					<pattern type="100000" count="other" draft="provisional">000 tsd ¤</pattern>
-					<pattern type="1000000" count="one" draft="provisional">0 Mio ¤</pattern>
-					<pattern type="1000000" count="other" draft="provisional">0 Mio ¤</pattern>
-					<pattern type="10000000" count="one" draft="provisional">00 Mio ¤</pattern>
-					<pattern type="10000000" count="other" draft="provisional">00 Mio ¤</pattern>
-					<pattern type="100000000" count="one" draft="provisional">000 Mio ¤</pattern>
-					<pattern type="100000000" count="other" draft="provisional">000 Mio ¤</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">0 Mrd ¤</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">0 Mrd ¤</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">00 Mrd ¤</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">00 Mrd ¤</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">000 Mrd ¤</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">000 Mrd ¤</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">0 Bio ¤</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">0 Bio ¤</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">00 Bio ¤</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">00 Bio ¤</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">000 Bio ¤</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">000 Bio ¤</pattern>
+					<pattern type="1000" count="one">0 Tsg'.' ¤</pattern>
+					<pattern type="1000" count="other">0 Tsg'.' ¤</pattern>
+					<pattern type="10000" count="one">00 Tsg'.' ¤</pattern>
+					<pattern type="10000" count="other">00 Tsg'.' ¤</pattern>
+					<pattern type="100000" count="one">000 Tsg'.' ¤</pattern>
+					<pattern type="100000" count="other">000 Tsg'.' ¤</pattern>
+					<pattern type="1000000" count="one">0 Mio'.' ¤</pattern>
+					<pattern type="1000000" count="other">0 Mio'.' ¤</pattern>
+					<pattern type="10000000" count="one">00 Mio'.' ¤</pattern>
+					<pattern type="10000000" count="other">00 Mio'.' ¤</pattern>
+					<pattern type="100000000" count="one">000 Mio'.' ¤</pattern>
+					<pattern type="100000000" count="other">000 Mio'.' ¤</pattern>
+					<pattern type="1000000000" count="one">0 Mrd'.' ¤</pattern>
+					<pattern type="1000000000" count="other">0 Mrd'.' ¤</pattern>
+					<pattern type="10000000000" count="one">00 Mrd'.' ¤</pattern>
+					<pattern type="10000000000" count="other">00 Mrd'.' ¤</pattern>
+					<pattern type="100000000000" count="one">000 Mrd'.' ¤</pattern>
+					<pattern type="100000000000" count="other">000 Mrd'.' ¤</pattern>
+					<pattern type="1000000000000" count="one">0 Bio'.' ¤</pattern>
+					<pattern type="1000000000000" count="other">0 Bio'.' ¤</pattern>
+					<pattern type="10000000000000" count="one">00 Bio'.' ¤</pattern>
+					<pattern type="10000000000000" count="other">00 Bio'.' ¤</pattern>
+					<pattern type="100000000000000" count="one">000 Bio'.' ¤</pattern>
+					<pattern type="100000000000000" count="other">000 Bio'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -2238,14 +2258,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Botswanischi Pula</displayName>
 			</currency>
 			<currency type="BYB">
-				<displayName>Belarus-Rubel (alt)</displayName>
-				<displayName count="one">Belarus-Rubel (alt)</displayName>
-				<displayName count="other">Belarus-Rubel (alt)</displayName>
+				<displayName>Belarus-Rubel (1994–1999)</displayName>
+				<displayName count="one">Belarus-Rubel (1994–1999)</displayName>
+				<displayName count="other">Belarus-Rubel (1994–1999)</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName>Belarus Rubel</displayName>
+				<displayName count="one">Belarus-Rubel</displayName>
+				<displayName count="other">Belarus-Rubel</displayName>
 			</currency>
 			<currency type="BYR">
-				<displayName>Belarus Rubel (nöi)</displayName>
-				<displayName count="one">Belarus-Rubel (nöi)</displayName>
-				<displayName count="other">Belarus-Rubel (nöi)</displayName>
+				<displayName>Belarus Rubel (2000–2016)</displayName>
+				<displayName count="one">Belarus-Rubel (2000–2016)</displayName>
+				<displayName count="other">Belarus-Rubel (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belize-Dollar</displayName>
@@ -2757,6 +2782,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Pataca</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ouguiya (1973–2017)</displayName>
+				<displayName count="one">Ouguiya (1973–2017)</displayName>
+				<displayName count="other">Ouguiya (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ouguiya</displayName>
 				<displayName count="one">Ouguiya</displayName>
 				<displayName count="other">Ouguiya</displayName>
@@ -2877,14 +2907,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Peruanischi Inti</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>Nöie Sol</displayName>
-				<displayName count="one">Nöie Sol</displayName>
-				<displayName count="other">Nöii Sol</displayName>
-			</currency>
-			<currency type="PES">
 				<displayName>Sol</displayName>
 				<displayName count="one">Sol</displayName>
 				<displayName count="other">Sol</displayName>
+			</currency>
+			<currency type="PES">
+				<displayName>Sol (1863–1965)</displayName>
+				<displayName count="one">Sol (1863–1965)</displayName>
+				<displayName count="other">Sol (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>Kina</displayName>
@@ -3042,6 +3072,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Süüdsudaneesischi Pfund</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobra (1977–2017)</displayName>
+				<displayName count="one">Dobra (1977–2017)</displayName>
+				<displayName count="other">Dobra (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobra</displayName>
 				<displayName count="one">Dobra</displayName>
 				<displayName count="other">Dobra</displayName>
@@ -4037,4 +4072,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

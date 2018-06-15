@@ -1,30 +1,226 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12217 $"/>
+		<version number="$Revision: 13873 $"/>
 		<language type="es"/>
 		<territory type="US"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ace">acehnés</language>
+			<language type="alt">altái meridional</language>
+			<language type="arp">arapaho</language>
+			<language type="bas" draft="contributed">basa</language>
+			<language type="bax" draft="contributed">bamun</language>
+			<language type="bho" draft="contributed">bhojpuri</language>
+			<language type="bla">siksika</language>
+			<language type="bua" draft="contributed">buriat</language>
+			<language type="dum" draft="contributed">neerlandés medieval</language>
+			<language type="en_GB" alt="short">inglés (RU)</language>
+			<language type="enm" draft="contributed">inglés medieval</language>
+			<language type="eu" draft="provisional">euskera</language>
+			<language type="frm" draft="contributed">francés medieval</language>
+			<language type="gmh" draft="contributed">alemán de la alta edad media</language>
+			<language type="grc" draft="contributed">griego antiguo</language>
+			<language type="gu">gurayatí</language>
+			<language type="hak" draft="contributed">hak</language>
+			<language type="ht" draft="provisional">criollo haitiano</language>
+			<language type="kbd" draft="contributed">kabardiano</language>
+			<language type="krc" draft="contributed">karachay-balkar</language>
+			<language type="lo" draft="provisional">lao</language>
+			<language type="lus" draft="contributed">lushai</language>
+			<language type="mga" draft="contributed">irlandés medieval</language>
+			<language type="nan" draft="contributed">nan</language>
+			<language type="nr">ndebele meridional</language>
+			<language type="nso" draft="contributed">sotho septentrional</language>
+			<language type="pcm" draft="contributed">pcm</language>
+			<language type="rm">romanche</language>
+			<language type="rn" draft="contributed">kiroundi</language>
+			<language type="shu" draft="contributed">árabe chadiano</language>
+			<language type="sma">sami meridional</language>
+			<language type="ss" draft="contributed">siswati</language>
+			<language type="st" draft="contributed">sesotho meridional</language>
+			<language type="sw_CD" draft="contributed">swahili del Congo</language>
+			<language type="syr">siriaco</language>
+			<language type="tet" draft="contributed">tetún</language>
+			<language type="tn" draft="contributed">setchwana</language>
+			<language type="tyv">tuviniano</language>
+			<language type="tzm" draft="provisional">tamazight del Atlas Central</language>
+			<language type="wo" draft="contributed">wolof</language>
+			<language type="wuu" draft="contributed">wuu</language>
+			<language type="xal" draft="contributed">kalmyk</language>
+		</languages>
+		<scripts>
+			<script type="Hanb" draft="contributed">hanb</script>
+			<script type="Mlym" draft="contributed">malayálam</script>
+		</scripts>
+		<territories>
+			<territory type="011">África occidental</territory>
+			<territory type="014">África oriental</territory>
+			<territory type="015">África septentrional</territory>
+			<territory type="018">África meridional</territory>
+			<territory type="030">Asia oriental</territory>
+			<territory type="034">Asia meridional</territory>
+			<territory type="035">Sudeste asiático</territory>
+			<territory type="039">Europa meridional</territory>
+			<territory type="057">Región de Micronesia</territory>
+			<territory type="145">Asia occidental</territory>
+			<territory type="151">Europa oriental</territory>
+			<territory type="154">Europa septentrional</territory>
+			<territory type="155">Europa occidental</territory>
+			<territory type="AC">Isla de la Ascensión</territory>
+			<territory type="BA" draft="provisional">Bosnia y Herzegovina</territory>
+			<territory type="CI">Côte d’Ivoire</territory>
+			<territory type="CI" alt="variant" draft="contributed">CI</territory>
+			<territory type="EZ">zona euro</territory>
+			<territory type="GB" alt="short">RU</territory>
+			<territory type="GG">Guernsey</territory>
+			<territory type="QO">Territorios alejados de Oceanía</territory>
+			<territory type="TL">Timor-Leste</territory>
+			<territory type="TL" alt="variant" draft="contributed">TL</territory>
+			<territory type="UM">Islas menores alejadas de EE. UU.</territory>
+			<territory type="VI">Islas Vírgenes de EE. UU.</territory>
+		</territories>
+		<types>
+			<type key="collation" type="ducet" draft="contributed">orden de clasificación de Unicode predeterminado</type>
+			<type key="lb" type="normal" draft="contributed">salto de línea normal</type>
+			<type key="ms" type="uksystem" draft="contributed">sistema imperial</type>
+			<type key="numbers" type="gujr" draft="contributed">dígitos en gujarati</type>
+			<type key="numbers" type="knda" draft="contributed">números en kannada</type>
+			<type key="numbers" type="laoo" draft="contributed">números en lao</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="US">estadounidense</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<characters>
+		<moreInformation draft="contributed">[...]</moreInformation>
+	</characters>
+	<delimiters>
+		<quotationStart>«</quotationStart>
+		<quotationEnd>»</quotationEnd>
+		<alternateQuotationStart>“</alternateQuotationStart>
+		<alternateQuotationEnd>”</alternateQuotationEnd>
+	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="contributed">d MMM, y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMMM" draft="contributed">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">d MMM y G</dateFormatItem>
+						<dateFormatItem id="MMMd" draft="contributed">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="contributed">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd" draft="contributed">d 'de' MMM</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d" draft="contributed">d/M – d/M</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/M – d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d" draft="contributed">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d/M/y – d/M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d/M/y – d/M/y G</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d" draft="contributed">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d/M/y–E, d/M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d/M/y–E, d/M/y G</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
 			<calendar type="gregorian">
+				<days>
+					<dayContext type="format">
+						<dayWidth type="narrow">
+							<day type="sun" draft="contributed">D</day>
+							<day type="mon" draft="contributed">L</day>
+							<day type="tue" draft="contributed">M</day>
+							<day type="wed" draft="contributed">M</day>
+							<day type="thu" draft="contributed">J</day>
+							<day type="fri" draft="contributed">V</day>
+							<day type="sat" draft="contributed">S</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="wide">
+							<quarter type="1" draft="provisional">1.er trimestre</quarter>
+							<quarter type="2" draft="provisional">2.º trimestre</quarter>
+							<quarter type="3" draft="provisional">3.er trimestre</quarter>
+							<quarter type="4" draft="provisional">4.º trimestre</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="wide">
+							<quarter type="1" draft="provisional">1.er trimestre</quarter>
+							<quarter type="2" draft="provisional">2.º trimestre</quarter>
+							<quarter type="3" draft="provisional">3.er trimestre</quarter>
+							<quarter type="4" draft="provisional">4.º trimestre</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a</dayPeriod>
-							<dayPeriod type="pm">p</dayPeriod>
+							<dayPeriod type="noon">del mediodía</dayPeriod>
+							<dayPeriod type="morning1">de la madrugada</dayPeriod>
+							<dayPeriod type="morning2">mañana</dayPeriod>
+							<dayPeriod type="evening1">de la tarde</dayPeriod>
+							<dayPeriod type="night1">de la noche</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">a. m.</dayPeriod>
+							<dayPeriod type="pm">p. m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
+				<dateFormats>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="provisional">d/M/y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
@@ -47,8 +243,250 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="Hmsvvvv">HH:mm:ss (vvvv)</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
+						<dateFormatItem id="MMd">d/MM</dateFormatItem>
+						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, d 'de' MMM</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
+						<dateFormatItem id="yMM">MM/y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">EEE, d 'de' MMMM 'de' y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a – h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="H">HH–HH</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="H">HH–HH v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d" draft="provisional">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d–d 'de' MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E d 'de' MMM – E d 'de' MMM</greatestDifference>
+							<greatestDifference id="M">E d 'de' MMM – E d 'de' MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM–MMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d–d 'de' MMM 'de' y</greatestDifference>
+							<greatestDifference id="M">d 'de' MMM – d 'de' MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="y">MMMM 'de' y – MMMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="year">
+				<relative type="-1">el año pasado</relative>
+				<relative type="0">este año</relative>
+				<relative type="1">el año próximo</relative>
+			</field>
+			<field type="month">
+				<relative type="-1">el mes pasado</relative>
+				<relative type="0">este mes</relative>
+				<relative type="1">el mes próximo</relative>
+			</field>
+			<field type="week">
+				<relative type="-1">la semana pasada</relative>
+				<relative type="0">esta semana</relative>
+				<relative type="1">la semana próxima</relative>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName draft="provisional">sem. de m</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName draft="provisional">sem. de m</displayName>
+			</field>
+			<field type="day">
+				<relative type="-2" draft="provisional">anteayer</relative>
+				<relative type="-1">ayer</relative>
+				<relative type="0">hoy</relative>
+				<relative type="1">mañana</relative>
+				<relative type="2">pasado mañana</relative>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>día del a</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>día del a</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName draft="provisional">día de la semana del mes</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>día de sem. de mes</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>día de sem. de mes</displayName>
+			</field>
+			<field type="sun">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">dentro de {0} domingo</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">dentro de {0} domingos</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">dentro de {0} DO</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">hace {0} DO</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">hace {0} DO</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">dentro de {0} lunes</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">dentro de {0} lunes</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">dentro de {0} lun.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">hace {0} lun.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">hace {0} lun.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">dentro de {0} LU</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">dentro de {0} LU</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">hace {0} LU</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">hace {0} LU</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">dentro de {0} martes</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">dentro de {0} miércoles</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1" draft="provisional">el mie. pasado</relative>
+				<relative type="0" draft="provisional">este mié.</relative>
+				<relative type="1" draft="provisional">el próximo mié.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">dentro de {0} mié.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">dentro de {0} mié.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">hace {0} mié.</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">hace {0} mié.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">dentro de {0} MI</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">dentro de {0} MI</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">hace {0} MI</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">hace {0} MI</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">dentro de {0} jueves</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">dentro de {0} JU</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">dentro de {0} viernes</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">dentro de {0} vie.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">hace {0} VI</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">hace {0} VI</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">dentro de {0} sábado</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">dentro de {0} sábados</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">dentro de {0} SA</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">hace {0} SA</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">hace {0} SA</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>a. m./p. m.</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>a. m./p. m.</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>a. m./p. m.</displayName>
+			</field>
+		</fields>
 		<timeZoneNames>
 			<zone type="Pacific/Honolulu">
 				<short>
@@ -56,6 +494,44 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>HST</standard>
 					<daylight>HDT</daylight>
 				</short>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>hora universal coordinada</standard>
+				</long>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity>São Paulo</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity>Nassau</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity>Acra</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity>Yangón (Rangún)</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity draft="contributed">Astrakhan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity draft="contributed">Ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity draft="contributed">Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity>Dusambé</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>St. Thomas</exemplarCity>
 			</zone>
 			<metazone type="Alaska">
 				<short>
@@ -79,6 +555,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</short>
 			</metazone>
 			<metazone type="America_Mountain">
+				<long>
+					<generic>hora de las Montañas Rocosas</generic>
+					<standard>hora estándar de las Montañas Rocosas</standard>
+					<daylight>hora de verano de las Montañas Rocosas</daylight>
+				</long>
 				<short>
 					<generic>MT</generic>
 					<standard>MST</standard>
@@ -92,12 +573,73 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<daylight>PDT</daylight>
 				</short>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>hora de Apia</generic>
+					<standard>hora estándar de Apia</standard>
+					<daylight>hora de verano de Apia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>hora de Argentina occidental</generic>
+					<standard>hora estándar de Argentina occidental</standard>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<short>
 					<generic>AT</generic>
 					<standard>AST</standard>
 					<daylight>ADT</daylight>
 				</short>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>hora de Chamorro</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>hora de las Islas Cocos</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>hora de la isla de Pascua</generic>
+					<standard>hora estándar de la isla de Pascua</standard>
+					<daylight>hora de verano de la isla de Pascua</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>hora de Europa oriental</generic>
+					<standard>hora estándar de Europa oriental</standard>
+					<daylight>hora de verano de Europa oriental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="provisional">hora del extremo oriental de Europa</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>hora de Europa occidental</generic>
+					<standard>hora estándar de Europa occidental</standard>
+					<daylight>hora de verano de Europa occidental</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>hora de las islas Malvinas</generic>
+					<standard>hora estándar de las islas Malvinas</standard>
+					<daylight>hora de verano de las islas Malvinas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>hora de las islas Gilbert</standard>
+				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<short>
@@ -106,19 +648,348 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<daylight>HADT</daylight>
 				</short>
 			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>hora del Océano Índico</standard>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard>hora de la isla Macquarie</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>hora de las islas Marquesas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>hora de las Islas Marshall</standard>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>hora de Myanmar (Birmania)</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<standard>hora de la isla Norfolk</standard>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>hora de las islas Fénix</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>hora de Pyongyang</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>hora de las Islas Salomón</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>hora de la isla Wake</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000000000" count="one" draft="provisional">0 billón</pattern>
+					<pattern type="1000000000" count="other" draft="provisional">0 billones</pattern>
+					<pattern type="10000000000" count="one" draft="provisional">00 billones</pattern>
+					<pattern type="10000000000" count="other" draft="provisional">00 billones</pattern>
+					<pattern type="100000000000" count="one" draft="provisional">000 billones</pattern>
+					<pattern type="100000000000" count="other" draft="provisional">000 billones</pattern>
+					<pattern type="1000000000000" count="one">0 trillón</pattern>
+					<pattern type="1000000000000" count="other">0 trillones</pattern>
+					<pattern type="10000000000000" count="one">00 trillones</pattern>
+					<pattern type="10000000000000" count="other">00 trillones</pattern>
+					<pattern type="100000000000000" count="one">000 trillones</pattern>
+					<pattern type="100000000000000" count="other">000 trillones</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" count="one" draft="contributed">0</pattern>
+					<pattern type="1000" count="other" draft="contributed">0</pattern>
+					<pattern type="10000" count="one" draft="contributed">00 K</pattern>
+					<pattern type="10000" count="other" draft="contributed">00 K</pattern>
+					<pattern type="100000" count="one" draft="contributed">000 K</pattern>
+					<pattern type="100000" count="other" draft="contributed">000 K</pattern>
+					<pattern type="1000000000" count="one" draft="provisional">0 B</pattern>
+					<pattern type="1000000000" count="other" draft="provisional">0 B</pattern>
+					<pattern type="10000000000" count="one" draft="provisional">00 B</pattern>
+					<pattern type="10000000000" count="other" draft="provisional">00 B</pattern>
+					<pattern type="100000000000" count="one" draft="provisional">000 B</pattern>
+					<pattern type="100000000000" count="other" draft="provisional">000 B</pattern>
+					<pattern type="1000000000000" count="one">0 T</pattern>
+					<pattern type="1000000000000" count="other">0 T</pattern>
+					<pattern type="10000000000000" count="one">00 T</pattern>
+					<pattern type="10000000000000" count="other">00 T</pattern>
+					<pattern type="100000000000000" count="one">000 T</pattern>
+					<pattern type="100000000000000" count="other">000 T</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="one">0 K ¤</pattern>
+					<pattern type="1000" count="other">0 K ¤</pattern>
+					<pattern type="10000" count="one">00 K ¤</pattern>
+					<pattern type="10000" count="other">00 K ¤</pattern>
+					<pattern type="100000" count="one">000 K ¤</pattern>
+					<pattern type="100000" count="other">000 K ¤</pattern>
+					<pattern type="1000000" count="one">0 M ¤</pattern>
+					<pattern type="1000000" count="other">0 M ¤</pattern>
+					<pattern type="10000000" count="one">00 M ¤</pattern>
+					<pattern type="10000000" count="other">00 M ¤</pattern>
+					<pattern type="100000000" count="one">000 M ¤</pattern>
+					<pattern type="100000000" count="other">000 M ¤</pattern>
+					<pattern type="1000000000" count="one">0000 M ¤</pattern>
+					<pattern type="1000000000" count="other">0000 M ¤</pattern>
+					<pattern type="10000000000" count="one" draft="provisional">¤00 B</pattern>
+					<pattern type="10000000000" count="other" draft="provisional">¤00 B</pattern>
+					<pattern type="100000000000" count="one" draft="provisional">¤000 B</pattern>
+					<pattern type="100000000000" count="other" draft="provisional">¤000 B</pattern>
+					<pattern type="1000000000000" count="one" draft="provisional">¤0 T</pattern>
+					<pattern type="1000000000000" count="other" draft="provisional">¤0 T</pattern>
+					<pattern type="10000000000000" count="one" draft="provisional">¤00 T</pattern>
+					<pattern type="10000000000000" count="other" draft="provisional">¤00 T</pattern>
+					<pattern type="100000000000000" count="one" draft="provisional">¤000 T</pattern>
+					<pattern type="100000000000000" count="other" draft="provisional">¤000 T</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
+			<currency type="AMD">
+				<displayName draft="provisional">dram</displayName>
+			</currency>
+			<currency type="FKP">
+				<symbol alt="narrow" draft="contributed">£</symbol>
+			</currency>
 			<currency type="JPY">
 				<symbol>¥</symbol>
+			</currency>
+			<currency type="KGS">
+				<displayName count="one">som</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName count="one">kwacha malauí</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>ringit</displayName>
+				<displayName count="one">ringit</displayName>
+				<displayName count="other">ringits</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName count="one">leu rumano</displayName>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
+			</currency>
+			<currency type="SSP">
+				<symbol alt="narrow" draft="contributed">£</symbol>
+			</currency>
+			<currency type="STN">
+				<displayName draft="contributed">dobra santotomense</displayName>
+				<displayName count="one" draft="contributed">dobra santotomense</displayName>
+				<displayName count="other" draft="contributed">dobra santotomense</displayName>
+			</currency>
+			<currency type="SYP">
+				<symbol alt="narrow" draft="contributed">£</symbol>
+			</currency>
+			<currency type="THB">
+				<displayName>bat</displayName>
+				<displayName count="one">bat</displayName>
+				<displayName count="other">bats</displayName>
 			</currency>
 			<currency type="USD">
 				<symbol>$</symbol>
 			</currency>
+			<currency type="UZS">
+				<displayName>sum</displayName>
+				<displayName count="one">sum</displayName>
+				<displayName count="other">sums</displayName>
+			</currency>
+			<currency type="VEF">
+				<symbol alt="narrow" draft="provisional">Bs</symbol>
+			</currency>
+			<currency type="XAF">
+				<displayName>franco CFA de África central</displayName>
+				<displayName count="one">franco CFA de África central</displayName>
+				<displayName count="other">francos CFA de África central</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>franco CFA de África Occidental</displayName>
+				<displayName count="one">franco CFA de África Occidental</displayName>
+				<displayName count="other">francos CFA de África Occidental</displayName>
+			</currency>
 		</currencies>
 	</numbers>
 	<units>
+		<unitLength type="long">
+			<unit type="angle-revolution">
+				<displayName draft="contributed">revoluciones</displayName>
+			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<unitPattern count="one" draft="contributed">{0} mg/dL</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName draft="contributed">mpg Imp.</displayName>
+				<unitPattern count="one" draft="contributed">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName draft="contributed">ohmios</displayName>
+				<unitPattern count="one" draft="contributed">{0} ohmio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ohmios</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName draft="contributed">voltios</displayName>
+				<unitPattern count="one" draft="contributed">{0} voltio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} voltios</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName draft="contributed">kilovatios hora</displayName>
+				<unitPattern count="one" draft="contributed">{0} kilovatio hora</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kilovatios hora</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<unitPattern count="one" draft="contributed">{0} gigahercio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} gigahercios</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName draft="contributed">megahercios</displayName>
+				<unitPattern count="one" draft="contributed">{0} megahercio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} megahercios</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName draft="contributed">kilohercios</displayName>
+				<unitPattern count="one" draft="contributed">{0} kilohercio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kilohercios</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName draft="contributed">hercios</displayName>
+				<unitPattern count="one" draft="contributed">{0} hercio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hercios</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="contributed">millas escandinavas</displayName>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="contributed">pt</displayName>
+				<unitPattern count="one" draft="contributed">{0} pt</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pt</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName draft="contributed">gigavatios</displayName>
+				<unitPattern count="one" draft="contributed">{0} gigavatio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} gigavatios</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName draft="contributed">megavatios</displayName>
+				<unitPattern count="one" draft="contributed">{0} megavatio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} megavatios</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName draft="contributed">kilovatios</displayName>
+				<unitPattern count="one" draft="contributed">{0} kilovatio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kilovatios</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName draft="contributed">vatios</displayName>
+				<unitPattern count="one" draft="contributed">{0} vatio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} vatios</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName draft="contributed">milivatios</displayName>
+				<unitPattern count="one" draft="contributed">{0} milivatio</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} milivatios</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<unitPattern count="one" draft="contributed">{0} caballo de vapor</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} caballos de vapor</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName draft="contributed">kelvin</displayName>
+				<unitPattern count="one" draft="contributed">{0} kelvin</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kelvin</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName draft="contributed">acres-pies</displayName>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName draft="contributed">Imp. gal</displayName>
+				<unitPattern count="one" draft="contributed">{0} gal Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} gal Imp.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/gal Imp.</perUnitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="acceleration-g-force">
+				<displayName draft="contributed">Fg</displayName>
+				<unitPattern count="one" draft="contributed">{0} Fg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Fg</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName draft="contributed">grad.</displayName>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName draft="contributed">mpg Imp.</displayName>
+				<unitPattern count="one" draft="contributed">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<perUnitPattern draft="contributed">{0}/a</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<perUnitPattern draft="contributed">{0}/d</perUnitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<unitPattern count="one" draft="contributed">{0} a. l.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} a. l.</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName draft="contributed">au</displayName>
+				<unitPattern count="one" draft="contributed">{0} au</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} au</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName draft="contributed">pt</displayName>
+				<unitPattern count="one" draft="contributed">{0} pt</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} pt</unitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName draft="contributed">oz t</displayName>
+				<unitPattern count="one" draft="contributed">{0} oz t</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} oz t</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName draft="contributed">c</displayName>
+				<unitPattern count="one" draft="contributed">{0} c</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} c</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName draft="contributed">CV</displayName>
+				<unitPattern count="one" draft="contributed">{0} CV</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} CV</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName draft="contributed">Imp. gal</displayName>
+				<unitPattern count="one" draft="contributed">{0} gal Imp.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} gal Imp.</unitPattern>
+			</unit>
+		</unitLength>
 		<unitLength type="narrow">
 			<unit type="temperature-fahrenheit">
 				<unitPattern count="one">{0}°</unitPattern>
@@ -126,5 +997,39 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 		</unitLength>
 	</units>
+	<characterLabels>
+		<characterLabelPattern type="historic" draft="contributed">{0} — Históricos</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous" draft="contributed">{0} — Varios</characterLabelPattern>
+		<characterLabel type="animal" draft="contributed">animal</characterLabel>
+		<characterLabel type="body" draft="contributed">cuerpo</characterLabel>
+		<characterLabel type="building" draft="contributed">edificio</characterLabel>
+		<characterLabel type="female" draft="contributed">mujer</characterLabel>
+		<characterLabel type="flag" draft="contributed">bandera</characterLabel>
+		<characterLabel type="format_whitespace" draft="contributed">Formato y espacio duro</characterLabel>
+		<characterLabel type="heart" draft="contributed">corazón</characterLabel>
+		<characterLabel type="keycap" draft="contributed">tecla</characterLabel>
+		<characterLabel type="letterlike_symbols" draft="contributed">Símbolos con letras</characterLabel>
+		<characterLabel type="limited_use" draft="contributed">Uso limitado</characterLabel>
+		<characterLabel type="male" draft="contributed">hombre</characterLabel>
+		<characterLabel type="modern_scripts" draft="contributed">Sistemas de escritura modernos</characterLabel>
+		<characterLabel type="nature" draft="contributed">naturaleza</characterLabel>
+		<characterLabel type="other" draft="contributed">Otros</characterLabel>
+		<characterLabel type="person" draft="contributed">persona</characterLabel>
+		<characterLabel type="phonetic_alphabet" draft="contributed">Alfabeto fonético</characterLabel>
+		<characterLabel type="place" draft="contributed">lugar</characterLabel>
+		<characterLabel type="plant" draft="contributed">planta</characterLabel>
+		<characterLabel type="sign_standard_symbols" draft="contributed">Símbolos de señales/estándar</characterLabel>
+		<characterLabel type="smiley" draft="contributed">cara sonriente</characterLabel>
+		<characterLabel type="south_asian_scripts" draft="contributed">Sistemas de escritura de Asia Meridional</characterLabel>
+		<characterLabel type="southeast_asian_scripts" draft="contributed">Sistemas de escritura de Asia Sudoriental</characterLabel>
+		<characterLabel type="sport" draft="contributed">deporte</characterLabel>
+		<characterLabel type="symbols" draft="contributed">Símbolos</characterLabel>
+		<characterLabel type="tone_marks" draft="contributed">Marcas tonales</characterLabel>
+		<characterLabel type="travel" draft="contributed">viaje</characterLabel>
+		<characterLabel type="travel_places" draft="contributed">Viajes y destinos</characterLabel>
+		<characterLabel type="variant_forms" draft="contributed">Variantes</characterLabel>
+		<characterLabel type="weather" draft="contributed">tiempo</characterLabel>
+		<characterLabel type="western_asian_scripts" draft="contributed">Sistemas de escritura de Asia Occidental</characterLabel>
+		<characterLabel type="whitespace" draft="contributed">Espacio duro</characterLabel>
+	</characterLabels>
 </ldml>
-

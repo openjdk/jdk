@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="yi"/>
 	</identity>
 	<localeDisplayNames>
@@ -172,7 +173,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Cyrl">ציריליש</script>
 			<script type="Deva">דעוואַנאַגאַרי</script>
 			<script type="Grek">גריכיש</script>
-			<script type="Hebr">Hebr</script>
+			<script type="Hebr">העברעיש</script>
 			<script type="Latn">גַלחיש</script>
 		</scripts>
 		<territories>
@@ -425,6 +426,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[א {א\u05B7} {א\u05B8} ב {ב\u05BF} ג ד {דזש} ה ו {ו\u05BC} {וו} {וי} ז {זש} ח ט {טש} י {י\u05B4} {יי} {ײ\u05B7} {כ\u05BC} כ ך ל מ ם נ ן ס ע {פ\u05BC} {פ\u05BF} ף צ ץ ק ר ש {ש\u05C2} {ת\u05BC} ת]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="contributed">[\u200E\u200F]</exemplarCharacters>
 		<exemplarCharacters type="index">[\u05C2 \u05BC \u05BF א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ – — , ; \: ! ? . ׳ ' &quot; ( ) \[ \] / ״ ־]</exemplarCharacters>
 	</characters>
 	<delimiters>
@@ -1485,4 +1487,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</listPattern>
 	</listPatterns>
 </ldml>
-

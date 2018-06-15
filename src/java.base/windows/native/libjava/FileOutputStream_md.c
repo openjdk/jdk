@@ -72,7 +72,3 @@ Java_java_io_FileOutputStream_writeBytes(JNIEnv *env,
     writeBytes(env, this, bytes, off, len, append, fos_fd);
 }
 
-JNIEXPORT void JNICALL
-Java_java_io_FileOutputStream_close0(JNIEnv *env, jobject this) {
-        handleClose(env, this, fos_fd);
-}

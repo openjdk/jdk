@@ -68,6 +68,17 @@ TARGETS += $(SRC_ZIP_SRCS)
 # Only evaluate the creation of src.zip in a sub make call when the symlinked
 # src directory structure has been generated.
 ifeq ($(SRC_GENERATED), true)
+
+  # Rewrite the EXCLUDE_TRANSLATIONS locales as exclude patters for java files
+  TRANSLATIONS_PATTERN := $(addprefix %_, $(addsuffix .java, $(EXCLUDE_TRANSLATIONS)))
+
+  # Add excludes for translations for all modules except jdk.localedata
+  $(foreach s, $(SRC_ZIP_SRCS), \
+    $(if $(filter $(notdir $s), jdk.localedata), , \
+      $(eval BUILD_SRC_ZIP_EXCLUDE_PATTERNS_$(dir $s) := $$(TRANSLATIONS_PATTERN)) \
+    ) \
+  )
+
   $(eval $(call SetupZipArchive, BUILD_SRC_ZIP, \
       SRC := $(dir $(SRC_ZIP_SRCS)), \
       INCLUDES := $(SRC_ZIP_INCLUDES), \

@@ -1,33 +1,41 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11987 $"/>
+		<version number="$Revision: 13937 $"/>
 		<language type="de"/>
 		<territory type="CH"/>
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="ace">Aceh-Sprache</language>
+			<language type="ach">Acholi-Sprache</language>
+			<language type="bas">Basaa-Sprache</language>
 			<language type="be">Weissrussisch</language>
-			<language type="prg" draft="contributed">Altpreussisch</language>
+			<language type="bik">Bikol-Sprache</language>
+			<language type="bin">Bini-Sprache</language>
+			<language type="chb">Chibcha-Sprache</language>
+			<language type="din">Dinka-Sprache</language>
+			<language type="fan">Pangwe-Sprache</language>
+			<language type="gba">Gbaya-Sprache</language>
+			<language type="kmb">Kimbundu-Sprache</language>
+			<language type="mus">Muskogee-Sprache</language>
+			<language type="prg">Altpreussisch</language>
 		</languages>
 		<territories>
-			<territory type="BD">Bangladesh</territory>
 			<territory type="BN">Brunei</territory>
 			<territory type="BW">Botswana</territory>
 			<territory type="BY">Weissrussland</territory>
-			<territory type="CV" draft="provisional">Kapverden</territory>
-			<territory type="DJ" draft="provisional">Djibouti</territory>
+			<territory type="CV">Kapverden</territory>
 			<territory type="GB">Grossbritannien</territory>
-			<territory type="MH">Marshall-Inseln</territory>
 			<territory type="QO">Äusseres Ozeanien</territory>
-			<territory type="RW" draft="provisional">Rwanda</territory>
 			<territory type="SB">Salomon-Inseln</territory>
-			<territory type="ST" draft="provisional">Sao Tomé und Principe</territory>
+			<territory type="TL">Osttimor</territory>
 			<territory type="ZW">Zimbabwe</territory>
 		</territories>
 		<keys>
@@ -45,17 +53,74 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a ä b c d e f g h i j k l m n o ö p q r s t u ü v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â å ã ā æ ç é è ĕ ê ë ē ğ í ì ĭ î ï İ ī ı ñ ó ò ŏ ô ø ō œ ş ß ú ù ŭ û ū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- . ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<days>
+					<dayContext type="format">
+						<dayWidth type="short">
+							<day type="sun">So</day>
+							<day type="mon">Mo</day>
+							<day type="tue">Di</day>
+							<day type="wed">Mi</day>
+							<day type="thu">Do</day>
+							<day type="fri">Fr</day>
+							<day type="sat">Sa</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era-narrow">
+				<displayName>Epoche</displayName>
+			</field>
+			<field type="quarter">
+				<relative type="-1">letztes Quartal</relative>
+				<relative type="0">dieses Quartal</relative>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>Woche im Monat</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>Wo. i. M.</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>W. i. Mon.</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>Tag d. J.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>Wochentag</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>Wochentag im Monat</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>Wochent. i. Mo.</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>Wochent. i. Mon.</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+		</timeZoneNames>
+	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
-			<group>'</group>
+			<group>’</group>
 		</symbols>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
+					<pattern>#,##0%</pattern>
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
@@ -67,14 +132,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Weissrussischer Rubel</displayName>
 				<displayName count="one">Weissrussischer Rubel</displayName>
 				<displayName count="other">Weissrussische Rubel</displayName>
 			</currency>
+			<currency type="BYR">
+				<displayName>Weissrussischer Rubel (2000–2016)</displayName>
+				<displayName count="one">Weissrussischer Rubel (2000–2016)</displayName>
+				<displayName count="other">Weissrussische Rubel (2000–2016)</displayName>
+			</currency>
 			<currency type="EUR">
-				<symbol draft="contributed">EUR</symbol>
+				<symbol>EUR</symbol>
 				<symbol alt="narrow" draft="contributed">EUR</symbol>
+			</currency>
+			<currency type="PEN">
+				<displayName>Peruanischer Neuer Sol</displayName>
+				<displayName count="one">Peruanischer Neuer Sol</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName>São-toméischer Dobra (2018)</displayName>
+				<displayName count="one">São-toméischer Dobra (2018)</displayName>
+				<displayName count="other">São-toméischer Dobra (2018)</displayName>
 			</currency>
 		</currencies>
 	</numbers>
@@ -84,6 +163,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Quadratfuss</displayName>
 				<unitPattern count="one">{0} Quadratfuss</unitPattern>
 				<unitPattern count="other">{0} Quadratfuss</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
 			</unit>
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
@@ -96,12 +178,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} Kubikfuss</unitPattern>
 				<unitPattern count="other">{0} Kubikfuss</unitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
 		</unitLength>
 	</units>
+	<typographicNames>
+		<axisName type="opsz">optische Grösse</axisName>
+		<styleName type="opsz" subtype="8">Konsultationsgrösse</styleName>
+		<styleName type="opsz" subtype="12">Lesegrösse</styleName>
+		<styleName type="opsz" subtype="18">Schaugrösse</styleName>
+		<styleName type="opsz" subtype="72">Plakatgrösse</styleName>
+		<styleName type="opsz" subtype="144">Ferngrösse</styleName>
+	</typographicNames>
 </ldml>
-

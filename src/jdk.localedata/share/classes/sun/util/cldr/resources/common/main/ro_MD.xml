@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11914 $"/>
+		<version number="$Revision: 13839 $"/>
 		<language type="ro"/>
 		<territory type="MD"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="sw_CD" draft="contributed">swahili (R. D. Congo)</language>
+			<language type="wal" draft="contributed">wolaytta</language>
+		</languages>
+		<territories>
+			<territory type="MM" draft="contributed">Myanmar</territory>
+		</territories>
+	</localeDisplayNames>
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
@@ -122,6 +132,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1" draft="contributed">noaptea</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="morning1" draft="contributed">dimineață</dayPeriod>
+							<dayPeriod type="afternoon1" draft="contributed">după-amiază</dayPeriod>
+							<dayPeriod type="evening1" draft="contributed">seară</dayPeriod>
+							<dayPeriod type="night1" draft="contributed">noapte</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="midnight" draft="contributed">miezul nopții</dayPeriod>
+							<dayPeriod type="noon" draft="contributed">amiază</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraAbbr>
@@ -181,4 +203,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</unitLength>
 	</units>
 </ldml>
-

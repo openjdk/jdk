@@ -31,6 +31,7 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.StructuralTypeMapping;
 import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
+import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph;
 import com.sun.tools.javac.comp.Resolve.ResolveError;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
@@ -164,10 +165,17 @@ public class DeferredAttr extends JCTree.Visitor {
                     JCMemberReference result = new JCMemberReference(t.mode, t.name, expr, typeargs) {
                         @Override
                         public void setOverloadKind(OverloadKind overloadKind) {
-                            super.setOverloadKind(overloadKind);
-                            if (t.getOverloadKind() == null) {
+                            OverloadKind previous = t.getOverloadKind();
+                            if (previous == null) {
                                 t.setOverloadKind(overloadKind);
+                            } else {
+                                Assert.check(previous == overloadKind);
                             }
+                        }
+
+                        @Override
+                        public OverloadKind getOverloadKind() {
+                            return t.getOverloadKind();
                         }
                     };
                     result.pos = t.pos;
@@ -656,28 +664,57 @@ public class DeferredAttr extends JCTree.Visitor {
         }
 
         /**
-         * Pick the deferred node to be unstuck. The chosen node is the first strongly connected
-         * component containing exactly one node found in the dependency graph induced by deferred nodes.
-         * If no such component is found, the first deferred node is returned.
+         * Pick the deferred node to be unstuck. First, deferred nodes are organized into a graph
+         * (see {@code DeferredAttrContext.buildStuckGraph()}, where a node N1 depends on another node N2
+         * if its input variable depends (as per the inference graph) on the output variables of N2
+         * (see {@code DeferredAttrContext.canInfluence()}.
+         *
+         * Then, the chosen deferred node is the first strongly connected component containing exactly
+         * one node found in such a graph. If no such component is found, the first deferred node is chosen.
          */
         DeferredAttrNode pickDeferredNode() {
+            List<StuckNode> stuckGraph = buildStuckGraph();
+            //compute tarjan on the stuck graph
+            List<? extends StuckNode> csn = GraphUtils.tarjan(stuckGraph).get(0);
+            return csn.length() == 1 ? csn.get(0).data : deferredAttrNodes.get(0);
+        }
+
+        List<StuckNode> buildStuckGraph() {
+            //first, build inference graph
+            infer.doIncorporation(inferenceContext, warn);
+            InferenceGraph graph = infer.new GraphSolver(inferenceContext, types.noWarnings)
+                    .new InferenceGraph();
+            //then, build stuck graph
             List<StuckNode> nodes = deferredAttrNodes.stream()
                     .map(StuckNode::new)
                     .collect(List.collector());
             //init stuck expression graph; a deferred node A depends on a deferred node B iff
-            //the intersection between A's input variable and B's output variable is non-empty.
+            //B's output variables can influence A's input variables.
             for (StuckNode sn1 : nodes) {
-                for (Type t : sn1.data.deferredStuckPolicy.stuckVars()) {
-                    for (StuckNode sn2 : nodes) {
-                        if (sn1 != sn2 && sn2.data.deferredStuckPolicy.depVars().contains(t)) {
-                            sn1.deps.add(sn2);
-                        }
+                for (StuckNode sn2 : nodes) {
+                    if (sn1 != sn2 && canInfluence(graph, sn2, sn1)) {
+                        sn1.deps.add(sn2);
                     }
                 }
             }
-            //compute tarjan on the stuck graph
-            List<? extends StuckNode> csn = GraphUtils.tarjan(nodes).get(0);
-            return csn.length() == 1 ? csn.get(0).data : deferredAttrNodes.get(0);
+            return nodes;
+        }
+
+        boolean canInfluence(InferenceGraph graph, StuckNode sn1, StuckNode sn2) {
+            Set<Type> outputVars = sn1.data.deferredStuckPolicy.depVars();
+            for (Type inputVar : sn2.data.deferredStuckPolicy.stuckVars()) {
+                InferenceGraph.Node inputNode = graph.findNode(inputVar);
+                //already solved stuck vars do not appear in the graph
+                if (inputNode != null) {
+                    Set<InferenceGraph.Node> inputClosure = inputNode.closure();
+                    if (outputVars.stream()
+                            .map(graph::findNode)
+                            .anyMatch(inputClosure::contains)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         class StuckNode extends GraphUtils.TarjanNode<DeferredAttrNode, StuckNode> {

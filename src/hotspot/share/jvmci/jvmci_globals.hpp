@@ -121,5 +121,8 @@ class JVMCIGlobals {
   // an error message describing the inconsistency is printed before
   // returning false.
   static bool check_jvmci_flags_are_consistent();
+
+  // Check and exit VM with error if selected GC is not supported by JVMCI.
+  static void check_jvmci_supported_gc();
 };
 #endif // SHARE_VM_JVMCI_JVMCIGLOBALS_HPP

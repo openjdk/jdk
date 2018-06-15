@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="kea"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,13 +17,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="ab">abkaziu</language>
+			<language type="ab">abkáziu</language>
 			<language type="af">afrikaner</language>
 			<language type="agq">aghem</language>
 			<language type="ak">akan</language>
-			<language type="am">amariku</language>
-			<language type="ar">arabi</language>
-			<language type="ar_001">arabi mudernu</language>
+			<language type="am">amáriku</language>
+			<language type="an" draft="unconfirmed">argones</language>
+			<language type="ar">árabi</language>
+			<language type="ar_001">árabi mudernu</language>
 			<language type="arn">araukanu</language>
 			<language type="as">asames</language>
 			<language type="asa">asu</language>
@@ -30,6 +32,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="az">azerbaijanu</language>
 			<language type="az" alt="short">azeri</language>
 			<language type="ba">baxkir</language>
+			<language type="ban" draft="unconfirmed">balinese</language>
 			<language type="be">bielorusu</language>
 			<language type="bem">bemba</language>
 			<language type="bez">bena</language>
@@ -84,12 +87,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="fr">franses</language>
 			<language type="fr_CA">franses kanadianu</language>
 			<language type="fr_CH">franses suisu</language>
-			<language type="fy">frisiu osidental</language>
+			<language type="fy">fríziu osidental</language>
 			<language type="ga">irlandes</language>
 			<language type="gag">gagauz</language>
 			<language type="gl">galegu</language>
 			<language type="gn">guarani</language>
-			<language type="gsw">alimãu di Suisa</language>
+			<language type="gsw">alimãu suísu</language>
 			<language type="gu">gujarati</language>
 			<language type="guz">gusii</language>
 			<language type="gv">manks</language>
@@ -139,10 +142,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="lv">letãu</language>
 			<language type="mg">malgaxi</language>
 			<language type="mi">maori</language>
-			<language type="mk">masedoniu</language>
+			<language type="mk">masedóniu</language>
 			<language type="ml">malaialam</language>
 			<language type="mr">marati</language>
-			<language type="ms">malaiu</language>
+			<language type="ms">maláiu</language>
 			<language type="mt">maltes</language>
 			<language type="my">birmanes</language>
 			<language type="nb">norueges bokmål</language>
@@ -152,7 +155,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="nmg">kuazio</language>
 			<language type="nn">norueges nynorsk</language>
 			<language type="om">oromo</language>
-			<language type="or">oriya</language>
+			<language type="or">odía</language>
 			<language type="pa">pandjabi</language>
 			<language type="pl">pulaku</language>
 			<language type="ps">paxto</language>
@@ -163,14 +166,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="quc">kitxe</language>
 			<language type="rm">romanxi</language>
 			<language type="ro">rumenu</language>
+			<language type="ro_MD">rumenu moldáviku</language>
 			<language type="ru">rusu</language>
 			<language type="rw">kiniaruanda</language>
-			<language type="sa">sanskritu</language>
+			<language type="sa">sánskritu</language>
 			<language type="sd">sindi</language>
 			<language type="ses">koiraboro seni</language>
 			<language type="si">singales</language>
 			<language type="sk">slovaku</language>
-			<language type="sl">sloveniu</language>
+			<language type="sl">slovéniu</language>
 			<language type="smn">inari sami</language>
 			<language type="so">somali</language>
 			<language type="sq">albanes</language>
@@ -181,7 +185,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sw_CD">suaíli kongoles</language>
 			<language type="ta">tamil</language>
 			<language type="te">telugu</language>
-			<language type="tg">tajik</language>
+			<language type="tg">tadjiki</language>
 			<language type="th">tailandes</language>
 			<language type="ti">tigrinia</language>
 			<language type="tk">turkmenu</language>
@@ -191,18 +195,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tzm">tamazait di Atlas Sentral</language>
 			<language type="ug">uigur</language>
 			<language type="uk">ukranianu</language>
-			<language type="und">lingua diskonxedu</language>
+			<language type="und">língua diskonxedu</language>
 			<language type="ur">urdu</language>
 			<language type="uz">uzbeki</language>
 			<language type="vi">vietnamita</language>
 			<language type="wo">uolof</language>
 			<language type="xh">koza</language>
 			<language type="yo">ioruba</language>
+			<language type="yue" draft="unconfirmed">kantonese</language>
 			<language type="zh">xines</language>
 			<language type="zh_Hans">xines simplifikadu</language>
 			<language type="zh_Hant">xines tradisional</language>
 			<language type="zu">zulu</language>
-			<language type="zxx">sem konteudo linguistiku</language>
+			<language type="zxx">sen kontiudu linguístiku</language>
 		</languages>
 		<scripts>
 			<script type="Arab">arábiku</script>
@@ -217,7 +222,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">gregu</script>
 			<script type="Gujr">gujarati</script>
 			<script type="Guru">gurmuki</script>
-			<script type="Hang">angul</script>
+			<script type="Hang">hangul</script>
 			<script type="Hani">han</script>
 			<script type="Hans">simplifikadu</script>
 			<script type="Hans" alt="stand-alone">han simplifikadu</script>
@@ -242,7 +247,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Thaa">taana</script>
 			<script type="Thai">tailandes</script>
 			<script type="Tibt">tibetanu</script>
-			<script type="Zsym">simbulus</script>
+			<script type="Zsym">símbulus</script>
 			<script type="Zxxx">nãu skritu</script>
 			<script type="Zyyy">komun</script>
 			<script type="Zzzz">skrita diskonxedu</script>
@@ -280,27 +285,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="419">Merka Latinu</territory>
 			<territory type="AC">Ilha di Asensãu</territory>
 			<territory type="AD">Andora</territory>
-			<territory type="AE">Emiradus Arabi Unidu</territory>
+			<territory type="AE">Emiradus Árabi Unidu</territory>
 			<territory type="AF">Afeganistãu</territory>
 			<territory type="AG">Antigua i Barbuda</territory>
 			<territory type="AI">Angila</territory>
-			<territory type="AL">Albania</territory>
-			<territory type="AM">Armenia</territory>
+			<territory type="AL">Albánia</territory>
+			<territory type="AM">Arménia</territory>
 			<territory type="AO">Angola</territory>
-			<territory type="AQ">Antartika</territory>
+			<territory type="AQ">Antártika</territory>
 			<territory type="AR">Arjentina</territory>
 			<territory type="AS">Samoa Merkanu</territory>
-			<territory type="AT">Austria</territory>
-			<territory type="AU">Australia</territory>
+			<territory type="AT">Áustria</territory>
+			<territory type="AU">Austrália</territory>
 			<territory type="AW">Aruba</territory>
 			<territory type="AX">Ilhas Åland</territory>
 			<territory type="AZ">Azerbaijãu</territory>
-			<territory type="BA">Bosnia-Erzegovina</territory>
+			<territory type="BA">Bósnia i Erzegovina</territory>
 			<territory type="BB">Barbadus</territory>
 			<territory type="BD">Bangladexi</territory>
 			<territory type="BE">Béljika</territory>
 			<territory type="BF">Burkina Fasu</territory>
-			<territory type="BG">Bulgaria</territory>
+			<territory type="BG">Bulgária</territory>
 			<territory type="BH">Barain</territory>
 			<territory type="BI">Burundi</territory>
 			<territory type="BJ">Benin</territory>
@@ -317,12 +322,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BY">Belarus</territory>
 			<territory type="BZ">Belizi</territory>
 			<territory type="CA">Kanadá</territory>
-			<territory type="CC">Ilhas Kokus</territory>
+			<territory type="CC">Ilhas Kokus (Keeling)</territory>
 			<territory type="CD">Kongu - Kinxasa</territory>
-			<territory type="CD" alt="variant">Republika Dimokratika di Kongu</territory>
+			<territory type="CD" alt="variant">Repúblika Dimokrátika di Kongu</territory>
 			<territory type="CF">Republika Sentru-Afrikanu</territory>
 			<territory type="CG">Kongu - Brazavili</territory>
-			<territory type="CG" alt="variant">Republika di Kongu</territory>
+			<territory type="CG" alt="variant">Repúblika di Kongu</territory>
 			<territory type="CH">Suisa</territory>
 			<territory type="CI">Kosta di Marfin</territory>
 			<territory type="CI" alt="variant">Kosta di Marfin (Côte d’Ivoire)</territory>
@@ -338,74 +343,75 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">Kurasau</territory>
 			<territory type="CX">Ilha di Natal</territory>
 			<territory type="CY">Xipri</territory>
-			<territory type="CZ">Republika Txeka</territory>
+			<territory type="CZ">Txékia</territory>
+			<territory type="CZ" alt="variant">Repúblika Txeka</territory>
 			<territory type="DE">Alimanha</territory>
 			<territory type="DG">Diegu Garsia</territory>
 			<territory type="DJ">Djibuti</territory>
 			<territory type="DK">Dinamarka</territory>
 			<territory type="DM">Dominika</territory>
 			<territory type="DO">Repúblika Dominikana</territory>
-			<territory type="DZ">Arjelia</territory>
-			<territory type="EA">Seuta i Melila</territory>
+			<territory type="DZ">Arjélia</territory>
+			<territory type="EA">Seuta i Melilha</territory>
 			<territory type="EC">Ekuador</territory>
-			<territory type="EE">Stonia</territory>
+			<territory type="EE">Stónia</territory>
 			<territory type="EG">Ejitu</territory>
 			<territory type="EH">Sara Osidental</territory>
 			<territory type="ER">Iritreia</territory>
 			<territory type="ES">Spanha</territory>
-			<territory type="ET">Itiopia</territory>
+			<territory type="ET">Etiópia</territory>
 			<territory type="EU">Uniãu Europeia</territory>
-			<territory type="FI">Finlandia</territory>
+			<territory type="FI">Finlándia</territory>
 			<territory type="FJ">Fidji</territory>
 			<territory type="FK">Ilhas Malvinas</territory>
 			<territory type="FK" alt="variant">Ilhas Falkland (Ilhas Malvinas)</territory>
-			<territory type="FM">Mikronezia</territory>
+			<territory type="FM">Mikronézia</territory>
 			<territory type="FO">Ilhas Faroe</territory>
 			<territory type="FR">Fransa</territory>
 			<territory type="GA">Gabãu</territory>
 			<territory type="GB">Reinu Unidu</territory>
 			<territory type="GB" alt="short">R.U.</territory>
 			<territory type="GD">Granada</territory>
-			<territory type="GE">Jiorjia</territory>
+			<territory type="GE">Jiórjia</territory>
 			<territory type="GF">Giana Franseza</territory>
 			<territory type="GG">Gernzi</territory>
 			<territory type="GH">Gana</territory>
 			<territory type="GI">Jibraltar</territory>
 			<territory type="GL">Gronelándia</territory>
-			<territory type="GM">Gambia</territory>
+			<territory type="GM">Gámbia</territory>
 			<territory type="GN">Gine</territory>
 			<territory type="GP">Guadalupi</territory>
 			<territory type="GQ">Gine Ekuatorial</territory>
-			<territory type="GR">Gresia</territory>
-			<territory type="GS">Jeórjia di Sul i Ilhas di Sanduixi di Sul</territory>
+			<territory type="GR">Grésia</territory>
+			<territory type="GS">Ilhas Jeórjia di Sul i Sanduixi di Sul</territory>
 			<territory type="GT">Guatimala</territory>
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Gine-Bisau</territory>
 			<territory type="GY">Giana</territory>
-			<territory type="HK">Rejiãu Administrativu Special di Hong Kong</territory>
+			<territory type="HK">Rejiãu Administrativu Spesial di Hong Kong</territory>
 			<territory type="HK" alt="short">Hong Kong</territory>
-			<territory type="HM">Ilha Heard i Ilhas McDonald</territory>
+			<territory type="HM">Ilhas Heard i McDonald</territory>
 			<territory type="HN">Onduras</territory>
-			<territory type="HR">Kroasia</territory>
+			<territory type="HR">Kroásia</territory>
 			<territory type="HT">Aití</territory>
 			<territory type="HU">Ungria</territory>
 			<territory type="IC">Kanárias</territory>
-			<territory type="ID">Indonezia</territory>
+			<territory type="ID">Indonézia</territory>
 			<territory type="IE">Irlanda</territory>
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Ilha di Man</territory>
-			<territory type="IN">India</territory>
-			<territory type="IO">Ilhas Britanika di Indiku</territory>
+			<territory type="IN">Índia</territory>
+			<territory type="IO">Ilhas Británikas di Índiku</territory>
 			<territory type="IQ">Iraki</territory>
-			<territory type="IR">Iron</territory>
-			<territory type="IS">Islandia</territory>
-			<territory type="IT">Italia</territory>
+			<territory type="IR">Irãu</territory>
+			<territory type="IS">Islándia</territory>
+			<territory type="IT">Itália</territory>
 			<territory type="JE">Jersi</territory>
 			<territory type="JM">Jamaika</territory>
-			<territory type="JO">Jordania</territory>
+			<territory type="JO">Jordánia</territory>
 			<territory type="JP">Japãu</territory>
-			<territory type="KE">Kenia</territory>
-			<territory type="KG">Kirgiston</territory>
+			<territory type="KE">Kénia</territory>
+			<territory type="KG">Kirgistãu</territory>
 			<territory type="KH">Kambodja</territory>
 			<territory type="KI">Kiribati</territory>
 			<territory type="KM">Kamoris</territory>
@@ -416,61 +422,61 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KY">Ilhas Kaimãu</territory>
 			<territory type="KZ">Kazakistãu</territory>
 			<territory type="LA">Laus</territory>
-			<territory type="LB">Libanu</territory>
+			<territory type="LB">Líbanu</territory>
 			<territory type="LC">Santa Lúsia</territory>
 			<territory type="LI">Lixenstain</territory>
 			<territory type="LK">Sri Lanka</territory>
-			<territory type="LR">Liberia</territory>
+			<territory type="LR">Libéria</territory>
 			<territory type="LS">Lezotu</territory>
-			<territory type="LT">Lituania</territory>
+			<territory type="LT">Lituánia</territory>
 			<territory type="LU">Luxemburgu</territory>
-			<territory type="LV">Letonia</territory>
-			<territory type="LY">Libia</territory>
+			<territory type="LV">Letónia</territory>
+			<territory type="LY">Líbia</territory>
 			<territory type="MA">Marokus</territory>
-			<territory type="MC">Monaku</territory>
-			<territory type="MD">Moldavia</territory>
+			<territory type="MC">Mónaku</territory>
+			<territory type="MD">Moldávia</territory>
 			<territory type="ME">Montenegru</territory>
 			<territory type="MF">Sãu Martinhu di Fransa</territory>
 			<territory type="MG">Madagaskar</territory>
 			<territory type="MH">Ilhas Marxal</territory>
-			<territory type="MK">Masidonia</territory>
-			<territory type="MK" alt="variant">Masidonia (FYROM)</territory>
+			<territory type="MK">Masidónia</territory>
+			<territory type="MK" alt="variant">Masidónia (FYROM)</territory>
 			<territory type="ML">Mali</territory>
-			<territory type="MM">Mianmar</territory>
-			<territory type="MN">Mongolia</territory>
-			<territory type="MO">Rejiãu Administrativu Special di Makau</territory>
+			<territory type="MM">Mianmar (Birmánia)</territory>
+			<territory type="MN">Mongólia</territory>
+			<territory type="MO">Rejiãu Administrativu Spesial di Makau</territory>
 			<territory type="MO" alt="short">Makau</territory>
 			<territory type="MP">Ilhas Marianas di Norti</territory>
 			<territory type="MQ">Martinika</territory>
-			<territory type="MR">Mauritania</territory>
+			<territory type="MR">Mauritánia</territory>
 			<territory type="MS">Monserat</territory>
 			<territory type="MT">Malta</territory>
-			<territory type="MU">Ilhas Maurisia</territory>
+			<territory type="MU">Maurísia</territory>
 			<territory type="MV">Maldivas</territory>
 			<territory type="MW">Malaui</territory>
 			<territory type="MX">Méxiku</territory>
-			<territory type="MY">Malazia</territory>
+			<territory type="MY">Malázia</territory>
 			<territory type="MZ">Musambiki</territory>
-			<territory type="NA">Namibia</territory>
-			<territory type="NC">Nova Kalidonia</territory>
+			<territory type="NA">Namíbia</territory>
+			<territory type="NC">Nova Kalidónia</territory>
 			<territory type="NE">Nijer</territory>
 			<territory type="NF">Ilhas Norfolk</territory>
-			<territory type="NG">Nijeria</territory>
+			<territory type="NG">Nijéria</territory>
 			<territory type="NI">Nikarágua</territory>
 			<territory type="NL">Olanda</territory>
 			<territory type="NO">Noruega</territory>
 			<territory type="NP">Nepal</territory>
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
-			<territory type="NZ">Nova Zilandia</territory>
+			<territory type="NZ">Nova Zilándia</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panamá</territory>
 			<territory type="PE">Peru</territory>
-			<territory type="PF">Polinezia Franseza</territory>
+			<territory type="PF">Polinézia Franseza</territory>
 			<territory type="PG">Papua-Nova Gine</territory>
 			<territory type="PH">Filipinas</territory>
 			<territory type="PK">Pakistãu</territory>
-			<territory type="PL">Pulonia</territory>
+			<territory type="PL">Pulónia</territory>
 			<territory type="PM">San Piere i Mikelon</territory>
 			<territory type="PN">Pirkairn</territory>
 			<territory type="PR">Portu Riku</territory>
@@ -480,50 +486,50 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PY">Paraguai</territory>
 			<territory type="QA">Katar</territory>
 			<territory type="QO">Ilhas di Oseania</territory>
-			<territory type="RE">Runion</territory>
-			<territory type="RO">Romenia</territory>
-			<territory type="RS">Servia</territory>
+			<territory type="RE">Runiãu</territory>
+			<territory type="RO">Ruménia</territory>
+			<territory type="RS">Sérvia</territory>
 			<territory type="RU">Rúsia</territory>
 			<territory type="RW">Ruanda</territory>
-			<territory type="SA">Arabia Saudita</territory>
-			<territory type="SB">Ilhas Salumon</territory>
+			<territory type="SA">Arábia Saudita</territory>
+			<territory type="SB">Ilhas Salumãu</territory>
 			<territory type="SC">Seixelis</territory>
 			<territory type="SD">Sudãu</territory>
-			<territory type="SE">Suesia</territory>
+			<territory type="SE">Suésia</territory>
 			<territory type="SG">Singapura</territory>
 			<territory type="SH">Santa Ilena</territory>
-			<territory type="SI">Slovenia</territory>
+			<territory type="SI">Slovénia</territory>
 			<territory type="SJ">Svalbard i Jan Maien</territory>
-			<territory type="SK">Slovakia</territory>
+			<territory type="SK">Slovákia</territory>
 			<territory type="SL">Sera Lioa</territory>
 			<territory type="SM">San Marinu</territory>
 			<territory type="SN">Senegal</territory>
-			<territory type="SO">Sumalia</territory>
+			<territory type="SO">Sumália</territory>
 			<territory type="SR">Surinami</territory>
 			<territory type="SS">Sudãu di Sul</territory>
-			<territory type="ST">Sãu Tume i Prinsipi</territory>
+			<territory type="ST">Sãu Tume i Prínsipi</territory>
 			<territory type="SV">El Salvador</territory>
 			<territory type="SX">Sãu Martinhu di Olanda</territory>
-			<territory type="SY">Siria</territory>
+			<territory type="SY">Síria</territory>
 			<territory type="SZ">Suazilándia</territory>
 			<territory type="TA">Tristan da Kunha</territory>
 			<territory type="TC">Ilhas Turkas i Kaikus</territory>
 			<territory type="TD">Txadi</territory>
 			<territory type="TF">Terras Franses di Sul</territory>
 			<territory type="TG">Togu</territory>
-			<territory type="TH">Tailandia</territory>
+			<territory type="TH">Tailándia</territory>
 			<territory type="TJ">Tadjikistãu</territory>
 			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Timor Lesti</territory>
 			<territory type="TM">Turkumenistãu</territory>
-			<territory type="TN">Tunizia</territory>
+			<territory type="TN">Tunízia</territory>
 			<territory type="TO">Tonga</territory>
 			<territory type="TR">Turkia</territory>
 			<territory type="TT">Trinidad i Tobagu</territory>
 			<territory type="TV">Tuvalu</territory>
 			<territory type="TW">Taiuan</territory>
-			<territory type="TZ">Tanzania</territory>
-			<territory type="UA">Ukrania</territory>
+			<territory type="TZ">Tanzánia</territory>
+			<territory type="UA">Ukránia</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Ilhas Minoris Distantis de Stadus Unidus</territory>
 			<territory type="US">Stadus Unidos di Merka</territory>
@@ -533,18 +539,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="VA">Vatikanu</territory>
 			<territory type="VC">Sãu Bisenti i Granadinas</territory>
 			<territory type="VE">Vinizuela</territory>
-			<territory type="VG">Ilhas Virjens Britanikas</territory>
+			<territory type="VG">Ilhas Virjens Británikas</territory>
 			<territory type="VI">Ilhas Virjens Merkanas</territory>
 			<territory type="VN">Vietnam</territory>
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Ualis i Futuna</territory>
 			<territory type="WS">Samoa</territory>
 			<territory type="XK">Kozovu</territory>
-			<territory type="YE">Iemen</territory>
+			<territory type="YE">Iémen</territory>
 			<territory type="YT">Maiote</territory>
-			<territory type="ZA">Afrika di Sul</territory>
-			<territory type="ZM">Zambia</territory>
-			<territory type="ZW">Zimbabui</territory>
+			<territory type="ZA">Áfrika di Sul</territory>
+			<territory type="ZM">Zámbia</territory>
+			<territory type="ZW">Zimbábui</territory>
 			<territory type="ZZ">Rejiãu Diskonxedu</territory>
 		</territories>
 		<keys>
@@ -555,7 +561,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="latn">Númerus Arábikus</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="metric">Metriku</measurementSystemName>
+			<measurementSystemName type="metric">Métriku</measurementSystemName>
 			<measurementSystemName type="UK">Ingles</measurementSystemName>
 			<measurementSystemName type="US">Merkanu</measurementSystemName>
 		</measurementSystemNames>
@@ -569,6 +575,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a b d {dj} e f g h i j k l {lh} m n ñ {nh} o p r s t {tx} u v x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ c ç é è ĕ ê ë ẽ ē í ì ĭ î ï ĩ ī {n\u0308} ó ò ŏ ô ö õ ø ō œ q {rr} ú ù ŭ û ü ũ ū w ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P R S T U V X Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -631,6 +638,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
@@ -671,6 +679,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQQ 'di' y G</dateFormatItem>
 					</availableFormats>
@@ -912,13 +921,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="sat">sab</day>
 						</dayWidth>
 						<dayWidth type="narrow">
-							<day type="sun">d</day>
-							<day type="mon">s</day>
-							<day type="tue">t</day>
-							<day type="wed">k</day>
-							<day type="thu">k</day>
-							<day type="fri">s</day>
-							<day type="sat">s</day>
+							<day type="sun">D</day>
+							<day type="mon">S</day>
+							<day type="tue">T</day>
+							<day type="wed">K</day>
+							<day type="thu">K</day>
+							<day type="fri">S</day>
+							<day type="sat">S</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">du</day>
@@ -936,7 +945,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="wed">kuarta-fera</day>
 							<day type="thu">kinta-fera</day>
 							<day type="fri">sesta-fera</day>
-							<day type="sat">sabadu</day>
+							<day type="sat">sábadu</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1086,15 +1095,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM 'di' y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d 'di' MMM 'di' y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d 'di' MMM 'di' y G</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a (v)</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss (v)</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a (v)</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm (v)</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
@@ -1111,7 +1124,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMd">dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMM">MM/y</dateFormatItem>
-						<dateFormatItem id="yMMM">MMM 'di' y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM 'di' y</dateFormatItem>
@@ -1500,7 +1513,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="hour-narrow">
-				<displayName draft="unconfirmed">o</displayName>
+				<displayName>h</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">di li {0} ora</relativeTimePattern>
 				</relativeTime>
@@ -1886,9 +1899,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="CVE">
 				<displayName>Skudu Kabuverdianu</displayName>
 				<displayName count="other">Skudu Kabuverdianu</displayName>
-				<symbol>​</symbol>
+				<symbol>​</symbol> <!-- zero width space -->
 				<decimal>$</decimal>
-				<group>,</group>
 			</currency>
 			<currency type="CZK">
 				<symbol>CZK</symbol>
@@ -2093,9 +2105,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ougia (1973–2017)</displayName>
+				<displayName count="other">Ougia (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ougia</displayName>
 				<displayName count="other">Ougia</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>Rupia di Maurisias</displayName>
@@ -2230,9 +2246,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>SOS</symbol>
 			</currency>
 			<currency type="STD">
-				<displayName>Dobra di Sãu Tume i Prinsipi</displayName>
-				<displayName count="other">Dobra di Sãu Tume i Prinsipi</displayName>
+				<displayName>Dobra di Sãu Tume i Prínsipi (1977–2017)</displayName>
+				<displayName count="other">Dobra di Sãu Tume i Prinsipi (1977–2017)</displayName>
 				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
+				<displayName>Dobra di Sãu Tume i Prínsipi</displayName>
+				<displayName count="other">Dobra di Sãu Tume i Prinsipi</displayName>
 			</currency>
 			<currency type="SYP">
 				<symbol>SYP</symbol>
@@ -2303,16 +2323,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
-				<displayName>Franku CFA BEAC</displayName>
-				<displayName count="other">Franku CFA BEAC</displayName>
+				<displayName>Franku CFA (BEAC)</displayName>
+				<displayName count="other">Franku CFA (BEAC)</displayName>
 				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<symbol>EC$</symbol>
 			</currency>
 			<currency type="XOF">
-				<displayName>Franku CFA BCEAO</displayName>
-				<displayName count="other">Franku CFA BCEAO</displayName>
+				<displayName>Franku CFA (BCEAO)</displayName>
+				<displayName count="other">Franku CFA (BCEAO)</displayName>
 				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPF">
@@ -2357,6 +2377,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>métru pur sigundu kuadradu</displayName>
 				<unitPattern count="other">{0} métru pur sigundu kuadradu</unitPattern>
 			</unit>
+			<unit type="angle-revolution">
+				<displayName>volta</displayName>
+				<unitPattern count="other">{0} volta</unitPattern>
+			</unit>
 			<unit type="angle-radian">
 				<displayName>radianu</displayName>
 				<unitPattern count="other">{0} radianu</unitPattern>
@@ -2365,25 +2389,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>grau</displayName>
 				<unitPattern count="other">{0} grau</unitPattern>
 			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>minutu di arku</displayName>
+				<unitPattern count="other">{0} minutu di arku</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>sigundu di arku</displayName>
+				<unitPattern count="other">{0} sigundu di arku</unitPattern>
+			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>kilómetru kuadradu</displayName>
 				<unitPattern count="other">{0} kilómetru kuadradu</unitPattern>
+				<perUnitPattern>{0} pur kilómetru kuadradu</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ektar</displayName>
 				<unitPattern count="other">{0} ektar</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<displayName>métru kuadradu</displayName>
-				<unitPattern count="other">{0} métru kuadradu</unitPattern>
+				<displayName>metru kuadradu</displayName>
+				<unitPattern count="other">{0} metru kuadradu</unitPattern>
+				<perUnitPattern>{0} pur metru kuadradu</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>sentímetru kuadradu</displayName>
 				<unitPattern count="other">{0} sentímetru kuadradu</unitPattern>
+				<perUnitPattern>{0} pur sentímetru kuadradu</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>milha kuadradu</displayName>
 				<unitPattern count="other">{0} milha kuadradu</unitPattern>
+				<perUnitPattern>{0} pur milha kuadradu</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ákri</displayName>
@@ -2394,24 +2430,45 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} jarda kuadradu</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
-				<displayName>pé kuadradu</displayName>
-				<unitPattern count="other">{0} pé kuadradu</unitPattern>
+				<displayName>pe kuadradu</displayName>
+				<unitPattern count="other">{0} pe kuadradu</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>pulegada kuadradu</displayName>
 				<unitPattern count="other">{0} pulegada kuadradu</unitPattern>
+				<perUnitPattern>{0} pur pulegada kuadradu</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>kilati</displayName>
 				<unitPattern count="other">{0} kilati</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>miligrama pur desilitru</displayName>
+				<unitPattern count="other">{0} miligrama pur desilitru</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>milimol pur litru</displayName>
+				<unitPattern count="other">{0} milimol pur litru</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>parti pur milhãu</displayName>
+				<unitPattern count="other">{0} parti pur milhãu</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litru pur kilómetru</displayName>
 				<unitPattern count="other">{0} litru pur kilómetru</unitPattern>
 			</unit>
+			<unit type="consumption-liter-per-100kilometers">
+				<displayName>litru pur 100 kilómetru</displayName>
+				<unitPattern count="other">{0} litru pur 100 kilómetru</unitPattern>
+			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>milha pur galãu</displayName>
 				<unitPattern count="other">{0} milha pur galãu</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>milha pur galãu imperial</displayName>
+				<unitPattern count="other">{0} milha pur galãu imperial</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabyte</displayName>
@@ -2453,21 +2510,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>bit</displayName>
 				<unitPattern count="other">{0} bit</unitPattern>
 			</unit>
+			<unit type="duration-century">
+				<displayName>sékulu</displayName>
+				<unitPattern count="other">{0} sékulu</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>anu</displayName>
 				<unitPattern count="other">{0} anu</unitPattern>
+				<perUnitPattern>{0} pur anu</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mes</displayName>
 				<unitPattern count="other">{0} mes</unitPattern>
+				<perUnitPattern>{0} pur mes</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>simana</displayName>
 				<unitPattern count="other">{0} simana</unitPattern>
+				<perUnitPattern>{0} pur simana</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>dia</displayName>
 				<unitPattern count="other">{0} dia</unitPattern>
+				<perUnitPattern>{0} pur dia</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ora</displayName>
@@ -2477,6 +2542,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-minute">
 				<displayName>minutu</displayName>
 				<unitPattern count="other">{0} minutu</unitPattern>
+				<perUnitPattern>{0} pur minutu</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sigundu</displayName>
@@ -2498,10 +2564,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-kilometer">
 				<displayName>kilómetru</displayName>
 				<unitPattern count="other">{0} kilómetru</unitPattern>
+				<perUnitPattern>{0} pur kilómetru</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>métru</displayName>
-				<unitPattern count="other">{0} métru</unitPattern>
+				<displayName>metru</displayName>
+				<unitPattern count="other">{0} metru</unitPattern>
+				<perUnitPattern>{0} pur metru</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>desímetru</displayName>
@@ -2510,6 +2578,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-centimeter">
 				<displayName>sentímetru</displayName>
 				<unitPattern count="other">{0} sentímetru</unitPattern>
+				<perUnitPattern>{0} pur sentímetru</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>milímetru</displayName>
@@ -2536,12 +2605,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} jarda</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName>pé</displayName>
-				<unitPattern count="other">{0} pé</unitPattern>
+				<displayName>pe</displayName>
+				<unitPattern count="other">{0} pe</unitPattern>
+				<perUnitPattern>{0} pur pe</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>pulegada</displayName>
 				<unitPattern count="other">{0} pulegada</unitPattern>
+				<perUnitPattern>{0} pur pulegada</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>parsek</displayName>
@@ -2558,6 +2629,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-nautical-mile">
 				<displayName>milha náutiku</displayName>
 				<unitPattern count="other">{0} milha náutiku</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>milha skandinavu</displayName>
+				<unitPattern count="other">{0} milha skandinavu</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -2672,6 +2747,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>m/s²</displayName>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
+			<unit type="angle-revolution">
+				<displayName>vol</displayName>
+				<unitPattern count="other">{0} vol</unitPattern>
+			</unit>
 			<unit type="angle-radian">
 				<displayName>rad</displayName>
 				<unitPattern count="other">{0} rad</unitPattern>
@@ -2681,16 +2760,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>arcmin</displayName>
-				<unitPattern count="other">{0}′</unitPattern>
+				<displayName>arkmin</displayName>
+				<unitPattern count="other">{0} arkmin</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName>arcsec</displayName>
-				<unitPattern count="other">{0}″</unitPattern>
+				<displayName>arksig</displayName>
+				<unitPattern count="other">{0} arksig</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>km²</displayName>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
@@ -2699,14 +2779,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-meter">
 				<displayName>m²</displayName>
 				<unitPattern count="other">{0} m²</unitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>cm²</displayName>
 				<unitPattern count="other">{0} cm²</unitPattern>
+				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>mi²</displayName>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ac</displayName>
@@ -2723,18 +2806,39 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-inch">
 				<displayName>in²</displayName>
 				<unitPattern count="other">{0} in²</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>kt</displayName>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dl</displayName>
+				<unitPattern count="other">{0} mg/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>milimol/litru</displayName>
+				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>parti/milhãu</displayName>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
+			<unit type="consumption-liter-per-100kilometers">
+				<displayName>litru/100km</displayName>
+				<unitPattern count="other">{0} l/100 km</unitPattern>
+			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mpg</displayName>
 				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>milha/gal imp.</displayName>
+				<unitPattern count="other">{0} mpg imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -2776,21 +2880,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>b</displayName>
 				<unitPattern count="other">{0} b</unitPattern>
 			</unit>
+			<unit type="duration-century">
+				<displayName>sék.</displayName>
+				<unitPattern count="other">{0} sék.</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>anu</displayName>
 				<unitPattern count="other">{0} anu</unitPattern>
+				<perUnitPattern>{0}/anu</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>mes</displayName>
 				<unitPattern count="other">{0} mes</unitPattern>
+				<perUnitPattern>{0}/mes</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>sim.</displayName>
 				<unitPattern count="other">{0} sim.</unitPattern>
+				<perUnitPattern>{0}/sim.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>dia</displayName>
 				<unitPattern count="other">{0} dia</unitPattern>
+				<perUnitPattern>{0}/dia</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ora</displayName>
@@ -2800,6 +2912,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-minute">
 				<displayName>min.</displayName>
 				<unitPattern count="other">{0} min.</unitPattern>
+				<perUnitPattern>{0}/min.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sig.</displayName>
@@ -2873,10 +2986,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
 				<unitPattern count="other">{0} km</unitPattern>
+				<perUnitPattern>{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
 				<unitPattern count="other">{0} m</unitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>dm</displayName>
@@ -2885,6 +3000,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-centimeter">
 				<displayName>cm</displayName>
 				<unitPattern count="other">{0} cm</unitPattern>
+				<perUnitPattern>{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
@@ -2911,12 +3027,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName>pé</displayName>
-				<unitPattern count="other">{0} pé</unitPattern>
+				<displayName>pe</displayName>
+				<unitPattern count="other">{0} pe</unitPattern>
+				<perUnitPattern>{0}/pe</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>in</displayName>
 				<unitPattern count="other">{0} in</unitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>pc</displayName>
@@ -2933,6 +3051,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="length-nautical-mile">
 				<displayName>nmi</displayName>
 				<unitPattern count="other">{0} nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>smi</displayName>
+				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -3114,6 +3236,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="consumption-liter-per-100kilometers">
+				<displayName>l/100km</displayName>
+				<unitPattern count="other">{0} l/100km</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>anu</displayName>
 				<unitPattern count="other">{0} anu</unitPattern>
@@ -3136,7 +3262,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="duration-minute">
 				<displayName>min.</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} min.</unitPattern>
+				<unitPattern count="other">{0} min.</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sig.</displayName>
@@ -3221,4 +3347,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

@@ -31,7 +31,7 @@ SRC#
 
 
 AC_PREREQ([2.69])
-AC_INIT(OpenJDK, jdk9, build-dev@openjdk.java.net,,http://openjdk.java.net)
+AC_INIT(OpenJDK, openjdk, build-dev@openjdk.java.net,,http://openjdk.java.net)
 
 AC_CONFIG_AUX_DIR([$TOPDIR/make/autoconf/build-aux])
 m4_include([build-aux/pkg.m4])
@@ -232,6 +232,7 @@ HOTSPOT_SETUP_JVM_FEATURES
 JDKOPT_DETECT_INTREE_EC
 JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER
 JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST
+JDKOPT_EXCLUDE_TRANSLATIONS
 
 ###############################################################################
 #

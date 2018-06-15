@@ -39,7 +39,6 @@ tier1_part2 = \
     -java/util/Arrays/TimSortStackSize2.java
 
 tier1_part3 = \
-    :build_sanity \
     :jdk_math \
     :jdk_svc_sanity \
     java/nio/Buffer \
@@ -76,6 +75,7 @@ tier2_part3 = \
     :jdk_net
 
 tier3 = \
+    :build \
     :jdk_rmi \
     :jdk_beans \
     :jdk_imageio \
@@ -88,8 +88,8 @@ tier3 = \
 #
 
 # Build source checking
-build_sanity = \
-    sanity/releaseFile
+build = \
+    build
 
 # java.lang package and VM runtime support
 jdk_lang = \

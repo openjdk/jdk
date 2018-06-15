@@ -715,19 +715,23 @@ public class AnnotationParser {
                                           ConstantPool constPool,
                                           Class<?> container) {
         Object[] result = new Class<?>[length];
-        boolean typeMismatch = false;
-        int tag = 0;
+        Object exceptionProxy = null;
 
         for (int i = 0; i < length; i++) {
-            tag = buf.get();
+            int tag = buf.get();
             if (tag == 'c') {
-                result[i] = parseClassValue(buf, constPool, container);
+                Object value = parseClassValue(buf, constPool, container);
+                if (value instanceof ExceptionProxy) {
+                    if (exceptionProxy == null) exceptionProxy = (ExceptionProxy) value;
+                } else {
+                    result[i] = value;
+                }
             } else {
                 skipMemberValue(tag, buf);
-                typeMismatch = true;
+                if (exceptionProxy == null) exceptionProxy = exceptionProxy(tag);
             }
         }
-        return typeMismatch ? exceptionProxy(tag) : result;
+        return (exceptionProxy != null) ? exceptionProxy : result;
     }
 
     private static Object parseEnumArray(int length, Class<? extends Enum<?>> enumType,
@@ -735,19 +739,23 @@ public class AnnotationParser {
                                          ConstantPool constPool,
                                          Class<?> container) {
         Object[] result = (Object[]) Array.newInstance(enumType, length);
-        boolean typeMismatch = false;
-        int tag = 0;
+        Object exceptionProxy = null;
 
         for (int i = 0; i < length; i++) {
-            tag = buf.get();
+            int tag = buf.get();
             if (tag == 'e') {
-                result[i] = parseEnumValue(enumType, buf, constPool, container);
+                Object value = parseEnumValue(enumType, buf, constPool, container);
+                if (value instanceof ExceptionProxy) {
+                    if (exceptionProxy == null) exceptionProxy = (ExceptionProxy) value;
+                } else {
+                    result[i] = value;
+                }
             } else {
                 skipMemberValue(tag, buf);
-                typeMismatch = true;
+                if (exceptionProxy == null) exceptionProxy = exceptionProxy(tag);
             }
         }
-        return typeMismatch ? exceptionProxy(tag) : result;
+        return (exceptionProxy != null) ? exceptionProxy : result;
     }
 
     private static Object parseAnnotationArray(int length,
@@ -756,19 +764,23 @@ public class AnnotationParser {
                                                ConstantPool constPool,
                                                Class<?> container) {
         Object[] result = (Object[]) Array.newInstance(annotationType, length);
-        boolean typeMismatch = false;
-        int tag = 0;
+        Object exceptionProxy = null;
 
         for (int i = 0; i < length; i++) {
-            tag = buf.get();
+            int tag = buf.get();
             if (tag == '@') {
-                result[i] = parseAnnotation(buf, constPool, container, true);
+                Object value = parseAnnotation(buf, constPool, container, true);
+                if (value instanceof ExceptionProxy) {
+                    if (exceptionProxy == null) exceptionProxy = (ExceptionProxy) value;
+                } else {
+                    result[i] = value;
+                }
             } else {
                 skipMemberValue(tag, buf);
-                typeMismatch = true;
+                if (exceptionProxy == null) exceptionProxy = exceptionProxy(tag);
             }
         }
-        return typeMismatch ? exceptionProxy(tag) : result;
+        return (exceptionProxy != null) ? exceptionProxy : result;
     }
 
     /**

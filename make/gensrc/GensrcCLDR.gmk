@@ -23,7 +23,7 @@
 # questions.
 #
 
-CLDRVERSION := 29.0.0
+CLDRVERSION := 33
 CLDRSRCDIR := $(TOPDIR)/src/jdk.localedata/share/classes/sun/util/cldr/resources/common
 
 GENSRC_BASEDIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base

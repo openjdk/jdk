@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="sbp"/>
 	</identity>
 	<localeDisplayNames>
@@ -288,6 +289,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p s t u v w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[q r x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P S T U V W Y]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -696,6 +698,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Ihela ya Bukini</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ihela ya Molitaniya (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ihela ya Molitaniya</displayName>
 			</currency>
 			<currency type="MUR">
@@ -735,6 +740,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Ihela ya Somaliya</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Ihela ya Sao Tome ni Pilinsipe (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Ihela ya Sao Tome ni Pilinsipe</displayName>
 			</currency>
 			<currency type="SZL">
@@ -780,4 +788,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

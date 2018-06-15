@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="te"/>
 	</identity>
 	<localeDisplayNames>
@@ -23,7 +26,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ada">అడాంగ్మే</language>
 			<language type="ady">అడిగాబ్జే</language>
 			<language type="ae">అవేస్టాన్</language>
-			<language type="aeb" draft="unconfirmed">టునీషియా అరబిక్</language>
+			<language type="aeb">టునీషియా అరబిక్</language>
 			<language type="af">ఆఫ్రికాన్స్</language>
 			<language type="afh">అఫ్రిహిలి</language>
 			<language type="agq">అగేమ్</language>
@@ -34,18 +37,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="alt">దక్షిణ ఆల్టై</language>
 			<language type="am">అమ్హారిక్</language>
 			<language type="an">అరగోనిస్</language>
-			<language type="ang">ప్రాచీన ఆగ్లం</language>
+			<language type="ang">ప్రాచీన ఆంగ్లం</language>
 			<language type="anp">ఆంగిక</language>
 			<language type="ar">అరబిక్</language>
 			<language type="ar_001">ఆధునిక ప్రామాణిక అరబిక్</language>
 			<language type="arc">అరామేక్</language>
-			<language type="arn">అరౌకేనియన్</language>
+			<language type="arn">మపుచే</language>
 			<language type="arp">అరాపాహో</language>
 			<language type="arw">అరావాక్</language>
-			<language type="arz" draft="unconfirmed">ఈజిప్ట్ అరబిక్</language>
-			<language type="as">అస్సామీ</language>
+			<language type="arz">ఈజిప్షియన్ అరబిక్</language>
+			<language type="as">అస్సామీస్</language>
 			<language type="asa">అసు</language>
-			<language type="ast">అస్టురియాన్</language>
+			<language type="ast">ఆస్టూరియన్</language>
 			<language type="av">అవారిక్</language>
 			<language type="awa">అవధి</language>
 			<language type="ay">ఐమారా</language>
@@ -55,61 +58,62 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bal">బాలుచి</language>
 			<language type="ban">బాలినీస్</language>
 			<language type="bas">బసా</language>
-			<language type="be">బెలరుశియన్</language>
+			<language type="be">బెలరుషియన్</language>
 			<language type="bej">బేజా</language>
 			<language type="bem">బెంబా</language>
-			<language type="bez">బీనా</language>
+			<language type="bez">బెనా</language>
 			<language type="bg">బల్గేరియన్</language>
 			<language type="bgn">పశ్చిమ బలూచీ</language>
-			<language type="bho">భోజ్ పూరి</language>
+			<language type="bho">భోజ్‌పురి</language>
 			<language type="bi">బిస్లామా</language>
 			<language type="bik">బికోల్</language>
 			<language type="bin">బిని</language>
-			<language type="bla">సిక్ సికా</language>
+			<language type="bla">సిక్సికా</language>
 			<language type="bm">బంబారా</language>
-			<language type="bn">బెంగాలీ</language>
+			<language type="bn">బాంగ్లా</language>
 			<language type="bo">టిబెటన్</language>
-			<language type="bpy" draft="unconfirmed">బిష్ణుప్రియ</language>
+			<language type="bpy">బిష్ణుప్రియ</language>
 			<language type="br">బ్రెటన్</language>
 			<language type="bra">బ్రాజ్</language>
 			<language type="brx">బోడో</language>
 			<language type="bs">బోస్నియన్</language>
 			<language type="bua">బురియట్</language>
-			<language type="bug">బ్యుగినిస్</language>
+			<language type="bug">బుగినీస్</language>
 			<language type="byn">బ్లిన్</language>
-			<language type="ca">కెటలాన్</language>
+			<language type="ca">కాటలాన్</language>
 			<language type="cad">కేడ్డో</language>
 			<language type="car">కేరిబ్</language>
 			<language type="cch">అట్సామ్</language>
 			<language type="ce">చెచెన్</language>
-			<language type="ceb">సేబుఆనో</language>
+			<language type="ceb">సెబుయానో</language>
 			<language type="cgg">ఛిగా</language>
 			<language type="ch">చమర్రో</language>
 			<language type="chb">చిబ్చా</language>
 			<language type="chg">చాగటై</language>
-			<language type="chk">చూకిస్</language>
+			<language type="chk">చూకీస్</language>
 			<language type="chm">మారి</language>
 			<language type="chn">చినూక్ జార్గన్</language>
-			<language type="cho">చొచ్కతావ్</language>
+			<language type="cho">చక్టా</language>
 			<language type="chp">చిపెవ్యాన్</language>
 			<language type="chr">చెరోకీ</language>
 			<language type="chy">చేయేన్</language>
-			<language type="ckb">సెంట్రల్ కుర్దిష్</language>
+			<language type="ckb">సెంట్రల్ కర్డిష్</language>
 			<language type="co">కోర్సికన్</language>
 			<language type="cop">కోప్టిక్</language>
 			<language type="cr">క్రి</language>
 			<language type="crh">క్రిమియన్ టర్కిష్</language>
+			<language type="crs">సెసేల్వా క్రియోల్ ఫ్రెంచ్</language>
 			<language type="cs">చెక్</language>
 			<language type="csb">కషుబియన్</language>
-			<language type="cu">చర్చ స్లావిక్</language>
+			<language type="cu">చర్చ్ స్లావిక్</language>
 			<language type="cv">చువాష్</language>
 			<language type="cy">వెల్ష్</language>
-			<language type="da">డేనిష్</language>
+			<language type="da">డానిష్</language>
 			<language type="dak">డకోటా</language>
 			<language type="dar">డార్గ్వా</language>
 			<language type="dav">టైటా</language>
 			<language type="de">జర్మన్</language>
-			<language type="de_AT">ఆస్ట్రేలియన్ జర్మన్</language>
+			<language type="de_AT">ఆస్ట్రియన్ జర్మన్</language>
 			<language type="de_CH">స్విస్ హై జర్మన్</language>
 			<language type="del">డెలావేర్</language>
 			<language type="den">స్లేవ్</language>
@@ -117,17 +121,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="din">డింకా</language>
 			<language type="dje">జార్మా</language>
 			<language type="doi">డోగ్రి</language>
-			<language type="dsb">లోవర్ సోర్బియన్</language>
-			<language type="dua">దుఆలా</language>
+			<language type="dsb">లోయర్ సోర్బియన్</language>
+			<language type="dua">డ్యూలా</language>
 			<language type="dum">మధ్యమ డచ్</language>
 			<language type="dv">దివేహి</language>
 			<language type="dyo">జోలా-ఫోనయి</language>
 			<language type="dyu">డ్యులా</language>
-			<language type="dz">జొన్ఖా</language>
+			<language type="dz">జోంఖా</language>
+			<language type="dzg">డాజాగా</language>
 			<language type="ebu">ఇంబు</language>
-			<language type="ee">ఈవీ</language>
+			<language type="ee">యూ</language>
 			<language type="efi">ఎఫిక్</language>
-			<language type="egy">ప్రాచీన ఇజిప్షియన్</language>
+			<language type="egy">ప్రాచీన ఈజిప్షియన్</language>
 			<language type="eka">ఏకాజక్</language>
 			<language type="el">గ్రీక్</language>
 			<language type="elx">ఎలామైట్</language>
@@ -139,13 +144,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="en_US">అమెరికన్ ఇంగ్లీష్</language>
 			<language type="en_US" alt="short">యు.ఎస్. ఇంగ్లీష్</language>
 			<language type="enm">మధ్యమ ఆంగ్లం</language>
-			<language type="eo">ఎస్పరెన్టొ</language>
+			<language type="eo">ఎస్పెరాంటో</language>
 			<language type="es">స్పానిష్</language>
-			<language type="es_419">లాటిన్ అమెరికెన్ స్పానిష్</language>
+			<language type="es_419">లాటిన్ అమెరికన్ స్పానిష్</language>
 			<language type="es_ES">యూరోపియన్ స్పానిష్</language>
 			<language type="es_MX">మెక్సికన్ స్పానిష్</language>
-			<language type="et">ఈస్టొనియన్</language>
-			<language type="eu">బాస్క్</language>
+			<language type="et">ఎస్టోనియన్</language>
+			<language type="eu">బాస్క్యూ</language>
 			<language type="ewo">ఎవోండొ</language>
 			<language type="fa">పర్షియన్</language>
 			<language type="fan">ఫాంగ్</language>
@@ -159,8 +164,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="fr">ఫ్రెంచ్</language>
 			<language type="fr_CA">కెనడియెన్ ఫ్రెంచ్</language>
 			<language type="fr_CH">స్విస్ ఫ్రెంచ్</language>
+			<language type="frc" draft="contributed">కాజున్ ఫ్రెంచ్</language>
 			<language type="frm">మధ్యమ ప్రెంచ్</language>
-			<language type="fro">ప్రాచీన ప్రెంచ్</language>
+			<language type="fro">ప్రాచీన ఫ్రెంచ్</language>
 			<language type="frr">ఉత్తర ఫ్రిసియన్</language>
 			<language type="frs">తూర్పు ఫ్రిసియన్</language>
 			<language type="fur">ఫ్రియులియన్</language>
@@ -168,14 +174,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ga">ఐరిష్</language>
 			<language type="gaa">గా</language>
 			<language type="gag">గాగౌజ్</language>
+			<language type="gan">గాన్ చైనీస్</language>
 			<language type="gay">గాయో</language>
 			<language type="gba">గ్బాయా</language>
 			<language type="gd">స్కాటిష్ గేలిక్</language>
 			<language type="gez">జీజ్</language>
 			<language type="gil">గిల్బర్టీస్</language>
-			<language type="gl">గెలిషియన్</language>
+			<language type="gl">గాలిషియన్</language>
 			<language type="gmh">మధ్యమ హై జర్మన్</language>
-			<language type="gn">గురాని</language>
+			<language type="gn">గ్వారనీ</language>
 			<language type="goh">ప్రాచీన హై జర్మన్</language>
 			<language type="gon">గోండి</language>
 			<language type="gor">గోరోంటలా</language>
@@ -185,39 +192,41 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="gsw">స్విస్ జర్మన్</language>
 			<language type="gu">గుజరాతి</language>
 			<language type="guz">గుస్సీ</language>
-			<language type="gv">మంకస్</language>
+			<language type="gv">మాంక్స్</language>
 			<language type="gwi">గ్విచిన్</language>
 			<language type="ha">హౌసా</language>
 			<language type="hai">హైడా</language>
+			<language type="hak">హక్కా చైనీస్</language>
 			<language type="haw">హవాయియన్</language>
-			<language type="he">హీబ్రు</language>
+			<language type="he">హీబ్రూ</language>
 			<language type="hi">హిందీ</language>
-			<language type="hil">హిలి గేయినోన్</language>
+			<language type="hil">హిలిగేయినోన్</language>
 			<language type="hit">హిట్టిటే</language>
 			<language type="hmn">మోంగ్</language>
 			<language type="ho">హిరి మోటు</language>
-			<language type="hr">క్రొయెషియన్</language>
+			<language type="hr">క్రోయేషియన్</language>
 			<language type="hsb">అప్పర్ సోర్బియన్</language>
-			<language type="ht">హైతియన్</language>
-			<language type="hu">హన్గేరియన్</language>
+			<language type="hsn">జియాంగ్ చైనీస్</language>
+			<language type="ht">హైటియన్ క్రియోల్</language>
+			<language type="hu">హంగేరియన్</language>
 			<language type="hup">హుపా</language>
 			<language type="hy">ఆర్మేనియన్</language>
 			<language type="hz">హిరేరో</language>
 			<language type="ia">ఇంటర్లింగ్వా</language>
 			<language type="iba">ఐబాన్</language>
-			<language type="ibb" draft="unconfirmed">ఇబిబియో</language>
+			<language type="ibb">ఇబిబియో</language>
 			<language type="id">ఇండోనేషియన్</language>
-			<language type="ie">ఇంటర్ లింగ్</language>
+			<language type="ie">ఇంటర్లింగ్</language>
 			<language type="ig">ఇగ్బో</language>
 			<language type="ii">శిషువన్ ఈ</language>
-			<language type="ik">ఇనూపైఏక్</language>
-			<language type="ilo">ఐయోకో</language>
+			<language type="ik">ఇనుపైయాక్</language>
+			<language type="ilo">ఐలోకో</language>
 			<language type="inh">ఇంగుష్</language>
-			<language type="io">ఈడౌ</language>
+			<language type="io">ఈడో</language>
 			<language type="is">ఐస్లాండిక్</language>
 			<language type="it">ఇటాలియన్</language>
 			<language type="iu">ఇనుక్టిటుట్</language>
-			<language type="ja">జాపనీస్</language>
+			<language type="ja">జపనీస్</language>
 			<language type="jbo">లోజ్బాన్</language>
 			<language type="jgo">గోంబా</language>
 			<language type="jmc">మకొమ్</language>
@@ -243,6 +252,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ki">కికుయు</language>
 			<language type="kj">క్వాన్యామ</language>
 			<language type="kk">కజఖ్</language>
+			<language type="kkj">కాకో</language>
 			<language type="kl">కలాల్లిసూట్</language>
 			<language type="kln">కలెంజిన్</language>
 			<language type="km">ఖ్మేర్</language>
@@ -260,6 +270,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ks">కాశ్మీరి</language>
 			<language type="ksb">శంబాలా</language>
 			<language type="ksf">బాఫియ</language>
+			<language type="ksh">కొలోనియన్</language>
 			<language type="ku">కుర్దిష్</language>
 			<language type="kum">కుమ్యిక్</language>
 			<language type="kut">కుటేనై</language>
@@ -271,7 +282,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="lag">లాంగీ</language>
 			<language type="lah">లాహండా</language>
 			<language type="lam">లాంబా</language>
-			<language type="lb">లుక్సంబర్గిష్</language>
+			<language type="lb">లక్సెంబర్గిష్</language>
 			<language type="lez">లేజ్ఘియన్</language>
 			<language type="lg">గాండా</language>
 			<language type="li">లిమ్బర్గిష్</language>
@@ -279,15 +290,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ln">లింగాల</language>
 			<language type="lo">లావో</language>
 			<language type="lol">మొంగో</language>
+			<language type="lou" draft="contributed">లూసియానా క్రియోల్</language>
 			<language type="loz">లోజి</language>
 			<language type="lrc">ఉత్తర లూరీ</language>
-			<language type="lt">లిథుయేనియన్</language>
+			<language type="lt">లిథువేనియన్</language>
 			<language type="lu">లూబ-కటాంగ</language>
 			<language type="lua">లుబా-లులువ</language>
-			<language type="lui">లుఇసేనో</language>
+			<language type="lui">లుయిసెనో</language>
 			<language type="lun">లుండా</language>
 			<language type="luo">లువో</language>
-			<language type="lus">లుషై</language>
+			<language type="lus">మిజో</language>
 			<language type="luy">లుయియ</language>
 			<language type="lv">లాట్వియన్</language>
 			<language type="mad">మాదురీస్</language>
@@ -295,8 +307,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mai">మైథిలి</language>
 			<language type="mak">మకాసార్</language>
 			<language type="man">మండింగో</language>
-			<language type="mas">మాసాయి</language>
-			<language type="mdf">మొక్షా</language>
+			<language type="mas">మాసై</language>
+			<language type="mdf">మోక్ష</language>
 			<language type="mdr">మండార్</language>
 			<language type="men">మెండే</language>
 			<language type="mer">మెరు</language>
@@ -308,18 +320,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mh">మార్షలీస్</language>
 			<language type="mi">మయోరి</language>
 			<language type="mic">మికమాక్</language>
-			<language type="min">మినాంగ్కాబో</language>
+			<language type="min">మినాంగ్‌కాబో</language>
 			<language type="mk">మసడోనియన్</language>
 			<language type="ml">మలయాళం</language>
 			<language type="mn">మంగోలియన్</language>
 			<language type="mnc">మంచు</language>
-			<language type="mni">మణిపూరి</language>
-			<language type="moh">మోహుక్</language>
+			<language type="mni">మణిపురి</language>
+			<language type="moh">మోహాక్</language>
 			<language type="mos">మోస్సి</language>
 			<language type="mr">మరాఠీ</language>
-			<language type="ms">మలేయ్</language>
+			<language type="ms">మలాయ్</language>
 			<language type="mt">మాల్టీస్</language>
-			<language type="mua">ముదాంగ్</language>
+			<language type="mua">మండాంగ్</language>
 			<language type="mul">బహుళ భాషలు</language>
 			<language type="mus">క్రీక్</language>
 			<language type="mwl">మిరాండిస్</language>
@@ -328,66 +340,70 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="myv">ఎర్జియా</language>
 			<language type="mzn">మాసన్‌దెరాని</language>
 			<language type="na">నౌరు</language>
+			<language type="nan">మిన్ నాన్ చైనీస్</language>
 			<language type="nap">నియాపోలిటన్</language>
 			<language type="naq">నమ</language>
-			<language type="nb">నార్వీజియన్ బొక్మాల్</language>
+			<language type="nb">నార్వేజియన్ బొక్మాల్</language>
 			<language type="nd">ఉత్తర దెబెలె</language>
 			<language type="nds">లో జర్మన్</language>
 			<language type="nds_NL">లో సాక్సన్</language>
 			<language type="ne">నేపాలి</language>
 			<language type="new">నెవారి</language>
-			<language type="ng">దోంగా</language>
+			<language type="ng">డోంగా</language>
 			<language type="nia">నియాస్</language>
-			<language type="niu">నియూఇయాన్</language>
+			<language type="niu">నాయియన్</language>
 			<language type="nl">డచ్</language>
 			<language type="nl_BE">ఫ్లెమిష్</language>
 			<language type="nmg">క్వాసియె</language>
-			<language type="nn">నార్విజియాన్ న్యోర్స్క్</language>
-			<language type="no">నార్విజియాన్</language>
+			<language type="nn">నార్వేజియాన్ న్యోర్స్క్</language>
+			<language type="nnh">గింబూన్</language>
+			<language type="no">నార్వేజియన్</language>
 			<language type="nog">నోగై</language>
 			<language type="non">ప్రాచిన నోర్స్</language>
 			<language type="nqo">న్కో</language>
 			<language type="nr">దక్షిణ దెబెలె</language>
 			<language type="nso">ఉత్తర సోతో</language>
 			<language type="nus">న్యుర్</language>
-			<language type="nv">నవాహో</language>
-			<language type="nwc">సాంప్రదాయ న్యుఆరి</language>
+			<language type="nv">నవాజొ</language>
+			<language type="nwc">సాంప్రదాయ న్యూయారీ</language>
 			<language type="ny">న్యాన్జా</language>
 			<language type="nym">న్యంవేజి</language>
 			<language type="nyn">న్యాన్కోలె</language>
-			<language type="nyo">నిఓరో</language>
+			<language type="nyo">నేయోరో</language>
 			<language type="nzi">జీమా</language>
 			<language type="oc">ఆక్సిటన్</language>
 			<language type="oj">చేవా</language>
 			<language type="om">ఒరోమో</language>
-			<language type="or">ఒరియా</language>
+			<language type="or">ఒడియా</language>
 			<language type="os">ఒసేటిక్</language>
 			<language type="osa">ఒసాజ్</language>
 			<language type="ota">ఒట్టోమన్ టర్కిష్</language>
 			<language type="pa">పంజాబీ</language>
-			<language type="pag">పంగా సినాన్</language>
+			<language type="pag">పంగాసినాన్</language>
 			<language type="pal">పహ్లావి</language>
-			<language type="pam">పంపగ్న</language>
+			<language type="pam">పంపన్గా</language>
 			<language type="pap">పపియమేంటో</language>
-			<language type="pau">పాలుఆన్</language>
+			<language type="pau">పలావెన్</language>
+			<language type="pcm">నైజీరియా పిడ్గిన్</language>
 			<language type="peo">ప్రాచీన పర్షియన్</language>
 			<language type="phn">ఫోనికన్</language>
 			<language type="pi">పాలీ</language>
 			<language type="pl">పోలిష్</language>
 			<language type="pon">పోహ్న్పెయన్</language>
+			<language type="prg">ప్రష్యన్</language>
 			<language type="pro">ప్రాచీన ప్రోవెంసాల్</language>
 			<language type="ps">పాష్టో</language>
 			<language type="ps" alt="variant">పుష్టో</language>
 			<language type="pt">పోర్చుగీస్</language>
 			<language type="pt_BR">బ్రెజీలియన్ పోర్చుగీస్</language>
 			<language type="pt_PT">యూరోపియన్ పోర్చుగీస్</language>
-			<language type="qu">కెషుయా</language>
+			<language type="qu">కెచువా</language>
 			<language type="quc">కిచే</language>
-			<language type="raj">రాజస్తాని</language>
+			<language type="raj">రాజస్తానీ</language>
 			<language type="rap">రాపన్యుయి</language>
 			<language type="rar">రారోటొంగాన్</language>
 			<language type="rm">రోమన్ష్</language>
-			<language type="rn">రండి</language>
+			<language type="rn">రుండి</language>
 			<language type="ro">రోమానియన్</language>
 			<language type="ro_MD">మొల్డావియన్</language>
 			<language type="rof">రోంబో</language>
@@ -399,11 +415,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="rwk">ర్వా</language>
 			<language type="sa">సంస్కృతం</language>
 			<language type="sad">సండావి</language>
-			<language type="sah">యాకుట్</language>
+			<language type="sah">సఖా</language>
 			<language type="sam">సమారిటన్ అరమేక్</language>
 			<language type="saq">సంబురు</language>
 			<language type="sas">ససక్</language>
 			<language type="sat">సంటాలి</language>
+			<language type="sba">గాంబే</language>
 			<language type="sbp">సాంగు</language>
 			<language type="sc">సార్డీనియన్</language>
 			<language type="scn">సిసిలియన్</language>
@@ -422,7 +439,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="si">సింహళం</language>
 			<language type="sid">సిడామో</language>
 			<language type="sk">స్లోవాక్</language>
-			<language type="sl">స్లోవేనియాన్</language>
+			<language type="sl">స్లోవేనియన్</language>
 			<language type="sm">సమోవన్</language>
 			<language type="sma">దక్షిణ సామి</language>
 			<language type="smj">లులే సామి</language>
@@ -434,11 +451,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sog">సోగ్డియన్</language>
 			<language type="sq">అల్బేనియన్</language>
 			<language type="sr">సెర్బియన్</language>
-			<language type="srn">స్రానన్ టోనగో</language>
+			<language type="srn">స్రానన్ టోంగో</language>
 			<language type="srr">సెరేర్</language>
 			<language type="ss">స్వాతి</language>
+			<language type="ssy">సాహో</language>
 			<language type="st">దక్షిణ సోతో</language>
-			<language type="su">సుడానీస్</language>
+			<language type="su">సండానీస్</language>
 			<language type="suk">సుకుమా</language>
 			<language type="sus">సుసు</language>
 			<language type="sux">సుమేరియాన్</language>
@@ -449,9 +467,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="syc">సాంప్రదాయ సిరియాక్</language>
 			<language type="syr">సిరియాక్</language>
 			<language type="ta">తమిళము</language>
-			<language type="tcy" draft="unconfirmed">తుళు</language>
+			<language type="tcy">తుళు</language>
 			<language type="te">తెలుగు</language>
-			<language type="tem">టింనే</language>
+			<language type="tem">టిమ్నే</language>
 			<language type="teo">టెసో</language>
 			<language type="ter">టెరెనో</language>
 			<language type="tet">టేటం</language>
@@ -460,17 +478,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ti">తిగ్రిన్యా</language>
 			<language type="tig">టీగ్రె</language>
 			<language type="tiv">టివ్</language>
-			<language type="tk">తుర్కమెన్</language>
+			<language type="tk">తుర్క్‌మెన్</language>
 			<language type="tkl">టోకెలావ్</language>
-			<language type="tl">తగలోగ్</language>
+			<language type="tl">టగలాగ్</language>
 			<language type="tlh">క్లింగాన్</language>
-			<language type="tli">లింగిట్</language>
+			<language type="tli">ట్లింగిట్</language>
 			<language type="tmh">టామషేక్</language>
-			<language type="tn">సెటస్వానా</language>
+			<language type="tn">స్వానా</language>
 			<language type="to">టాంగాన్</language>
 			<language type="tog">న్యాసా టోన్గా</language>
 			<language type="tpi">టోక్ పిసిన్</language>
 			<language type="tr">టర్కిష్</language>
+			<language type="trv">తరోకో</language>
 			<language type="ts">సోంగా</language>
 			<language type="tsi">శింషీయన్</language>
 			<language type="tt">టాటర్</language>
@@ -496,16 +515,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="vot">వోటిక్</language>
 			<language type="vun">వుంజొ</language>
 			<language type="wa">వాలూన్</language>
-			<language type="wal">వాలామో</language>
+			<language type="wae">వాల్సర్</language>
+			<language type="wal">వాలేట్టా</language>
 			<language type="war">వారే</language>
 			<language type="was">వాషో</language>
 			<language type="wbp">వార్లపిరి</language>
 			<language type="wo">వొలాఫ్</language>
+			<language type="wuu">వు చైనీస్</language>
 			<language type="xal">కల్మిక్</language>
 			<language type="xh">షోసా</language>
 			<language type="xog">సొగా</language>
-			<language type="yao">యాఒ</language>
+			<language type="yao">యాయే</language>
 			<language type="yap">యాపిస్</language>
+			<language type="yav">యాంగ్‌బెన్</language>
+			<language type="ybb">యెంబా</language>
 			<language type="yi">ఇడ్డిష్</language>
 			<language type="yo">యోరుబా</language>
 			<language type="yue">కాంటనీస్</language>
@@ -513,7 +536,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zap">జపోటెక్</language>
 			<language type="zbl">బ్లిసింబల్స్</language>
 			<language type="zen">జెనాగా</language>
-			<language type="zgh">ప్రామాణిక మొరొకన్ తమజియట్</language>
+			<language type="zgh">ప్రామాణిక మొరొకన్ టామజైట్</language>
 			<language type="zh">చైనీస్</language>
 			<language type="zh_Hans">సరళీకృత చైనీస్</language>
 			<language type="zh_Hant">సాంప్రదాయక చైనీస్</language>
@@ -530,7 +553,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Avst">అవేస్టాన్</script>
 			<script type="Bali">బాలినీస్</script>
 			<script type="Batk">బాటక్</script>
-			<script type="Beng">బెంగాలి</script>
+			<script type="Beng">బాంగ్లా</script>
 			<script type="Blis">బ్లిస్సింబల్స్</script>
 			<script type="Bopo">బోపోమోఫో</script>
 			<script type="Brah">బ్రాహ్మి</script>
@@ -560,6 +583,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">గ్రీక్</script>
 			<script type="Gujr">గుజరాతీ</script>
 			<script type="Guru">గుర్ముఖి</script>
+			<script type="Hanb">హాన్బ్</script>
 			<script type="Hang">హంగుల్</script>
 			<script type="Hani">హాన్</script>
 			<script type="Hano">హనునూ</script>
@@ -570,10 +594,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hebr">హీబ్రు</script>
 			<script type="Hira">హిరాగాన</script>
 			<script type="Hmng">పాహవా హ్మోంగ్</script>
-			<script type="Hrkt">కాటాకాన లేదా హిరాగన</script>
+			<script type="Hrkt">జపనీస్ సిలబెరీస్</script>
 			<script type="Hung">ప్రాచీన హంగేరియన్</script>
 			<script type="Inds">సింధు</script>
 			<script type="Ital">ప్రాచిన ఐటాలిక్</script>
+			<script type="Jamo">జమో</script>
 			<script type="Java">జావనీస్</script>
 			<script type="Jpan">జాపనీస్</script>
 			<script type="Kali">కాయాహ్ లి</script>
@@ -607,7 +632,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Ogam">ఒఘమ్</script>
 			<script type="Olck">ఓల్ చికి</script>
 			<script type="Orkh">ఓర్ఖోన్</script>
-			<script type="Orya">ఒరియా</script>
+			<script type="Orya">ఒడియా</script>
 			<script type="Osma">ఓసమాన్య</script>
 			<script type="Perm">ప్రాచీన పెర్మిక్</script>
 			<script type="Phag">ఫాగ్స్-పా</script>
@@ -652,6 +677,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii">యి</script>
 			<script type="Zinh">వారసత్వం</script>
 			<script type="Zmth">గణిత సంకేతలిపి</script>
+			<script type="Zsye">ఎమోజి</script>
 			<script type="Zsym">చిహ్నాలు</script>
 			<script type="Zxxx">లిపి లేని</script>
 			<script type="Zyyy">సామాన్య</script>
@@ -662,14 +688,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="002">ఆఫ్రికా</territory>
 			<territory type="003">ఉత్తర అమెరికా</territory>
 			<territory type="005">దక్షిణ అమెరికా</territory>
-			<territory type="009">ఒషీనియ</territory>
+			<territory type="009">ఓషినియా</territory>
 			<territory type="011">పశ్చిమ ఆఫ్రికా భూభాగం</territory>
 			<territory type="013">మధ్యమ అమెరికా</territory>
 			<territory type="014">తూర్పు ఆఫ్రికా</territory>
 			<territory type="015">ఉత్తర ఆఫ్రికా</territory>
 			<territory type="017">మధ్యమ ఆఫ్రికా</territory>
 			<territory type="018">దక్షిణ ఆఫ్రికా భూభాగం</territory>
-			<territory type="019">అమెరికాలు</territory>
+			<territory type="019">అమెరికాస్</territory>
 			<territory type="021">ఉత్తర అమెరికా భూభాగం</territory>
 			<territory type="029">కరిబ్బియన్</territory>
 			<territory type="030">తూర్పు ఆసియా</territory>
@@ -687,23 +713,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">తూర్పు యూరోప్</territory>
 			<territory type="154">ఉత్తర యూరోప్</territory>
 			<territory type="155">పశ్చిమ యూరోప్</territory>
+			<territory type="202" draft="contributed">ఉప సెహరన్ ఆఫ్రికా</territory>
 			<territory type="419">లాటిన్ అమెరికా</territory>
-			<territory type="AC">ఎసెషన్ దీవి</territory>
-			<territory type="AD">అండొర్రా</territory>
+			<territory type="AC">అసెన్షన్ దీవి</territory>
+			<territory type="AD">ఆండోరా</territory>
 			<territory type="AE">యునైటెడ్ అరబ్ ఎమిరేట్స్</territory>
 			<territory type="AF">ఆఫ్ఘనిస్తాన్</territory>
 			<territory type="AG">ఆంటిగ్వా మరియు బార్బుడా</territory>
-			<territory type="AI">ఆంగవిల్లా</territory>
+			<territory type="AI">ఆంగ్విల్లా</territory>
 			<territory type="AL">అల్బేనియా</territory>
 			<territory type="AM">ఆర్మేనియా</territory>
 			<territory type="AO">అంగోలా</territory>
-			<territory type="AQ">అంటార్కటికా</territory>
+			<territory type="AQ">అంటార్కిటికా</territory>
 			<territory type="AR">అర్జెంటీనా</territory>
 			<territory type="AS">అమెరికన్ సమోవా</territory>
 			<territory type="AT">ఆస్ట్రియా</territory>
 			<territory type="AU">ఆస్ట్రేలియా</territory>
 			<territory type="AW">అరుబా</territory>
-			<territory type="AX">ఆలేండ్ దీవులు</territory>
+			<territory type="AX">ఆలాండ్ దీవులు</territory>
 			<territory type="AZ">అజర్బైజాన్</territory>
 			<territory type="BA">బోస్నియా మరియు హెర్జెగొవీనా</territory>
 			<territory type="BB">బార్బడోస్</territory>
@@ -714,9 +741,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BH">బహ్రెయిన్</territory>
 			<territory type="BI">బురుండి</territory>
 			<territory type="BJ">బెనిన్</territory>
-			<territory type="BL">సెంట్ బర్తేలెమీ</territory>
+			<territory type="BL">సెయింట్ బర్తేలెమీ</territory>
 			<territory type="BM">బెర్ముడా</territory>
-			<territory type="BN">బ్రూనై</territory>
+			<territory type="BN">బ్రూనే</territory>
 			<territory type="BO">బొలీవియా</territory>
 			<territory type="BQ">కరీబియన్ నెదర్లాండ్స్</territory>
 			<territory type="BR">బ్రెజిల్</territory>
@@ -734,7 +761,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CG">కాంగో- బ్రాజావిల్లి</territory>
 			<territory type="CG" alt="variant">కాంగో (రిపబ్లిక్)</territory>
 			<territory type="CH">స్విట్జర్లాండ్</territory>
-			<territory type="CI">ఐవరీ కోస్ట్</territory>
+			<territory type="CI">కోట్ డి ఐవోర్</territory>
+			<territory type="CI" alt="variant">ఐవరీ కోస్ట్</territory>
 			<territory type="CK">కుక్ దీవులు</territory>
 			<territory type="CL">చిలీ</territory>
 			<territory type="CM">కామెరూన్</territory>
@@ -743,19 +771,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CP">క్లిప్పర్టన్ దీవి</territory>
 			<territory type="CR">కోస్టా రికా</territory>
 			<territory type="CU">క్యూబా</territory>
-			<territory type="CV">కేప్ వెర్డే</territory>
+			<territory type="CV">కేప్ వెర్డె</territory>
 			<territory type="CW">కురాకవో</territory>
 			<territory type="CX">క్రిస్మస్ దీవి</territory>
 			<territory type="CY">సైప్రస్</territory>
-			<territory type="CZ">చెక్ రిపబ్లిక్</territory>
+			<territory type="CZ">చెకియా</territory>
+			<territory type="CZ" alt="variant">చెక్ రిపబ్లిక్</territory>
 			<territory type="DE">జర్మనీ</territory>
 			<territory type="DG">డియాగో గార్సియా</territory>
 			<territory type="DJ">జిబౌటి</territory>
 			<territory type="DK">డెన్మార్క్</territory>
-			<territory type="DM">డోమెనిక</territory>
-			<territory type="DO">డొమెనికన్ రిపబ్లిక్</territory>
+			<territory type="DM">డొమినికా</territory>
+			<territory type="DO">డొమినికన్ రిపబ్లిక్</territory>
 			<territory type="DZ">అల్జీరియా</territory>
-			<territory type="EA">స్యూటా మరియు మెలిల్లా</territory>
+			<territory type="EA">స్యూటా &amp; మెలిల్లా</territory>
 			<territory type="EC">ఈక్వడార్</territory>
 			<territory type="EE">ఎస్టోనియా</territory>
 			<territory type="EG">ఈజిప్ట్</territory>
@@ -763,31 +792,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ER">ఎరిట్రియా</territory>
 			<territory type="ES">స్పెయిన్</territory>
 			<territory type="ET">ఇథియోపియా</territory>
-			<territory type="EU">యురోపియన్ యునియన్</territory>
+			<territory type="EU">యూరోపియన్ యూనియన్</territory>
+			<territory type="EZ">యూరోజోన్</territory>
 			<territory type="FI">ఫిన్లాండ్</territory>
 			<territory type="FJ">ఫిజీ</territory>
 			<territory type="FK">ఫాక్‌ల్యాండ్ దీవులు</territory>
 			<territory type="FK" alt="variant">ఫాక్‌ల్యాండ్ దీవులు (ఇస్లాస్ మాల్వినాస్)</territory>
-			<territory type="FM">మైక్రోనేశియ</territory>
+			<territory type="FM">మైక్రోనేషియా</territory>
 			<territory type="FO">ఫారో దీవులు</territory>
 			<territory type="FR">ఫ్రాన్స్‌</territory>
 			<territory type="GA">గాబన్</territory>
 			<territory type="GB">యునైటెడ్ కింగ్‌డమ్</territory>
 			<territory type="GB" alt="short">యు.కె.</territory>
-			<territory type="GD">గ్రెనెడా</territory>
+			<territory type="GD">గ్రెనడా</territory>
 			<territory type="GE">జార్జియా</territory>
 			<territory type="GF">ఫ్రెంచ్ గియానా</territory>
-			<territory type="GG">గ్వేర్నసే</territory>
+			<territory type="GG">గర్న్‌సీ</territory>
 			<territory type="GH">ఘనా</territory>
-			<territory type="GI">జిబ్రాల్టార్</territory>
-			<territory type="GL">గ్రీన్‌లాండ్</territory>
+			<territory type="GI">జిబ్రాల్టర్</territory>
+			<territory type="GL">గ్రీన్‌ల్యాండ్</territory>
 			<territory type="GM">గాంబియా</territory>
 			<territory type="GN">గినియా</territory>
-			<territory type="GP">గ్వాడేలోప్</territory>
+			<territory type="GP">గ్వాడెలోప్</territory>
 			<territory type="GQ">ఈక్వటోరియల్ గినియా</territory>
 			<territory type="GR">గ్రీస్</territory>
 			<territory type="GS">దక్షిణ జార్జియా &amp; దక్షిణ శాండ్విచ్ దీవులు</territory>
-			<territory type="GT">గ్వాటిమాల</territory>
+			<territory type="GT">గ్వాటిమాలా</territory>
 			<territory type="GU">గ్వామ్</territory>
 			<territory type="GW">గినియా-బిస్సావ్</territory>
 			<territory type="GY">గయానా</territory>
@@ -803,8 +833,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="IE">ఐర్లాండ్</territory>
 			<territory type="IL">ఇజ్రాయిల్</territory>
 			<territory type="IM">ఐల్ ఆఫ్ మాన్</territory>
-			<territory type="IN">భారత దేశం</territory>
-			<territory type="IO">బ్రిటీష్ భారతీయ సముద్రపు ప్రాంతం</territory>
+			<territory type="IN">భారతదేశం</territory>
+			<territory type="IO">బ్రిటీష్ హిందూ మహాసముద్ర ప్రాంతం</territory>
 			<territory type="IQ">ఇరాక్</territory>
 			<territory type="IR">ఇరాన్</territory>
 			<territory type="IS">ఐస్లాండ్</territory>
@@ -818,16 +848,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KH">కంబోడియా</territory>
 			<territory type="KI">కిరిబాటి</territory>
 			<territory type="KM">కొమొరోస్</territory>
-			<territory type="KN">సెంట్ కిట్ట్స్ మరియు నెవిస్</territory>
+			<territory type="KN">సెయింట్ కిట్స్ మరియు నెవిస్</territory>
 			<territory type="KP">ఉత్తర కొరియా</territory>
 			<territory type="KR">దక్షిణ కొరియా</territory>
 			<territory type="KW">కువైట్</territory>
 			<territory type="KY">కేమాన్ దీవులు</territory>
-			<territory type="KZ">కజకస్తాన్</territory>
+			<territory type="KZ">కజకిస్తాన్</territory>
 			<territory type="LA">లావోస్</territory>
 			<territory type="LB">లెబనాన్</territory>
-			<territory type="LC">సెంట్ లూసియా</territory>
-			<territory type="LI">లిక్టెస్టేన్</territory>
+			<territory type="LC">సెయింట్ లూసియా</territory>
+			<territory type="LI">లిక్టెన్‌స్టెయిన్</territory>
 			<territory type="LK">శ్రీలంక</territory>
 			<territory type="LR">లైబీరియా</territory>
 			<territory type="LS">లెసోతో</territory>
@@ -835,11 +865,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="LU">లక్సంబర్గ్</territory>
 			<territory type="LV">లాత్వియా</territory>
 			<territory type="LY">లిబియా</territory>
-			<territory type="MA">మొరాక్కో</territory>
+			<territory type="MA">మొరాకో</territory>
 			<territory type="MC">మొనాకో</territory>
 			<territory type="MD">మోల్డోవా</territory>
-			<territory type="ME">మోంటేనేగ్రో</territory>
-			<territory type="MF">సెంట్ మార్టిన్</territory>
+			<territory type="ME">మోంటెనీగ్రో</territory>
+			<territory type="MF">సెయింట్ మార్టిన్</territory>
 			<territory type="MG">మడగాస్కర్</territory>
 			<territory type="MH">మార్షల్ దీవులు</territory>
 			<territory type="MK">మేసిడోనియా</territory>
@@ -847,12 +877,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ML">మాలి</territory>
 			<territory type="MM">మయన్మార్ (బర్మా)</territory>
 			<territory type="MN">మంగోలియా</territory>
-			<territory type="MO">మాకావ్ ఎస్ఏఆర్ చైనా</territory>
-			<territory type="MO" alt="short">మకావు</territory>
+			<territory type="MO">మకావ్ ఎస్ఏఆర్ చైనా</territory>
+			<territory type="MO" alt="short">మకావ్</territory>
 			<territory type="MP">ఉత్తర మరియానా దీవులు</territory>
-			<territory type="MQ">మార్టినిక్</territory>
+			<territory type="MQ">మార్టినీక్</territory>
 			<territory type="MR">మౌరిటేనియా</territory>
-			<territory type="MS">మోంట్సేర్రాట్</territory>
+			<territory type="MS">మాంట్సెరాట్</territory>
 			<territory type="MT">మాల్టా</territory>
 			<territory type="MU">మారిషస్</territory>
 			<territory type="MV">మాల్దీవులు</territory>
@@ -863,32 +893,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="NA">నమీబియా</territory>
 			<territory type="NC">క్రొత్త కాలెడోనియా</territory>
 			<territory type="NE">నైజర్</territory>
-			<territory type="NF">నార్ఫాక్ దీవి</territory>
+			<territory type="NF">నార్ఫోక్ దీవి</territory>
 			<territory type="NG">నైజీరియా</territory>
 			<territory type="NI">నికరాగువా</territory>
 			<territory type="NL">నెదర్లాండ్స్</territory>
 			<territory type="NO">నార్వే</territory>
 			<territory type="NP">నేపాల్</territory>
 			<territory type="NR">నౌరు</territory>
-			<territory type="NU">నియు</territory>
+			<territory type="NU">నియూ</territory>
 			<territory type="NZ">న్యూజిలాండ్</territory>
 			<territory type="OM">ఒమన్</territory>
 			<territory type="PA">పనామా</territory>
 			<territory type="PE">పెరూ</territory>
-			<territory type="PF">ఫ్రెంచ్ పోలినిషియా</territory>
-			<territory type="PG">పాపువా న్యు గినియా</territory>
-			<territory type="PH">ఫిలిప్పీన్స్</territory>
+			<territory type="PF">ఫ్రెంచ్ పోలినీషియా</territory>
+			<territory type="PG">పాపువా న్యూ గినియా</territory>
+			<territory type="PH">ఫిలిప్పైన్స్</territory>
 			<territory type="PK">పాకిస్తాన్</territory>
 			<territory type="PL">పోలాండ్</territory>
-			<territory type="PM">సెంట్ పియెర్ మరియు మికెలాన్</territory>
+			<territory type="PM">సెయింట్ పియెర్ మరియు మికెలాన్</territory>
 			<territory type="PN">పిట్‌కెయిర్న్ దీవులు</territory>
-			<territory type="PR">ఫ్యూర్టో రికో</territory>
+			<territory type="PR">ప్యూర్టో రికో</territory>
 			<territory type="PS">పాలస్తీనియన్ ప్రాంతాలు</territory>
 			<territory type="PS" alt="short">పాలస్తీనా</territory>
 			<territory type="PT">పోర్చుగల్</territory>
-			<territory type="PW">పలావు</territory>
+			<territory type="PW">పాలావ్</territory>
 			<territory type="PY">పరాగ్వే</territory>
-			<territory type="QA">కతర్</territory>
+			<territory type="QA">ఖతార్</territory>
 			<territory type="QO">ఒషీనియా బయటున్నవి</territory>
 			<territory type="RE">రియూనియన్</territory>
 			<territory type="RO">రోమానియా</territory>
@@ -901,34 +931,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SD">సూడాన్</territory>
 			<territory type="SE">స్వీడన్</territory>
 			<territory type="SG">సింగపూర్</territory>
-			<territory type="SH">సెంట్ హెలినా</territory>
+			<territory type="SH">సెయింట్ హెలెనా</territory>
 			<territory type="SI">స్లోవేనియా</territory>
-			<territory type="SJ">స్వాల్బార్డ్ మరియు యాన్ మాయేన్</territory>
+			<territory type="SJ">స్వాల్‌బార్డ్ &amp; జాన్ మాయెన్</territory>
 			<territory type="SK">స్లోవేకియా</territory>
 			<territory type="SL">సియెర్రా లియాన్</territory>
-			<territory type="SM">సాన్ మారినో</territory>
+			<territory type="SM">శాన్ మారినో</territory>
 			<territory type="SN">సెనెగల్</territory>
 			<territory type="SO">సోమాలియా</territory>
-			<territory type="SR">సురినామ్</territory>
+			<territory type="SR">సూరినామ్</territory>
 			<territory type="SS">దక్షిణ సూడాన్</territory>
-			<territory type="ST">సావోటోమ్ మరియు ప్రిన్సిపే</territory>
+			<territory type="ST">సావోటోమ్ &amp; ప్రిన్సిపే</territory>
 			<territory type="SV">ఎల్ సాల్వడోర్</territory>
 			<territory type="SX">సింట్ మార్టెన్</territory>
 			<territory type="SY">సిరియా</territory>
 			<territory type="SZ">స్వాజిల్యాండ్</territory>
 			<territory type="TA">ట్రిస్టన్ డ కన్హా</territory>
-			<territory type="TC">తుర్క్ మరియు కాలికోస్ దీవులు</territory>
+			<territory type="TC">టర్క్స్ &amp; కైకోస్ దీవులు</territory>
 			<territory type="TD">చాద్</territory>
 			<territory type="TF">ఫ్రెంచ్ దక్షిణ ప్రాంతాలు</territory>
 			<territory type="TG">టోగో</territory>
 			<territory type="TH">థాయిలాండ్</territory>
 			<territory type="TJ">తజికిస్తాన్</territory>
-			<territory type="TK">టోకేలావ్</territory>
+			<territory type="TK">టోకెలావ్</territory>
 			<territory type="TL">టిమోర్-లెస్టె</territory>
-			<territory type="TL" alt="variant">తూర్పు తైమూర్</territory>
-			<territory type="TM">తుర్కమేనిస్తాన్</territory>
+			<territory type="TL" alt="variant">తూర్పు టిమోర్</territory>
+			<territory type="TM">టర్క్‌మెనిస్తాన్</territory>
 			<territory type="TN">ట్యునీషియా</territory>
-			<territory type="TO">టోంగా</territory>
+			<territory type="TO">టాంగా</territory>
 			<territory type="TR">టర్కీ</territory>
 			<territory type="TT">ట్రినిడాడ్ మరియు టొబాగో</territory>
 			<territory type="TV">టువాలు</territory>
@@ -937,22 +967,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">ఉక్రెయిన్</territory>
 			<territory type="UG">ఉగాండా</territory>
 			<territory type="UM">సంయుక్త రాజ్య అమెరికా బయట ఉన్న దీవులు</territory>
-			<territory type="US">అమెరికా సంయుక్త రాష్ట్రాలు</territory>
+			<territory type="UN">యునైటెడ్ నేషన్స్</territory>
+			<territory type="UN" alt="short">యు.ఎన్</territory>
+			<territory type="US">యునైటెడ్ స్టేట్స్</territory>
 			<territory type="US" alt="short">యు.ఎస్.</territory>
-			<territory type="UY">ఉరుగువే</territory>
+			<territory type="UY">ఉరుగ్వే</territory>
 			<territory type="UZ">ఉజ్బెకిస్తాన్</territory>
 			<territory type="VA">వాటికన్ నగరం</territory>
-			<territory type="VC">సెంట్ విన్సెంట్ మరియు గ్రెనడీన్స్</territory>
-			<territory type="VE">వెనుజువేలా</territory>
+			<territory type="VC">సెయింట్ విన్సెంట్ &amp; గ్రెనడీన్స్</territory>
+			<territory type="VE">వెనిజులా</territory>
 			<territory type="VG">బ్రిటిష్ వర్జిన్ దీవులు</territory>
 			<territory type="VI">యు.ఎస్. వర్జిన్ దీవులు</territory>
 			<territory type="VN">వియత్నాం</territory>
 			<territory type="VU">వనాటు</territory>
-			<territory type="WF">వాలిస్ మరియు ఫ్యుత్యునా</territory>
+			<territory type="WF">వాలిస్ &amp; ఫ్యుత్యునా</territory>
 			<territory type="WS">సమోవా</territory>
 			<territory type="XK">కొసోవో</territory>
 			<territory type="YE">యెమెన్</territory>
-			<territory type="YT">మాయొట్టి</territory>
+			<territory type="YT">మాయొట్</territory>
 			<territory type="ZA">దక్షిణ ఆఫ్రికా</territory>
 			<territory type="ZM">జాంబియా</territory>
 			<territory type="ZW">జింబాబ్వే</territory>
@@ -970,11 +1002,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">క్యాలెండర్</key>
+			<key type="cf">కరెన్సీ ఫార్మాట్</key>
 			<key type="colAlternate">చిహ్నాలను క్రమబద్ధీకరించడాన్ని విస్మరించు</key>
 			<key type="colBackwards">వ్యతిరేక ఉచ్ఛారణ క్రమబద్ధీకరణ</key>
 			<key type="colCaseFirst">అప్పర్‌కేస్‌/లోయర్ కేస్ క్రమం</key>
 			<key type="colCaseLevel">కేస్ సెన్సిటివ్ క్రమబద్ధీకరణ</key>
-			<key type="colHiraganaQuaternary">కానా క్రమబద్ధీకరణ</key>
 			<key type="collation">క్రమబద్ధీకరణ క్రమం</key>
 			<key type="colNormalization">సాధారణీకరించిన క్రమబద్ధీకరణ</key>
 			<key type="colNumeric">సంఖ్యాత్మక క్రమబద్ధీకరణ</key>
@@ -986,7 +1018,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">సంఖ్యలు</key>
 			<key type="timezone">సమయ మండలి</key>
 			<key type="va">లొకేల్ రూపాంతరం</key>
-			<key type="variableTop">చిహ్నాలుగా క్రమబద్ధీకరించు</key>
 			<key type="x">ప్రైవేట్-ఉపయోగం</key>
 		</keys>
 		<types>
@@ -994,17 +1025,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="chinese">చైనీస్ క్యాలెండర్</type>
 			<type key="calendar" type="coptic">కాప్టిక్ క్యాలెండర్</type>
 			<type key="calendar" type="dangi">దాంగీ క్యాలెండర్</type>
-			<type key="calendar" type="ethiopic">ఎపోథిక్ క్యాలెండర్</type>
+			<type key="calendar" type="ethiopic">ఎథియోపిక్ క్యాలెండర్</type>
 			<type key="calendar" type="ethiopic-amete-alem">ఎథోపిక్ అమేటే అలెమ్ క్యాలెండర్</type>
 			<type key="calendar" type="gregorian">గ్రేగోరియన్ క్యాలెండర్</type>
 			<type key="calendar" type="hebrew">హిబ్రూ క్యాలెండర్</type>
 			<type key="calendar" type="indian">భారతీయ జాతీయ క్యాలెండర్</type>
 			<type key="calendar" type="islamic">ఇస్లామిక్ క్యాలెండర్</type>
 			<type key="calendar" type="islamic-civil">ఇస్లామిక్-సివిల్ క్యాలెండర్</type>
-			<type key="calendar" type="iso8601">(ISO-8601) క్యాలెండర్</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">ఇస్లామిక్ క్యాలెండర్ (సౌదీ అరేబియా)</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">ఇస్లామిక్ క్యాలెండర్</type>
+			<type key="calendar" type="islamic-umalqura" draft="contributed">ఇస్లామిక్ క్యాలెండర్ (ఉమ్ అల్-ఖురా)</type>
+			<type key="calendar" type="iso8601">ISO-8601 క్యాలెండర్</type>
 			<type key="calendar" type="japanese">జపానీయుల క్యాలెండర్</type>
 			<type key="calendar" type="persian">పర్షియన్ క్యాలెండర్</type>
 			<type key="calendar" type="roc">మింగ్యూ క్యాలెండర్</type>
+			<type key="cf" type="account">అకౌంటింగ్ కరెన్సీ ఫార్మాట్</type>
+			<type key="cf" type="standard">ప్రామాణిక కరెన్సీ ఫార్మాట్</type>
 			<type key="colAlternate" type="non-ignorable">చిహ్నాలను క్రమబద్ధీకరించు</type>
 			<type key="colAlternate" type="shifted">చిహ్నాలను విస్మరించడాన్ని క్రమబద్ధీకరించు</type>
 			<type key="colBackwards" type="no">ఉచ్ఛారణలను సాధారణంగా క్రమబద్ధీకరించు</type>
@@ -1014,11 +1050,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper">ముందు అప్పర్‌కేస్‌ని క్రమబద్ధీకరించు</type>
 			<type key="colCaseLevel" type="no">కేస్ ఇన్‌సెన్సిటివ్‌ను క్రమబద్ధీకరించు</type>
 			<type key="colCaseLevel" type="yes">కేస్ సెన్సిటివ్‌ని క్రమబద్ధీకరించు</type>
-			<type key="colHiraganaQuaternary" type="no">కానాను వేరుగా క్రమబద్ధీకరించు</type>
-			<type key="colHiraganaQuaternary" type="yes">కానాని భిన్నంగా క్రమబద్ధీకరించు</type>
 			<type key="collation" type="big5han">సాంప్రదాయ చైనీస్ క్రమబద్ధీకరణ క్రమం - Big5</type>
+			<type key="collation" type="compat" draft="contributed">మునుపటి క్రమబద్ధీకరణ క్రమం, అనుకూలం</type>
 			<type key="collation" type="dictionary">నిఘంటువు క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="ducet">డిఫాల్ట్ యూనీకోడ్ క్రమబద్ధీకరణ క్రమం</type>
+			<type key="collation" type="eor" draft="contributed">యురోపియన్ క్రమబద్ధీకరణ నిబంధనలు</type>
 			<type key="collation" type="gb2312han">సరళీకృత చైనీస్ క్రమబద్ధీకరణ క్రమం - GB2312</type>
 			<type key="collation" type="phonebook">ఫోన్‌బుక్ క్రమబద్ధీకరణ క్రమం</type>
 			<type key="collation" type="phonetic">ధ్వని ఉచ్ఛారిత క్రమబద్ధీకరణ క్రమం</type>
@@ -1039,20 +1075,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary">ఉచ్ఛారణలు/కేస్‌/వెడల్పు/కానాను క్రమబద్ధీకరించు</type>
 			<type key="colStrength" type="secondary">ఉచ్ఛారణలని క్రమబద్ధీకరించు</type>
 			<type key="colStrength" type="tertiary">ఉచ్ఛారణలని/కేస్‌ని/వెడల్పుని క్రమబద్ధీకరించు</type>
+			<type key="d0" type="fwidth">పూర్తి వెడల్పు</type>
+			<type key="d0" type="hwidth">సగం వెడల్పు</type>
+			<type key="d0" type="npinyin">సంఖ్య</type>
 			<type key="hc" type="h11">12 గంటల పద్ధతి (0–11)</type>
 			<type key="hc" type="h12">12 గంటల పద్ధతి (1–12)</type>
 			<type key="hc" type="h23">24 గంటల పద్ధతి (0–23)</type>
 			<type key="hc" type="h24">24 గంటల పద్ధతి (1–24)</type>
-			<type key="lb" type="loose">వదులు లైన్ బ్రేక్ శైలి</type>
+			<type key="lb" type="loose">అపక్రమ లైన్ బ్రేక్ శైలి</type>
 			<type key="lb" type="normal">సాధారణ లైన్ బ్రేక్ శైలి</type>
-			<type key="lb" type="strict">కఠిన లైన్ బ్రేక్ శైలి</type>
+			<type key="lb" type="strict">క్రమ లైన్ బ్రేక్ శైలి</type>
+			<type key="m0" type="bgn">US BGN ట్రాన్స్‌లిట్రేషన్</type>
+			<type key="m0" type="ungegn">UN GEGN ట్రాన్స్‌లిట్రేషన్</type>
 			<type key="ms" type="metric">మెట్రిక్ పద్ధతి</type>
 			<type key="ms" type="uksystem">ఇంపీరియల్ కొలమాన పద్ధతి</type>
 			<type key="ms" type="ussystem">యు.ఎస్. కొలమాన పద్ధతి</type>
 			<type key="numbers" type="arab">అరబిక్-ఇండిక్ అంకెలు</type>
 			<type key="numbers" type="arabext">పొడిగించబడిన అరబిక్-ఇండిక్ అంకెలు</type>
-			<type key="numbers" type="armn">అమెరికా సంఖ్యలు</type>
-			<type key="numbers" type="armnlow">అమెరికన్ చిన్న సంఖ్యలు</type>
+			<type key="numbers" type="armn">ఆర్మేనియన్ సంఖ్యలు</type>
+			<type key="numbers" type="armnlow">ఆర్మేనియన్ చిన్నబడి సంఖ్యలు</type>
 			<type key="numbers" type="beng">బెంగాలీ అంకెలు</type>
 			<type key="numbers" type="deva">దేవనాగరి అంకెలు</type>
 			<type key="numbers" type="ethi">ఎథియోపిక్ సంఖ్యలు</type>
@@ -1060,12 +1101,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="fullwide">పూర్తి వెడల్పు అంకెలు</type>
 			<type key="numbers" type="geor">జార్జియన్ సంఖ్యలు</type>
 			<type key="numbers" type="grek">గ్రీక్ సంఖ్యలు</type>
-			<type key="numbers" type="greklow">గ్రీక్ చిన్న సంఖ్యలు</type>
+			<type key="numbers" type="greklow">గ్రీక్ చిన్నబడి సంఖ్యలు</type>
 			<type key="numbers" type="gujr">గుజరాతీ అంకెలు</type>
 			<type key="numbers" type="guru">గుర్ముఖీ అంకెలు</type>
 			<type key="numbers" type="hanidec">చైనీయుల దశాంశ సంఖ్యలు</type>
-			<type key="numbers" type="hans">సరళీకృతం చెయ్యబడిన చైనీయుల సంఖ్యలు</type>
-			<type key="numbers" type="hansfin">సరళీకృతం చెయ్యబడిన చైనీయుల ఆర్థిక సంఖ్యలు</type>
+			<type key="numbers" type="hans">సరళీకృత చైనీయుల సంఖ్యలు</type>
+			<type key="numbers" type="hansfin">సరళీకృత చైనీయుల ఆర్థిక సంఖ్యలు</type>
 			<type key="numbers" type="hant">సాంప్రదాయ చైనీయుల సంఖ్యలు</type>
 			<type key="numbers" type="hantfin">సాంప్రదాయ చైనీయుల ఆర్థిక సంఖ్యలు</type>
 			<type key="numbers" type="hebr">హిబ్రూ సంఖ్యలు</type>
@@ -1081,7 +1122,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="native">స్థానిక అంకెలు</type>
 			<type key="numbers" type="orya">ఒరియా అంకెలు</type>
 			<type key="numbers" type="roman">రోమన్ సంఖ్యలు</type>
-			<type key="numbers" type="romanlow">రోమన్ చిన్న సంఖ్యలు</type>
+			<type key="numbers" type="romanlow">రోమన్ చిన్నబడి సంఖ్యలు</type>
 			<type key="numbers" type="taml">సాంప్రదాయ తమిళ సంఖ్యలు</type>
 			<type key="numbers" type="tamldec">తమిళ అంకెలు</type>
 			<type key="numbers" type="telu">తెలుగు అంకెలు</type>
@@ -1090,18 +1131,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional">సాంప్రదాయ సంఖ్యలు</type>
 			<type key="numbers" type="vaii">వాయ్ అంకెలు</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN">BGN</transformName>
-			<transformName type="Numeric">సంఖ్య</transformName>
-			<transformName type="Tone">టోన్</transformName>
-			<transformName type="UNGEGN">UNGEGN</transformName>
-			<transformName type="x-Accents">గాఢతలు</transformName>
-			<transformName type="x-Fullwidth">పూర్తి వెడల్పు</transformName>
-			<transformName type="x-Halfwidth">సగం వెడల్పు</transformName>
-			<transformName type="x-Jamo">జమో</transformName>
-			<transformName type="x-Pinyin">పిన్యిన్</transformName>
-			<transformName type="x-Publishing">ప్రచురించబడుతోంది</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">దశాంశం</measurementSystemName>
 			<measurementSystemName type="UK">యుకె</measurementSystemName>
@@ -1117,6 +1146,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[అ ఆ ఇ ఈ ఉ ఊ ఋ ౠ ఌ ౡ ఎ ఏ ఐ ఒ ఓ ఔ ఁ ం ః క ఖ గ ఘ ఙ చ ఛ జ ఝ ఞ ట ఠ డ ఢ ణ త థ ద ధ న ప ఫ బ భ మ య ర ఱ ల వ శ ష స హ ళ \u0C3E \u0C3F \u0C40 ు ూ ృ ౄ \u0C46 \u0C47 \u0C48 \u0C4A \u0C4B \u0C4C \u0C4D \u0C55 \u0C56]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D ౦ ౧ ౨ ౩ ౪ ౫ ౬ ౭ ౮ ౯]</exemplarCharacters>
 		<exemplarCharacters type="index">[అ ఆ ఇ ఈ ఉ ఊ ఋ ౠ ఎ ఏ ఐ ఒ ఓ ఔ క ఖ గ ఘ ఙ చ ఛ జ ఝ ఞ ట ఠ డ ఢ ణ త థ ద ధ న ప ఫ బ భ మ య ర ఱ ల వ శ ష స హ ళ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0౦ 1౧ 2౨ 3౩ 4౪ 5౫ 6౬ 7౭ 8౮ 9౯]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1125,6 +1155,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1134,6 +1183,243 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="buddhist">
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">BE</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">BE</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">BE</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="coptic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">టౌట్</month>
+							<month type="2" draft="contributed">బాబా</month>
+							<month type="3" draft="contributed">హాటర్</month>
+							<month type="4" draft="contributed">కిహఖ్</month>
+							<month type="5" draft="contributed">తోబా</month>
+							<month type="6" draft="contributed">అమ్షిర్</month>
+							<month type="7" draft="contributed">బారామ్హట్</month>
+							<month type="8" draft="contributed">బారామౌదా</month>
+							<month type="9" draft="contributed">బషాన్స్</month>
+							<month type="10" draft="contributed">పఓనా</month>
+							<month type="11" draft="contributed">ఇపెప్</month>
+							<month type="12" draft="contributed">మెస్రా</month>
+							<month type="13" draft="contributed">నైసే</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">టౌట్</month>
+							<month type="2" draft="contributed">బాబా</month>
+							<month type="3" draft="contributed">హాటర్</month>
+							<month type="4" draft="contributed">కిహఖ్</month>
+							<month type="5" draft="contributed">తోబా</month>
+							<month type="6" draft="contributed">అమ్షిర్</month>
+							<month type="7" draft="contributed">బారామ్హట్</month>
+							<month type="8" draft="contributed">బారామౌదా</month>
+							<month type="9" draft="contributed">బషాన్స్</month>
+							<month type="10" draft="contributed">పఓనా</month>
+							<month type="11" draft="contributed">ఇపెప్</month>
+							<month type="12" draft="contributed">మెస్రా</month>
+							<month type="13" draft="contributed">నైసే</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">టౌట్</month>
+							<month type="2" draft="contributed">బాబా</month>
+							<month type="3" draft="contributed">హాటర్</month>
+							<month type="4" draft="contributed">కిహఖ్</month>
+							<month type="5" draft="contributed">తోబా</month>
+							<month type="6" draft="contributed">అమ్షిర్</month>
+							<month type="7" draft="contributed">బారామ్హట్</month>
+							<month type="8" draft="contributed">బారామౌదా</month>
+							<month type="9" draft="contributed">బషాన్స్</month>
+							<month type="10" draft="contributed">పఓనా</month>
+							<month type="11" draft="contributed">ఇపెప్</month>
+							<month type="12" draft="contributed">మెస్రా</month>
+							<month type="13" draft="contributed">నైసే</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">టౌట్</month>
+							<month type="2" draft="contributed">బాబా</month>
+							<month type="3" draft="contributed">హాటర్</month>
+							<month type="4" draft="contributed">కిహఖ్</month>
+							<month type="5" draft="contributed">తోబా</month>
+							<month type="6" draft="contributed">అమ్షిర్</month>
+							<month type="7" draft="contributed">బారామ్హట్</month>
+							<month type="8" draft="contributed">బారామౌదా</month>
+							<month type="9" draft="contributed">బషాన్స్</month>
+							<month type="10" draft="contributed">పఓనా</month>
+							<month type="11" draft="contributed">ఇపెప్</month>
+							<month type="12" draft="contributed">మెస్రా</month>
+							<month type="13" draft="contributed">నైసే</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="ethiopic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">మెస్క్‌రమ్</month>
+							<month type="2" draft="contributed">టెకెమట్</month>
+							<month type="3" draft="contributed">హెదర్</month>
+							<month type="4" draft="contributed">తహసాస్</month>
+							<month type="5" draft="contributed">టర్</month>
+							<month type="6" draft="contributed">యెకాటిట్</month>
+							<month type="7" draft="contributed">మెగాబిట్</month>
+							<month type="8" draft="contributed">మియజియ</month>
+							<month type="9" draft="contributed">గెన్‌బోట్</month>
+							<month type="10" draft="contributed">సెనె</month>
+							<month type="11" draft="contributed">హమ్లె</month>
+							<month type="12" draft="contributed">నెహస్సె</month>
+							<month type="13" draft="contributed">పగుమెన్</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">మెస్క్‌రమ్</month>
+							<month type="2" draft="contributed">టెకెమట్</month>
+							<month type="3" draft="contributed">హెదర్</month>
+							<month type="4" draft="contributed">తహసాస్</month>
+							<month type="5" draft="contributed">టర్</month>
+							<month type="6" draft="contributed">యెకాటిట్</month>
+							<month type="7" draft="contributed">మెగాబిట్</month>
+							<month type="8" draft="contributed">మియజియ</month>
+							<month type="9" draft="contributed">గెన్‌బోట్</month>
+							<month type="10" draft="contributed">సెనె</month>
+							<month type="11" draft="contributed">హమ్లె</month>
+							<month type="12" draft="contributed">నెహస్సె</month>
+							<month type="13" draft="contributed">పగుమెన్</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">మెస్క్‌రమ్</month>
+							<month type="2" draft="contributed">టెకెమట్</month>
+							<month type="3" draft="contributed">హెదర్</month>
+							<month type="4" draft="contributed">తహసాస్</month>
+							<month type="5" draft="contributed">టర్</month>
+							<month type="6" draft="contributed">యెకాటిట్</month>
+							<month type="7" draft="contributed">మెగాబిట్</month>
+							<month type="8" draft="contributed">మియజియ</month>
+							<month type="9" draft="contributed">గెన్‌బోట్</month>
+							<month type="10" draft="contributed">సెనె</month>
+							<month type="11" draft="contributed">హమ్లె</month>
+							<month type="12" draft="contributed">నెహస్సె</month>
+							<month type="13" draft="contributed">పగుమెన్</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">మెస్క్‌రమ్</month>
+							<month type="2" draft="contributed">టెకెమట్</month>
+							<month type="3" draft="contributed">హెదర్</month>
+							<month type="4" draft="contributed">తహసాస్</month>
+							<month type="5" draft="contributed">టర్</month>
+							<month type="6" draft="contributed">యెకాటిట్</month>
+							<month type="7" draft="contributed">మెగాబిట్</month>
+							<month type="8" draft="contributed">మియజియ</month>
+							<month type="9" draft="contributed">గెన్‌బోట్</month>
+							<month type="10" draft="contributed">సెనె</month>
+							<month type="11" draft="contributed">హమ్లె</month>
+							<month type="12" draft="contributed">నెహస్సె</month>
+							<month type="13" draft="contributed">పగుమెన్</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ERA0</era>
+						<era type="1" draft="contributed">ERA1</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -1179,9 +1465,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh" draft="contributed">B h</dateFormatItem>
+						<dateFormatItem id="Bhm" draft="contributed">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms" draft="contributed">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm" draft="contributed">B E h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms" draft="contributed">B E h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm" draft="contributed">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm" draft="contributed">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms" draft="contributed">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms" draft="contributed">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d, MMM y G</dateFormatItem>
@@ -1366,7 +1661,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="5">మే</month>
 							<month type="6">జూన్</month>
 							<month type="7">జులై</month>
-							<month type="8">ఆగస్టు</month>
+							<month type="8">ఆగ</month>
 							<month type="9">సెప్టెం</month>
 							<month type="10">అక్టో</month>
 							<month type="11">నవం</month>
@@ -1495,10 +1790,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1">1వ త్రైమాసం</quarter>
-							<quarter type="2">2వ త్రైమాసం</quarter>
-							<quarter type="3">3వ త్రైమాసం</quarter>
-							<quarter type="4">4వ త్రైమాసం</quarter>
+							<quarter type="1">1వ త్రైమాసికం</quarter>
+							<quarter type="2">2వ త్రైమాసికం</quarter>
+							<quarter type="3">3వ త్రైమాసికం</quarter>
+							<quarter type="4">4వ త్రైమాసికం</quarter>
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
@@ -1515,17 +1810,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
-							<quarter type="1">మొదటి త్రైమాసికం</quarter>
-							<quarter type="2">రెండవ త్రైమాసికం</quarter>
-							<quarter type="3">మూడవ త్రైమాసికం</quarter>
-							<quarter type="4">నాల్గవ త్రైమాసికం</quarter>
+							<quarter type="1">1వ త్రైమాసికం</quarter>
+							<quarter type="2">2వ త్రైమాసికం</quarter>
+							<quarter type="3">3వ త్రైమాసికం</quarter>
+							<quarter type="4">4వ త్రైమాసికం</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">అర్థరాత్రి</dayPeriod>
+							<dayPeriod type="midnight">అర్ధరాత్రి</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ఉదయం</dayPeriod>
@@ -1534,7 +1829,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">రాత్రి</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">అర్థరాత్రి</dayPeriod>
+							<dayPeriod type="midnight">అర్ధరాత్రి</dayPeriod>
 							<dayPeriod type="am">ఉ</dayPeriod>
 							<dayPeriod type="pm">సా</dayPeriod>
 							<dayPeriod type="morning1">ఉదయం</dayPeriod>
@@ -1543,9 +1838,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">రాత్రి</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">అర్థరాత్రి</dayPeriod>
-							<dayPeriod type="am">[AM]</dayPeriod>
-							<dayPeriod type="pm">[PM]</dayPeriod>
+							<dayPeriod type="midnight">అర్ధరాత్రి</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ఉదయం</dayPeriod>
 							<dayPeriod type="afternoon1">మధ్యాహ్నం</dayPeriod>
 							<dayPeriod type="evening1">సాయంత్రం</dayPeriod>
@@ -1554,7 +1849,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">అర్థరాత్రి</dayPeriod>
+							<dayPeriod type="midnight">అర్ధరాత్రి</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ఉదయం</dayPeriod>
@@ -1563,7 +1858,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">రాత్రి</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">అర్థరాత్రి</dayPeriod>
+							<dayPeriod type="midnight">అర్ధరాత్రి</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ఉదయం</dayPeriod>
@@ -1572,7 +1867,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">రాత్రి</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">అర్థరాత్రి</dayPeriod>
+							<dayPeriod type="midnight">అర్ధరాత్రి</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">ఉదయం</dayPeriod>
@@ -1591,9 +1886,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</eraNames>
 					<eraAbbr>
 						<era type="0">క్రీపూ</era>
-						<era type="0" alt="variant">[BCE]</era>
+						<era type="0" alt="variant">BCE</era>
 						<era type="1">క్రీశ</era>
-						<era type="1" alt="variant">[CE]</era>
+						<era type="1" alt="variant">CE</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -1643,12 +1938,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} {0}కి</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1} {0}కి</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
@@ -1662,17 +1957,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
+						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
+						<dateFormatItem id="GyMMM">G MMM y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G d, MMM y</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G, E d, MMM y</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G, d MMM, y, E</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
@@ -1685,24 +1985,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
-						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MEd">d/M, E</dateFormatItem>
 						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">d MMM, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMMలో Wవ వారం</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMMలో Wవ వారం</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
-						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">d/M/y, E</dateFormatItem>
 						<dateFormatItem id="yMM">MM-y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">d, MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMEd">E, d, MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">d MMM, y, E</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Yలో wవ వారం</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Yలో wవ వారం</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1752,8 +2056,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
-							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="d">d/M, E – d/M, E</greatestDifference>
+							<greatestDifference id="M">d/M, E – d/M, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -1763,8 +2067,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM</greatestDifference>
+							<greatestDifference id="d">d MMM, E – d MMM, E</greatestDifference>
+							<greatestDifference id="M">d MMM, E – d MMM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
@@ -1779,9 +2083,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="d">d/M/y, E – d/M/y, E</greatestDifference>
+							<greatestDifference id="M">d/M/y, E – d/M/y, E</greatestDifference>
+							<greatestDifference id="y">d/M/y, E – d/M/y, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y</greatestDifference>
@@ -1793,9 +2097,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">d MMM, y – d MMM, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM, y</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM, y</greatestDifference>
-							<greatestDifference id="y">E, d MMM, y – E, d MMM, y</greatestDifference>
+							<greatestDifference id="d">d MMM, E – d MMM, y, E</greatestDifference>
+							<greatestDifference id="M">d MMM, E – d MMM, y, E</greatestDifference>
+							<greatestDifference id="y">d MMM, y, E – d MMM, y, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
@@ -1804,34 +2108,255 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
-			<calendar type="indian">
+			<calendar type="hebrew">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">టిశ్రీ</month>
+							<month type="2" draft="contributed">హేష్‌వాన్</month>
+							<month type="3" draft="contributed">కిస్లెవ్</month>
+							<month type="4" draft="contributed">టెవెట్</month>
+							<month type="5" draft="contributed">షెవాట్</month>
+							<month type="6" draft="contributed">అదర్ I</month>
+							<month type="7" draft="contributed">అదర్</month>
+							<month type="7" yeartype="leap" draft="contributed">అదర్ II</month>
+							<month type="8" draft="contributed">నిసాన్</month>
+							<month type="9" draft="contributed">ఐయర్</month>
+							<month type="10" draft="contributed">సివాన్</month>
+							<month type="11" draft="contributed">తముజ్</month>
+							<month type="12" draft="contributed">అవ</month>
+							<month type="13" draft="contributed">ఇలుల్</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="7" yeartype="leap" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">చైత్రం</month>
-							<month type="2" draft="unconfirmed">వైశాఖం</month>
-							<month type="3" draft="unconfirmed">జ్యేష్ఠం</month>
-							<month type="4" draft="unconfirmed">ఆషాఢం</month>
-							<month type="5" draft="unconfirmed">శ్రావణం</month>
-							<month type="6" draft="unconfirmed">భాద్రపదం</month>
-							<month type="7" draft="unconfirmed">ఆశ్వయుజం</month>
-							<month type="8" draft="unconfirmed">కార్తీకం</month>
-							<month type="9" draft="unconfirmed">మార్గశిరం</month>
-							<month type="10" draft="unconfirmed">పుష్యం</month>
-							<month type="11" draft="unconfirmed">మాఘం</month>
-							<month type="12" draft="unconfirmed">ఫల్గుణం</month>
+							<month type="1" draft="contributed">టిశ్రీ</month>
+							<month type="2" draft="contributed">హేష్‌వాన్</month>
+							<month type="3" draft="contributed">కిస్లెవ్</month>
+							<month type="4" draft="contributed">టెవెట్</month>
+							<month type="5" draft="contributed">షెవాట్</month>
+							<month type="6" draft="contributed">అదర్ I</month>
+							<month type="7" draft="contributed">అదర్</month>
+							<month type="7" yeartype="leap" draft="contributed">అదర్ II</month>
+							<month type="8" draft="contributed">నిసాన్</month>
+							<month type="9" draft="contributed">ఐయర్</month>
+							<month type="10" draft="contributed">సివాన్</month>
+							<month type="11" draft="contributed">తముజ్</month>
+							<month type="12" draft="contributed">అవ</month>
+							<month type="13" draft="contributed">ఇలుల్</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">టిశ్రీ</month>
+							<month type="2" draft="contributed">హేష్‌వాన్</month>
+							<month type="3" draft="contributed">కిస్లెవ్</month>
+							<month type="4" draft="contributed">టెవెట్</month>
+							<month type="5" draft="contributed">షెవాట్</month>
+							<month type="6" draft="contributed">అదర్ I</month>
+							<month type="7" draft="contributed">అదర్</month>
+							<month type="7" yeartype="leap" draft="contributed">అదర్ II</month>
+							<month type="8" draft="contributed">నిసాన్</month>
+							<month type="9" draft="contributed">ఐయర్</month>
+							<month type="10" draft="contributed">సివాన్</month>
+							<month type="11" draft="contributed">తముజ్</month>
+							<month type="12" draft="contributed">అవ</month>
+							<month type="13" draft="contributed">ఇలుల్</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="7" yeartype="leap" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+							<month type="13" draft="contributed">13</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">టిశ్రీ</month>
+							<month type="2" draft="contributed">హేష్‌వాన్</month>
+							<month type="3" draft="contributed">కిస్లెవ్</month>
+							<month type="4" draft="contributed">టెవెట్</month>
+							<month type="5" draft="contributed">షెవాట్</month>
+							<month type="6" draft="contributed">అదర్ I</month>
+							<month type="7" draft="contributed">అదర్</month>
+							<month type="7" yeartype="leap" draft="contributed">అదర్ II</month>
+							<month type="8" draft="contributed">నిసాన్</month>
+							<month type="9" draft="contributed">ఐయర్</month>
+							<month type="10" draft="contributed">సివాన్</month>
+							<month type="11" draft="contributed">తముజ్</month>
+							<month type="12" draft="contributed">అవ</month>
+							<month type="13" draft="contributed">ఇలుల్</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">AM</era>
+					</eraNames>
 					<eraAbbr>
-						<era type="0" draft="unconfirmed">శక</era>
+						<era type="0" draft="contributed">AM</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">AM</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">చైత్రం</month>
+							<month type="2" draft="contributed">వైశాఖం</month>
+							<month type="3" draft="contributed">జ్యేష్ఠం</month>
+							<month type="4" draft="contributed">ఆషాఢం</month>
+							<month type="5" draft="contributed">శ్రావణం</month>
+							<month type="6" draft="contributed">భాద్రపదం</month>
+							<month type="7" draft="contributed">ఆశ్వయుజం</month>
+							<month type="8" draft="contributed">కార్తీకం</month>
+							<month type="9" draft="contributed">మార్గశిరం</month>
+							<month type="10" draft="contributed">పుష్యం</month>
+							<month type="11" draft="contributed">మాఘం</month>
+							<month type="12" draft="contributed">ఫల్గుణం</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">చైత్రం</month>
+							<month type="2" draft="contributed">వైశాఖం</month>
+							<month type="3" draft="contributed">జ్యేష్ఠం</month>
+							<month type="4" draft="contributed">ఆషాఢం</month>
+							<month type="5" draft="contributed">శ్రావణం</month>
+							<month type="6" draft="contributed">భాద్రపదం</month>
+							<month type="7" draft="contributed">ఆశ్వయుజం</month>
+							<month type="8" draft="contributed">కార్తీకం</month>
+							<month type="9" draft="contributed">మార్గశిరం</month>
+							<month type="10" draft="contributed">పుష్యం</month>
+							<month type="11" draft="contributed">మాఘం</month>
+							<month type="12" draft="contributed">ఫల్గుణం</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">చైత్రం</month>
+							<month type="2" draft="contributed">వైశాఖం</month>
+							<month type="3" draft="contributed">జ్యేష్ఠం</month>
+							<month type="4" draft="contributed">ఆషాఢం</month>
+							<month type="5" draft="contributed">శ్రావణం</month>
+							<month type="6" draft="contributed">భాద్రపదం</month>
+							<month type="7" draft="contributed">ఆశ్వయుజం</month>
+							<month type="8" draft="contributed">కార్తీకం</month>
+							<month type="9" draft="contributed">మార్గశిరం</month>
+							<month type="10" draft="contributed">పుష్యం</month>
+							<month type="11" draft="contributed">మాఘం</month>
+							<month type="12" draft="contributed">ఫల్గుణం</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">చైత్రం</month>
+							<month type="2" draft="contributed">వైశాఖం</month>
+							<month type="3" draft="contributed">జ్యేష్ఠం</month>
+							<month type="4" draft="contributed">ఆషాఢం</month>
+							<month type="5" draft="contributed">శ్రావణం</month>
+							<month type="6" draft="contributed">భాద్రపదం</month>
+							<month type="7" draft="contributed">ఆశ్వయుజం</month>
+							<month type="8" draft="contributed">కార్తీకం</month>
+							<month type="9" draft="contributed">మార్గశిరం</month>
+							<month type="10" draft="contributed">పుష్యం</month>
+							<month type="11" draft="contributed">మాఘం</month>
+							<month type="12" draft="contributed">ఫల్గుణం</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">శక</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">శక</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">శక</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="islamic">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ముహ.</month>
+							<month type="2" draft="contributed">సఫ.</month>
+							<month type="3" draft="contributed">ర. I</month>
+							<month type="4" draft="contributed">ర. II</month>
+							<month type="5" draft="contributed">జుమ. I</month>
+							<month type="6" draft="contributed">జుమ. II</month>
+							<month type="7" draft="contributed">రజ.</month>
+							<month type="8" draft="contributed">షబా.</month>
+							<month type="9" draft="contributed">రంజా.</month>
+							<month type="10" draft="contributed">షవ్వా.</month>
+							<month type="11" draft="contributed">ధుల్-కి.</month>
+							<month type="12" draft="contributed">ధుల్-హి.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Muharram</month>
 							<month type="2">Safar</month>
@@ -1847,12 +2372,192 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="12">Dhuʻl-Hijjah</month>
 						</monthWidth>
 					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ముహ.</month>
+							<month type="2" draft="contributed">సఫ.</month>
+							<month type="3" draft="contributed">ర. I</month>
+							<month type="4" draft="contributed">ర. II</month>
+							<month type="5" draft="contributed">జుమ. I</month>
+							<month type="6" draft="contributed">జుమ. II</month>
+							<month type="7" draft="contributed">రజ.</month>
+							<month type="8" draft="contributed">షబా.</month>
+							<month type="9" draft="contributed">రంజా.</month>
+							<month type="10" draft="contributed">షవ్వా.</month>
+							<month type="11" draft="contributed">ధుల్-కి.</month>
+							<month type="12" draft="contributed">ధుల్-హి.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">ముహర్రం</month>
+							<month type="2" draft="contributed">సఫర్</month>
+							<month type="3" draft="contributed">రబీ I</month>
+							<month type="4" draft="contributed">రబీ II</month>
+							<month type="5" draft="contributed">జుమదా I</month>
+							<month type="6" draft="contributed">జుమదా II</month>
+							<month type="7" draft="contributed">రజబ్</month>
+							<month type="8" draft="contributed">షబాన్</month>
+							<month type="9" draft="contributed">రంజాన్</month>
+							<month type="10" draft="contributed">షవ్వాల్</month>
+							<month type="11" draft="contributed">ధుల్-కి దాహ్</month>
+							<month type="12" draft="contributed">ధుల్-హిజ్జాహ్</month>
+						</monthWidth>
+					</monthContext>
 				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">AH</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">AH</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">AH</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="persian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ఫావర్డిన్</month>
+							<month type="2" draft="contributed">ఊడాబహష్ట్</month>
+							<month type="3" draft="contributed">ఖోర్డాడ్</month>
+							<month type="4" draft="contributed">టిర్</month>
+							<month type="5" draft="contributed">మెర్డాడ్</month>
+							<month type="6" draft="contributed">శశివర్</month>
+							<month type="7" draft="contributed">మెహర్</month>
+							<month type="8" draft="contributed">అబన్</month>
+							<month type="9" draft="contributed">అజర్</month>
+							<month type="10" draft="contributed">డే</month>
+							<month type="11" draft="contributed">బాహ్‌మాన్</month>
+							<month type="12" draft="contributed">ఎస్‌ఫాండ్</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">ఫావర్డిన్</month>
+							<month type="2" draft="contributed">ఊడాబహష్ట్</month>
+							<month type="3" draft="contributed">ఖోర్డాడ్</month>
+							<month type="4" draft="contributed">టిర్</month>
+							<month type="5" draft="contributed">మెర్డాడ్</month>
+							<month type="6" draft="contributed">శశివర్</month>
+							<month type="7" draft="contributed">మెహర్</month>
+							<month type="8" draft="contributed">అబన్</month>
+							<month type="9" draft="contributed">అజర్</month>
+							<month type="10" draft="contributed">డే</month>
+							<month type="11" draft="contributed">బాహ్‌మాన్</month>
+							<month type="12" draft="contributed">ఎస్‌ఫాండ్</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">ఫావర్డిన్</month>
+							<month type="2" draft="contributed">ఊడాబహష్ట్</month>
+							<month type="3" draft="contributed">ఖోర్డాడ్</month>
+							<month type="4" draft="contributed">టిర్</month>
+							<month type="5" draft="contributed">మెర్డాడ్</month>
+							<month type="6" draft="contributed">శశివర్</month>
+							<month type="7" draft="contributed">మెహర్</month>
+							<month type="8" draft="contributed">అబన్</month>
+							<month type="9" draft="contributed">అజర్</month>
+							<month type="10" draft="contributed">డే</month>
+							<month type="11" draft="contributed">బాహ్‌మాన్</month>
+							<month type="12" draft="contributed">ఎస్‌ఫాండ్</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">ఫావర్డిన్</month>
+							<month type="2" draft="contributed">ఊడాబహష్ట్</month>
+							<month type="3" draft="contributed">ఖోర్డాడ్</month>
+							<month type="4" draft="contributed">టిర్</month>
+							<month type="5" draft="contributed">మెర్డాడ్</month>
+							<month type="6" draft="contributed">శశివర్</month>
+							<month type="7" draft="contributed">మెహర్</month>
+							<month type="8" draft="contributed">అబన్</month>
+							<month type="9" draft="contributed">అజర్</month>
+							<month type="10" draft="contributed">డే</month>
+							<month type="11" draft="contributed">బాహ్‌మాన్</month>
+							<month type="12" draft="contributed">ఎస్‌ఫాండ్</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">AP</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">AP</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">AP</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="roc">
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">R.O.C. పూర్వం</era>
+						<era type="1" draft="contributed">R.O.C.</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">R.O.C. పూర్వం</era>
+						<era type="1" draft="contributed">R.O.C.</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">R.O.C. పూర్వం</era>
+						<era type="1" draft="contributed">R.O.C.</era>
+					</eraNarrow>
+				</eras>
 			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>యుగం, శకము</displayName>
+				<displayName>యుగం</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>యుగం</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>యుగం</displayName>
 			</field>
 			<field type="year">
 				<displayName>సంవత్సరం</displayName>
@@ -1872,7 +2577,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>సం.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} సం.లో</relativeTimePattern>
-					<relativeTimePattern count="other">{0} సం.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సం.ల్లో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} సం. క్రితం</relativeTimePattern>
@@ -1882,16 +2587,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="year-narrow">
 				<displayName>సం.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} సం.</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} సం.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} సం.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సం.ల్లో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} సం.</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} సం.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} సం. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సం. క్రితం</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName>త్రైమాసికం</displayName>
+				<relative type="-1">గత త్రైమాసికం</relative>
+				<relative type="0">ఈ త్రైమాసికం</relative>
+				<relative type="1">తదుపరి త్రైమాసికం</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} త్రైమాసికంలో</relativeTimePattern>
 					<relativeTimePattern count="other">{0} త్రైమాసికాల్లో</relativeTimePattern>
@@ -1915,12 +2623,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="quarter-narrow">
 				<displayName>త్రై.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} త్రై</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} త్రై</relativeTimePattern>
+					<relativeTimePattern count="one">{0} త్రైమాసికంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} త్రైమాసికాల్లో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} త్రై</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} త్రై</relativeTimePattern>
+					<relativeTimePattern count="one">{0} త్రైమా. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} త్రైమా. క్రితం</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -1957,12 +2665,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ఈ నెల</relative>
 				<relative type="1">తదుపరి నెల</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} నెల</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} నెలలు</relativeTimePattern>
+					<relativeTimePattern count="one">{0} నెలలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} నెలల్లో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} నెల</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} నెలలు</relativeTimePattern>
+					<relativeTimePattern count="one">{0} నెల క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} నెలల క్రితం</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="week">
@@ -1978,9 +2686,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} వారం క్రితం</relativeTimePattern>
 					<relativeTimePattern count="other">{0} వారాల క్రితం</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} వారం</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>వారము</displayName>
+				<displayName>వా</displayName>
 				<relative type="-1">గత వారం</relative>
 				<relative type="0">ఈ వారం</relative>
 				<relative type="1">తదుపరి వారం</relative>
@@ -1992,6 +2701,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} వారం క్రితం</relativeTimePattern>
 					<relativeTimePattern count="other">{0} వారాల క్రితం</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0}లో వారం</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>వా</displayName>
@@ -1999,13 +2709,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">ఈ వారం</relative>
 				<relative type="1">తదుపరి వారం</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} వా.</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} వా.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} వారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} వారాల్లో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} వా.</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} వా.</relativeTimePattern>
+					<relativeTimePattern count="one">{0} వారం క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} వారాల క్రితం</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0}లో వారం</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>నెలలో వారం</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>నెలలో వారం</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>నెలలో వారం</displayName>
 			</field>
 			<field type="day">
 				<displayName>దినం</displayName>
@@ -2040,134 +2760,333 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="day-narrow">
-				<displayName>ది</displayName>
+				<displayName>రోజు</displayName>
 				<relative type="-2">మొన్న</relative>
 				<relative type="-1">నిన్న</relative>
 				<relative type="0">ఈ రోజు</relative>
 				<relative type="1">రేపు</relative>
 				<relative type="2">ఎల్లుండి</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} రోజు</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} రోజులు</relativeTimePattern>
+					<relativeTimePattern count="one">{0} రోజులో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} రోజుల్లో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} రోజు</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} రోజులు</relativeTimePattern>
+					<relativeTimePattern count="one">{0} రోజు క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} రోజుల క్రితం</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>సంవత్సరంలో దినం</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>సంవత్సరంలో దినం</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>సంవత్సరంలో దినం</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>వారంలో రోజు</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>వారంలో రోజు</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>వారంలో రోజు</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>నెలలో పనిదినం</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>నెలలో పనిదినం</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>నెలలో పనిదినం</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">గత ఆదివారం</relative>
 				<relative type="0">ఈ ఆదివారం</relative>
 				<relative type="1">తదుపరి ఆదివారం</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ఆదివారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ఆదివారాల్లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ఆదివారం క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ఆదివారాల క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">గత ఆది.</relative>
 				<relative type="0">ఈ ఆది.</relative>
 				<relative type="1">తదుపరి ఆది.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ఆది.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ఆది.ల్లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ఆది. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ఆది. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
-				<relative type="-1">గత ఆ</relative>
-				<relative type="0">ఈ ఆ</relative>
-				<relative type="1">తదుపరి ఆ</relative>
+				<relative type="-1">గత ఆది.</relative>
+				<relative type="0">ఈ ఆది.</relative>
+				<relative type="1">తదుపరి ఆది.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ఆదివారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ఆదివారాల్లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ఆది. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ఆది. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">గత సోమవారం</relative>
 				<relative type="0">ఈ సోమవారం</relative>
 				<relative type="1">తదుపరి సోమవారం</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} సోమవారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సోమవారాలలో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} సోమవారం క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సోమవారాల క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">గత సోమ.</relative>
 				<relative type="0">ఈ సోమ.</relative>
 				<relative type="1">తదుపరి సోమ.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} సోమ.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సోమ.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} సోమ. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సోమ. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
-				<relative type="-1">గత సో</relative>
-				<relative type="0">ఈ సో</relative>
-				<relative type="1">తదుపరి సో</relative>
+				<relative type="-1">గత సోమ.</relative>
+				<relative type="0">ఈ సోమ.</relative>
+				<relative type="1">తదుపరి సోమ.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} సోమవారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సోమవారాలలో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} సోమ. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సోమ. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">గత మంగళవారం</relative>
 				<relative type="0">ఈ మంగళవారం</relative>
 				<relative type="1">తదుపరి మంగళవారం</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} మంగళవారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} మంగళవారాలలో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} మంగళవారం క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} మంగళవారాల క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">గత మంగళ.</relative>
 				<relative type="0">ఈ మంగళ.</relative>
 				<relative type="1">తదుపరి మంగళ.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} మంగళ.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} మంగళ.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} మంగళ. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} మంగళ. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
-				<relative type="-1">గత మం</relative>
-				<relative type="0">ఈ మం</relative>
-				<relative type="1">తదుపరి మం</relative>
+				<relative type="-1">గత మంగళ.</relative>
+				<relative type="0">ఈ మంగళ.</relative>
+				<relative type="1">తదుపరి మంగళ.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} మం.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} మం.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} మంగళ. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} మంగళ. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">గత బుధవారం</relative>
 				<relative type="0">ఈ బుధవారం</relative>
 				<relative type="1">తదుపరి బుధవారం</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} బుధవారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} బుధవారాలలో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} బుధవారం క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} బుధవారాల క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">గత బుధ.</relative>
 				<relative type="0">ఈ బుధ.</relative>
 				<relative type="1">తదుపరి బుధ.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} బుధ.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} బుధ.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} బుధ. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} బుధ. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
-				<relative type="-1">గత బు</relative>
-				<relative type="0">ఈ బు</relative>
-				<relative type="1">తదుపరి బు</relative>
+				<relative type="-1">గత బుధ.</relative>
+				<relative type="0">ఈ బుధ.</relative>
+				<relative type="1">తదుపరి బుధ.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} బుధవారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} బుధవారాలలో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} బుధ. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} బుధ. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">గత గురువారం</relative>
 				<relative type="0">ఈ గురువారం</relative>
 				<relative type="1">తదుపరి గురువారం</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} గురువారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} గురువారాలలో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} గురువారం క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} గురువారాల క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">గత గురు.</relative>
 				<relative type="0">ఈ గురు.</relative>
 				<relative type="1">తదుపరి గురు.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} గురు.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} గురు.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} గురు. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} గురు. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
-				<relative type="-1">గత గు</relative>
-				<relative type="0">ఈ గు</relative>
-				<relative type="1">తదుపరి గు</relative>
+				<relative type="-1">గత గురు.</relative>
+				<relative type="0">ఈ గురు.</relative>
+				<relative type="1">తదుపరి గురు.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} గు.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} గు.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} గురు. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} గురు. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">గత శుక్రవారం</relative>
 				<relative type="0">ఈ శుక్రవారం</relative>
 				<relative type="1">తదుపరి శుక్రవారం</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} శుక్రవారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శుక్రవారాలలో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} శుక్రవారం క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శుక్రవారాల క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">గత శుక్ర.</relative>
 				<relative type="0">ఈ శుక్ర.</relative>
 				<relative type="1">తదుపరి శుక్ర.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} శుక్ర.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శుక్ర.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} శుక్ర. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శుక్ర. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
-				<relative type="-1">గత శు</relative>
-				<relative type="0">ఈ శు</relative>
-				<relative type="1">తదుపరి శు</relative>
+				<relative type="-1">గత శుక్ర.</relative>
+				<relative type="0">ఈ శుక్ర.</relative>
+				<relative type="1">తదుపరి శుక్ర.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} శు.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శు.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} శుక్ర. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శుక్ర. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">గత శనివారం</relative>
 				<relative type="0">ఈ శనివారం</relative>
 				<relative type="1">తదుపరి శనివారం</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} శనివారంలో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శనివారాలలో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} శనివారం క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శనివారాల క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">గత శని.</relative>
 				<relative type="0">ఈ శని.</relative>
 				<relative type="1">తదుపరి శని.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} శని.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శని.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} శని. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శని. క్రితం</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
-				<relative type="-1">గత శ</relative>
-				<relative type="0">ఈ శ</relative>
-				<relative type="1">తదుపరి శ</relative>
+				<relative type="-1">గత శని.</relative>
+				<relative type="0">ఈ శని.</relative>
+				<relative type="1">తదుపరి శని.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} శ.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శ.లో</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} శని. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} శని. క్రితం</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>[AM/PM]</displayName>
+				<displayName>AM/PM</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>గంట</displayName>
+				<relative type="0">ఈ గంట</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} గంటలో</relativeTimePattern>
 					<relativeTimePattern count="other">{0} గంటల్లో</relativeTimePattern>
@@ -2191,16 +3110,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="hour-narrow">
 				<displayName>గం</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} గం</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} గం</relativeTimePattern>
+					<relativeTimePattern count="one">{0} గం.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} గం.లో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} గం</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} గం</relativeTimePattern>
+					<relativeTimePattern count="one">{0} గం. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} గం. క్రితం</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>నిమిషము</displayName>
+				<relative type="0">ఈ నిమిషం</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} నిమిషంలో</relativeTimePattern>
 					<relativeTimePattern count="other">{0} నిమిషాల్లో</relativeTimePattern>
@@ -2224,19 +3144,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="minute-narrow">
 				<displayName>ని</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} ని</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} ని</relativeTimePattern>
+					<relativeTimePattern count="one">{0} నిమి.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} నిమి.లో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} ని</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} ని</relativeTimePattern>
+					<relativeTimePattern count="one">{0} నిమి. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} నిమి. క్రితం</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second">
-				<displayName>క్షణం</displayName>
+				<displayName>సెకను</displayName>
 				<relative type="0">ప్రస్తుతం</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} సెకన్‌లో</relativeTimePattern>
+					<relativeTimePattern count="one">{0} సెకనులో</relativeTimePattern>
 					<relativeTimePattern count="other">{0} సెకన్లలో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
@@ -2245,10 +3165,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="second-short">
-				<displayName>క్ష.</displayName>
+				<displayName>సెక.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} సెక. లో</relativeTimePattern>
-					<relativeTimePattern count="other">{0} సెక. లో</relativeTimePattern>
+					<relativeTimePattern count="one">{0} సెకనులో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సెకన్లలో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} సెక. క్రితం</relativeTimePattern>
@@ -2256,18 +3176,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
-				<displayName>క్ష</displayName>
+				<displayName>సెక.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} సె</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} సె</relativeTimePattern>
+					<relativeTimePattern count="one">{0} సెక.లో</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సెక. లో</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} సె క్రితం</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} సె క్రితం</relativeTimePattern>
+					<relativeTimePattern count="one">{0} సెక. క్రితం</relativeTimePattern>
+					<relativeTimePattern count="other">{0} సెక. క్రితం</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="zone">
-				<displayName>కాల మండలం</displayName>
+				<displayName>సమయ మండలి</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>సమయ మండలి</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>సమయ మండలి</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
@@ -2275,9 +3201,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>{0} సమయం</regionFormat>
-			<regionFormat type="daylight">{0} పగటి సమయం</regionFormat>
+			<regionFormat type="daylight">{0} పగటి వెలుతురు సమయం</regionFormat>
 			<regionFormat type="standard">{0} ప్రామాణిక సమయం</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>శాంటా ఇసబెల్</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>హోనోలులు</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>సమన్వయ సార్వజనీన సమయం</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>తెలియని నగరం</exemplarCity>
 			</zone>
@@ -2291,10 +3228,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>కాబుల్</exemplarCity>
 			</zone>
 			<zone type="America/Antigua">
-				<exemplarCity>అంటిగ్వా</exemplarCity>
+				<exemplarCity>ఆంటిగ్వా</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
-				<exemplarCity>ఆంగ్విలా</exemplarCity>
+				<exemplarCity>ఆంగ్విల్లా</exemplarCity>
 			</zone>
 			<zone type="Europe/Tirane">
 				<exemplarCity>టిరేన్</exemplarCity>
@@ -2330,10 +3267,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>కేసీ</exemplarCity>
 			</zone>
 			<zone type="Antarctica/DumontDUrville">
-				<exemplarCity>డ్యుమాంట్ డ్యుర్విల్లీ</exemplarCity>
+				<exemplarCity>డ్యూమాంట్ డి’ఉర్విల్లే</exemplarCity>
 			</zone>
 			<zone type="Antarctica/McMurdo">
-				<exemplarCity>మెక్ముర్డో</exemplarCity>
+				<exemplarCity>మెక్‌ముర్డో</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
 				<exemplarCity>రియో గల్లేగోస్</exemplarCity>
@@ -2366,7 +3303,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>టుకుమన్</exemplarCity>
 			</zone>
 			<zone type="America/Cordoba">
-				<exemplarCity>కోర్బోడా</exemplarCity>
+				<exemplarCity>కోర్డోబా</exemplarCity>
 			</zone>
 			<zone type="America/Buenos_Aires">
 				<exemplarCity>బ్యూనోస్ ఎయిర్స్</exemplarCity>
@@ -2393,7 +3330,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>బ్రోకెన్ హిల్</exemplarCity>
 			</zone>
 			<zone type="Australia/Currie">
-				<exemplarCity>కుర్రియే</exemplarCity>
+				<exemplarCity>కర్రీ</exemplarCity>
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>మెల్బోర్న్</exemplarCity>
@@ -2483,7 +3420,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>మనాస్</exemplarCity>
 			</zone>
 			<zone type="America/Cuiaba">
-				<exemplarCity>కుయోబే</exemplarCity>
+				<exemplarCity>కుయబా</exemplarCity>
 			</zone>
 			<zone type="America/Santarem">
 				<exemplarCity>సాంటరెమ్</exemplarCity>
@@ -2504,7 +3441,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>బహియ</exemplarCity>
 			</zone>
 			<zone type="America/Fortaleza">
-				<exemplarCity>ఫార్ట్లెజా</exemplarCity>
+				<exemplarCity>ఫోర్టలేజా</exemplarCity>
 			</zone>
 			<zone type="America/Maceio">
 				<exemplarCity>మాసియో</exemplarCity>
@@ -2541,6 +3478,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Vancouver">
 				<exemplarCity>వాన్కూవర్</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>ఫోర్ట్ నెల్సన్</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>డాసన్ క్రీక్</exemplarCity>
@@ -2597,7 +3537,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>మోన్‌క్టోన్</exemplarCity>
 			</zone>
 			<zone type="America/Halifax">
-				<exemplarCity>హలుఫాక్స్</exemplarCity>
+				<exemplarCity>హాలిఫాక్స్</exemplarCity>
 			</zone>
 			<zone type="America/Goose_Bay">
 				<exemplarCity>గూస్ బే</exemplarCity>
@@ -2609,10 +3549,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>బ్లాంక్-సబ్లోన్</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
-				<exemplarCity>సె. జాన్స్</exemplarCity>
+				<exemplarCity>సెయింట్ జాన్స్</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
-				<exemplarCity>కోకాస్</exemplarCity>
+				<exemplarCity>కోకోస్</exemplarCity>
 			</zone>
 			<zone type="Africa/Kinshasa">
 				<exemplarCity>కిన్షాసా</exemplarCity>
@@ -2637,6 +3577,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Pacific/Easter">
 				<exemplarCity>ఈస్టర్</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>పుంటా అరీనస్</exemplarCity>
 			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>శాంటియాగో</exemplarCity>
@@ -2670,6 +3613,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>నికోసియా</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>ఫామగుస్టా</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>ప్రాగ్</exemplarCity>
@@ -2780,13 +3726,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>థులే</exemplarCity>
 			</zone>
 			<zone type="America/Godthab">
-				<exemplarCity>గాడ్తాబ్</exemplarCity>
+				<exemplarCity>నూక్</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity>స్కోర్స్బైసుండ్</exemplarCity>
+				<exemplarCity>ఇటోక్కోర్టూర్మిట్</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
-				<exemplarCity>డెన్మార్క్శ్వాన్</exemplarCity>
+				<exemplarCity>డెన్మార్క్‌షాన్</exemplarCity>
 			</zone>
 			<zone type="Africa/Banjul">
 				<exemplarCity>బంజూల్</exemplarCity>
@@ -2929,6 +3875,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>ఓరల్</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>ఆటిరా</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>అక్టోబ్</exemplarCity>
 			</zone>
@@ -3002,10 +3951,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>బామాకో</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
-				<exemplarCity>రంగూన్</exemplarCity>
+				<exemplarCity>యాంగన్</exemplarCity>
 			</zone>
 			<zone type="Asia/Hovd">
-				<exemplarCity>హోవడ్</exemplarCity>
+				<exemplarCity>హోవ్డ్</exemplarCity>
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>ఉలాన్బాటర్</exemplarCity>
@@ -3026,7 +3975,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>న్వాక్షోట్</exemplarCity>
 			</zone>
 			<zone type="America/Montserrat">
-				<exemplarCity>మోంటిసిరాట్</exemplarCity>
+				<exemplarCity>మాంట్సెరాట్</exemplarCity>
 			</zone>
 			<zone type="Europe/Malta">
 				<exemplarCity>మాల్టా</exemplarCity>
@@ -3041,10 +3990,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>బ్లాన్టైర్</exemplarCity>
 			</zone>
 			<zone type="America/Tijuana">
-				<exemplarCity>తిజ్యునా</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>శాంటా ఇసబెల్</exemplarCity>
+				<exemplarCity>టిజువానా</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>హెర్మోసిల్లో</exemplarCity>
@@ -3119,7 +4065,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>నియూ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Chatham">
-				<exemplarCity>ఛతం</exemplarCity>
+				<exemplarCity>చాథమ్</exemplarCity>
 			</zone>
 			<zone type="Pacific/Auckland">
 				<exemplarCity>ఆక్లాండ్</exemplarCity>
@@ -3158,10 +4104,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>వార్షా</exemplarCity>
 			</zone>
 			<zone type="America/Miquelon">
-				<exemplarCity>మిక్వెలాన్</exemplarCity>
+				<exemplarCity>మికెలాన్</exemplarCity>
 			</zone>
 			<zone type="Pacific/Pitcairn">
-				<exemplarCity>పిట్కెయిర్న్</exemplarCity>
+				<exemplarCity>పిట్‌కైర్న్</exemplarCity>
 			</zone>
 			<zone type="America/Puerto_Rico">
 				<exemplarCity>ప్యూర్టో రికో</exemplarCity>
@@ -3211,17 +4157,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>వోల్గోగ్రాడ్</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>సరాటవ్</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>అస్ట్రఖాన్</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>ఉల్యనోవ్స్క్</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>కిరోవ్</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>సమార</exemplarCity>
 			</zone>
 			<zone type="Asia/Yekaterinburg">
-				<exemplarCity>యెకటెరింగ్‌బర్గ్</exemplarCity>
+				<exemplarCity>యెకటెరింబర్గ్</exemplarCity>
 			</zone>
 			<zone type="Asia/Omsk">
 				<exemplarCity>ఓమ్స్క్</exemplarCity>
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>నవోసిబిర్స్క్</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>బార్నాల్</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>టామ్స్క్</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>నొవొకుజ్‌నెట్‌స్క్</exemplarCity>
@@ -3293,7 +4257,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>లాంగ్‌యియర్‌బైయన్</exemplarCity>
 			</zone>
 			<zone type="Europe/Bratislava">
-				<exemplarCity>బ్రటీష్‌వాలా</exemplarCity>
+				<exemplarCity>బ్రాటిస్లావా</exemplarCity>
 			</zone>
 			<zone type="Africa/Freetown">
 				<exemplarCity>ఫ్రీటౌన్</exemplarCity>
@@ -3347,7 +4311,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>డుషన్బీ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Fakaofo">
-				<exemplarCity>ఫాకావ్ఫో</exemplarCity>
+				<exemplarCity>ఫాకోఫో</exemplarCity>
 			</zone>
 			<zone type="Asia/Dili">
 				<exemplarCity>డిలి</exemplarCity>
@@ -3374,10 +4338,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>తైపీ</exemplarCity>
 			</zone>
 			<zone type="Africa/Dar_es_Salaam">
-				<exemplarCity>దార్ ఎ సలామ్</exemplarCity>
+				<exemplarCity>దార్ ఎస్ సలామ్</exemplarCity>
 			</zone>
 			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ఉజుగోరోడ్</exemplarCity>
+				<exemplarCity>ఉజ్‌హోరోడ్</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>కీవ్</exemplarCity>
@@ -3391,9 +4355,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>మిడ్వే</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>జాన్సటన్</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>వేక్</exemplarCity>
 			</zone>
@@ -3403,8 +4364,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>నోమ్</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>హోనోలులు</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>జాన్సటన్</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>యాంకరేజ్</exemplarCity>
@@ -3416,7 +4377,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>సిట్కా</exemplarCity>
 			</zone>
 			<zone type="America/Juneau">
-				<exemplarCity>జోనొవ్</exemplarCity>
+				<exemplarCity>జూనో</exemplarCity>
 			</zone>
 			<zone type="America/Metlakatla">
 				<exemplarCity>మెట్లకట్ల</exemplarCity>
@@ -3440,7 +4401,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>న్యూ సలేమ్, ఉత్తర డకోట</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
-				<exemplarCity>సెంట్రల్, ఉత్తర డకోటా</exemplarCity>
+				<exemplarCity>సెంటర్, ఉత్తర డకోటా</exemplarCity>
 			</zone>
 			<zone type="America/Chicago">
 				<exemplarCity>చికాగో</exemplarCity>
@@ -3461,7 +4422,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>నోక్స్, ఇండియాన</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Winamac">
-				<exemplarCity>వినిమాక్, ఇండియాన</exemplarCity>
+				<exemplarCity>వినామాక్, ఇండియాన</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Marengo">
 				<exemplarCity>మరెంగో, ఇండియాన</exemplarCity>
@@ -3524,7 +4485,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ఎడెన్</exemplarCity>
 			</zone>
 			<zone type="Indian/Mayotte">
-				<exemplarCity>మయోట్టి</exemplarCity>
+				<exemplarCity>మయోట్</exemplarCity>
 			</zone>
 			<zone type="Africa/Johannesburg">
 				<exemplarCity>జొహెన్స్‌బర్గ్</exemplarCity>
@@ -3544,7 +4505,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Afghanistan">
 				<long>
-					<standard>ఆఫ్ఘనిస్థాన్ సమయం</standard>
+					<standard>ఆఫ్ఘనిస్తాన్ సమయం</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Central">
@@ -3573,7 +4534,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>అలాస్కా సమయం</generic>
 					<standard>అలాస్కా ప్రామాణిక సమయం</standard>
-					<daylight>అలాస్కా పగటి సమయం</daylight>
+					<daylight>అలాస్కా పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Almaty">
@@ -3594,28 +4555,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>మధ్యమ సమయం</generic>
 					<standard>మధ్యమ ప్రామాణిక సమయం</standard>
-					<daylight>మధ్యమ పగటి సమయం</daylight>
+					<daylight>మధ్యమ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
 					<generic>తూర్పు సమయం</generic>
 					<standard>తూర్పు ప్రామాణిక సమయం</standard>
-					<daylight>తూర్పు పగటి సమయం</daylight>
+					<daylight>తూర్పు పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>మౌంటేన్ సమయం</generic>
-					<standard>మౌంటేన్ ప్రామాణిక సమయం</standard>
-					<daylight>మౌంటేన్ పగటి సమయం</daylight>
+					<generic>మౌంటెయిన్ సమయం</generic>
+					<standard>మౌంటెయిన్ ప్రామాణిక సమయం</standard>
+					<daylight>మౌంటెయిన్ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
 					<generic>పసిఫిక్ సమయం</generic>
 					<standard>పసిఫిక్ ప్రామాణిక సమయం</standard>
-					<daylight>పసిఫిక్ పగటి సమయం</daylight>
+					<daylight>పసిఫిక్ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Anadyr">
@@ -3678,35 +4639,35 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>అట్లాంటిక్ సమయం</generic>
 					<standard>అట్లాంటిక్ ప్రామాణిక సమయం</standard>
-					<daylight>అట్లాంటిక్ పగటి సమయం</daylight>
+					<daylight>అట్లాంటిక్ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
 					<generic>ఆస్ట్రేలియా మధ్యమ సమయం</generic>
 					<standard>ఆస్ట్రేలియా మధ్యమ ప్రామాణిక సమయం</standard>
-					<daylight>ఆస్ట్రేలియా మధ్యమ పగటి సమయం</daylight>
+					<daylight>ఆస్ట్రేలియా మధ్యమ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
-					<generic>మధ్యమ ఆస్ట్రేలియన్ పశ్చిమ సమయం</generic>
-					<standard>మధ్యమ ఆస్ట్రేలియా పశ్చిమ ప్రామాణిక సమయం</standard>
-					<daylight>మధ్యమ ఆస్ట్రేలియన్ పశ్చిమ పగటి సమయం</daylight>
+					<generic>ఆస్ట్రేలియా మధ్యమ పశ్చిమ సమయం</generic>
+					<standard>మధ్యమ ఆస్ట్రేలియన్ పశ్చిమ ప్రామాణిక సమయం</standard>
+					<daylight>ఆస్ట్రేలియా మధ్యమ పశ్చిమ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
 					<generic>తూర్పు ఆస్ట్రేలియా సమయం</generic>
-					<standard>తూర్పు ఆస్ట్రేలియా ప్రామాణిక సమయం</standard>
-					<daylight>తూర్పు ఆస్ట్రేలియా పగటి సమయం</daylight>
+					<standard>ఆస్ట్రేలియన్ తూర్పు ప్రామాణిక సమయం</standard>
+					<daylight>ఆస్ట్రేలియన్ తూర్పు పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
 					<generic>పశ్చిమ ఆస్ట్రేలియా సమయం</generic>
-					<standard>పశ్చిమ ఆస్ట్రేలియన్ ప్రామాణిక సమయం</standard>
-					<daylight>పశ్చిమ ఆస్ట్రేలియన్ పగటి సమయం</daylight>
+					<standard>ఆస్ట్రేలియన్ పశ్చిమ ప్రామాణిక సమయం</standard>
+					<daylight>ఆస్ట్రేలియన్ పశ్చిమ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
@@ -3799,7 +4760,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Cocos">
 				<long>
-					<standard>కాకోస్ దీవుల సమయం</standard>
+					<standard>కోకోస్ దీవుల సమయం</standard>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
@@ -3813,14 +4774,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>కుక్ దీవుల సమయం</generic>
 					<standard>కుక్ దీవుల ప్రామాణిక సమయం</standard>
-					<daylight>కుక్ దీవుల అర్థ వేసవి సమయం</daylight>
+					<daylight>కుక్ దీవుల అర్ధ వేసవి సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
 					<generic>క్యూబా సమయం</generic>
 					<standard>క్యూబా ప్రామాణిక సమయం</standard>
-					<daylight>క్యూబా పగటి సమయం</daylight>
+					<daylight>క్యూబా పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
@@ -4019,9 +4980,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
-					<generic>ఇరక్వుట్స్క్ సమయం</generic>
-					<standard>ఇరక్వుట్స్క్ ప్రామాణిక సమయం</standard>
-					<daylight>ఇరక్వుట్స్క్ వేసవి సమయం</daylight>
+					<generic>ఇర్కుట్స్క్ సమయం</generic>
+					<standard>ఇర్కుట్స్క్ ప్రామాణిక సమయం</standard>
+					<daylight>ఇర్కుట్స్క్ వేసవి సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
@@ -4076,7 +5037,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
-					<standard>కిర్గిస్థాన్ సమయం</standard>
+					<standard>కిర్గిస్తాన్ సమయం</standard>
 				</long>
 			</metazone>
 			<metazone type="Lanka">
@@ -4144,21 +5105,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Mawson">
 				<long>
-					<standard>మావ్సన్ సమయం</standard>
+					<standard>మాసన్ సమయం</standard>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Northwest">
 				<long>
-					<generic>వాయవ్య మెక్సికో సమయం</generic>
-					<standard>వాయవ్య మెక్సికో ప్రామాణిక సమయం</standard>
-					<daylight>వాయవ్య మెక్సికో పగటి సమయం</daylight>
+					<generic>వాయువ్య మెక్సికో సమయం</generic>
+					<standard>వాయువ్య మెక్సికో ప్రామాణిక సమయం</standard>
+					<daylight>వాయువ్య మెక్సికో పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
 					<generic>మెక్సికన్ పసిఫిక్ సమయం</generic>
 					<standard>మెక్సికన్ పసిఫిక్ ప్రామాణిక సమయం</standard>
-					<daylight>మెక్సికన్ పసిఫిక్ పగటి సమయం</daylight>
+					<daylight>మెక్సికన్ పసిఫిక్ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
@@ -4206,9 +5167,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic>న్యూఫౌండ్ ల్యాండ్ సమయం</generic>
-					<standard>న్యూఫౌండ్ ల్యాండ్ ప్రామాణిక సమయం</standard>
-					<daylight>న్యూఫౌండ్ ల్యాండ్ పగటి సమయం</daylight>
+					<generic>న్యూఫౌండ్‌ల్యాండ్ సమయం</generic>
+					<standard>న్యూఫౌండ్‌ల్యాండ్ ప్రామాణిక సమయం</standard>
+					<daylight>న్యూఫౌండ్‌ల్యాండ్ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
@@ -4249,9 +5210,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
-					<generic>పాకిస్థాన్ సమయం</generic>
+					<generic>పాకిస్తాన్ సమయం</generic>
 					<standard>పాకిస్తాన్ ప్రామాణిక సమయం</standard>
-					<daylight>పాకిస్థాన్ వేసవి సమయం</daylight>
+					<daylight>పాకిస్తాన్ వేసవి సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Palau">
@@ -4294,17 +5255,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>సెయింట్ పియెర్ మరియు మిక్వెలాన్ సమయం</generic>
 					<standard>సెయింట్ పియెర్ మరియు మిక్వెలాన్ ప్రామాణిక సమయం</standard>
-					<daylight>సెయింట్ పియర్ మరియు మిక్వెలాన్ పగటి సమయం</daylight>
+					<daylight>సెయింట్ పియర్ మరియు మిక్వెలాన్ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
 				<long>
-					<standard>పిట్కైరన్ సమయం</standard>
+					<standard>పిట్‌కైర్న్ సమయం</standard>
 				</long>
 			</metazone>
 			<metazone type="Ponape">
 				<long>
 					<standard>పొనేప్ సమయం</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>ప్యోంగాంగ్ సమయం</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -4342,7 +5308,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>సమోవా సమయం</generic>
 					<standard>సమోవా ప్రామాణిక సమయం</standard>
-					<daylight>సమోవా వేసవి సమయం</daylight>
+					<daylight>సమోవా పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
@@ -4357,7 +5323,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Solomon">
 				<long>
-					<standard>సొలొమన్ దీవుల సమయం</standard>
+					<standard>సోలమన్ దీవుల సమయం</standard>
 				</long>
 			</metazone>
 			<metazone type="South_Georgia">
@@ -4384,7 +5350,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>తైపీ సమయం</generic>
 					<standard>తైపీ ప్రామాణిక సమయం</standard>
-					<daylight>తైపీ పగటి వెలుతరు సమయం</daylight>
+					<daylight>తైపీ పగటి వెలుతురు సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
@@ -4411,9 +5377,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
-					<generic>తుర్క్మెనిస్థాన్ సమయం</generic>
-					<standard>తుర్క్మెనిస్థాన్ ప్రామాణిక సమయం</standard>
-					<daylight>తుర్క్మెనిస్థాన్ వేసవి సమయం</daylight>
+					<generic>తుర్క్‌మెనిస్తాన్ సమయం</generic>
+					<standard>తుర్క్‌మెనిస్తాన్ ప్రామాణిక సమయం</standard>
+					<daylight>తుర్క్‌మెనిస్తాన్ వేసవి సమయం</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tuvalu">
@@ -4485,9 +5451,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
-					<generic>ఏకాటెరిన్బర్గ్ సమయం</generic>
-					<standard>ఏకాటెరిన్బర్గ్ ప్రామాణిక సమయం</standard>
-					<daylight>ఏకాటెరిన్బర్గ్ వేసవి సమయం</daylight>
+					<generic>యెకటెరిన్‌బర్గ్ సమయం</generic>
+					<standard>యెకటెరిన్‌బర్గ్ ప్రామాణిక సమయం</standard>
+					<daylight>యెకటెరిన్‌బర్గ్ వేసవి సమయం</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -4502,6 +5468,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<decimal>.</decimal>
 			<group>,</group>
 			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="telu">
+			<decimal>.</decimal>
+			<group>,</group>
 			<percentSign>%</percentSign>
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
@@ -4575,6 +5554,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<decimalFormats numberSystem="telu">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
 		<scientificFormats numberSystem="latn">
 			<scientificFormatLength>
 				<scientificFormat>
@@ -4582,7 +5568,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
+		<scientificFormats numberSystem="telu">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
 		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="telu">
 			<percentFormatLength>
 				<percentFormat>
 					<pattern>#,##0%</pattern>
@@ -4628,6 +5628,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="telu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -4721,9 +5728,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
-				<displayName>బహ్రైని దీనార్</displayName>
-				<displayName count="one">బహ్రైని దీనార్</displayName>
-				<displayName count="other">బహ్రైని దీనార్‌లు</displayName>
+				<displayName>బహ్రెయిన్ దినార్</displayName>
+				<displayName count="one">బహ్రెయిన్ దినార్</displayName>
+				<displayName count="other">బహ్రెయిన్ దినార్‌లు</displayName>
 				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
@@ -4780,12 +5787,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>బెలరూసియన్ రూబల్</displayName>
 				<displayName count="one">బెలరూసియన్ రూబల్</displayName>
 				<displayName count="other">బెలరూసియన్ రూబల్‌లు</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>బెలరూసియన్ రూబల్ (2000–2016)</displayName>
+				<displayName count="one">బెలరూసియన్ రూబల్ (2000–2016)</displayName>
+				<displayName count="other">బెలరూసియన్ రూబల్‌లు (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>బెలీజ్ డాలర్</displayName>
@@ -4819,6 +5832,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">చిలియన్ పెసోలు</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>చైనీస్ యూవాన్ (ఆఫ్‌షోర్)</displayName>
+				<displayName count="one">చైనీస్ యూవాన్ (ఆఫ్‌షోర్)</displayName>
+				<displayName count="other">చైనీస్ యూవాన్ (ఆఫ్‌షోర్)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>చైనా దేశ యువాన్</displayName>
@@ -4946,6 +5965,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">జార్జియన్ లారి</displayName>
 				<displayName count="other">జార్జియన్ లారీలు</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
@@ -5016,9 +6036,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
-				<displayName>హంగేరియన్ ఫోరిన్ట్</displayName>
-				<displayName count="one">హంగేరియన్ ఫోరిన్ట్</displayName>
-				<displayName count="other">హంగేరియన్ ఫోరిన్ట్‌లు</displayName>
+				<displayName>హంగేరియన్ ఫోరింట్</displayName>
+				<displayName count="one">హంగేరియన్ ఫోరింట్</displayName>
+				<displayName count="other">హంగేరియన్ ఫోరింట్‌లు</displayName>
 				<symbol>HUF</symbol>
 				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
@@ -5060,7 +6080,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">ఐస్లాండిక్ క్రోనా</displayName>
 				<displayName count="other">ఐస్లాండిక్ క్రోనర్</displayName>
 				<symbol>ISK</symbol>
-				<symbol alt="narrow" draft="provisional">kr</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>జమైకన్ డాలర్</displayName>
@@ -5237,10 +6257,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>మౌరిటానియన్ ఒగ్యియా (1973–2017)</displayName>
+				<displayName count="one">మౌరిటానియన్ ఒగ్యియా (1973–2017)</displayName>
+				<displayName count="other">మౌరిటానియన్ ఒగ్యియాలు (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>మౌరిటానియన్ ఒగ్యియా</displayName>
 				<displayName count="one">మౌరిటానియన్ ఒగ్యియా</displayName>
 				<displayName count="other">మౌరిటానియన్ ఒగ్యియాలు</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>మారిషన్ రూపాయి</displayName>
@@ -5341,9 +6366,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>పెరువియన్ న్యూవో సోల్</displayName>
-				<displayName count="one">పెరువియన్ న్యూవో సోల్</displayName>
-				<displayName count="other">పెరువియన్ న్యూవో సోల్‌లు</displayName>
+				<displayName>పెరువియన్ సోల్</displayName>
+				<displayName count="one">పెరువియన్ సోల్</displayName>
+				<displayName count="other">పెరువియన్ సోల్‌లు</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
@@ -5391,6 +6416,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">రోమానియాన్ లెయు</displayName>
 				<displayName count="other">రోమానియాన్ లీ</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>సెర్బియన్ దీనార్</displayName>
@@ -5485,10 +6511,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>సావో టోమ్ మరియు ప్రిన్సిపి డోబ్రా (1977–2017)</displayName>
+				<displayName count="one">సావో టోమ్ మరియు ప్రిన్సిపి డోబ్రా (1977–2017)</displayName>
+				<displayName count="other">సావో టోమ్ మరియు ప్రిన్సిపి డోబ్రాలు (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>సావో టోమ్ మరియు ప్రిన్సిపి డోబ్రా</displayName>
 				<displayName count="one">సావో టోమ్ మరియు ప్రిన్సిపి డోబ్రా</displayName>
 				<displayName count="other">సావో టోమ్ మరియు ప్రిన్సిపి డోబ్రాలు</displayName>
-				<symbol>STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
@@ -5572,9 +6603,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UGX">
-				<displayName>యుగండన్ షిల్లింగ్</displayName>
-				<displayName count="one">యుగండన్ షిల్లింగ్</displayName>
-				<displayName count="other">యుగండన్ షిల్లింగ్‌లు</displayName>
+				<displayName>ఉగాండన్ షిల్లింగ్</displayName>
+				<displayName count="one">ఉగాండన్ షిల్లింగ్</displayName>
+				<displayName count="other">ఉగాండన్ షిల్లింగ్‌లు</displayName>
 				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
@@ -5624,9 +6655,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
-				<displayName>సిఎఫ్‌ఎ ఫ్రాంక్ బిఇఏసి</displayName>
-				<displayName count="one">సిఎఫ్‌ఎ ఫ్రాంక్ బిఇఏసి</displayName>
-				<displayName count="other">సిఎఫ్‌ఎ ఫ్రాంక్ బిఇఏసి</displayName>
+				<displayName>సెంట్రల్ ఆఫ్రికన్ సిఎఫ్‌ఎ ఫ్రాంక్</displayName>
+				<displayName count="one">సెంట్రల్ ఆఫ్రికన్ సిఎఫ్‌ఎ ఫ్రాంక్</displayName>
+				<displayName count="other">సెంట్రల్ ఆఫ్రికన్ సిఎఫ్‌ఎ ఫ్రాంక్‌లు</displayName>
 				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XAG">
@@ -5643,9 +6674,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
-				<displayName>సిఎఫ్‌ఎ ఫ్రాంక్ బిసిఈఏఓ</displayName>
-				<displayName count="one">సిఎఫ్‌ఎ ఫ్రాంక్ బిసిఈఏఓ</displayName>
-				<displayName count="other">సిఎఫ్‌ఎ ఫ్రాంక్ బిసిఈఏఓ</displayName>
+				<displayName>పశ్చిమ ఆఫ్రికన్ సిఏఫ్ఏ ఫ్రాంక్</displayName>
+				<displayName count="one">పశ్చిమ ఆఫ్రికన్ సిఏఫ్ఏ ఫ్రాంక్</displayName>
+				<displayName count="other">పశ్చిమ ఆఫ్రికన్ సిఏఫ్ఏ ఫ్రాంక్‌లు</displayName>
 				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPF">
@@ -5690,6 +6721,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} రోజు</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} రోజులు</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}వ కుడి మలుపు తీసుకోండి.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5707,9 +6743,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} మీటర్లు/స్క్వేర్ సెకన్లు</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName>విప్లవం</displayName>
-				<unitPattern count="one">{0} విప్లవం</unitPattern>
-				<unitPattern count="other">{0} విప్లవంలు</unitPattern>
+				<displayName>భ్రమణాలు</displayName>
+				<unitPattern count="one">{0} భ్రమణం</unitPattern>
+				<unitPattern count="other">{0} భ్రమణాలు</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>రేడియన్లు</displayName>
@@ -5735,6 +6771,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>చదరపు కిలోమీటర్లు</displayName>
 				<unitPattern count="one">{0} చదరపు కిలోమీటరు</unitPattern>
 				<unitPattern count="other">{0} చదరపు కిలోమీటర్లు</unitPattern>
+				<perUnitPattern>చదరపు కిలోమీటరుకు {0}</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>హెక్టార్లు</displayName>
@@ -5745,18 +6782,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>చదరపు మీటర్లు</displayName>
 				<unitPattern count="one">{0} చదరపు మీటరు</unitPattern>
 				<unitPattern count="other">{0} చదరపు మీటర్లు</unitPattern>
-				<perUnitPattern>{0}/చదరపు మీటర్లు</perUnitPattern>
+				<perUnitPattern>చదరపు మీటరుకు {0}</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>చదరపు సెంటీమీటర్లు</displayName>
 				<unitPattern count="one">{0} చదరపు సెంటీమీటరు</unitPattern>
 				<unitPattern count="other">{0} చదరపు సెంటీమీటర్లు</unitPattern>
-				<perUnitPattern>{0}/చదరపు సెంటీమీటర్లు</perUnitPattern>
+				<perUnitPattern>చదరపు సెంటీమీటరుకు {0}</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>చదరపు మైళ్లు</displayName>
 				<unitPattern count="one">{0} చదరపు మైలు</unitPattern>
 				<unitPattern count="other">{0} చదరపు మైళ్లు</unitPattern>
+				<perUnitPattern>చదరపు మైలుకు {0}</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ఎకరాలు</displayName>
@@ -5777,12 +6815,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>చదరపు అంగుళాలు</displayName>
 				<unitPattern count="one">{0} చదరపు అంగుళం</unitPattern>
 				<unitPattern count="other">{0} చదరపు అంగుళాలు</unitPattern>
-				<perUnitPattern>{0}/చదరపు అంగుళాలు</perUnitPattern>
+				<perUnitPattern>చదరపు అంగుళానికి {0}</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>కేరట్లు</displayName>
 				<unitPattern count="one">{0} కేరట్</unitPattern>
 				<unitPattern count="other">{0} కేరట్లు</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>మిల్లీగ్రాములు/డెసిలీటర్</displayName>
+				<unitPattern count="one">{0} మిల్లీగ్రాము/డెసిలీటర్</unitPattern>
+				<unitPattern count="other">{0} మిల్లీగ్రాములు/డెసిలీటర్</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>మిల్లీమోల్‌లు/లీటర్</displayName>
+				<unitPattern count="one">{0} మిల్లీమోల్‌/లీటర్</unitPattern>
+				<unitPattern count="other">{0} మిల్లీమోల్‌లు/లీటర్</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>భాగాలు/మిలియన్</displayName>
+				<unitPattern count="one">{0} భాగం/మిలియన్</unitPattern>
+				<unitPattern count="other">{0} భాగాలు/మిలియన్</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>లీటర్లు/కిలోమీటరు</displayName>
@@ -5790,14 +6843,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} లీటర్లు/కిలోమీటరు</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName>లీటర్లు/100 కిలోమీటర్లకు</displayName>
-				<unitPattern count="one">{0} లీటరు/100 కిలోమీటర్లకు</unitPattern>
-				<unitPattern count="other">{0} లీటర్లు/100 కిలోమీటర్లకు</unitPattern>
+				<displayName>లీటర్లు/100 కీలోమీటర్లు</displayName>
+				<unitPattern count="one">{0} లీటరు/100 కీలోమీటర్లు</unitPattern>
+				<unitPattern count="other">{0} లీటర్లు/100 కీలోమీటర్లు</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>మైళ్లు/గ్యాలన్</displayName>
 				<unitPattern count="one">{0} మైలు/గ్యాలన్</unitPattern>
 				<unitPattern count="other">{0} మైళ్లు/గ్యాలన్</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>మైళ్లు/ఇంపీరియల్ గ్యాలన్</displayName>
+				<unitPattern count="one">{0} మైలు/ఇంపీరియల్ గ్యాలన్</unitPattern>
+				<unitPattern count="other">{0} మైళ్లు/ఇంపీరియల్ గ్యాలన్</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>టెరాబైట్లు</displayName>
@@ -5840,14 +6898,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} కిలోబిట్లు</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName>బైట్లు</displayName>
+				<displayName>బైట్‌లు</displayName>
 				<unitPattern count="one">{0} బైట్</unitPattern>
 				<unitPattern count="other">{0} బైట్‌లు</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<displayName>బిట్లు</displayName>
+				<displayName>బిట్‌లు</displayName>
 				<unitPattern count="one">{0} బిట్</unitPattern>
-				<unitPattern count="other">{0} బిట్లు</unitPattern>
+				<unitPattern count="other">{0} బిట్‌లు</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>శతాబ్దాలు</displayName>
@@ -5894,7 +6952,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>సెకన్లు</displayName>
 				<unitPattern count="one">{0} సెకను</unitPattern>
 				<unitPattern count="other">{0} సెకన్లు</unitPattern>
-				<perUnitPattern>{0}/సెకను</perUnitPattern>
+				<perUnitPattern>సెకనుకు {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>మిల్లీసెకన్లు</displayName>
@@ -6076,6 +7134,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} స్కాండినేవియన్ మైలు</unitPattern>
 				<unitPattern count="other">{0} స్కాండినేవియన్ మైళ్లు</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>పాయింట్‌లు</displayName>
+				<unitPattern count="one">{0} పాయింట్</unitPattern>
+				<unitPattern count="other">{0} పాయింట్‌లు</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>లక్స్</displayName>
 				<unitPattern count="one">{0} లక్స్</unitPattern>
@@ -6112,6 +7175,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>టన్నులు</displayName>
 				<unitPattern count="one">{0} టన్ను</unitPattern>
 				<unitPattern count="other">{0} టన్నులు</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName draft="contributed">స్టోన్లు</displayName>
+				<unitPattern count="one" draft="contributed">{0} స్టోను</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} స్టోన్లు</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>పౌండ్లు</displayName>
@@ -6176,9 +7244,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} మిల్లీమీటర్ల పాదరసం</unitPattern>
 			</unit>
 			<unit type="pressure-pound-per-square-inch">
-				<displayName>పౌండ్లు/చదరపు అంగుళం</displayName>
-				<unitPattern count="one">{0} పౌండు/చదరపు అంగుళం</unitPattern>
-				<unitPattern count="other">{0} పౌండ్లు/చదరపు అంగుళం</unitPattern>
+				<displayName>చదరపు అంగుళానికి పౌండ్లు</displayName>
+				<unitPattern count="one">చదరపు అంగుళానికి {0} పౌండు</unitPattern>
+				<unitPattern count="other">చదరపు అంగుళానికి {0} పౌండ్లు</unitPattern>
 			</unit>
 			<unit type="pressure-inch-hg">
 				<displayName>అంగుళాల పాదరసం</displayName>
@@ -6192,23 +7260,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>కిలోమీటర్లు/గంట</displayName>
-				<unitPattern count="one">{0} కిలోమీటరు/గంట</unitPattern>
-				<unitPattern count="other">{0} కిలోమీటర్లు/గంట</unitPattern>
+				<unitPattern count="one">గంటకు {0} కిలోమీటరు</unitPattern>
+				<unitPattern count="other">గంటకు {0} కిలోమీటర్లు</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>మీటర్లు/సెకను</displayName>
-				<unitPattern count="one">{0} మీటరు/సెకను</unitPattern>
-				<unitPattern count="other">{0} మీటర్లు/సెకను</unitPattern>
+				<unitPattern count="one">సెకనుకు {0} మీటరు</unitPattern>
+				<unitPattern count="other">సెకనుకు {0} మీటర్లు</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName>మైళ్లు/గంట</displayName>
-				<unitPattern count="one">{0} మైలు/గంట</unitPattern>
-				<unitPattern count="other">{0} మైళ్లు/గంట</unitPattern>
+				<displayName>గంటకు మైళ్లు</displayName>
+				<unitPattern count="one">గంటకు {0} మైలు</unitPattern>
+				<unitPattern count="other">గంటకు {0} మైళ్లు</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<displayName>నాట్</displayName>
 				<unitPattern count="one">{0} నాట్</unitPattern>
-				<unitPattern count="other">{0} నాటులు</unitPattern>
+				<unitPattern count="other">{0} నాట్‌లు</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
@@ -6221,9 +7289,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} డిగ్రీల సెల్సియస్</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
-				<displayName>డిగ్రీల ఫారన్హీట్</displayName>
-				<unitPattern count="one">{0} డిగ్రీ ఫారన్హీట్</unitPattern>
-				<unitPattern count="other">{0} డిగ్రీల ఫారన్హీట్</unitPattern>
+				<displayName>డిగ్రీల ఫారెన్‌హీట్</displayName>
+				<unitPattern count="one">{0} డిగ్రీల ఫారెన్‌హీట్</unitPattern>
+				<unitPattern count="other">{0} డిగ్రీల ఫారెన్‌హీట్</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
 				<displayName>కెల్విన్స్</displayName>
@@ -6319,6 +7387,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} గ్యాలన్లు</unitPattern>
 				<perUnitPattern>గ్యాలనుకు {0}</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ఇంపీరియల్ గ్యాలన్లు</displayName>
+				<unitPattern count="one">{0} ఇంపీరియల్ గ్యాలన్</unitPattern>
+				<unitPattern count="other">{0} ఇంపీరియల్ గ్యాలన్లు</unitPattern>
+				<perUnitPattern>ఇంపీరియల్ గ్యాలనుకు {0}</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>పావు వంతులు</displayName>
 				<unitPattern count="one">{0} పావు వంతు</unitPattern>
@@ -6371,9 +7445,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} మీ/సె²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName>వి.</displayName>
-				<unitPattern count="one">{0} వి.</unitPattern>
-				<unitPattern count="other">{0} వి.</unitPattern>
+				<displayName>భ్రమ.</displayName>
+				<unitPattern count="one">{0} భ్రమ</unitPattern>
+				<unitPattern count="other">{0} భ్రమ.</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>రేడియన్లు</displayName>
@@ -6399,6 +7473,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>కి.మీ²</displayName>
 				<unitPattern count="one">{0} కి.మీ²</unitPattern>
 				<unitPattern count="other">{0} కి.మీ²</unitPattern>
+				<perUnitPattern>{0}/ కి.మీ²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>హెక్టార్లు</displayName>
@@ -6421,6 +7496,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>చద. మైళ్లు</displayName>
 				<unitPattern count="one">{0} చద. మై.</unitPattern>
 				<unitPattern count="other">{0} చద. మై.</unitPattern>
+				<perUnitPattern>{0}/ చద. మై²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ఎకరాలు</displayName>
@@ -6448,6 +7524,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} కేర.</unitPattern>
 				<unitPattern count="other">{0} కేర.</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>మి.గ్రా./డె.లీ.</displayName>
+				<unitPattern count="one">{0} మి.గ్రా./డె.లీ.</unitPattern>
+				<unitPattern count="other">{0} మి.గ్రా./డె.లీ.</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>మిల్లీమోల్‌/లీటర్</displayName>
+				<unitPattern count="one">{0} మి.మో./లీ.</unitPattern>
+				<unitPattern count="other">{0} మి.మో./లీ.</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>భాగాలు/మిలియన్</displayName>
+				<unitPattern count="one">{0} భా./మి.</unitPattern>
+				<unitPattern count="other">{0} భా./మి.</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>లీటర్లు/కి.మీ</displayName>
 				<unitPattern count="one">{0} లీ./కి.మీ</unitPattern>
@@ -6462,6 +7553,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>మైళ్లు/గ్యా.</displayName>
 				<unitPattern count="one">{0} మై./గ్యా.</unitPattern>
 				<unitPattern count="other">{0} మై./గ్యా.</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>మైళ్లు/గ్యా. ఇంపీరియల్</displayName>
+				<unitPattern count="one">{0} మై./గ్యా. ఇంపీరియల్</unitPattern>
+				<unitPattern count="other">{0} మై./గ్యా. ఇంపీరియల్</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>టె.బైట్</displayName>
@@ -6712,7 +7808,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="length-parsec">
 				<displayName>పార్సెక్‌లు</displayName>
-				<unitPattern count="one">{0} పా.</unitPattern>
+				<unitPattern count="one">{0} పా.లు</unitPattern>
 				<unitPattern count="other">{0} పా.</unitPattern>
 			</unit>
 			<unit type="length-light-year">
@@ -6737,6 +7833,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>స్కాం.మై.</displayName>
 				<unitPattern count="one">{0} స్కాం.మై.</unitPattern>
 				<unitPattern count="other">{0} స్కాం.మై.</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>పాయింట్‌లు</displayName>
+				<unitPattern count="one" draft="provisional">{0} pt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>లక్స్</displayName>
@@ -6774,6 +7875,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>టన్నులు</displayName>
 				<unitPattern count="one">{0} టన్ను</unitPattern>
 				<unitPattern count="other">{0} టన్ను</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName draft="contributed">స్టోన్లు</displayName>
+				<unitPattern count="one" draft="contributed">{0} స్టో</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} స్టో</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>పౌండ్లు</displayName>
@@ -6981,6 +8087,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} గ్యా.</unitPattern>
 				<perUnitPattern>{0}/గ్యా.</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ఇంపీరియల్ గ్యా.</displayName>
+				<unitPattern count="one">{0} గ్యా. ఇంపీరియల్</unitPattern>
+				<unitPattern count="other">{0} గ్యా. ఇంపీరియల్</unitPattern>
+				<perUnitPattern>{0}/ గ్యా. ఇంపీరియల్</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>పావు వం.</displayName>
 				<unitPattern count="one">{0} పావు వం.</unitPattern>
@@ -7014,7 +8126,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0} తూ.</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} ఉ.</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}ద</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} ద.</coordinateUnitPattern>
 				<coordinateUnitPattern type="west">{0} ప.</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
@@ -7063,9 +8175,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} అ²</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName>లీ/100 కి.మీ.</displayName>
-				<unitPattern count="one">{0}లీ/100 కి.మీ.</unitPattern>
-				<unitPattern count="other">{0}లీ/100 కి.మీ.</unitPattern>
+				<displayName>లీ/100కి.మీ.</displayName>
+				<unitPattern count="one">{0}లీ/100కి.మీ.</unitPattern>
+				<unitPattern count="other">{0}లీ/100కి.మీ.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>సం</displayName>
@@ -7086,21 +8198,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>రోజు</displayName>
 				<unitPattern count="one">{0}రో</unitPattern>
 				<unitPattern count="other">{0}రో</unitPattern>
+				<perUnitPattern draft="contributed">{0}/రో</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>గంట</displayName>
 				<unitPattern count="one">{0}గం</unitPattern>
 				<unitPattern count="other">{0}గం</unitPattern>
+				<perUnitPattern draft="contributed">{0}/గం</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>నిమి</displayName>
 				<unitPattern count="one">{0}ని</unitPattern>
 				<unitPattern count="other">{0}ని</unitPattern>
+				<perUnitPattern draft="contributed">{0}/నిమి.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>సె</displayName>
 				<unitPattern count="one">{0}సె</unitPattern>
 				<unitPattern count="other">{0}సె</unitPattern>
+				<perUnitPattern draft="contributed">{0}/సె</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>మి.సె.</displayName>
@@ -7111,16 +8227,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>కి.మీ</displayName>
 				<unitPattern count="one">{0}కి.మీ</unitPattern>
 				<unitPattern count="other">{0}కి.మీ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/కి.మీ.</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>మీటరు</displayName>
 				<unitPattern count="one">{0}మీ</unitPattern>
 				<unitPattern count="other">{0}మీ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/మీ.</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="contributed">డె.మీ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} డె.మీ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} డె.మీ.</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>సెం.మీ</displayName>
 				<unitPattern count="one">{0}సెం.మీ</unitPattern>
 				<unitPattern count="other">{0}సెం.మీ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/సెం.మీ.</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>మి.మీ</displayName>
@@ -7132,46 +8256,68 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} పి.మీ</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName draft="contributed">మైళ్లు</displayName>
 				<unitPattern count="one">{0} మై</unitPattern>
 				<unitPattern count="other">{0} మై</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName draft="contributed">గజాలు</displayName>
 				<unitPattern count="one">{0} గ.</unitPattern>
 				<unitPattern count="other">{0} గ.</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName draft="contributed">అడుగులు</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
+				<perUnitPattern draft="contributed">{0}/అ.</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName draft="contributed">అంగుళాలు</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
+				<perUnitPattern draft="contributed">{0}/అం.</perUnitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="one">{0} కాం. సం</unitPattern>
 				<unitPattern count="other">{0} కాం. సం</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="contributed">స్కాం.మై.</displayName>
+				<unitPattern count="one" draft="contributed">{0} స్కాం.మై.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} స్కాం.మై.</unitPattern>
+			</unit>
 			<unit type="mass-kilogram">
 				<displayName>కి.గ్రా</displayName>
 				<unitPattern count="one">{0}కి.గ్రా</unitPattern>
 				<unitPattern count="other">{0}కి.గ్రా</unitPattern>
+				<perUnitPattern draft="contributed">{0}/కి.గ్రా.</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>గ్రాము</displayName>
 				<unitPattern count="one">{0}గ్రా</unitPattern>
 				<unitPattern count="other">{0}గ్రా</unitPattern>
+				<perUnitPattern draft="contributed">{0}/గ్రా.</perUnitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<unitPattern count="one" draft="unconfirmed">{0} ట</unitPattern>
 				<unitPattern count="other" draft="unconfirmed">{0} ట</unitPattern>
 			</unit>
+			<unit type="mass-stone">
+				<displayName draft="contributed">స్టోను</displayName>
+				<unitPattern count="one" draft="contributed">{0} స్టో</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} స్టో</unitPattern>
+			</unit>
 			<unit type="mass-pound">
+				<displayName draft="contributed">పౌండ్లు</displayName>
 				<unitPattern count="one">{0} పౌ.</unitPattern>
 				<unitPattern count="other">{0} పౌ.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/పౌ.</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName draft="contributed">ఔ.</displayName>
 				<unitPattern count="one">{0} ఔ.</unitPattern>
 				<unitPattern count="other">{0} ఔ.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ ఔ.</perUnitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="one">{0} కి.వా</unitPattern>
@@ -7186,14 +8332,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} హా.ప</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName draft="contributed">హె.పా</displayName>
 				<unitPattern count="one">{0} హె.పా</unitPattern>
 				<unitPattern count="other">{0} హె.పా</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-of-mercury">
+				<displayName draft="contributed">మిమీ. పాద</displayName>
+				<unitPattern count="one" draft="contributed">{0} మిమీ. పాద</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} మిమీ. పాద</unitPattern>
+			</unit>
+			<unit type="pressure-pound-per-square-inch">
+				<displayName draft="contributed">పౌ/చ.అం</displayName>
+				<unitPattern count="one" draft="contributed">{0} పౌ/చ.అం</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} పౌ/చ.అం</unitPattern>
+			</unit>
 			<unit type="pressure-inch-hg">
+				<displayName draft="contributed">అం.పాద</displayName>
 				<unitPattern count="one">{0} అం.పాద</unitPattern>
 				<unitPattern count="other">{0} అం.పాద</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<displayName draft="contributed">మి.బార్</displayName>
 				<unitPattern count="one">{0} మి.బార్</unitPattern>
 				<unitPattern count="other">{0} మి.బార్</unitPattern>
 			</unit>
@@ -7203,12 +8362,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}కి.మీ/గం</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName draft="contributed">మీటర్లు/సెక.</displayName>
 				<unitPattern count="one">{0} మీ/సె</unitPattern>
 				<unitPattern count="other">{0} మీ/సె</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<displayName draft="contributed">మైళ్లు/గంట</displayName>
 				<unitPattern count="one">{0} మై/గం.</unitPattern>
 				<unitPattern count="other">{0} మై/గం.</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName draft="contributed">°</displayName>
+				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°సెల్సి</displayName>
@@ -7216,8 +8382,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}°సెల్సి</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName draft="contributed">°ఫా</displayName>
 				<unitPattern count="one">{0}°F</unitPattern>
 				<unitPattern count="other">{0}°F</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName draft="contributed">కె</displayName>
+				<unitPattern count="one" draft="contributed">{0} కె</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} కె</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="one">{0} కిమీ³</unitPattern>
@@ -7256,6 +8428,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} మరియు {1}</listPatternPart>
 			<listPatternPart type="2">{0} మరియు {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} లేదా {1}</listPatternPart>
+			<listPatternPart type="2">{0} లేదా {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} మరియు {1}</listPatternPart>
+			<listPatternPart type="2">{0} మరియు {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
@@ -7281,5 +8465,103 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>వద్దు:వ</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — అన్ని</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — అనుకూలత</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — ఆవృతం</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — విస్తారితం</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — చారిత్రకం</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — ఇతరములు</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — ఇతరం</characterLabelPattern>
+		<characterLabelPattern type="scripts">స్క్రిప్ట్‌లు — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} స్ట్రోక్</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} స్ట్రోకులు</characterLabelPattern>
+		<characterLabel type="activities">కార్యాచరణ</characterLabel>
+		<characterLabel type="african_scripts">ఆఫ్రికన్ స్క్రిప్ట్</characterLabel>
+		<characterLabel type="american_scripts">అమెరికన్ స్క్రిప్ట్</characterLabel>
+		<characterLabel type="animal">జంతువు</characterLabel>
+		<characterLabel type="animals_nature">జంతువు లేదా ప్రకృతి</characterLabel>
+		<characterLabel type="arrows">బాణం</characterLabel>
+		<characterLabel type="body">శరీరం</characterLabel>
+		<characterLabel type="box_drawing">బాక్స్ డ్రాయింగ్</characterLabel>
+		<characterLabel type="braille">బ్రెయిలీ</characterLabel>
+		<characterLabel type="building">భవనం</characterLabel>
+		<characterLabel type="bullets_stars">బుల్లెట్ లేదా నక్షత్రం</characterLabel>
+		<characterLabel type="consonantal_jamo">కాన్సొనెంటల్ జామో</characterLabel>
+		<characterLabel type="currency_symbols">కరెన్సీ చిహ్నం</characterLabel>
+		<characterLabel type="dash_connector">డాష్/గీత</characterLabel>
+		<characterLabel type="digits">అంకె</characterLabel>
+		<characterLabel type="dingbats">డింగ్‌బాట్</characterLabel>
+		<characterLabel type="divination_symbols">భవిష్యవాణి చిహ్నం</characterLabel>
+		<characterLabel type="downwards_arrows">దిగువకు సూచించే బాణం</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">దిగువకు, ఎగువకు చూపించే బాణం</characterLabel>
+		<characterLabel type="east_asian_scripts">తూర్పు ఆసియా స్క్రిప్ట్</characterLabel>
+		<characterLabel type="emoji">ఎమోజి</characterLabel>
+		<characterLabel type="european_scripts">యూరోపియన్ స్క్రిప్ట్</characterLabel>
+		<characterLabel type="female">మహిళ</characterLabel>
+		<characterLabel type="flag">పతాకం</characterLabel>
+		<characterLabel type="flags">పతాకాలు</characterLabel>
+		<characterLabel type="food_drink">ఆహారం &amp; పానీయాలు</characterLabel>
+		<characterLabel type="format">ఆకృతి</characterLabel>
+		<characterLabel type="format_whitespace">ఆకృతి &amp; తెల్లని ఖాళీ</characterLabel>
+		<characterLabel type="full_width_form_variant">ఫుల్-విడ్త్ రూపాంతరం</characterLabel>
+		<characterLabel type="geometric_shapes">రేఖాగణిత ఆకారం</characterLabel>
+		<characterLabel type="half_width_form_variant">హాఫ్-విడ్త్ రూపాంతరం</characterLabel>
+		<characterLabel type="han_characters">హాన్ అక్షరం</characterLabel>
+		<characterLabel type="han_radicals">హాన్ ధాత్వాంశం</characterLabel>
+		<characterLabel type="hanja">హాంజా</characterLabel>
+		<characterLabel type="hanzi_simplified">హాంజీ (సరళీకృతం)</characterLabel>
+		<characterLabel type="hanzi_traditional">హంజీ (సాంప్రదాయకం)</characterLabel>
+		<characterLabel type="heart">హృదయం</characterLabel>
+		<characterLabel type="historic_scripts">చారిత్రక స్క్రిప్ట్</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ఇడియోగ్రాఫిక్ వివ. అక్షరం</characterLabel>
+		<characterLabel type="japanese_kana">జపనీస్ కానా</characterLabel>
+		<characterLabel type="kanbun">కానబన్</characterLabel>
+		<characterLabel type="kanji">కాంజీ</characterLabel>
+		<characterLabel type="keycap">కీక్యాప్</characterLabel>
+		<characterLabel type="leftwards_arrows">ఎడమకు సూచించే బాణం</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">ఎడమకు, కుడికి సూచించే బాణం</characterLabel>
+		<characterLabel type="letterlike_symbols">అక్షరం వంటి చిహ్నం</characterLabel>
+		<characterLabel type="limited_use">పరిమిత ఉపయోగం</characterLabel>
+		<characterLabel type="male">పురుషుడు</characterLabel>
+		<characterLabel type="math_symbols">గణిత చిహ్నం</characterLabel>
+		<characterLabel type="middle_eastern_scripts">మధ్యమ తూర్పు స్క్రిప్ట్</characterLabel>
+		<characterLabel type="miscellaneous">ఇతరములు</characterLabel>
+		<characterLabel type="modern_scripts">ఆధునిక స్క్రిప్ట్</characterLabel>
+		<characterLabel type="modifier">మాడిఫైయర్</characterLabel>
+		<characterLabel type="musical_symbols">సంగీత చిహ్నం</characterLabel>
+		<characterLabel type="nature">ప్రకృతి</characterLabel>
+		<characterLabel type="nonspacing">అంతరం రహిత</characterLabel>
+		<characterLabel type="numbers">సంఖ్యలు</characterLabel>
+		<characterLabel type="objects">వస్తువు</characterLabel>
+		<characterLabel type="other">ఇతరం</characterLabel>
+		<characterLabel type="paired">జత చేయబడిన</characterLabel>
+		<characterLabel type="person">వ్యక్తి</characterLabel>
+		<characterLabel type="phonetic_alphabet">ఫోనెటిక్ అక్షరం</characterLabel>
+		<characterLabel type="pictographs">చిత్రసంకేతం</characterLabel>
+		<characterLabel type="place">స్థలం</characterLabel>
+		<characterLabel type="plant">మొక్క</characterLabel>
+		<characterLabel type="punctuation">విరామ చిహ్నం</characterLabel>
+		<characterLabel type="rightwards_arrows">కుడికి సూచించే బాణం</characterLabel>
+		<characterLabel type="sign_standard_symbols">సంకేతం లేదా చిహ్నం</characterLabel>
+		<characterLabel type="small_form_variant">చిన్న రూపాంతరాలు</characterLabel>
+		<characterLabel type="smiley">స్మైలీ</characterLabel>
+		<characterLabel type="smileys_people">స్మైలీ లేదా వ్యక్తి</characterLabel>
+		<characterLabel type="south_asian_scripts">దక్షిణ ఆసియా స్క్రిప్ట్</characterLabel>
+		<characterLabel type="southeast_asian_scripts">నైరుతి ఆసియా స్క్రిప్ట్</characterLabel>
+		<characterLabel type="spacing">అంతరం</characterLabel>
+		<characterLabel type="sport">క్రీడ</characterLabel>
+		<characterLabel type="symbols">చిహ్నం</characterLabel>
+		<characterLabel type="technical_symbols">సాంకేతిక చిహ్నం</characterLabel>
+		<characterLabel type="tone_marks">టోన్ మార్క్</characterLabel>
+		<characterLabel type="travel">ప్రయాణం</characterLabel>
+		<characterLabel type="travel_places">ప్రయాణం లేదా స్థలం</characterLabel>
+		<characterLabel type="upwards_arrows">ఎగువకు సూచించే బాణాలు</characterLabel>
+		<characterLabel type="variant_forms">రూపాంతరం</characterLabel>
+		<characterLabel type="vocalic_jamo">వోకాలిక్ జామో</characterLabel>
+		<characterLabel type="weather">వాతావరణం</characterLabel>
+		<characterLabel type="western_asian_scripts">పశ్చిమ ఆసియా స్క్రిప్ట్</characterLabel>
+		<characterLabel type="whitespace">తెల్లని ఖాళీ</characterLabel>
+	</characterLabels>
 </ldml>
-

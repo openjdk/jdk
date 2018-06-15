@@ -307,10 +307,12 @@ ZWeakRootsIterator::ZWeakRootsIterator() :
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZStatTimer timer(ZSubPhasePauseWeakRootsSetup);
   SymbolTable::clear_parallel_claimed_index();
+  StringTable::reset_dead_counter();
 }
 
 ZWeakRootsIterator::~ZWeakRootsIterator() {
   ZStatTimer timer(ZSubPhasePauseWeakRootsTeardown);
+  StringTable::finish_dead_counter();
 }
 
 void ZWeakRootsIterator::do_vm_weak_handles(BoolObjectClosure* is_alive, OopClosure* cl) {
@@ -341,9 +343,34 @@ void ZWeakRootsIterator::do_symbol_table(BoolObjectClosure* is_alive, OopClosure
   SymbolTable::possibly_parallel_unlink(&dummy, &dummy);
 }
 
+class ZStringTableDeadCounterBoolObjectClosure : public BoolObjectClosure  {
+private:
+  BoolObjectClosure* const _cl;
+  size_t                   _ndead;
+
+public:
+  ZStringTableDeadCounterBoolObjectClosure(BoolObjectClosure* cl) :
+      _cl(cl),
+      _ndead(0) {}
+
+  ~ZStringTableDeadCounterBoolObjectClosure() {
+    StringTable::inc_dead_counter(_ndead);
+  }
+
+  virtual bool do_object_b(oop obj) {
+    if (_cl->do_object_b(obj)) {
+      return true;
+    }
+
+    _ndead++;
+    return false;
+  }
+};
+
 void ZWeakRootsIterator::do_string_table(BoolObjectClosure* is_alive, OopClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseWeakRootsStringTable);
-  _string_table_iter.weak_oops_do(is_alive, cl);
+  ZStringTableDeadCounterBoolObjectClosure counter_is_alive(is_alive);
+  _string_table_iter.weak_oops_do(&counter_is_alive, cl);
 }
 
 void ZWeakRootsIterator::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* cl) {
@@ -377,7 +404,13 @@ ZConcurrentWeakRootsIterator::ZConcurrentWeakRootsIterator() :
     _string_table_iter(StringTable::weak_storage()),
     _vm_weak_handles(this),
     _jni_weak_handles(this),
-    _string_table(this) {}
+    _string_table(this) {
+  StringTable::reset_dead_counter();
+}
+
+ZConcurrentWeakRootsIterator::~ZConcurrentWeakRootsIterator() {
+  StringTable::finish_dead_counter();
+}
 
 void ZConcurrentWeakRootsIterator::do_vm_weak_handles(OopClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentWeakRootsVMWeakHandles);
@@ -389,9 +422,36 @@ void ZConcurrentWeakRootsIterator::do_jni_weak_handles(OopClosure* cl) {
   _jni_weak_handles_iter.oops_do(cl);
 }
 
+class ZStringTableDeadCounterOopClosure : public OopClosure  {
+private:
+  OopClosure* const _cl;
+  size_t            _ndead;
+
+public:
+  ZStringTableDeadCounterOopClosure(OopClosure* cl) :
+      _cl(cl),
+      _ndead(0) {}
+
+  ~ZStringTableDeadCounterOopClosure() {
+    StringTable::inc_dead_counter(_ndead);
+  }
+
+  virtual void do_oop(oop* p) {
+    _cl->do_oop(p);
+    if (*p == NULL) {
+      _ndead++;
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
 void ZConcurrentWeakRootsIterator::do_string_table(OopClosure* cl) {
   ZStatTimer timer(ZSubPhaseConcurrentWeakRootsStringTable);
-  _string_table_iter.oops_do(cl);
+  ZStringTableDeadCounterOopClosure counter_cl(cl);
+  _string_table_iter.oops_do(&counter_cl);
 }
 
 void ZConcurrentWeakRootsIterator::oops_do(OopClosure* cl) {

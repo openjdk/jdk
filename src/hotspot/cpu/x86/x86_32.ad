@@ -11482,10 +11482,10 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 
 // =======================================================================
 // fast clearing of an array
-instruct rep_stos(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+instruct rep_stos(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(!((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
 
   format %{ $$template
     $$emit$$"XOR    EAX,EAX\t# ClearArray:\n\t"
@@ -11502,6 +11502,32 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlag
     if (UseFastStosb) {
        $$emit$$"SHL    ECX,3\t# Convert doublewords to bytes\n\t"
        $$emit$$"REP STOSB\t# store EAX into [EDI++] while ECX--\n\t"
+    } else if (UseXMMForObjInit) {
+       $$emit$$"MOV     RDI,RAX\n\t"
+       $$emit$$"VPXOR    YMM0,YMM0,YMM0\n\t"
+       $$emit$$"JMPQ    L_zero_64_bytes\n\t"
+       $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
+       $$emit$$"VMOVDQU YMM0,(RAX)\n\t"
+       $$emit$$"VMOVDQU YMM0,0x20(RAX)\n\t"
+       $$emit$$"ADD     0x40,RAX\n\t"
+       $$emit$$"# L_zero_64_bytes:\n\t"
+       $$emit$$"SUB     0x8,RCX\n\t"
+       $$emit$$"JGE     L_loop\n\t"
+       $$emit$$"ADD     0x4,RCX\n\t"
+       $$emit$$"JL      L_tail\n\t"
+       $$emit$$"VMOVDQU YMM0,(RAX)\n\t"
+       $$emit$$"ADD     0x20,RAX\n\t"
+       $$emit$$"SUB     0x4,RCX\n\t"
+       $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
+       $$emit$$"ADD     0x4,RCX\n\t"
+       $$emit$$"JLE     L_end\n\t"
+       $$emit$$"DEC     RCX\n\t"
+       $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
+       $$emit$$"VMOVQ   XMM0,(RAX)\n\t"
+       $$emit$$"ADD     0x8,RAX\n\t"
+       $$emit$$"DEC     RCX\n\t"
+       $$emit$$"JGE     L_sloop\n\t"
+       $$emit$$"# L_end:\n\t"
     } else {
        $$emit$$"SHL    ECX,1\t# Convert doublewords to words\n\t"
        $$emit$$"REP STOS\t# store EAX into [EDI++] while ECX--\n\t"
@@ -11509,28 +11535,57 @@ instruct rep_stos(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlag
     $$emit$$"# DONE"
   %}
   ins_encode %{
-    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register, false);
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register,
+                 $tmp$$XMMRegister, false);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct rep_stos_large(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+instruct rep_stos_large(eCXRegI cnt, eDIRegP base, regD tmp, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
   predicate(((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp, KILL zero, KILL cr);
   format %{ $$template
-    $$emit$$"XOR    EAX,EAX\t# ClearArray:\n\t"
     if (UseFastStosb) {
+       $$emit$$"XOR    EAX,EAX\t# ClearArray:\n\t"
        $$emit$$"SHL    ECX,3\t# Convert doublewords to bytes\n\t"
        $$emit$$"REP STOSB\t# store EAX into [EDI++] while ECX--\n\t"
+    } else if (UseXMMForObjInit) {
+       $$emit$$"MOV     RDI,RAX\t# ClearArray:\n\t"
+       $$emit$$"VPXOR   YMM0,YMM0,YMM0\n\t"
+       $$emit$$"JMPQ    L_zero_64_bytes\n\t"
+       $$emit$$"# L_loop:\t# 64-byte LOOP\n\t"
+       $$emit$$"VMOVDQU YMM0,(RAX)\n\t"
+       $$emit$$"VMOVDQU YMM0,0x20(RAX)\n\t"
+       $$emit$$"ADD     0x40,RAX\n\t"
+       $$emit$$"# L_zero_64_bytes:\n\t"
+       $$emit$$"SUB     0x8,RCX\n\t"
+       $$emit$$"JGE     L_loop\n\t"
+       $$emit$$"ADD     0x4,RCX\n\t"
+       $$emit$$"JL      L_tail\n\t"
+       $$emit$$"VMOVDQU YMM0,(RAX)\n\t"
+       $$emit$$"ADD     0x20,RAX\n\t"
+       $$emit$$"SUB     0x4,RCX\n\t"
+       $$emit$$"# L_tail:\t# Clearing tail bytes\n\t"
+       $$emit$$"ADD     0x4,RCX\n\t"
+       $$emit$$"JLE     L_end\n\t"
+       $$emit$$"DEC     RCX\n\t"
+       $$emit$$"# L_sloop:\t# 8-byte short loop\n\t"
+       $$emit$$"VMOVQ   XMM0,(RAX)\n\t"
+       $$emit$$"ADD     0x8,RAX\n\t"
+       $$emit$$"DEC     RCX\n\t"
+       $$emit$$"JGE     L_sloop\n\t"
+       $$emit$$"# L_end:\n\t"
     } else {
+       $$emit$$"XOR    EAX,EAX\t# ClearArray:\n\t"
        $$emit$$"SHL    ECX,1\t# Convert doublewords to words\n\t"
        $$emit$$"REP STOS\t# store EAX into [EDI++] while ECX--\n\t"
     }
     $$emit$$"# DONE"
   %}
   ins_encode %{
-    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register, true);
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register,
+                 $tmp$$XMMRegister, true);
   %}
   ins_pipe( pipe_slow );
 %}

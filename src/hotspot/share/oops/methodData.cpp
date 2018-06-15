@@ -1217,8 +1217,8 @@ void MethodData::init() {
   // Set per-method invoke- and backedge mask.
   double scale = 1.0;
   CompilerOracle::has_option_value(_method, "CompileThresholdScaling", scale);
-  _invoke_mask = right_n_bits(Arguments::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
-  _backedge_mask = right_n_bits(Arguments::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _invoke_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _backedge_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
 
   _tenure_traps = 0;
   _num_loops = 0;

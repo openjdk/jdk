@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,19 @@
 
 /*
  * @test
- * @bug 8167965
+ * @bug 8167965 8194308
  * @summary Test proper handling of the --release option.
- * @modules jdk.jdeps/com.sun.tools.jdeprscan
+ * @modules
+ *      jdk.compiler/com.sun.tools.javac.jvm
+ *      jdk.compiler/com.sun.tools.javac.platform
+ *      jdk.jdeps/com.sun.tools.jdeprscan
  * @build jdk.jdeprscan.TestRelease
  * @run testng jdk.jdeprscan.TestRelease
  */
 
 package jdk.jdeprscan;
 
+import com.sun.tools.javac.platform.JDKPlatformProvider;
 import com.sun.tools.jdeprscan.Main;
 import org.testng.annotations.Test;
 
@@ -45,11 +49,9 @@ public class TestRelease {
 
     @Test
     public void testSuccess() {
-        assertTrue(invoke("6"));
-        assertTrue(invoke("7"));
-        assertTrue(invoke("8"));
-        assertTrue(invoke("9"));
-        assertTrue(invoke("10"));
+        for (String target : new JDKPlatformProvider().getSupportedPlatformNames()) {
+            assertTrue(invoke(target));
+        }
     }
 
     @Test

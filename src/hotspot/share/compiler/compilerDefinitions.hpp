@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_COMPILER_COMPILERDEFINITIONS_HPP
 #define SHARE_VM_COMPILER_COMPILERDEFINITIONS_HPP
 
-#include "utilities/globalDefinitions.hpp"
+#include "memory/allocation.hpp"
 
 // The (closed set) of concrete compiler classes.
 enum CompilerType {
@@ -75,8 +75,6 @@ inline bool is_client_compilation_mode_vm() {
   return Compilation_mode == CompMode_client;
 }
 
-extern void set_client_compilation_mode();
-
 inline bool is_c1_compile(int comp_level) {
   return comp_level > CompLevel_none && comp_level < CompLevel_full_optimization;
 }
@@ -108,5 +106,24 @@ enum RTMState {
 #else
 #define RTM_OPT_ONLY(code)
 #endif
+
+class CompilerConfig : public AllStatic {
+public:
+  // Scale compile thresholds
+  // Returns threshold scaled with CompileThresholdScaling
+  static intx scaled_compile_threshold(intx threshold, double scale);
+  static intx scaled_compile_threshold(intx threshold);
+
+  // Returns freq_log scaled with CompileThresholdScaling
+  static intx scaled_freq_log(intx freq_log, double scale);
+  static intx scaled_freq_log(intx freq_log);
+
+  static bool check_args_consistency(bool status);
+
+  static void ergo_initialize();
+
+private:
+  static void set_tiered_flags();
+};
 
 #endif // SHARE_VM_COMPILER_COMPILERDEFINITIONS_HPP

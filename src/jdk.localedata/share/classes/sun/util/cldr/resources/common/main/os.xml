@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12313 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="os"/>
 	</identity>
 	<localeDisplayNames>
@@ -48,6 +49,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="es" draft="contributed">испайнаг</language>
 			<language type="es_419" draft="contributed">латинаг америкаг англисаг</language>
 			<language type="es_ES" draft="contributed">европӕйаг англисаг</language>
+			<language type="es_MX" draft="unconfirmed">мексикӕйаг испайнаг</language>
 			<language type="et" draft="contributed">естойнаг</language>
 			<language type="eu" draft="contributed">баскаг</language>
 			<language type="fa" draft="contributed">персайнаг</language>
@@ -141,6 +143,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[а ӕ б в г {гъ} д {дж} {дз} е ё ж з и й к {къ} л м н о п {пъ} р с т {тъ} у ф х {хъ} ц {цъ} ч {чъ} ш щ ъ ы ь э ю я]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Ӕ Б В Г {Гъ} Д {Дж} {Дз} Е Ё Ж З И Й К {Къ} Л М Н О П {Пъ} Р С Т {Тъ} У Ф Х {Хъ} Ц {Цъ} Ч {Чъ} Ш Щ Ы Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 		<ellipsis type="final" draft="contributed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="contributed">…{0}</ellipsis>
@@ -623,6 +626,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="year">
 				<displayName draft="contributed">Аз</displayName>
 			</field>
+			<field type="quarter">
+				<displayName draft="unconfirmed">квартал</displayName>
+			</field>
+			<field type="quarter-short">
+				<displayName draft="unconfirmed">кв.</displayName>
+			</field>
+			<field type="quarter-narrow">
+				<displayName draft="unconfirmed">кв.</displayName>
+			</field>
 			<field type="month">
 				<displayName draft="contributed">Мӕй</displayName>
 			</field>
@@ -930,4 +942,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

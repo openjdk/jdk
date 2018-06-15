@@ -81,11 +81,3 @@ tools/sjavac/ClasspathDependencies.java						8158002	   generic-all	  Requires i
 #
 # jdeps 
 
-tools/jdeprscan/tests/jdk/jdeprscan/TestNotFound.java       8193784    generic-all        temporary until support for --release 11 is worked out
-###########################################################################
-#
-# Java EE Module Removal
-#
-tools/jdeprscan/tests/jdk/jdeprscan/TestRelease.java                  8194308    generic-all  Java EE Module Removal
-tools/jdeprscan/tests/jdk/jdeprscan/TestNotFound.java                 8194308    generic-all  Java EE Module Removal
-

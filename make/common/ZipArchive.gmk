@@ -42,6 +42,10 @@ endif
 #   INCLUDE_FILES
 #   EXCLUDES
 #   EXCLUDE_FILES
+#   EXCLUDE_PATTERNS - Patterns with at most one % wildcard matching filenames
+#                      and not directories.
+#   EXCLUDE_PATTERNS_$dir - Exclude patterns just like above but specific to one
+#                           src dir
 #   SUFFIXES
 #   EXTRA_DEPS
 #   ZIP_OPTIONS extra options to pass to zip
@@ -88,11 +92,26 @@ define SetupZipArchiveBody
     $1_ALL_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_ALL_SRCS))
   endif
   ifneq ($$($1_EXCLUDE_FILES),)
-    # Cannot precompute ZIP_EXCLUDE_FILES as it is dependent on which src root is being
-    # zipped at the moment.
     $1_SRC_EXCLUDE_FILES := $$(addprefix %, $$($1_EXCLUDE_FILES)) $$($1_EXCLUDE_FILES)
     $1_ALL_SRCS := $$(filter-out $$($1_SRC_EXCLUDE_FILES), $$($1_ALL_SRCS))
+    $$(foreach s, $$($1_SRC), \
+      $$(eval $1_ZIP_EXCLUDES_$$s += \
+          $$(addprefix -x$$(SPACE), $$(patsubst $$s/%,%, $$($1_EXCLUDE_FILES))) \
+      ) \
+    )
   endif
+  ifneq ($$($1_EXCLUDE_PATTERNS), )
+    $1_ALL_SRCS := $$(filter-out $$($1_EXCLUDE_PATTERNS), $$($1_ALL_SRCS))
+    $1_ZIP_EXCLUDES += $$(addprefix -x$(SPACE), $$(subst %,\*,$$($1_EXCLUDE_PATTERNS)))
+  endif
+  # Rewrite src dir specific exclude patterns to zip excludes
+  $$(foreach s, $$($1_SRC), \
+    $$(if $$($1_EXCLUDE_PATTERNS_$$s), \
+      $$(eval $1_ZIP_EXCLUDES_$$s += \
+          $$(addprefix -x$$(SPACE), $$(subst %,\*,$$($1_EXCLUDE_PATTERNS_$$s))) \
+      ) \
+    ) \
+  )
 
   # Use a slightly shorter name for logging, but with enough path to identify this zip.
   $1_NAME:=$$(subst $$(OUTPUTDIR)/,,$$($1_ZIP))
@@ -107,9 +126,9 @@ define SetupZipArchiveBody
   $$($1_ZIP) : $$($1_ALL_SRCS) $$($1_EXTRA_DEPS)
 	$(MKDIR) -p $$(@D)
 	$(ECHO) Updating $$($1_NAME)
-	$$(foreach i,$$($1_SRC),(cd $$i && $(ZIPEXE) -qru $$($1_ZIP_OPTIONS) $$@ . $$($1_ZIP_INCLUDES) \
-	    $$($1_ZIP_EXCLUDES) -x \*_the.\* \
-	    $$(addprefix -x$(SPACE), $$(patsubst $$i/%,%, $$($1_EXCLUDE_FILES))) \
+	$$(foreach s,$$($1_SRC),(cd $$s && $(ZIPEXE) -qru $$($1_ZIP_OPTIONS) $$@ . \
+	    $$($1_ZIP_INCLUDES) $$($1_ZIP_EXCLUDES) -x \*_the.\* \
+	    $$($1_ZIP_EXCLUDES_$$s) \
 	    || test "$$$$?" = "12" )$$(NEWLINE)) true
 	$(TOUCH) $$@
 

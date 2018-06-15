@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.utilities;
 
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import sun.jvm.hotspot.debugger.*;
@@ -45,11 +46,15 @@ public class CStringUtilities {
 
   private static String encoding = System.getProperty("file.encoding", "US-ASCII");
 
+  public static String getString(Address addr) {
+    return getString(addr, Charset.forName(encoding));
+  }
+
   /** Fetch a null-terminated ASCII string from the remote process.
       Returns null if the argument is null, otherwise returns a
       non-null string (for example, returns an empty string if the
       first character fetched is the null terminator). */
-  public static String getString(Address addr) {
+  public static String getString(Address addr, Charset charset) {
     if (addr == null) {
       return null;
     }
@@ -73,10 +78,6 @@ public class CStringUtilities {
     // FIXME: When we switch to use JDK 6 to build SA,
     // we can change the following to just return:
     // return new String(bytes, Charset.defaultCharset());
-    try {
-      return new String(bytes, encoding);
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException("Error converting bytes to String using " + encoding + " encoding", e);
-    }
+    return new String(bytes, charset);
   }
 }

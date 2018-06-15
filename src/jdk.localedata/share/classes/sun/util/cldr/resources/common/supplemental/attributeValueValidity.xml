@@ -3,73 +3,68 @@
 <!-- Copyright © 1991-2014 Unicode, Inc. CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/) For terms 
 	of use, see http://www.unicode.org/copyright.html -->
 <supplementalData>
-	<version number='$Revision: 12197 $'/>
+	<version number='$Revision: 13412 $'/>
 	<metadata>
 		<validity>
 			<!-- BCP 47 contains many more language codes than we are interested in maintaining as a part of the CLDR -->
 			<!-- This list contains ONLY those languages considered to be 'of interest' as part of CLDR, -->
 			<!-- and is maintained manually by the CLDR TC -->
 			<variable id='$language' type='choice'>
-				af agq ak am ar as asa ast ay az
-				ba bal bas be bem bez bg bm bn bo br brx bs
-				ca ce ceb cgg chr ckb cs cu cy
+				af agq ak am ar as asa ast az
+				bas be bem bez bg bm bn bo br brx bs
+				ca ce cgg chr ckb cs cu cy
 				da dav de dje dsb dua dyo dz
 				ebu ee el en eo es et eu ewo
 				fa ff fi fil fo fr fur fy
-				ga gd gl gn gsw gu guz gv
-				ha haw he hi hr hsb ht hu hy
-				id ig ii ilo is it
+				ga gd gl gsw gu guz gv
+				ha haw he hi hr hsb hu hy
+				id ig ii is it
 				ja jgo jmc
-				ka kab kam kbd kde kea khq ki kk kkj kl kln km kn ko kok ks ksb ksf ksh kw ky
-				lag lb lg lkt ln lo lrc lt lu lua luo luy lv
-				mai mas mdh mer mfe mg mgh mgo mis mk ml mn mr ms mt mua mul my mzn
-				naq nb nd ne nl nmg nn nnh nso nus ny nyn
+				ka kab kam kde kea khq ki kk kkj kl kln km kn ko kok ks ksb ksf ksh kw ky
+				lag lb lg lkt ln lo lrc lt lu luo luy lv
+				mas mer mfe mg mgh mgo mk ml mn mr ms mt mua mul my mzn
+				naq nb nd ne nl nmg nn nnh nus nyn
 				om or os
-				pa pag pl prg ps pt
+				pa pl prg ps pt
 				qu
 				rm rn ro rof root ru rw rwk
-				sah saq sat sbp sd se seh ses sg shi si sk sl smn sn so sq sr ss st sv sw
-				ta te teo tg th ti tk tn to tpi tr ts tt twq tzm
+				sah saq sbp se seh ses sg shi si sk sl smn sn so sq sr sv sw
+				ta te teo th ti tk to tr twq tzm
 				ug uk und ur uz
 				vai vi vo vun
-				wae war wo
-				xh xog
-				yav yi yo
-				za zgh zh zu zxx </variable>
+				wae
+				xog
+				yav yi yo yue
+				zgh zh zu zxx</variable>
 			<variable id='$languageExceptions' type='choice'>
-				aa ab ace ach ada ady ae aeb afh ain akk akz ale aln alt an ang anp arc arn aro arp arq arw ary arz ase av avk awa
-				ban bar bax bbc bbj bfd bej bew bfq bgn bho bi bik bin bjn bkm bla
-				bpy bqi bra brh bss bua bug bum byn byv
-				cad car cay cch ch chb chg chk chm chn cho chp chy co cop cps cr crh csb cv
-				dak dar del den dgr din doi dtp dum dv dyu dzg
-				efi egl egy eka elx enm esu ext
-				fan fat fit fj fon frc frm fro frp frr frs fy
-				gaa gag gan gay gba gbz gez gil glk gmh goh gom gon gor got grb grc guc gur gwi
-				hai hak hif hil hit hmn ho hsn hup hz
-				ia iba ibb ie ik inh io iu izh
-				jam jbo jpr jrb jut jv
-				kaa kac kaj kaw kbl kcg ken kfo kg kgp kha kho khw kiu kj kmb
-				koi kos kpe kr krc kri krj krl kru ku kum kut kv
-				la lad lah lam lez lfn li lij liv lmo lol loz ltg lui lun lus lzh lzz
-				mad maf mag mak man mde mdf mdr men mer mfe mg mga mgh mh mi mic min
-				mnc mni moh mos mrj mus mwl mwr mwv mye myv
-				na nan nap nds new ng nia niu njo no nog non nov nqo nr nv nwc nym nyo nzi
-				oc oj osa ota
-				pal pam pap pau pcd pdc pdt peo pfl phn pi pms pnt pon pro
-				quc qug
-				raj rap rar rgn rif rom rtm rue rug rup
-				sa sad sam sas saz sba sc scn sco sdc sdh see sei sel sga sgs sh shn shu sid sli sly sm sma smj sms
-				snk sog srn srr ssy stq su suk sus sux swb syc syr szl
-				tcy tem ter tet tig tiv tkl tkr tl tlh tli tly tmh tog tru trv tsd tsi ttt tum tvl tw ty tyv
-				udm uga umb
-				ve vec vep vls vmf vot vro
-				wa wal was wbp wuu
-				xal xmf
-				yao yap ybb yrl yue
-				zap zbl zea zen zun zza 
-			</variable>
-			<variable id='$scriptNonUnicode' type='choice'> Adlm Afak Aran Blis Cirt Cyrs Egyd Egyh Geok Inds Jurc Kitl Kits Kpel Latf Latg Loma Marc Maya Moon
-				Nkgb Nshu Osge Phlv Roro Sara Syre Syrj Syrn Tang Teng Visp Wole 
+				aa ab ace ada ady ain ale alt an anp arn arp av awa ay
+				ba ban bho bi bin bla bug byn
+				ceb ch chk chm cho chy co crs cv
+				dak dar dgr dv dzg
+				efi eka
+				fj fon
+				gaa gan gez gil gn gor gwi
+				hak hil hmn hsn ht hup hz
+				ia iba ibb ilo inh io iu
+				jbo jv
+				kac kaj kbd kcg kfo kha kj kmb kpe kr krc krl kru ku kum kv
+				la lad lez li loz lua lun lus
+				mad mag mai mak mdf men mh mi mic min mni moh mos mus mwl myv
+				na nan nap new ng nia niu nog nqo nr nso nv ny
+				oc
+				pag pam pap pau pcm
+				quc
+				rap rar rup
+				sa sad sat sba sc scn sco sd shn sm sma smj sms snk srn ss ssy st su suk swb syr
+				tem tet tg tig tlh tn tpi trv ts tt tum tvl ty tyv
+				udm umb
+				ve
+				wa wal war wo wuu
+				xal xh
+				ybb
+				zun zza</variable>
+			<variable id='$scriptNonUnicode' type='choice'>Afak Aran Blis Cirt Cyrs Egyd Egyh Geok Inds Jurc Kitl Kits Kpel Latf Latg Loma Maya Moon
+				Nkgb Phlv Roro Sara Syre Syrj Syrn Teng Visp Wole
 			</variable>				
 			<!--  <variable id='$language' type='choice'>$languageExceptions|$_language_cldr</variable> -->
 			<variable id='$casing' type='choice'>titlecase-words titlecase-firstword lowercase-words mixed</variable>
@@ -97,7 +92,7 @@
 			<variable id='$variableID' type='regex'>[$][a-zA-Z0-9_]+</variable>
 			<variable id='$version' type='regex'>\$.*\$</variable>
 			<variable id='$versionDotted' type='regex'>[0-9]+(\.[0-9]+(\.[0-9]+)?)?</variable>
-			<variable id='$emoji' type='unicodeSet'>[©®‼⁉™ℹ↔-↙↩↪⌚⌛⌨⏏⏩-⏳⏸-⏺ Ⓜ▪▫▶◀◻-◾☀-☄☎☑☔☕☘☝☠☢☣☦ ☪☮☯☸-☺♈-♓♠♣♥♦♨♻♿⚒-⚔⚖⚗ ⚙⚛⚜⚠⚡⚪⚫⚰⚱⚽⚾⛄⛅⛈⛎⛏⛑⛓⛔⛩⛪ ⛰-⛵⛷-⛺⛽✂✅✈-✍✏✒✔✖✝✡✨✳✴
+			<variable id='$emoji' type='unicodeSetOrString'>[©®‼⁉™ℹ↔-↙↩↪⌚⌛⌨⏏⏩-⏳⏸-⏺ Ⓜ▪▫▶◀◻-◾☀-☄☎☑☔☕☘☝☠☢☣☦ ☪☮☯☸-☺♈-♓♠♣♥♦♨♻♿⚒-⚔⚖⚗ ⚙⚛⚜⚠⚡⚪⚫⚰⚱⚽⚾⛄⛅⛈⛎⛏⛑⛓⛔⛩⛪ ⛰-⛵⛷-⛺⛽✂✅✈-✍✏✒✔✖✝✡✨✳✴
 				❄❇❌❎❓-❕❗❣❤➕-➗➡➰➿⤴⤵⬅-⬇ ⬛⬜⭐⭕〰〽㊗㊙🀄🃏🅰🅱🅾🅿🆎🆑-🆚🈁🈂🈚 🈯🈲-🈺🉐🉑🌀-🌡🌤-🎓🎖🎗🎙-🎛🎞-🏰🏳-🏵 🏷-📽📿-🔽🕉-🕎🕐-🕧🕯🕰🕳-🕹🖇🖊-🖍
 				🖐🖕🖖🖥🖨🖱🖲🖼🗂-🗄🗑-🗓🗜-🗞🗡🗣🗯🗳 🗺-🙏🚀-🛅🛋-🛐🛠-🛥🛩🛫🛬🛰🛳🤐-🤘🦀-🦄
 				🧀{#⃣}{*⃣}{0⃣}{1⃣}{2⃣}{3⃣}{4⃣}{5⃣}{6⃣}{7⃣}{8⃣}{9⃣}{☝🏻}{☝🏼}{☝🏽}{☝🏾}{☝🏿}{✊🏻}{✊🏼}{✊🏽}{✊🏾}{✊🏿}{✋🏻}{✋🏼}{✋🏽}{✋🏾}{✋🏿}{✌🏻}{✌🏼}{✌🏽}{✌🏾}{✌🏿}{✍🏻}{✍🏼}{✍🏽}{✍🏾}{✍🏿}{🇦🇨}{🇦🇩}{🇦🇪}{🇦🇫}{🇦🇬}{🇦🇮}{🇦🇱}{🇦🇲}{🇦🇴}{🇦🇶}{🇦🇷}{🇦🇸}{🇦🇹}{🇦🇺}{🇦🇼}{🇦🇽}{🇦🇿}{🇧🇦}{🇧🇧}{🇧🇩}{🇧🇪}{🇧🇫}{🇧🇬}{🇧🇭}{🇧🇮}{🇧🇯}{🇧🇱}{🇧🇲}{🇧🇳}{🇧🇴}{🇧🇶}{🇧🇷}{🇧🇸}{🇧🇹}{🇧🇻}{🇧🇼}{🇧🇾}{🇧🇿}{🇨🇦}{🇨🇨}{🇨🇩}{🇨🇫}{🇨🇬}{🇨🇭}{🇨🇮}{🇨🇰}{🇨🇱}{🇨🇲}{🇨🇳}{🇨🇴}{🇨🇵}{🇨🇷}{🇨🇺}{🇨🇻}{🇨🇼}{🇨🇽}{🇨🇾}{🇨🇿}{🇩🇪}{🇩🇬}{🇩🇯}{🇩🇰}{🇩🇲}{🇩🇴}{🇩🇿}{🇪🇦}{🇪🇨}{🇪🇪}{🇪🇬}{🇪🇭}{🇪🇷}{🇪🇸}{🇪🇹}{🇪🇺}{🇫🇮}{🇫🇯}{🇫🇰}{🇫🇲}{🇫🇴}{🇫🇷}{🇬🇦}{🇬🇧}{🇬🇩}{🇬🇪}{🇬🇫}{🇬🇬}{🇬🇭}{🇬🇮}{🇬🇱}{🇬🇲}{🇬🇳}{🇬🇵}{🇬🇶}{🇬🇷}{🇬🇸}{🇬🇹}{🇬🇺}{🇬🇼}{🇬🇾}{🇭🇰}{🇭🇲}{🇭🇳}{🇭🇷}{🇭🇹}{🇭🇺}{🇮🇨}{🇮🇩}{🇮🇪}{🇮🇱}{🇮🇲}{🇮🇳}{🇮🇴}{🇮🇶}{🇮🇷}{🇮🇸}{🇮🇹}{🇯🇪}{🇯🇲}{🇯🇴}{🇯🇵}{🇰🇪}{🇰🇬}{🇰🇭}{🇰🇮}{🇰🇲}{🇰🇳}{🇰🇵}{🇰🇷}{🇰🇼}{🇰🇾}{🇰🇿}{🇱🇦}{🇱🇧}{🇱🇨}{🇱🇮}{🇱🇰}{🇱🇷}{🇱🇸}{🇱🇹}{🇱🇺}{🇱🇻}{🇱🇾}{🇲🇦}{🇲🇨}{🇲🇩}{🇲🇪}{🇲🇫}{🇲🇬}{🇲🇭}{🇲🇰}{🇲🇱}{🇲🇲}{🇲🇳}{🇲🇴}{🇲🇵}{🇲🇶}{🇲🇷}{🇲🇸}{🇲🇹}{🇲🇺}{🇲🇻}{🇲🇼}{🇲🇽}{🇲🇾}{🇲🇿}{🇳🇦}{🇳🇨}{🇳🇪}{🇳🇫}{🇳🇬}{🇳🇮}{🇳🇱}{🇳🇴}{🇳🇵}{🇳🇷}{🇳🇺}{🇳🇿}{🇴🇲}{🇵🇦}{🇵🇪}{🇵🇫}{🇵🇬}{🇵🇭}{🇵🇰}{🇵🇱}{🇵🇲}{🇵🇳}{🇵🇷}{🇵🇸}{🇵🇹}{🇵🇼}{🇵🇾}{🇶🇦}{🇷🇪}{🇷🇴}{🇷🇸}{🇷🇺}{🇷🇼}{🇸🇦}{🇸🇧}{🇸🇨}{🇸🇩}{🇸🇪}{🇸🇬}{🇸🇭}{🇸🇮}{🇸🇯}{🇸🇰}{🇸🇱}{🇸🇲}{🇸🇳}{🇸🇴}{🇸🇷}{🇸🇸}{🇸🇹}{🇸🇻}{🇸🇽}{🇸🇾}{🇸🇿}{🇹🇦}{🇹🇨}{🇹🇩}{🇹🇫}{🇹🇬}{🇹🇭}{🇹🇯}{🇹🇰}{🇹🇱}{🇹🇲}{🇹🇳}{🇹🇴}{🇹🇷}{🇹🇹}{🇹🇻}{🇹🇼}{🇹🇿}{🇺🇦}{🇺🇬}{🇺🇲}{🇺🇸}{🇺🇾}{🇺🇿}{🇻🇦}{🇻🇨}{🇻🇪}{🇻🇬}{🇻🇮}{🇻🇳}{🇻🇺}{🇼🇫}{🇼🇸}{🇽🇰}{🇾🇪}{🇾🇹}{🇿🇦}{🇿🇲}{🇿🇼}{🎅🏻}{🎅🏼}{🎅🏽}{🎅🏾}{🎅🏿}{🏂🏻}{🏂🏼}{🏂🏽}{🏂🏾}{🏂🏿}{🏃🏻}{🏃🏼}{🏃🏽}{🏃🏾}{🏃🏿}{🏄🏻}{🏄🏼}{🏄🏽}{🏄🏾}{🏄🏿}{🏇🏻}{🏇🏼}{🏇🏽}{🏇🏾}{🏇🏿}{🏊🏻}{🏊🏼}{🏊🏽}{🏊🏾}{🏊🏿}{👂🏻}{👂🏼}{👂🏽}{👂🏾}{👂🏿}{👃🏻}{👃🏼}{👃🏽}{👃🏾}{👃🏿}{👆🏻}{👆🏼}{👆🏽}{👆🏾}{👆🏿}{👇🏻}{👇🏼}{👇🏽}{👇🏾}{👇🏿}{👈🏻}{👈🏼}{👈🏽}{👈🏾}{👈🏿}{👉🏻}{👉🏼}{👉🏽}{👉🏾}{👉🏿}{👊🏻}{👊🏼}{👊🏽}{👊🏾}{👊🏿}{👋🏻}{👋🏼}{👋🏽}{👋🏾}{👋🏿}{👌🏻}{👌🏼}{👌🏽}{👌🏾}{👌🏿}{👍🏻}{👍🏼}{👍🏽}{👍🏾}{👍🏿}{👎🏻}{👎🏼}{👎🏽}{👎🏾}{👎🏿}{👏🏻}{👏🏼}{👏🏽}{👏🏾}{👏🏿}{👐🏻}{👐🏼}{👐🏽}{👐🏾}{👐🏿}{👦🏻}{👦🏼}{👦🏽}{👦🏾}{👦🏿}{👧🏻}{👧🏼}{👧🏽}{👧🏾}{👧🏿}{👨
@@ -221,7 +216,7 @@
 			<attributeValues dtds='supplementalData' elements='zoneItem' attributes='aliases' type='list'>$_bcp47_timezone</attributeValues>
 			<attributeValues dtds='supplementalData' elements='zoneItem' attributes='territory'>$_region</attributeValues>
 			<attributeValues dtds='supplementalData' elements='zoneItem' attributes='type'>$_bcp47_timezone</attributeValues>
-			<attributeValues dtds='ldml' elements='annotation' attributes='cp' type='unicodeSet'>$emoji</attributeValues>
+			<attributeValues dtds='ldml' elements='annotation' attributes='cp' type='unicodeSetOrString'>$emoji</attributeValues>
 			<attributeValues dtds='ldml' elements='annotation' attributes='tts' type='TODO'>$exemplar</attributeValues>
 			<attributeValues dtds='ldml' elements='casingItem' attributes='type' type='choice'>calendar_field currencyName currencyName_count
 				day_format_except_narrow day_narrow day_standalone_except_narrow era_abbr era_name era_narrow key keyValue language metazone_long
@@ -398,7 +393,9 @@
 			<attributeValues dtds='ldmlBCP47' elements='type' attributes='since' type='choice'>$versionDotted</attributeValues>
 			<attributeValues dtds='ldmlBCP47' elements='version' attributes='cldrVersion' type='choice'>$double</attributeValues>
 			<attributeValues dtds='ldmlBCP47' elements='version' attributes='number' type='regex'>\$Revision.*\$</attributeValues>
-			<attributeValues dtds='ldml' elements='subdivision' attributes='type' type='single'>$_subdivision</attributeValues>
+			<!--  
+			<attributeValues dtds='ldml' elements='subdivision' attributes='type' type='single'>$_subdivisionIso</attributeValues>
+			-->
 			<attributeValues dtds='supplementalData' elements='group' attributes='type' type='list'>$_region</attributeValues>
 			<attributeValues dtds='supplementalData' elements='personList' attributes='locales' type='list'>$localeOrDeprecated</attributeValues>
 			<attributeValues dtds='supplementalData' elements='subgroup' attributes='subtype' type='TODO'></attributeValues>

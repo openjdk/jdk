@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12128 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="nd"/>
 	</identity>
 	<localeDisplayNames>
@@ -479,22 +480,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>HH:mm:ss zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>HH:mm:ss z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>HH:mm:ss</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>HH:mm</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -689,6 +690,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Fulenki yase Malagasi</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ugwiya yase Moritaniya (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ugwiya yase Moritaniya</displayName>
 			</currency>
 			<currency type="MUR">
@@ -731,6 +735,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Shilingi yase Somaliya</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobra yase Sao Tome lo Principe (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobra yase Sao Tome lo Principe</displayName>
 			</currency>
 			<currency type="SZL">
@@ -775,4 +782,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

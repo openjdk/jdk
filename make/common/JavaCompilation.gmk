@@ -180,6 +180,7 @@ endef
 #   CREATE_API_DIGEST:=Set to true to use a javac plugin to generate a public API
 #        hash which can be used for down stream dependencies to only rebuild
 #        when the API changes. Implicitly used in sjavac.
+#   KEEP_ALL_TRANSLATIONS:=Set to true to skip translation filtering
 SetupJavaCompilation = $(NamedParamsMacroTemplate)
 define SetupJavaCompilationBody
 
@@ -266,6 +267,11 @@ define SetupJavaCompilationBody
           $$(eval $1_$$(relative_src) := 1) $$(s))))
   endif
 
+  # Filter out any excluded translations
+  ifneq ($$($1_KEEP_ALL_TRANSLATIONS), true)
+    $1_SRCS := $$(call FilterExcludedTranslations, $$($1_SRCS), .java)
+  endif
+
   ifeq ($$(strip $$($1_SRCS)), )
     ifneq ($$($1_FAIL_NO_SRC), false)
       $$(error No source files found for $1)
@@ -290,6 +296,10 @@ define SetupJavaCompilationBody
     ifneq (,$$($1_EXCLUDE_PATTERN))
       $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_PATTERN),$$($1_ALL_COPIES))
     endif
+    # Filter out any excluded translations
+    ifneq ($$($1_KEEP_ALL_TRANSLATIONS), true)
+      $1_ALL_COPIES := $$(call FilterExcludedTranslations, $$($1_ALL_COPIES), .properties)
+    endif
     ifneq (,$$($1_ALL_COPIES))
       # Yep, there are files to be copied!
       $1_ALL_COPY_TARGETS:=
@@ -309,6 +319,10 @@ define SetupJavaCompilationBody
       endif
       ifneq (,$$($1_EXCLUDE_PATTERN))
         $1_ALL_CLEANS := $$(filter-out $$($1_EXCLUDE_PATTERN),$$($1_ALL_CLEANS))
+      endif
+      # Filter out any excluded translations
+      ifneq ($$($1_KEEP_ALL_TRANSLATIONS), true)
+        $1_ALL_CLEANS := $$(call FilterExcludedTranslations, $$($1_ALL_CLEANS), .properties)
       endif
       ifneq (,$$($1_ALL_CLEANS))
         # Yep, there are files to be copied and cleaned!

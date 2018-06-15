@@ -31,13 +31,15 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build Common AttemptOOM CPUSetsReader sun.hotspot.WhiteBox PrintContainerInfo
+ * @build AttemptOOM sun.hotspot.WhiteBox PrintContainerInfo
  * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver TestCPUSets
  */
 import java.util.List;
+import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
+import jdk.test.lib.containers.cgroup.CPUSetsReader;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;

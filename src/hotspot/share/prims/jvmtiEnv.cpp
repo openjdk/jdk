@@ -64,6 +64,7 @@
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -537,10 +538,17 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
     if (event_type == JVMTI_EVENT_CLASS_FILE_LOAD_HOOK && enabled) {
       record_class_file_load_hook_enabled();
     }
+
+    if (event_type == JVMTI_EVENT_SAMPLED_OBJECT_ALLOC) {
+      if (enabled) {
+        ThreadHeapSampler::enable();
+      } else {
+        ThreadHeapSampler::disable();
+      }
+    }
     JvmtiEventController::set_user_enabled(this, (JavaThread*) NULL, event_type, enabled);
   } else {
     // We have a specified event_thread.
-
     JavaThread* java_thread = NULL;
     ThreadsListHandle tlh;
     jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), event_thread, &java_thread, NULL);
@@ -3630,6 +3638,15 @@ JvmtiEnv::GetAvailableProcessors(jint* processor_count_ptr) {
   *processor_count_ptr = os::active_processor_count();
   return JVMTI_ERROR_NONE;
 } /* end GetAvailableProcessors */
+
+jvmtiError
+JvmtiEnv::SetHeapSamplingRate(jint sampling_rate) {
+  if (sampling_rate < 0) {
+    return JVMTI_ERROR_ILLEGAL_ARGUMENT;
+  }
+  ThreadHeapSampler::set_sampling_rate(sampling_rate);
+  return JVMTI_ERROR_NONE;
+} /* end SetHeapSamplingRate */
 
   //
   // System Properties functions

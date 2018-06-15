@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2014 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12197 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="ce"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,51 +17,88 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="aa">афарийн</language>
 			<language type="ab">абхазхойн</language>
+			<language type="ace">ачехийн</language>
+			<language type="ada">адангме</language>
+			<language type="ady">адигейн</language>
 			<language type="af">африкаанс</language>
 			<language type="agq">агхӀем</language>
+			<language type="ain">айнийн</language>
 			<language type="ak">акан</language>
+			<language type="ale">алеутийн</language>
+			<language type="alt">къилба алтайн</language>
 			<language type="am">амхаройн</language>
+			<language type="an">арагонойн</language>
+			<language type="anp">ангика</language>
 			<language type="ar">Ӏаьрбийн</language>
 			<language type="ar_001">ХӀинца болу стандартан Ӏаьрбийн</language>
 			<language type="arn">арауканхойн</language>
+			<language type="arp">арапахо</language>
 			<language type="as">ассамийн</language>
 			<language type="asa">асу</language>
+			<language type="ast">астурийн</language>
+			<language type="av">суьйлийн</language>
+			<language type="awa">авадхи</language>
+			<language type="ay">аймара</language>
 			<language type="az">азербайджанийн</language>
 			<language type="az" alt="short">азербайджанийн</language>
 			<language type="ba">башкирийн</language>
+			<language type="ban">балийн</language>
+			<language type="bas">баса</language>
 			<language type="be">белорусийн</language>
 			<language type="bem">бемба</language>
 			<language type="bez">бена</language>
 			<language type="bg">болгарийн</language>
 			<language type="bgn">малхбузен-белуджийн</language>
+			<language type="bho">бходжпури</language>
+			<language type="bi">бислама</language>
+			<language type="bin">бини</language>
+			<language type="bla">сиксика</language>
 			<language type="bm">бамбара</language>
 			<language type="bn">бенгалийн</language>
 			<language type="bo">тибетхойн</language>
 			<language type="br">бретонийн</language>
 			<language type="brx">бодо</language>
 			<language type="bs">боснийн</language>
+			<language type="bug">бугийн</language>
+			<language type="byn">билийн</language>
 			<language type="ca">каталонийн</language>
 			<language type="ce">нохчийн</language>
+			<language type="ceb">себуано</language>
 			<language type="cgg">чига</language>
+			<language type="ch">чаморро</language>
+			<language type="chk">чукчийн</language>
+			<language type="chm">марийн</language>
+			<language type="cho">чоктавийн</language>
 			<language type="chr">чероки</language>
+			<language type="chy">шайенийн</language>
 			<language type="ckb">юккъерчу курдийн</language>
 			<language type="co">корсиканийн</language>
+			<language type="crs">сейшелийн креолийн</language>
 			<language type="cs">чехийн</language>
+			<language type="cu">килсславянийн</language>
 			<language type="cv">чувашийн</language>
 			<language type="cy">валлийн</language>
 			<language type="da">датхойн</language>
+			<language type="dak">дакота</language>
+			<language type="dar">даьргӀойн</language>
 			<language type="dav">таита</language>
 			<language type="de">немцойн</language>
 			<language type="de_AT">австрин немцойн</language>
-			<language type="de_CH">швейцарин лакхара немцойн</language>
+			<language type="de_CH">швейцарин литературин немцойн</language>
+			<language type="dgr">догриб</language>
 			<language type="dje">зарма</language>
 			<language type="dsb">сорбийн</language>
 			<language type="dua">дуала</language>
+			<language type="dv">мальдивийн</language>
 			<language type="dyo">дьола-фоньи</language>
 			<language type="dz">дзонг-кэ</language>
+			<language type="dzg">даза</language>
 			<language type="ebu">эмбу</language>
 			<language type="ee">эве</language>
+			<language type="efi">эфик</language>
+			<language type="eka">экаджук</language>
 			<language type="el">грекийн</language>
 			<language type="en">ингалсан</language>
 			<language type="en_AU">Австралин ингалсан</language>
@@ -76,179 +114,307 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="es_MX">мексикан испанхойн</language>
 			<language type="et">эстонийн</language>
 			<language type="eu">баскийн</language>
+			<language type="ewo">эвондо</language>
 			<language type="fa">гӀажарийн</language>
+			<language type="ff">фулах</language>
 			<language type="fi">финнийн</language>
 			<language type="fil">филиппинийн</language>
 			<language type="fj">фиджи</language>
 			<language type="fo">фарерийн</language>
+			<language type="fon">фон</language>
 			<language type="fr">французийн</language>
 			<language type="fr_CA">канадан французийн</language>
 			<language type="fr_CH">швейцарин французийн</language>
+			<language type="fur">фриулийн</language>
 			<language type="fy">малхбузен-фризийн</language>
 			<language type="ga">ирландхойн</language>
+			<language type="gaa">га</language>
 			<language type="gag">гагаузийн</language>
+			<language type="gd">гэлийн</language>
+			<language type="gez">геэз</language>
+			<language type="gil">гильбертийн</language>
 			<language type="gl">галисийн</language>
 			<language type="gn">гуарани</language>
+			<language type="gor">горонтало</language>
 			<language type="gsw">швейцарин немцойн</language>
 			<language type="gu">гуджарати</language>
 			<language type="guz">гусии</language>
 			<language type="gv">мэнийн</language>
+			<language type="gwi">гвичин</language>
 			<language type="ha">хауса</language>
 			<language type="haw">гавайн</language>
 			<language type="he">жугтийн</language>
-			<language type="hi">хинди</language>
+			<language type="hi">хӀинди</language>
+			<language type="hil">хилигайнон</language>
+			<language type="hmn">хмонг</language>
 			<language type="hr">хорватийн</language>
 			<language type="hsb">лакхара сербийн</language>
 			<language type="ht">гаитийн</language>
 			<language type="hu">венгрийн</language>
+			<language type="hup">хупа</language>
 			<language type="hy">эрмалойн</language>
+			<language type="hz">гереро</language>
+			<language type="ia">интерлингва</language>
+			<language type="iba">ибанийн</language>
+			<language type="ibb">ибибио</language>
 			<language type="id">индонезихойн</language>
 			<language type="ig">игбо</language>
 			<language type="ii">сычуань</language>
+			<language type="ilo">илоко</language>
+			<language type="inh">гӀалгӀайн</language>
+			<language type="io">идо</language>
 			<language type="is">исландхойн</language>
 			<language type="it">итальянийн</language>
 			<language type="iu">инуктитут</language>
 			<language type="ja">японийн</language>
+			<language type="jbo">ложбан</language>
 			<language type="jgo">нгомба</language>
 			<language type="jmc">мачаме</language>
 			<language type="jv">яванийн</language>
 			<language type="ka">гуьржийн</language>
 			<language type="kab">кабилийн</language>
+			<language type="kac">качинийн</language>
+			<language type="kaj">каджи</language>
 			<language type="kam">камба</language>
+			<language type="kbd">гӀебартойн</language>
+			<language type="kcg">тьяп</language>
 			<language type="kde">маконде</language>
 			<language type="kea">кабувердьяну</language>
+			<language type="kfo">коро</language>
+			<language type="kha">кхаси</language>
 			<language type="khq">койра чиини</language>
 			<language type="ki">кикуйю</language>
-			<language type="kk">казахийн</language>
+			<language type="kj">кунама</language>
+			<language type="kk">кхазакхийн</language>
+			<language type="kkj">како</language>
 			<language type="kl">гренландхойн</language>
 			<language type="kln">календжин</language>
 			<language type="km">кхмерийн</language>
+			<language type="kmb">кимбунду</language>
 			<language type="kn">каннада</language>
 			<language type="ko">корейн</language>
 			<language type="koi">коми-пермякийн</language>
 			<language type="kok">конкани</language>
+			<language type="kpe">кпелле</language>
+			<language type="kr">канури</language>
+			<language type="krc">кхарачойн-балкхаройн</language>
+			<language type="krl">карелийн</language>
+			<language type="kru">курух</language>
 			<language type="ks">кашмири</language>
 			<language type="ksb">шамбала</language>
 			<language type="ksf">бафиа</language>
+			<language type="ksh">коьлнийн</language>
 			<language type="ku">курдийн</language>
+			<language type="kum">гӀумкийн</language>
+			<language type="kv">комийн</language>
 			<language type="kw">корнуоллийн</language>
 			<language type="ky">гӀиргӀизойн</language>
 			<language type="la">латинан</language>
+			<language type="lad">ладино</language>
 			<language type="lag">ланги</language>
 			<language type="lb">люксембургхойн</language>
+			<language type="lez">лаьзгийн</language>
 			<language type="lg">ганда</language>
+			<language type="li">лимбургийн</language>
 			<language type="lkt">лакота</language>
 			<language type="ln">лингала</language>
 			<language type="lo">лаоссийн</language>
+			<language type="loz">лози</language>
 			<language type="lrc">къилбаседа лури</language>
 			<language type="lt">литвахойн</language>
 			<language type="lu">луба-катанга</language>
+			<language type="lua">луба-лулуа</language>
+			<language type="lun">лунда</language>
 			<language type="luo">луо (Кени а, Танзани а)</language>
+			<language type="lus">лушей</language>
 			<language type="luy">лухья</language>
 			<language type="lv">латышийн</language>
+			<language type="mad">мадурийн</language>
+			<language type="mag">магахи</language>
+			<language type="mai">майтхили</language>
+			<language type="mak">макасарийн</language>
 			<language type="mas">масаи</language>
+			<language type="mdf">мокшанойн</language>
+			<language type="men">менде</language>
 			<language type="mer">меру</language>
 			<language type="mfe">маврикин креолийн</language>
 			<language type="mg">малагасийн</language>
 			<language type="mgh">макуа-меетто</language>
 			<language type="mgo">мета</language>
+			<language type="mh">маршаллийн</language>
 			<language type="mi">маори</language>
+			<language type="mic">микмак</language>
+			<language type="min">минангкабау</language>
 			<language type="mk">македонхойн</language>
 			<language type="ml">малаялам</language>
 			<language type="mn">монголийн</language>
+			<language type="mni">манипурийн</language>
 			<language type="moh">мохаук</language>
+			<language type="mos">моси</language>
 			<language type="mr">маратхи</language>
 			<language type="ms">малайн</language>
 			<language type="mt">мальтойн</language>
 			<language type="mua">мунданг</language>
+			<language type="mul">тайп-тайпа доьзалан меттанаш</language>
+			<language type="mus">крик</language>
+			<language type="mwl">мирандойн</language>
 			<language type="my">бирманийн</language>
+			<language type="myv">эрзянийн</language>
 			<language type="mzn">мазандеранхойн</language>
+			<language type="na">науру</language>
+			<language type="nap">неаполитанойн</language>
 			<language type="naq">нама</language>
 			<language type="nb">норвегийн букмол</language>
 			<language type="nd">къилбаседа ндебели</language>
 			<language type="nds">лахара германхойн</language>
 			<language type="nds_NL">лахара саксонийн</language>
 			<language type="ne">непалхойн</language>
+			<language type="new">неваройн</language>
+			<language type="ng">ндонга</language>
+			<language type="nia">ниас</language>
+			<language type="niu">ниуэ</language>
 			<language type="nl">голландхойн</language>
 			<language type="nl_BE">фламандийн</language>
 			<language type="nmg">квасио</language>
 			<language type="nn">норвегийн нюнорск</language>
+			<language type="nnh">нгиембунд</language>
+			<language type="nog">ногӀийн</language>
 			<language type="nqo">нко</language>
+			<language type="nr">къилба ндебеле</language>
+			<language type="nso">къилбаседа сото</language>
 			<language type="nus">нуэр</language>
+			<language type="nv">навахо</language>
+			<language type="ny">ньянджа</language>
 			<language type="nyn">ньянколе</language>
+			<language type="oc">окситанойн</language>
 			<language type="om">оромо</language>
 			<language type="or">ори</language>
+			<language type="os">хӀирийн</language>
 			<language type="pa">панджаби</language>
+			<language type="pag">пангасинан</language>
+			<language type="pam">пампанга</language>
+			<language type="pap">папьяменто</language>
+			<language type="pau">палау</language>
+			<language type="pcm">нигерийн-креолийн</language>
 			<language type="pl">полякийн</language>
+			<language type="prg">пруссийн</language>
 			<language type="ps">пушту</language>
 			<language type="pt">португалихойн</language>
 			<language type="pt_BR">бразилин португалихойн</language>
 			<language type="pt_PT">европан португалихойн</language>
 			<language type="qu">кечуа</language>
 			<language type="quc">киче</language>
+			<language type="rap">рапануйн</language>
+			<language type="rar">раротонга</language>
 			<language type="rm">романшийн</language>
 			<language type="rn">рунди</language>
 			<language type="ro">румынийн</language>
 			<language type="ro_MD">молдавийн</language>
 			<language type="rof">ромбо</language>
+			<language type="root">ораман мотт</language>
 			<language type="ru">оьрсийн</language>
+			<language type="rup">аруминийн</language>
 			<language type="rw">киньяруанда</language>
 			<language type="rwk">руанда</language>
 			<language type="sa">санскрит</language>
+			<language type="sad">сандаве</language>
+			<language type="sah">якутийн</language>
 			<language type="saq">самбуру</language>
+			<language type="sat">сантали</language>
+			<language type="sba">нгамбайн</language>
 			<language type="sbp">сангу</language>
+			<language type="sc">сардинийн</language>
+			<language type="scn">сицилийн</language>
+			<language type="sco">шотландхойн</language>
 			<language type="sd">синдхи</language>
 			<language type="se">къилбаседа саамийн</language>
 			<language type="seh">сена</language>
 			<language type="ses">койраборо сенни</language>
 			<language type="sg">санго</language>
 			<language type="shi">тахелхит</language>
+			<language type="shn">шанойн</language>
 			<language type="si">сингалхойн</language>
 			<language type="sk">словакийн</language>
 			<language type="sl">словенийн</language>
+			<language type="sm">самоанойн</language>
 			<language type="sma">саамийн (къилба)</language>
 			<language type="smj">луле-саамийн</language>
 			<language type="smn">инари-саамийн</language>
 			<language type="sms">скольт-саамийн</language>
 			<language type="sn">шона</language>
+			<language type="snk">сонинке</language>
 			<language type="so">сомали</language>
 			<language type="sq">албанойн</language>
 			<language type="sr">сербийн</language>
+			<language type="srn">сранан-тонго</language>
+			<language type="ss">свази</language>
+			<language type="ssy">сахо</language>
+			<language type="st">къилба сото</language>
 			<language type="su">сунданхойн</language>
+			<language type="suk">сукума</language>
 			<language type="sv">шведийн</language>
 			<language type="sw">суахили</language>
 			<language type="sw_CD">суахили (Конго)</language>
+			<language type="swb">коморийн</language>
+			<language type="syr">шемахойн</language>
 			<language type="ta">тамилхойн</language>
 			<language type="te">телугу</language>
+			<language type="tem">темне</language>
 			<language type="teo">тесо</language>
+			<language type="tet">тетум</language>
 			<language type="tg">таджикийн</language>
 			<language type="th">тайн</language>
 			<language type="ti">тигринья</language>
+			<language type="tig">тигре</language>
 			<language type="tk">туркменийн</language>
+			<language type="tlh">клингонин</language>
+			<language type="tn">тсвана</language>
 			<language type="to">тонганийн</language>
+			<language type="tpi">ток-писин</language>
 			<language type="tr">туркойн</language>
+			<language type="trv">седекойн</language>
+			<language type="ts">тсонга</language>
 			<language type="tt">гӀезалойн</language>
+			<language type="tum">тумбука</language>
+			<language type="tvl">тувалу</language>
 			<language type="twq">тасавак</language>
+			<language type="ty">таитянойн</language>
+			<language type="tyv">тувинийн</language>
 			<language type="tzm">тамазигхтийн</language>
+			<language type="udm">удмуртийн</language>
 			<language type="ug">уйгурийн</language>
 			<language type="uk">украинийн</language>
+			<language type="umb">умбунду</language>
 			<language type="und">боьвзуш боцу мотт</language>
 			<language type="ur">урду</language>
 			<language type="uz">узбекийн</language>
 			<language type="vai">ваи</language>
+			<language type="ve">венда</language>
 			<language type="vi">вьетнамхойн</language>
+			<language type="vo">волапюк</language>
 			<language type="vun">вунджо</language>
+			<language type="wa">валлонойн</language>
+			<language type="wae">валлисийн</language>
+			<language type="wal">воламо</language>
+			<language type="war">варай</language>
 			<language type="wbp">варлпири</language>
 			<language type="wo">волоф</language>
+			<language type="xal">гӀалмакхойн</language>
 			<language type="xh">коса</language>
 			<language type="xog">сога</language>
+			<language type="yav">янгбен</language>
+			<language type="ybb">йемба</language>
+			<language type="yi">идиш</language>
 			<language type="yo">йоруба</language>
+			<language type="yue">кантонийн</language>
 			<language type="zgh">мороккон стандартан тамазигхтийн</language>
-			<language type="zh">китайн</language>
-			<language type="zh_Hans">атта китайн</language>
-			<language type="zh_Hant">ламастан китайн</language>
+			<language type="zh">цийн</language>
+			<language type="zh_Hans">атта цийн</language>
+			<language type="zh_Hant">ламастан цийн</language>
 			<language type="zu">зулу</language>
+			<language type="zun">зуньи</language>
 			<language type="zxx">меттан чулацам боцуш</language>
+			<language type="zza">заза</language>
 		</languages>
 		<scripts>
 			<script type="Arab">Ӏаьрбийн</script>
@@ -263,6 +429,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">грекийн</script>
 			<script type="Gujr">гуджарати</script>
 			<script type="Guru">гурмукхи</script>
+			<script type="Hanb">ханьб</script>
 			<script type="Hang">хангыль</script>
 			<script type="Hani">китайн</script>
 			<script type="Hans">атта китайн</script>
@@ -271,6 +438,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hant" alt="stand-alone">ламастан китайн</script>
 			<script type="Hebr">жугтийн</script>
 			<script type="Hira">хирагана</script>
+			<script type="Hrkt">катакана я хирагана</script>
+			<script type="Jamo">джамо</script>
 			<script type="Jpan">японийн</script>
 			<script type="Kana">катакана</script>
 			<script type="Khmr">кхмерийн</script>
@@ -288,6 +457,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Thaa">таана</script>
 			<script type="Thai">тайн</script>
 			<script type="Tibt">тибетхойн</script>
+			<script type="Zmth">математикан маьӀна</script>
+			<script type="Zsye">эмодзи</script>
 			<script type="Zsym">символаш</script>
 			<script type="Zxxx">йоза доцу</script>
 			<script type="Zyyy">массара а тӀеэцна</script>
@@ -327,7 +498,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="AC">Айъадаларан гӀайре</territory>
 			<territory type="AD">Андорра</territory>
 			<territory type="AE">Ӏарбийн Цхьанатоьхна Эмираташ</territory>
-			<territory type="AF">ОвхӀан-пачхьалкх</territory>
+			<territory type="AF">ОвхӀан мохк</territory>
 			<territory type="AG">Антигуа а, Барбуда а</territory>
 			<territory type="AI">Ангилья</territory>
 			<territory type="AL">Албани</territory>
@@ -367,13 +538,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CD">Демократин Республика Конго</territory>
 			<territory type="CD" alt="variant">Конго (ДРК)</territory>
 			<territory type="CF">Юккъерчу Африкин Республика</territory>
-			<territory type="CG">Республика Конго</territory>
+			<territory type="CG">Конго - Браззавиль</territory>
+			<territory type="CG" alt="variant">Республика Конго</territory>
 			<territory type="CH">Швейцари</territory>
 			<territory type="CI">Кот-Д’ивуар</territory>
+			<territory type="CI" alt="variant">Кот-д’Ивуар</territory>
 			<territory type="CK">Кукан гӀайренаш</territory>
 			<territory type="CL">Чили</territory>
 			<territory type="CM">Камерун</territory>
-			<territory type="CN">Китай</territory>
+			<territory type="CN">Цийчоь</territory>
 			<territory type="CO">Колумби</territory>
 			<territory type="CP">Клиппертон</territory>
 			<territory type="CR">Коста-Рика</territory>
@@ -399,6 +572,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Испани</territory>
 			<territory type="ET">Эфиопи</territory>
 			<territory type="EU">Евробарт</territory>
+			<territory type="EZ">еврозона</territory>
 			<territory type="FI">Финлянди</territory>
 			<territory type="FJ">Фиджи</territory>
 			<territory type="FK">Фолклендан гӀайренаш</territory>
@@ -438,7 +612,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="IE">Ирланди</territory>
 			<territory type="IL">Израиль</territory>
 			<territory type="IM">Мэн гӀайре</territory>
-			<territory type="IN">Инди</territory>
+			<territory type="IN">ХӀинди</territory>
 			<territory type="IO">Британин латта Индин океанехь</territory>
 			<territory type="IQ">Ӏиракъ</territory>
 			<territory type="IR">ГӀажарийчоь</territory>
@@ -458,7 +632,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KR">Къилба Корей</territory>
 			<territory type="KW">Кувейт</territory>
 			<territory type="KY">Кайман гӀайренаш</territory>
-			<territory type="KZ">Казахстан</territory>
+			<territory type="KZ">Кхазакхстан</territory>
 			<territory type="LA">Лаос</territory>
 			<territory type="LB">Ливан</territory>
 			<territory type="LC">Сент-Люси</territory>
@@ -473,7 +647,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MA">Марокко</territory>
 			<territory type="MC">Монако</territory>
 			<territory type="MD">Молдави</territory>
-			<territory type="ME">Ӏаьржаламанхойчоь</territory>
+			<territory type="ME">Ӏаьржаламанчоь</territory>
 			<territory type="MF">Сен-Мартен</territory>
 			<territory type="MG">Мадагаскар</territory>
 			<territory type="MH">Маршаллан гӀайренаш</territory>
@@ -506,7 +680,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="NR">Науру</territory>
 			<territory type="NU">Ниуэ</territory>
 			<territory type="NZ">Керла Зеланди</territory>
-			<territory type="OM">Оман</territory>
+			<territory type="OM">Ӏоман</territory>
 			<territory type="PA">Панама</territory>
 			<territory type="PE">Перу</territory>
 			<territory type="PF">Французийн Полинези</territory>
@@ -517,8 +691,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PM">Сен-Пьер а, Микелон а</territory>
 			<territory type="PN">Питкэрн гӀайренаш</territory>
 			<territory type="PR">Пуэрто-Рико</territory>
-			<territory type="PS">Палестинан латтанаш</territory>
-			<territory type="PS" alt="short">Палестина</territory>
+			<territory type="PS">ПалестӀинан латтанаш</territory>
+			<territory type="PS" alt="short">ПалестӀина</territory>
 			<territory type="PT">Португали</territory>
 			<territory type="PW">Палау</territory>
 			<territory type="PY">Парагвай</territory>
@@ -529,7 +703,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="RS">Серби</territory>
 			<territory type="RU">Росси</territory>
 			<territory type="RW">Руанда</territory>
-			<territory type="SA">СаӀудийн Арави</territory>
+			<territory type="SA">СаӀудийн Ӏаьрбийчоь</territory>
 			<territory type="SB">Соломонан гӀайренаш</territory>
 			<territory type="SC">Сейшелан гӀайренаш</territory>
 			<territory type="SD">Судан</territory>
@@ -559,6 +733,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TJ">Таджикистан</territory>
 			<territory type="TK">Токелау</territory>
 			<territory type="TL">Малхбален Тимор</territory>
+			<territory type="TL" alt="variant">Тимор-Лесте</territory>
 			<territory type="TM">Туркмени</territory>
 			<territory type="TN">Тунис</territory>
 			<territory type="TO">Тонга</territory>
@@ -570,6 +745,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Украина</territory>
 			<territory type="UG">Уганда</territory>
 			<territory type="UM">АЦШн арахьара кегийн гӀайренаш</territory>
+			<territory type="UN">Вовшахкхетта Къаьмнийн Организаци</territory>
 			<territory type="US">Цхьанатоьхна Штаташ</territory>
 			<territory type="US" alt="short">АЦШ</territory>
 			<territory type="UY">Уругвай</territory>
@@ -621,6 +797,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	<characters>
 		<exemplarCharacters>[а {аь} б в г {гӏ} д е ё ж з и {ий} й к {кк} {ккх} {кх} {кь} {кӏ} л м н о {ов} {оь} п {пп} {пӏ} р {рхӏ} с {сс} т {тт} {тӏ} у {ув} {уь} {уьй} ф х {хь} {хӏ} ц {цӏ} ч {чӏ} ш щ ъ ы ь э ю {юь} я {яь}]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б В Г Д Е Ё Ж З И К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -669,6 +846,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="11">ноя</month>
 							<month type="12">дек</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">Я</month>
+							<month type="2">Ф</month>
+							<month type="3">М</month>
+							<month type="4">А</month>
+							<month type="5">М</month>
+							<month type="6">И</month>
+							<month type="7">И</month>
+							<month type="8">А</month>
+							<month type="9">С</month>
+							<month type="10">О</month>
+							<month type="11">Н</month>
+							<month type="12">Д</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">январь</month>
 							<month type="2">февраль</month>
@@ -685,6 +876,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">Я</month>
+							<month type="2">Ф</month>
+							<month type="3">М</month>
+							<month type="4">А</month>
+							<month type="5">М</month>
+							<month type="6">И</month>
+							<month type="7">И</month>
+							<month type="8">А</month>
+							<month type="9">С</month>
+							<month type="10">О</month>
+							<month type="11">Н</month>
+							<month type="12">Д</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">январь</month>
 							<month type="2">февраль</month>
@@ -703,19 +908,116 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</months>
 				<days>
 					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">кӀи</day>
+							<day type="mon">ор</day>
+							<day type="tue">ши</day>
+							<day type="wed">кха</day>
+							<day type="thu">еа</day>
+							<day type="fri">пӀе</day>
+							<day type="sat">шуо</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">кӀи</day>
+							<day type="mon">ор</day>
+							<day type="tue">ши</day>
+							<day type="wed">кха</day>
+							<day type="thu">еа</day>
+							<day type="fri">пӀе</day>
+							<day type="sat">шуо</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">кӀи</day>
+							<day type="mon">ор</day>
+							<day type="tue">ши</day>
+							<day type="wed">кха</day>
+							<day type="thu">еа</day>
+							<day type="fri">пӀе</day>
+							<day type="sat">шуо</day>
+						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">кӀиранан де</day>
-							<day type="mon">оршотан де</day>
-							<day type="tue">шинарин де</day>
-							<day type="wed">кхаарин де</day>
-							<day type="thu">еарин де</day>
-							<day type="fri">пӀераскан де</day>
-							<day type="sat">шот де</day>
+							<day type="sun">кӀира</day>
+							<day type="mon">оршот</day>
+							<day type="tue">шинара</day>
+							<day type="wed">кхаара</day>
+							<day type="thu">еара</day>
+							<day type="fri">пӀераска</day>
+							<day type="sat">шуот</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">кӀи</day>
+							<day type="mon">ор</day>
+							<day type="tue">ши</day>
+							<day type="wed">кха</day>
+							<day type="thu">еа</day>
+							<day type="fri">пӀе</day>
+							<day type="sat">шуо</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">кӀ</day>
+							<day type="mon">о</day>
+							<day type="tue">ш</day>
+							<day type="wed">кх</day>
+							<day type="thu">е</day>
+							<day type="fri">пӀ</day>
+							<day type="sat">ш</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">кӀи</day>
+							<day type="mon">ор</day>
+							<day type="tue">ши</day>
+							<day type="wed">кха</day>
+							<day type="thu">еа</day>
+							<day type="fri">пӀе</day>
+							<day type="sat">шуо</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">кӀира</day>
+							<day type="mon">оршот</day>
+							<day type="tue">шинара</day>
+							<day type="wed">кхаара</day>
+							<day type="thu">еара</day>
+							<day type="fri">пӀераска</day>
+							<day type="sat">шуот</day>
 						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">1-гӀа кв.</quarter>
+							<quarter type="2">2-гӀа кв.</quarter>
+							<quarter type="3">3-гӀа кв.</quarter>
+							<quarter type="4">4-гӀа кв.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1-гӀа квартал</quarter>
+							<quarter type="2">2-гӀа квартал</quarter>
+							<quarter type="3">3-гӀа квартал</quarter>
+							<quarter type="4">4-гӀа квартал</quarter>
+						</quarterWidth>
+					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">1-гӀа кв.</quarter>
+							<quarter type="2">2-гӀа кв.</quarter>
+							<quarter type="3">3-гӀа кв.</quarter>
+							<quarter type="4">4-гӀа кв.</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1-гӀа квартал</quarter>
 							<quarter type="2">2-гӀа квартал</quarter>
@@ -724,6 +1026,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
+				<eras>
+					<eraNames>
+						<era type="0">Ӏийса пайхамар вина де кхачале</era>
+						<era type="0" alt="variant">вайн эра тӀеяле</era>
+						<era type="1">Ӏийса пайхамар вина дийнахь дуьйна</era>
+						<era type="1" alt="variant">вайн эрехь</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">в. э. тӀ. я</era>
+						<era type="0" alt="variant">МАССО</era>
+						<era type="1">в. э</era>
+					</eraAbbr>
+				</eras>
 			</calendar>
 		</calendars>
 		<fields>
@@ -859,6 +1174,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} кӀир. хьалха</relativeTimePattern>
 					<relativeTimePattern count="other">{0} кӀир. хьалха</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>кӀирнахь</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>кӀир.</displayName>
@@ -870,6 +1186,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} кӀир. хьалха</relativeTimePattern>
 					<relativeTimePattern count="other">{0} кӀир. хьалха</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>кӀирнахь {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>беттан кӀира</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>беттан кӀира</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>беттан кӀира</displayName>
 			</field>
 			<field type="day">
 				<displayName>де</displayName>
@@ -907,23 +1233,68 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} де хьалха</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>шеран де</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>шеран де</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>шеран де</displayName>
+			</field>
 			<field type="weekday">
-				<displayName>кӀиран де</displayName>
+				<displayName>кӀиранан де</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>кӀиранан де</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>кӀиранан де</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>кӀиранан де</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>кӀиранан де</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">даханчу кӀиранан дийнахь</relative>
 				<relative type="0">карарчу кӀиранан дийнахь</relative>
 				<relative type="1">рогӀерчу кӀиранан дийнахь</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} кӀиранденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} кӀиранденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} кӀиранденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} кӀиранденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">даханчу кӀиранан д.</relative>
 				<relative type="0">карарчу кӀиранан д.</relative>
 				<relative type="1">рогӀерчу кӀиранан д.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} кӀиранденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} кӀиранденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} кӀиранденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} кӀиранденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">даханчу кӀиранан д.</relative>
 				<relative type="0">карарчу кӀиранан д.</relative>
 				<relative type="1">рогӀерчу кӀиранан д</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} кӀиранденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} кӀиранденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} кӀиранденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} кӀиранденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">даханчу оршотан дийнахь</relative>
@@ -944,66 +1315,146 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="-1">даханчу шинарин дийнахь</relative>
 				<relative type="0">карарчу шинарин дийнахь</relative>
 				<relative type="1">рогӀерчу шинарин дийнахь</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Ширанаденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Ширанаденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Ширанаденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Ширанаденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">даханчу шинарин д.</relative>
 				<relative type="0">карарчу шинарин д.</relative>
 				<relative type="1">рогӀерчу шинарин д.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Ширанаденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Ширанаденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Ширанаденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Ширанаденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">даханчу шинарин д.</relative>
 				<relative type="0">карарчу шинарин д.</relative>
 				<relative type="1">рогӀерчу шинарин д.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Ширанаденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Ширанаденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Ширанаденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Ширанаденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">даханчу кхаарин дийнахь</relative>
 				<relative type="0">карарчу кхаарин дийнахь</relative>
 				<relative type="1">рогӀерчу кхаарин дийнахь</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Кхааринденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Кхааринденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Кхааринденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Кхааринденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">даханчу кхаарин д.</relative>
 				<relative type="0">карарчу кхаарин д.</relative>
 				<relative type="1">рогӀерчу кхаарин д.</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Кхааринденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Кхааринденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">даханчу кхаарин д.</relative>
 				<relative type="0">карарчу кхаарин д.</relative>
 				<relative type="1">рогӀерчу кхаарин д.</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Кхааринденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Кхааринденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">даханчу еарин дийнахь</relative>
 				<relative type="0">карарчу еарин дийнахь</relative>
 				<relative type="1">рогӀерчу еарин дийнахь</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Еаринденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Еаринденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Еаринденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Еаринденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">даханчу еарин д.</relative>
 				<relative type="0">карарчу еарин д.</relative>
 				<relative type="1">рогӀерчу еарин д.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Еаринденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Еаринденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">даханчу еарин д.</relative>
 				<relative type="0">карарчу еарин д.</relative>
 				<relative type="1">рогӀерчу еарин д.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Еаринденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Еаринденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">даханчу пӀераскан дийнахь</relative>
 				<relative type="0">карарчу пӀераскан дийнахь</relative>
 				<relative type="1">рогӀерчу пӀераскан дийнахь</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} ПӀерасканденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} ПӀерасканденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} ПӀерасканденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} ПӀерасканденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">даханчу пӀераскан д.</relative>
 				<relative type="0">карарчу пӀераскан д.</relative>
 				<relative type="1">рогӀерчу пӀераскан д.</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} ПӀерасканденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} ПӀерасканденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">даханчу пӀераскан д.</relative>
 				<relative type="0">карарчу пӀераскан д.</relative>
 				<relative type="1">рогӀерчу пӀераскан д.</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} ПӀерасканденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} ПӀерасканденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">даханчу шотдийнахь</relative>
 				<relative type="0">карарчу шотдийнахь</relative>
 				<relative type="1">рогӀерчу шотдийнахь</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">+{0} Шотденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Шотденошкахь</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">-{0} Шотденошкахь</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Шотденошкахь</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">даханчу шотд.</relative>
@@ -1020,6 +1471,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour">
 				<displayName>сахьт</displayName>
+				<relative type="0">хӀокху сахьтехь</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} сахьт даьлча</relativeTimePattern>
 					<relativeTimePattern count="other">{0} сахьт даьлча</relativeTimePattern>
@@ -1053,6 +1505,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>минот</displayName>
+				<relative type="0">хӀокху минотехь</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} минот яьлча</relativeTimePattern>
 					<relativeTimePattern count="other">{0} минот яьлча</relativeTimePattern>
@@ -1086,6 +1539,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="second">
 				<displayName>секунд</displayName>
+				<relative type="0">хӀинца</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} секунд яьлча</relativeTimePattern>
 					<relativeTimePattern count="other">{0} секунд яьлча</relativeTimePattern>
@@ -1129,6 +1583,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} (+1)</regionFormat>
 			<regionFormat type="standard">{0} (+0)</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Санта-Изабел</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Гонолулу</exemplarCity>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Йоьвзуш йоцу гӀала</exemplarCity>
 			</zone>
@@ -1393,6 +1853,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>Ванкувер</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Форт Нельсон</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Доусон-Крик</exemplarCity>
 			</zone>
@@ -1489,6 +1952,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Мархин гӀайренаш</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Пунта-Аренас</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Сантьяго</exemplarCity>
 			</zone>
@@ -1521,6 +1987,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Никоси</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Фамагуста</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Прага</exemplarCity>
@@ -1780,6 +2249,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>Орал</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Атирау</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Актобе</exemplarCity>
 			</zone>
@@ -1893,9 +2365,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Тихуана</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Санта-Изабел</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Эрмосильо</exemplarCity>
@@ -2062,6 +2531,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Волгоград</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Саратов</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Аштаркхне</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ульяновск</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Киров</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Самара</exemplarCity>
 			</zone>
@@ -2073,6 +2554,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Новосибирск</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Барнаул</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Томск</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Новокузнецк</exemplarCity>
@@ -2242,9 +2729,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Мидуэй, гӀ-наш</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Джонстон</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Уэйк, гӀ-е</exemplarCity>
 			</zone>
@@ -2254,8 +2738,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Гонолулу</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Джонстон</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Анкоридж</exemplarCity>
@@ -2388,7 +2872,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<metazone type="Afghanistan">
 				<long>
-					<standard>ОвхӀан-пачхьалкх</standard>
+					<standard>ОвхӀан</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Central">
@@ -2464,9 +2948,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Arabian">
 				<long>
-					<generic>СаӀудийн Арави</generic>
-					<standard>СаӀудийн Арави, стандартан хан</standard>
-					<daylight>СаӀудийн Арави, аьхкенан хан</daylight>
+					<generic>СаӀудийн Ӏаьрбийчоь</generic>
+					<standard>СаӀудийн Ӏаьрбийчоьнан стандартан хан</standard>
+					<daylight>СаӀудийн Ӏаьрбийчоьнан, аьхкенан хан</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
@@ -2596,9 +3080,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="China">
 				<long>
-					<generic>Китай</generic>
-					<standard>Китай, стандартан хан</standard>
-					<daylight>Китай, аьхкенан хан</daylight>
+					<generic>Цийчоь</generic>
+					<standard>Цийчоьнан, стандартан хан</standard>
+					<daylight>Цийчоьнан, аьхкенан хан</daylight>
 				</long>
 			</metazone>
 			<metazone type="Choibalsan">
@@ -2790,7 +3274,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="India">
 				<long>
-					<standard>Инди</standard>
+					<standard>ХӀинди</standard>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
@@ -2841,9 +3325,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Japan">
 				<long>
-					<generic>Япони</generic>
-					<standard>Япони, стандартан хан</standard>
-					<daylight>Япони, аьхкенан хан</daylight>
+					<generic>Япон</generic>
+					<standard>Япон, стандартан хан</standard>
+					<daylight>Япон, аьхкенан хан</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3089,6 +3573,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Ponape">
 				<long>
 					<standard>Понапе, гӀ-наш</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Пхеньян</standard>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -3544,12 +4033,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Белоруссин сом</displayName>
 				<displayName count="one">Белоруссин сом</displayName>
 				<displayName count="other">Белоруссин соьмаш</displayName>
-				<symbol draft="contributed">BYR</symbol>
+				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Белоруссин сом (2000–2016)</displayName>
+				<displayName count="one">Белоруссин сом (2000–2016)</displayName>
+				<displayName count="other">Белоруссин соьмаш (2000–2016)</displayName>
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Белизин доллар</displayName>
@@ -3900,9 +4395,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
-				<displayName>Казахстанан тенге</displayName>
-				<displayName count="one">Казахстанан тенге</displayName>
-				<displayName count="other">Казахстанан тенгеш</displayName>
+				<displayName>Кхазакхстанан тенге</displayName>
+				<displayName count="one">Кхазакхстанан тенге</displayName>
+				<displayName count="other">Кхазакхстанан тенгеш</displayName>
 				<symbol draft="contributed">KZT</symbol>
 				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
@@ -3986,10 +4481,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Мавританин уги (1973–2017)</displayName>
+				<displayName count="one">Мавританин уги (1973–2017)</displayName>
+				<displayName count="other">Мавританин угиш (1973–2017)</displayName>
+				<symbol draft="contributed">MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Мавританин уги</displayName>
 				<displayName count="one">Мавританин уги</displayName>
 				<displayName count="other">Мавританин угиш</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>Маврикин рупи</displayName>
@@ -4085,9 +4585,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>Перун керла соль</displayName>
-				<displayName count="one">Перун керла соль</displayName>
-				<displayName count="other">Перун керла солаш</displayName>
+				<displayName>Перун соль</displayName>
+				<displayName count="one">Перун соль</displayName>
+				<displayName count="other">Перун солаш</displayName>
 				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PGK">
@@ -4135,6 +4635,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Румынин лей</displayName>
 				<displayName count="other">Румынин лейш</displayName>
 				<symbol draft="contributed">RON</symbol>
+				<symbol alt="narrow" draft="contributed">лей</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Сербин динар</displayName>
@@ -4156,9 +4657,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
-				<displayName>СаӀудийн Аравин риал</displayName>
-				<displayName count="one">СаӀудийн Аравин риал</displayName>
-				<displayName count="other">СаӀудийн Аравин риалш</displayName>
+				<displayName>СаӀудийн Ӏаьрбийчоьнан риал</displayName>
+				<displayName count="one">СаӀудийн Ӏаьрбийчоьнан риал</displayName>
+				<displayName count="other">СаӀудийн Ӏаьрбийчоьнан риалш</displayName>
 				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
@@ -4228,10 +4729,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>Сан-Томен а, Принсипин а добра (1977–2017)</displayName>
+				<displayName count="one">Сан-Томен а, Принсипин а добра (1977–2017)</displayName>
+				<displayName count="other">Сан-Томен а, Принсипин а добраш (1977–2017)</displayName>
+				<symbol draft="contributed">STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>Сан-Томен а, Принсипин а добра</displayName>
 				<displayName count="one">Сан-Томен а, Принсипин а добра</displayName>
 				<displayName count="other">Сан-Томен а, Принсипин а добраш</displayName>
-				<symbol draft="contributed">STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
@@ -4335,9 +4841,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
-				<displayName>Узбекистанан сум</displayName>
-				<displayName count="one">Узбекистанан сум</displayName>
-				<displayName count="other">Узбекистанан сумаш</displayName>
+				<displayName>Узбекистанан сом</displayName>
+				<displayName count="one">Узбекистанан сом</displayName>
+				<displayName count="other">Узбекистанан сомаш</displayName>
 				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEF">
@@ -4669,4 +5175,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</durationUnit>
 	</units>
 </ldml>
-

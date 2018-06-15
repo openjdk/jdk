@@ -48,7 +48,6 @@ jlong handleGetLength(FD fd);
 JNIEXPORT jint handleRead(FD fd, void *buf, jint len);
 jint handleWrite(FD fd, const void *buf, jint len);
 jint handleAppend(FD fd, const void *buf, jint len);
-void handleClose(JNIEnv *env, jobject this, jfieldID fid);
 void fileDescriptorClose(JNIEnv *env, jobject this);
 JNIEXPORT jlong JNICALL
 handleLseek(FD fd, jlong offset, jint whence);
