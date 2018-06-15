@@ -194,6 +194,18 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
+  // Internal allocation methods.
+  inline static HeapWord* common_allocate_memory(Klass* klass, int size,
+                                                 void (*post_setup)(Klass*, HeapWord*, int),
+                                                 int size_for_post, bool init_memory,
+                                                 TRAPS);
+
+  // Internal allocation method for common obj/class/array allocations.
+  inline static HeapWord* allocate_memory(Klass* klass, int size,
+                                          void (*post_setup)(Klass*, HeapWord*, int),
+                                          int size_for_post, bool init_memory,
+                                          TRAPS);
+
   // Verification functions
   virtual void check_for_bad_heap_word_value(HeapWord* addr, size_t size)
     PRODUCT_RETURN;

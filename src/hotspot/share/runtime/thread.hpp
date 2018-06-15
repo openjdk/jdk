@@ -42,6 +42,7 @@
 #include "runtime/park.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/unhandledOops.hpp"
 #include "utilities/align.hpp"
@@ -338,6 +339,7 @@ class Thread: public ThreadShadow {
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
+  ThreadHeapSampler _heap_sampler;              // For use when sampling the memory.
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_FIELD_JFR;)      // Thread-local data for jfr
 
@@ -516,6 +518,8 @@ class Thread: public ThreadShadow {
   void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
   void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
   inline jlong cooked_allocated_bytes();
+
+  ThreadHeapSampler& heap_sampler()     { return _heap_sampler; }
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_ACCESSOR_JFR;)
 

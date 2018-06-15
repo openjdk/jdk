@@ -84,6 +84,7 @@ static const jlong  GARBAGE_COLLECTION_FINISH_BIT = (((jlong)1) << (JVMTI_EVENT_
 static const jlong  OBJECT_FREE_BIT = (((jlong)1) << (JVMTI_EVENT_OBJECT_FREE - TOTAL_MIN_EVENT_TYPE_VAL));
 static const jlong  RESOURCE_EXHAUSTED_BIT = (((jlong)1) << (JVMTI_EVENT_RESOURCE_EXHAUSTED - TOTAL_MIN_EVENT_TYPE_VAL));
 static const jlong  VM_OBJECT_ALLOC_BIT = (((jlong)1) << (JVMTI_EVENT_VM_OBJECT_ALLOC - TOTAL_MIN_EVENT_TYPE_VAL));
+static const jlong  SAMPLED_OBJECT_ALLOC_BIT = (((jlong)1) << (JVMTI_EVENT_SAMPLED_OBJECT_ALLOC - TOTAL_MIN_EVENT_TYPE_VAL));
 
 // bits for extension events
 static const jlong  CLASS_UNLOAD_BIT = (((jlong)1) << (EXT_EVENT_CLASS_UNLOAD - TOTAL_MIN_EVENT_TYPE_VAL));
@@ -620,6 +621,7 @@ JvmtiEventControllerPrivate::recompute_enabled() {
     JvmtiExport::set_should_post_compiled_method_load((any_env_thread_enabled & COMPILED_METHOD_LOAD_BIT) != 0);
     JvmtiExport::set_should_post_compiled_method_unload((any_env_thread_enabled & COMPILED_METHOD_UNLOAD_BIT) != 0);
     JvmtiExport::set_should_post_vm_object_alloc((any_env_thread_enabled & VM_OBJECT_ALLOC_BIT) != 0);
+    JvmtiExport::set_should_post_sampled_object_alloc((any_env_thread_enabled & SAMPLED_OBJECT_ALLOC_BIT) != 0);
 
     // need this if we want thread events or we need them to init data
     JvmtiExport::set_should_post_thread_life((any_env_thread_enabled & NEED_THREAD_LIFE_EVENTS) != 0);

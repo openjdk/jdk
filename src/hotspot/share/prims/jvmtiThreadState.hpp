@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   JvmtiDynamicCodeEventCollector* _dynamic_code_event_collector;
   // holds the current vm object alloc event collector, NULL if no event collector in use
   JvmtiVMObjectAllocEventCollector* _vm_object_alloc_event_collector;
+  // holds the current sampled object alloc event collector, NULL if no event collector in use
+  JvmtiSampledObjectAllocEventCollector* _sampled_object_alloc_event_collector;
 
   // Should only be created by factory methods
   JvmtiThreadState(JavaThread *thread);
@@ -314,11 +316,17 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   JvmtiVMObjectAllocEventCollector* get_vm_object_alloc_event_collector() {
     return _vm_object_alloc_event_collector;
   }
+  JvmtiSampledObjectAllocEventCollector* get_sampled_object_alloc_event_collector() {
+    return _sampled_object_alloc_event_collector;
+  }
   void set_dynamic_code_event_collector(JvmtiDynamicCodeEventCollector* collector) {
     _dynamic_code_event_collector = collector;
   }
   void set_vm_object_alloc_event_collector(JvmtiVMObjectAllocEventCollector* collector) {
     _vm_object_alloc_event_collector = collector;
+  }
+  void set_sampled_object_alloc_event_collector(JvmtiSampledObjectAllocEventCollector* collector) {
+    _sampled_object_alloc_event_collector = collector;
   }
 
 
