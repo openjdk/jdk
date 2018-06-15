@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,6 +190,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author Sunitha Reddy
  * @see javax.xml.datatype.Duration
  * @since 1.5
+ * @LastModified: June 2018
  */
 
 public class XMLGregorianCalendarImpl
@@ -2755,7 +2756,7 @@ public class XMLGregorianCalendarImpl
             if ((fractional.compareTo(DECIMAL_ZERO) < 0) ||
                     (fractional.compareTo(DECIMAL_ONE) > 0)) {
                 throw new IllegalArgumentException(DatatypeMessageFormatter.formatMessage(null,
-                        "InvalidFractional", new Object[]{fractional}));
+                        "InvalidFractional", new Object[]{fractional.toString()}));
             }
         }
         this.fractionalSecond = fractional;
