@@ -504,7 +504,6 @@ void ZHeap::relocate() {
 }
 
 void ZHeap::object_iterate(ObjectClosure* cl) {
-  // Should only be called in a safepoint after mark end.
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   ZHeapIterator iter;
