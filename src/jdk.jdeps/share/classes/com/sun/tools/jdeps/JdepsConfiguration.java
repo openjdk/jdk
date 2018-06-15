@@ -347,7 +347,7 @@ public class JdepsConfiguration implements AutoCloseable {
                 this.root = null;
                 this.systemModules = Collections.emptyMap();
             } else {
-                if (Files.isRegularFile(Paths.get(javaHome, "lib", "modules")))
+                if (!Files.isRegularFile(Paths.get(javaHome, "lib", "modules")))
                     throw new IllegalArgumentException("Invalid java.home: " + javaHome);
 
                 // alternate java.home
