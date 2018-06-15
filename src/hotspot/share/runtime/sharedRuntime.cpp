@@ -1989,11 +1989,7 @@ JRT_END
 
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
 JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
-  // Disable ObjectSynchronizer::quick_enter() in default config
-  // on AARCH64 and ARM until JDK-8153107 is resolved.
-  if (ARM_ONLY((SyncFlags & 256) != 0 &&)
-      AARCH64_ONLY((SyncFlags & 256) != 0 &&)
-      !SafepointSynchronize::is_synchronizing()) {
+  if (!SafepointSynchronize::is_synchronizing()) {
     // Only try quick_enter() if we're not trying to reach a safepoint
     // so that the calling thread reaches the safepoint more quickly.
     if (ObjectSynchronizer::quick_enter(_obj, thread, lock)) return;
