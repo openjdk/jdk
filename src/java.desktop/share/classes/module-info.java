@@ -108,7 +108,12 @@ module java.desktop {
     // qualified exports may be inserted at build time
     // see make/GensrcModuleInfo.gmk
     exports sun.awt to
-        jdk.accessibility;
+        jdk.accessibility,
+        jdk.unsupported.desktop;
+
+    exports java.awt.dnd.peer to jdk.unsupported.desktop;
+    exports sun.awt.dnd to jdk.unsupported.desktop;
+    exports sun.swing to jdk.unsupported.desktop;
 
     opens javax.swing.plaf.basic to
         jdk.jconsole;
@@ -130,6 +135,8 @@ module java.desktop {
     uses javax.sound.sampled.spi.AudioFileWriter;
     uses javax.sound.sampled.spi.FormatConversionProvider;
     uses javax.sound.sampled.spi.MixerProvider;
+
+    uses sun.swing.InteropProvider;
 
     provides sun.datatransfer.DesktopDatatransferService with
         sun.awt.datatransfer.DesktopDatatransferServiceImpl;
