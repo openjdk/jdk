@@ -45,6 +45,7 @@ public class UpgradeableModules {
     private static final List<String> UPGRADEABLE_MODULES =
         List.of("java.compiler",
                 "java.jnlp",
+                "jdk.aot",
                 "jdk.internal.vm.compiler",
                 "jdk.internal.vm.compiler.management",
                 "jdk.deploy",
